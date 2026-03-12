@@ -1,0 +1,325 @@
+---
+import { db } from '../../db/client';
+import { certificates, artworks, collectors } from '../../db/schema';
+import { eq } from 'drizzle-orm';
+import QRCode from 'qrcode';
+
+export const prerender = false;
+
+const { uuid } = Astro.params;
+
+if (!uuid) {
+  return Astro.redirect('/');
+}
+
+// 1. OBTENCIÓN DE DATOS (INGENIERÍA SSR)
+const certData = await db.select({
+    cert: certificates,
+    art: artworks,
+    owner: collectors
+})
+.from(certificates)
+.leftJoin(artworks, eq(certificates.artwork_id, artworks.id))
+.leftJoin(collectors, eq(certificates.collector_id, collectors.id))
+.where(eq(certificates.uuid, uuid))
+.limit(1);
+
+if (certData.length === 0) {
+    return Astro.redirect('/404');
+}
+
+const { cert, art, owner } = certData[0];
+const validationUrl = Astro.url.href;
+
+// 2. GENERACIÓN SÍNCRONA DE QR (ESTÁNDAR 2026)
+// Eliminamos dependencia de APIs externas para máxima estabilidad
+const qrCodeDataUrl = await QRCode.toDataURL(validationUrl, {
+    margin: 1,
+    width: 200,
+    color: {
+        dark: '#111111',
+        light: '#ffffff'
+    }
+});
+
+// 3. LÓGICA DE RUTAS DE IMÁGENES
+function serieToFolder(serieId: string): string {
+    if (!serieId) return "";
+    return serieId.charAt(0).toUpperCase() + serieId.slice(1);
+}
+
+const fechaCertificacion = cert.sale_date?.toLocaleDateString('es-ES', { 
+    day: '2-digit', 
+    month: 'long', 
+    year: 'numeric' 
+});
+
+const imagePath = `/img/Series/${serieToFolder(art?.serie_id)}/${art?.filename}`;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CERTIFCADO | {art?.title}</title>
+    
+    <!-- FUENTES EDITORIALES -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <style is:inline>
+        /* 
+           COA PRECISIÓN QUIRÚRGICA v2026
+           Aislamiento Hermético de Estilos
+        */
+        :root {
+            --coa-gold: #af8c3d;
+            --coa-ink: #111111;
+            --coa-paper: #ffffff;
+            --a4-w: 210mm;
+            --a4-h: 297mm;
+        }
+
+        /* Reset Total para Inmunidad */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { background: #080808; height: 100%; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+        body {
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            padding: 50px 0; font-family: 'Playfair Display', serif;
+        }
+
+        /* CONTROLES (NO PRINT) */
+        .coa-actions { margin-bottom: 30px; }
+        .btn-coa {
+            background: var(--coa-paper); color: #000; border: none; padding: 14px 40px;
+            font-family: 'Cinzel', serif; font-weight: 700; cursor: pointer;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.6); font-size: 13px; letter-spacing: 3px;
+            display: flex; align-items: center; gap: 15px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-coa:hover { background: var(--coa-gold); color: #fff; transform: translateY(-3px); }
+
+        /* ══ ARQUITECTURA DEL LIENZO A4 ══ */
+        .coa-canvas {
+            width: var(--a4-w);
+            height: var(--a4-h);
+            background: var(--coa-paper);
+            padding: 15mm;
+            position: relative;
+            box-shadow: 0 0 100px rgba(0,0,0,0.9);
+            display: grid;
+            grid-template-rows: 60mm 80mm 1fr 50mm; /* RESTRICCIÓN FÍSICA INAMOVIBLE */
+            overflow: hidden;
+        }
+
+        /* MARCO DE SEGURIDAD */
+        .coa-border {
+            position: absolute; inset: 10mm;
+            border: 5px double var(--coa-gold);
+            padding: 2px; height: calc(100% - 20mm); width: calc(100% - 20mm);
+            pointer-events: none;
+        }
+
+        .inner-content {
+            height: 100%; display: flex; flex-direction: column; align-items: center;
+            padding: 20mm 15mm; position: relative;
+        }
+
+        /* ══ SECCIÓN 1: CABECERA (60mm) ══ */
+        .coa-header { text-align: center; width: 100%; padding-bottom: 5mm; }
+        .gallery-id {
+            font-family: 'Cinzel', serif; font-size: 14px; letter-spacing: 8px;
+            color: var(--coa-gold); font-weight: 700; margin-bottom: 20px; display: block;
+        }
+        .coa-h1 {
+            font-family: 'Cinzel', serif; font-size: 42px; color: #000;
+            text-transform: uppercase; line-height: 1; margin-bottom: 12px; font-weight: 900;
+        }
+        .coa-sub { font-size: 15px; color: #777; font-style: italic; opacity: 0.8; }
+
+        /* ══ SECCIÓN 2: LA OBRA (80mm) ══ */
+        .coa-artwork-box {
+            width: 100%; height: 80mm; display: flex; justify-content: center; align-items: center;
+            margin-bottom: 8mm;
+        }
+        .coa-mount {
+            width: 200px; height: 100%; background: #fff; border: 1px solid #eee;
+            padding: 6px; box-shadow: 0 5px 30px rgba(0,0,0,0.03);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .coa-mount img {
+            max-width: 100%; max-height: 100%; object-fit: contain; display: block;
+        }
+
+        /* ══ SECCIÓN 3: ESPECIFICACIONES (DINÁMICA LIMITADA) ══ */
+        .coa-specs {
+            width: 100%; max-width: 550px; flex-grow: 1;
+            display: grid; grid-template-columns: 1fr 1fr;
+            border-top: 1px solid #f0f0f0; margin-bottom: 10mm;
+        }
+        .coa-cell { 
+            border-bottom: 1px solid #f0f0f0; padding: 12px 0; text-align: center;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        .coa-cell.full { grid-column: span 2; }
+        .coa-cell.r-border { border-right: 1px solid #f0f0f0; }
+
+        .coa-tag {
+            font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 2px;
+            color: #bbb; margin-bottom: 5px; font-weight: 700;
+        }
+        .coa-val { font-size: 16px; color: #222; font-weight: 700; }
+        .coa-title { font-size: 32px; font-style: italic; color: var(--coa-gold); line-height: 1.2; padding: 5px 0; }
+        .coa-owner { font-family: 'Cinzel', serif; font-size: 18px; color: #000; letter-spacing: 2px; }
+
+        .coa-legal {
+            width: 100%; text-align: center; font-size: 11px;
+            color: #999; line-height: 1.7; font-style: italic; padding: 0 40px;
+        }
+
+        /* ══ SECCIÓN 4: FOOTER (50mm) ══ */
+        .coa-footer {
+            width: 100%; display: flex; justify-content: space-between; align-items: flex-end;
+            margin-top: auto; padding-bottom: 15px;
+        }
+
+        .coa-qr-area { display: flex; align-items: center; gap: 15px; }
+        .coa-qr-img {
+            width: 80px; height: 80px; border: 1px solid #eee; padding: 3px; background: #fff;
+        }
+        .coa-qr-img img { width: 100%; height: auto; }
+        .coa-qr-info { text-align: left; }
+        .coa-qr-tag { font-family: 'Cinzel', serif; font-size: 8px; color: #ccc; letter-spacing: 1px; }
+        .coa-uuid { font-family: monospace; font-size: 9px; color: #ddd; display: block; }
+
+        .coa-signature-area { text-align: right; width: 250px; }
+        .coa-sig-name { font-family: 'Playfair Display', serif; font-size: 38px; font-style: italic; color: #000; margin-bottom: -15px; }
+        .coa-sig-line { width: 100%; height: 1.5px; background: var(--coa-gold); margin-bottom: 10px; }
+        .coa-sig-tag { font-family: 'Cinzel', serif; font-size: 10px; color: #aaa; letter-spacing: 3px; text-align: center; display: block; }
+
+        .coa-date-block { text-align: right; margin-top: 15px; }
+        .coa-date-lbl { font-family: 'Cinzel', serif; font-size: 9px; color: #bbb; letter-spacing: 1px; }
+        .coa-date-val { font-size: 14px; color: #555; font-weight: 700; }
+
+        /* ADORNOS DE ESQUINA */
+        .coa-ornament { position: absolute; width: 50px; height: 50px; border: 4px solid var(--coa-gold); z-index: 10; }
+        .tl { top: 12mm; left: 12mm; border-right: none; border-bottom: none; }
+        .tr { top: 12mm; right: 12mm; border-left: none; border-bottom: none; }
+        .bl { bottom: 12mm; left: 12mm; border-right: none; border-top: none; }
+        .br { bottom: 12mm; right: 12mm; border-left: none; border-top: none; }
+
+        /* ══ IMPRESIÓN FORZADA A4 ══ */
+        @media print {
+            @page { size: A4; margin: 0; }
+            body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
+            .coa-actions { display: none !important; }
+            .coa-canvas {
+                width: 210mm !important; height: 297mm !important;
+                box-shadow: none !important; margin: 0 !important; padding: 10mm !important;
+                background: #fff !important;
+            }
+            .coa-border, .coa-ornament { border-color: #000 !important; }
+            .coa-sig-line { background: #000 !important; }
+            .coa-h1, .coa-title, .coa-sig-name { color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="coa-actions no-print">
+        <button onclick="window.print()" class="btn-coa">
+            <i class="fas fa-print"></i> DESCARGAR O IMPRIMIR CERTIFICADO
+        </button>
+    </section>
+
+    <!-- LIENZO MAESTRO A4 -->
+    <article class="coa-canvas">
+        
+        <div class="coa-border"></div>
+        <div class="coa-ornament tl"></div>
+        <div class="coa-ornament tr"></div>
+        <div class="coa-ornament bl"></div>
+        <div class="coa-ornament br"></div>
+
+        <div class="inner-content">
+            
+            <header class="coa-header">
+                <span class="gallery-id">JAVIER MIX GALLERY</span>
+                <h1 class="coa-h1">Certificado de Autenticidad</h1>
+                <p class="coa-sub">Documento oficial que acredita la legítima propiedad y autoría absoluta de la obra artística.</p>
+            </header>
+
+            <section class="coa-artwork-box">
+                <div class="coa-mount">
+                    <img src={imagePath} alt={art?.title} onerror="this.src='/favicon.svg'; this.style.opacity='0.1';" />
+                </div>
+            </section>
+
+            <section class="coa-specs">
+                <div class="coa-cell full">
+                    <span class="coa-tag">TÍTULO DE LA OBRA ARTÍSTICA</span>
+                    <span class="coa-title">{art?.title}</span>
+                </div>
+
+                <div class="coa-cell r-border">
+                    <span class="coa-tag">SERIE ORIGINAL</span>
+                    <span class="coa-val">{art?.serie_id?.replace(/_/g, ' ')}</span>
+                </div>
+                <div class="coa-cell">
+                    <span class="coa-tag">AÑO DE CREACIÓN</span>
+                    <span class="coa-val">{new Date(cert.sale_date).getFullYear()}</span>
+                </div>
+
+                <div class="coa-cell r-border">
+                    <span class="coa-tag">DIMENSIONES</span>
+                    <span class="coa-val">{cert.dimensions}</span>
+                </div>
+                <div class="coa-cell">
+                    <span class="coa-tag">NÚMERO DE EDICIÓN</span>
+                    <span class="coa-val">{cert.edition_number || 'Obra Única'}</span>
+                </div>
+
+                <div class="coa-cell full" style="background: rgba(175, 140, 61, 0.03);">
+                    <span class="coa-tag">REGISTRADO A NOMBRE DEL COLECCIONISTA:</span>
+                    <span class="coa-owner">{owner?.name.toUpperCase()}</span>
+                </div>
+            </section>
+
+            <p class="coa-legal">
+                Este certificado garantiza que la obra anteriormente mencionada es una pieza artística original creada por Javier Mix. 
+                El autor conserva todos los derechos de autor y reproducción. Cualquier duplicación anula su validez oficial.
+            </p>
+
+            <footer class="coa-footer">
+                <div class="coa-qr-area">
+                    <div class="coa-qr-img">
+                        <img src={qrCodeDataUrl} alt="QR Validación" />
+                    </div>
+                    <div class="coa-qr-info">
+                        <span class="coa-qr-tag">VALIDACIÓN DE SISTEMA</span>
+                        <span class="coa-uuid">ID: {cert.uuid.toUpperCase()}</span>
+                    </div>
+                </div>
+
+                <div class="coa-signature-area">
+                    <div class="coa-sig-box">
+                        <span class="coa-sig-name">Javier Mix</span>
+                        <div class="coa-sig-line"></div>
+                        <span class="coa-sig-tag">FIRMA DEL AUTOR</span>
+                    </div>
+                    <div class="coa-date-block">
+                        <span class="coa-date-lbl">FECHA DE EMISIÓN: </span>
+                        <span class="coa-date-val">{fechaCertificacion}</span>
+                    </div>
+                </div>
+            </footer>
+
+        </div>
+
+    </article>
+
+</body>
+</html>

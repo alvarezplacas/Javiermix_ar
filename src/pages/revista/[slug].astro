@@ -1,0 +1,786 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import { db } from '../../db/client';
+import { magazine, artworks } from '../../db/schema';
+import { eq, ne, sql } from 'drizzle-orm';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/revista');
+}
+
+// Fetch article from database
+const articlesList = await db.select()
+  .from(magazine)
+  .where(eq(magazine.slug, slug))
+  .limit(1);
+
+if (articlesList.length === 0) {
+  return Astro.redirect('/revista');
+}
+
+const articulo = articlesList[0];
+
+// Fetch suggested artwork (random one from artworks with JMX prefix)
+const suggestedArtworks = await db.select()
+  .from(artworks)
+  .where(sql`LOWER(filename) LIKE 'jmx_%' OR LOWER(filename) LIKE 'jmix_%'`)
+  .orderBy(sql`RAND()`)
+  .limit(1);
+
+const suggestedArt = suggestedArtworks[0];
+
+function serieToFolder(serieId: string): string {
+  if (!serieId) return serieId;
+  return serieId.charAt(0).toUpperCase() + serieId.slice(1);
+}
+
+// Parse media items from DB (featured + JSON list)
+let mediaItems = [];
+try {
+  if (articulo.media_json) {
+    mediaItems = typeof articulo.media_json === 'string' 
+      ? JSON.parse(articulo.media_json) 
+      : articulo.media_json;
+  }
+} catch (e) {
+  console.error('Error parsing media_json', e);
+}
+
+function resolveMediaURL(url: string | null): string {
+  if (!url) return '/img/placeholder.jpg';
+  if (url.startsWith('http') || url.startsWith('/')) return url;
+  return `/uploads/magazine/${url}`;
+}
+
+// Build final media list, filtering empty sources
+const rawMedia = [
+  articulo.video_url ? { type: 'video', src: resolveMediaURL(articulo.video_url), caption: '' } : null,
+  articulo.featured_image ? { type: 'image', src: resolveMediaURL(articulo.featured_image), caption: '' } : null,
+  ...mediaItems.map(m => ({ ...m, src: resolveMediaURL(m.src) }))
+].filter(Boolean);
+
+// Fallback if no media at all
+const media = rawMedia.length > 0 ? rawMedia : [{ type: 'image', src: '/img/placeholder.jpg', caption: 'Imagen no disponible' }];
+
+// Formatear fecha
+const formattedDate = articulo.created_at ? new Date(articulo.created_at).toLocaleDateString('es-ES', {
+  day: 'numeric', month: 'long', year: 'numeric'
+}) : '';
+
+// Tiempo de lectura estimado (aprox 200 ppm)
+const wordCount = articulo.content_html.replace(/<[^>]*>/g, '').split(/\s+/).length;
+const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+---
+
+<Layout
+  title={articulo.title}
+  description={articulo.title}
+  type="article"
+  url={`/revista/${articulo.slug}`}
+  image={articulo.featured_image || ''}
+  pubDate={articulo.created_at?.toISOString()}
+  author="Javier Mix"
+>
+  <Header currentPath="/revista" />
+
+  <article class="magazine-article">
+    <div class="split-layout">
+
+      <!-- ── LEFT: Narrative Text ── -->
+      <section class="narrative-column">
+        <header class="article-header">
+          <span class="eyebrow">REVISTA ONLINE</span>
+          <h1 class="headline">{articulo.title}</h1>
+
+          {articulo.tags && (
+            <div class="article-tags">
+              {articulo.tags.split(',').map(tag => (
+                <span class="tag-chip">{tag.trim()}</span>
+              ))}
+            </div>
+          )}
+
+          <div class="meta-row">
+            <div class="author-info">Por <strong>Javier Mix</strong> · Buenos Aires</div>
+            <div class="stats-info">
+              <span class="date">{formattedDate}</span>
+              <span class="read-time">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                {readingTime} MIN LECTURA
+              </span>
+            </div>
+          </div>
+
+        </header>
+
+        <div class="prose-content" id="prose" set:html={articulo.content_html}></div>
+
+        <hr class="header-divider" />
+        
+        <!-- Star Rating System -->
+        <div class="rating-container" id="rating-container" data-slug={articulo.slug}>
+          <div class="stars-row" id="stars-row">
+            <button class="star-btn" data-value="1">★</button>
+            <button class="star-btn" data-value="2">★</button>
+            <button class="star-btn" data-value="3">★</button>
+            <button class="star-btn" data-value="4">★</button>
+            <button class="star-btn" data-value="5">★</button>
+          </div>
+          <div class="rating-stats">
+            <span class="rating-avg" id="rating-avg">0.0</span>
+            <span class="rating-sep">/</span>
+            <span class="rating-count" id="rating-count">0 votos</span>
+          </div>
+        </div>
+
+        <!-- ── CONTINUAR COLECCIÓN ── -->
+        <section class="collection-invite">
+          <div class="invite-header">
+            <span class="invite-eyebrow">CONTINUAR COLECCIÓN</span>
+            <h3 class="invite-title">Invitación a la Potencia</h3>
+            <p class="invite-text">
+              Cada obra es un fragmento de una memoria mayor. Te invitamos a completar tu serie o descubrir nuevas resonancias en nuestras colecciones curadas.
+            </p>
+          </div>
+
+          {suggestedArt && (
+            <a href={`/obra/${suggestedArt.serie_id.toLowerCase().replace(/_/g, '-')}-${suggestedArt.title.toLowerCase().replace(/ /g, '-')}`} class="suggested-artwork-card" style="text-decoration: none;">
+              <div class="art-preview">
+                <img src={`/img/Series/${serieToFolder(suggestedArt.serie_id)}/${suggestedArt.filename}`} alt={suggestedArt.title} onerror="this.onerror=null; this.src='/img/placeholder.jpg';" />
+              </div>
+              <div class="art-info">
+                <span class="art-serie">{suggestedArt.serie_id.replace(/_/g, ' ')}</span>
+                <h4 class="art-title">{suggestedArt.title}</h4>
+                <span class="btn-acquire">ADQUIRIR OBRA</span>
+              </div>
+            </a>
+          )}
+
+          <div class="invite-actions">
+            <a href="/obras" class="collections-link">
+              VER TODAS LAS COLECCIONES
+              <span class="link-underline"></span>
+            </a>
+          </div>
+        </section>
+
+        <div class="article-footer-nav">
+          <a href="/revista" class="back-link">← VOLVER A REVISTA</a>
+        </div>
+      </section>
+
+      <!-- ── RIGHT: Sticky Media Panel ── -->
+      <aside class="visual-column" id="visual-column" data-media={JSON.stringify(media)}>
+        <div class="media-stage" id="media-stage">
+          <div class="media-layer active" id="media-layer-A">
+            {media[0]?.type === 'video' ? (
+              <video src={media[0].src} class="media-video" style="opacity: 1" muted autoplay loop playsinline></video>
+            ) : (
+              <img src={media[0]?.src} alt={articulo.title} class="media-img" id="img-A" onerror="this.onerror=null; this.style.opacity=0;" />
+            )}
+          </div>
+          <div class="media-layer" id="media-layer-B">
+            <img src="" alt="" class="media-img" id="img-B" onerror="this.onerror=null; this.style.opacity=0;" />
+          </div>
+          <video class="media-video" id="media-video-dynamic" muted autoplay loop playsinline style="opacity: 0"></video>
+        </div>
+
+        <div class="media-caption" id="media-caption"></div>
+
+        <div class="media-dots" id="media-dots">
+          {media.map((_, i) => (
+            <button class={`dot ${i === 0 ? "active" : ""}`} data-index={i} aria-label={`Media ${i + 1}`}></button>
+          ))}
+        </div>
+
+        <div class="visual-blend"></div>
+      </aside>
+    </div>
+  </article>
+
+  <style is:global>
+    /* Estilos para el Bloque de Avance (Pull Quote) */
+    .editorial-callout {
+      background: rgba(220, 177, 74, 0.05);
+      border: 1px solid rgba(220, 177, 74, 0.1);
+      padding: 3rem;
+      margin: 4rem 0;
+      border-radius: 30px;
+      color: var(--color-accent, #dcb14a);
+      font-size: 1.8rem;
+      font-family: 'Georgia', serif;
+      font-style: italic;
+      text-align: center;
+      position: relative;
+      line-height: 1.4;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .editorial-callout::before {
+      content: "“";
+      position: absolute; top: -1.5rem; left: 2rem;
+      font-size: 6rem; color: var(--color-accent); opacity: 0.15;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('astro:page-load', () => {
+      const visualCol = document.getElementById('visual-column');
+      if (!visualCol) return;
+
+      const media = JSON.parse(visualCol.getAttribute('data-media') || '[]');
+      if (media.length === 0) return;
+
+      const layerA = document.getElementById('media-layer-A');
+      const layerB = document.getElementById('media-layer-B');
+      const imgA = document.getElementById('img-A') as HTMLImageElement;
+      const imgB = document.getElementById('img-B') as HTMLImageElement;
+      const video = document.getElementById('media-video-dynamic') as HTMLVideoElement;
+      const caption = document.getElementById('media-caption');
+      const dotsEl = document.getElementById('media-dots');
+      const prose = document.getElementById('prose');
+
+      let currentIdx = 0;
+      let frontLayer = 'A';
+
+      function showMedia(idx: number) {
+        if (idx === currentIdx) return;
+        currentIdx = idx;
+
+        const item = media[idx];
+        if (!item) return;
+
+        if (item.type === 'video') {
+          video.src = item.src;
+          video.style.display = 'block';
+          video.play();
+          video.style.opacity = '1';
+          if (layerA) layerA.style.opacity = '0';
+          if (layerB) layerB.style.opacity = '0';
+        } else {
+          video.style.opacity = '0';
+          video.pause();
+          setTimeout(() => { if (video.style.opacity === '0') video.style.display = 'none'; }, 1000);
+
+          if (frontLayer === 'A') {
+            if (imgB) imgB.src = item.src;
+            if (layerB) layerB.style.opacity = '1';
+            if (layerA) layerA.style.opacity = '0';
+            frontLayer = 'B';
+          } else {
+            if (imgA) imgA.src = item.src;
+            if (layerA) layerA.style.opacity = '1';
+            if (layerB) layerB.style.opacity = '0';
+            frontLayer = 'A';
+          }
+        }
+
+        if (caption) {
+          caption.style.opacity = '0';
+          setTimeout(() => {
+            caption.textContent = item.caption || '';
+            caption.style.opacity = item.caption ? '1' : '0';
+          }, 400);
+        }
+
+        dotsEl?.querySelectorAll('.dot').forEach((d, i) => {
+          d.classList.toggle('active', i === idx);
+        });
+      }
+
+      // Autoplay every 7 seconds if not manually interrupted lately
+      let lastInteratcion = Date.now();
+      setInterval(() => {
+        if (Date.now() - lastInteratcion > 10000) { // 10s of idle
+          const nextIdx = (currentIdx + 1) % media.length;
+          showMedia(nextIdx);
+        }
+      }, 7000);
+
+      dotsEl?.querySelectorAll('.dot').forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          lastInteratcion = Date.now();
+          showMedia(i);
+        });
+      });
+
+      // --- Rating System Logic ---
+      const ratingCont = document.getElementById('rating-container');
+      const starsRow = document.getElementById('stars-row');
+      const stars = starsRow?.querySelectorAll('.star-btn');
+      const avgEl = document.getElementById('rating-avg');
+      const countEl = document.getElementById('rating-count');
+      const slug = ratingCont?.getAttribute('data-slug');
+
+      if (ratingCont && slug) {
+        // Fetch initial rating
+        fetch(`/api/public/rate-article?slug=${slug}`)
+          .then(res => res.json())
+          .then(data => {
+            if (avgEl) avgEl.textContent = data.average;
+            if (countEl) countEl.textContent = `${data.count} votos`;
+            if (data.userScore > 0) {
+              highlightStars(data.userScore);
+            }
+          });
+
+        stars?.forEach(star => {
+          star.addEventListener('mouseenter', () => {
+            const val = parseInt(star.getAttribute('data-value') || '0');
+            previewStars(val);
+          });
+
+          star.addEventListener('mouseleave', () => {
+            const currentScore = ratingCont.getAttribute('data-user-score') || '0';
+            highlightStars(parseInt(currentScore));
+          });
+
+          star.addEventListener('click', async () => {
+            const val = parseInt(star.getAttribute('data-value') || '0');
+            ratingCont.setAttribute('disabled', 'true');
+            
+            try {
+              const res = await fetch('/api/public/rate-article', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug, score: val })
+              });
+              const data = await res.json();
+              if (data.success) {
+                if (avgEl) avgEl.textContent = data.average;
+                if (countEl) countEl.textContent = `${data.count} votos`;
+                ratingCont.setAttribute('data-user-score', val.toString());
+                highlightStars(val);
+                
+                // Visual feedback ping
+                ratingCont.style.transform = 'scale(1.05)';
+                setTimeout(() => ratingCont.style.transform = 'scale(1)', 200);
+              }
+            } catch (e) {
+              console.error('Error rating:', e);
+            } finally {
+              ratingCont.removeAttribute('disabled');
+            }
+          });
+        });
+      }
+
+      function highlightStars(count: number) {
+        stars?.forEach((s, i) => {
+          s.classList.toggle('active', i < count);
+          s.classList.remove('hover');
+        });
+      }
+
+      function previewStars(count: number) {
+        stars?.forEach((s, i) => {
+          s.classList.toggle('hover', i < count);
+        });
+      }
+    });
+  </script>
+
+</Layout>
+
+<style>
+/* ─────────────────────────────────
+   SPLIT LAYOUT (50 / 50)
+───────────────────────────────── */
+.magazine-article {
+  width: 100%;
+  background-color: #050505;
+}
+
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  align-items: start;
+}
+
+.narrative-column {
+  padding: 12rem 8% 10rem;
+  grid-column: 1;
+}
+
+.visual-column {
+  grid-column: 2;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.media-stage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.media-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.media-layer.active {
+  opacity: 1;
+}
+
+.media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  filter: brightness(0.75) contrast(1.05);
+}
+
+.media-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.media-caption {
+  position: absolute;
+  bottom: 5rem;
+  left: 0;
+  right: 0;
+  padding: 0 2.5rem;
+  font-family: inherit;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  z-index: 10;
+}
+
+.media-dots {
+  position: absolute;
+  bottom: 2rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  z-index: 10;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  border: none;
+  cursor: pointer;
+  transition: all 0.35s ease;
+  padding: 0;
+}
+
+.dot.active {
+  background: var(--color-accent, #dcb14a);
+  transform: scale(1.3);
+}
+
+.visual-blend {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(5,5,5,0.5), transparent);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Typography */
+.article-header {
+  margin-bottom: 5rem;
+}
+
+.eyebrow {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: var(--color-accent, #dcb14a);
+  margin-bottom: 1.2rem;
+  font-weight: 700;
+}
+
+.headline {
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.1;
+  margin-bottom: 2rem;
+  color: #fff;
+  font-family: 'Georgia', serif;
+}
+
+.article-tags {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.tag-chip {
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 50px;
+  font-family: var(--font-secondary);
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.author-info strong { color: #fff; font-weight: 700; }
+
+.stats-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.read-time {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 0.35rem 0.9rem;
+  border-radius: 50px;
+}
+
+.header-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, rgba(255,255,255,0.1), transparent);
+  margin-top: 3rem;
+}
+
+.prose-content {
+  font-family: 'Georgia', serif;
+  font-size: 1.25rem;
+  line-height: 1.95;
+  color: rgba(255,255,255,0.75);
+  font-weight: 300;
+}
+
+.prose-content :global(p) { margin-bottom: 2.5rem; }
+
+/* ── COLLECTION INVITE ── */
+.collection-invite {
+  margin: 8rem 0 4rem;
+  padding: 4rem 0;
+  border-top: 1px solid rgba(255,255,255,0.03);
+}
+
+.invite-eyebrow {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: var(--color-accent, #dcb14a);
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.invite-title {
+  font-family: 'Georgia', serif;
+  font-size: 2.5rem;
+  font-weight: 300;
+  font-style: italic;
+  color: #fff;
+  margin-bottom: 1.5rem;
+}
+
+.invite-text {
+  color: rgba(255,255,255,0.4);
+  font-size: 1rem;
+  line-height: 1.8;
+  max-width: 500px;
+  margin-bottom: 4rem;
+}
+
+.suggested-artwork-card {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 2.5rem;
+  background: rgba(255,255,255,0.02);
+  padding: 2.5rem;
+  border-radius: 4px;
+  align-items: center;
+  margin-bottom: 4rem;
+  border: 1px solid rgba(255,255,255,0.01);
+  transition: transform 0.4s ease, border 0.4s ease;
+}
+
+.suggested-artwork-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(220,177,74,0.15);
+}
+
+.art-preview {
+  width: 100%;
+  aspect-ratio: 4/5;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.art-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: brightness(0.85);
+}
+
+.art-serie {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.art-title {
+  font-family: 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: #fff;
+  margin-bottom: 2rem;
+}
+
+.btn-acquire {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #000;
+  background: var(--color-accent, #dcb14a);
+  padding: 0.8rem 1.5rem;
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+.btn-acquire:hover {
+  opacity: 0.9;
+}
+
+.collections-link {
+  display: inline-flex;
+  flex-direction: column;
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.link-underline {
+  display: block;
+  width: 30%;
+  height: 1px;
+  background: var(--color-accent, #dcb14a);
+  margin-top: 8px;
+  transition: width 0.4s ease;
+}
+
+.collections-link:hover .link-underline {
+  width: 100%;
+}
+
+
+/* ── RATING SYSTEM ── */
+.rating-container {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin: 2.5rem 0 1rem;
+  background: rgba(255,255,255,0.02);
+  padding: 1rem 1.5rem;
+  border-radius: 50px;
+  width: fit-content;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.stars-row {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.star-btn:hover,
+.star-btn.hover,
+.star-btn.active {
+  color: var(--color-accent, #dcb14a);
+  text-shadow: 0 0 10px rgba(220,177,74,0.4);
+}
+
+.rating-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-secondary);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.rating-avg {
+  color: #fff;
+  font-weight: 700;
+}
+
+.rating-sep {
+  color: rgba(255,255,255,0.2);
+}
+
+.rating-count {
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+}
+
+@media (max-width: 1024px) {
+  .split-layout { grid-template-columns: 1fr; }
+  .visual-column { height: 50vh; position: relative; }
+  .narrative-column { padding: 5rem 8% 8rem; }
+}
+</style>

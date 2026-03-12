@@ -1,0 +1,281 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { db } from '../../../db/client';
+import { collectors, certificates, artworks } from '../../../db/schema';
+import { eq, desc } from 'drizzle-orm';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const collectorId = parseInt(id || '');
+
+if (isNaN(collectorId)) {
+    return Astro.redirect('/admin/coleccionistas');
+}
+
+// 1. Obtener datos del coleccionista
+const collectorData = await db.select().from(collectors).where(eq(collectors.id, collectorId)).limit(1);
+
+if (collectorData.length === 0) {
+    return Astro.redirect('/admin/coleccionistas');
+}
+
+const collector = collectorData[0];
+
+// 2. Obtener historial de certificados vinculados
+const history = await db.select({
+    cert: certificates,
+    art: artworks
+})
+.from(certificates)
+.innerJoin(artworks, eq(certificates.artwork_id, artworks.id))
+.where(eq(certificates.collector_id, collectorId))
+.orderBy(desc(certificates.sale_date));
+
+const totalInversion = history.reduce((sum, item) => sum + parseFloat(item.cert.sale_price), 0);
+---
+
+<AdminLayout title={`Perfil: ${collector.name}`} activeTab="clientes">
+  <header class="content-header">
+    <div class="header-main">
+      <a href="/admin/coleccionistas" class="back-btn"><i class="fas fa-arrow-left"></i> CRM</a>
+      <h1>PERFIL DEL COLECCIONISTA</h1>
+    </div>
+    <div class="header-actions">
+        <button class="btn-secondary" id="edit-btn"><i class="fas fa-edit"></i> EDITAR DATOS</button>
+        <a href="/admin/certificados/nuevo" class="btn-primary"><i class="fas fa-plus"></i> EMITIR OBRA</a>
+    </div>
+  </header>
+
+  <div class="profile-grid">
+    <!-- COLUMNA IZQUIERDA: DATOS -->
+    <aside class="profile-sidebar">
+        <div class="admin-card stats-card">
+            <div class="collector-avatar">
+                {collector.name.charAt(0)}
+            </div>
+            <h2 class="collector-name">{collector.name}</h2>
+            <div class="status-badge" data-status={collector.status}>
+                {collector.status === 'vip' ? 'Coleccionista VIP' : (collector.status === 'collector' ? 'Propietario' : 'Interesado')}
+            </div>
+
+            <div class="quick-stats">
+                <div class="stat-item">
+                    <span class="stat-val">{history.length}</span>
+                    <span class="stat-lbl">OBRAS</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val">${totalInversion.toLocaleString()}</span>
+                    <span class="stat-lbl">INVERSIÓN</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card details-card">
+            <h3>Información de Contacto</h3>
+            <ul class="contact-list">
+                <li><i class="fas fa-envelope"></i> {collector.email || 'No registrado'}</li>
+                <li><i class="fas fa-phone"></i> {collector.phone || 'Sin teléfono'}</li>
+                <li><i class="fas fa-map-marker-alt"></i> {collector.country || 'Origen desconocido'}</li>
+                <li><i class="fab fa-instagram"></i> {collector.instagram ? `@${collector.instagram}` : 'Sin Instagram'}</li>
+            </ul>
+        </div>
+
+        <div class="admin-card notes-card">
+            <h3>Notas del Artista</h3>
+            <div class="notes-content">
+                {collector.notes || 'Sin observaciones privadas.'}
+            </div>
+        </div>
+    </aside>
+
+    <!-- COLUMNA DERECHA: HISTORIAL -->
+    <main class="profile-main">
+        <div class="admin-card history-card">
+            <div class="card-header">
+                <h3>Historial de Adquisiciones</h3>
+                <span class="badge-count">{history.length}</span>
+            </div>
+
+            {history.length === 0 ? (
+                <div class="empty-history">
+                    <i class="fas fa-folder-open"></i>
+                    <p>Este cliente aún no ha adquirido obras certificadas.</p>
+                </div>
+            ) : (
+                <div class="history-list">
+                    {history.map(item => (
+                        <div class="history-item">
+                            <div class="art-preview">
+                                <img src={`/img/Series/${item.art.serie_id.charAt(0).toUpperCase() + item.art.serie_id.slice(1)}/${item.art.filename}`} alt={item.art.title} />
+                            </div>
+                            <div class="art-info">
+                                <h4>{item.art.title}</h4>
+                                <p class="serie-name">{item.art.serie_id.replace(/_/g, ' ')}</p>
+                                <div class="sale-meta">
+                                    <span><i class="fas fa-calendar-alt"></i> {item.cert.sale_date?.toLocaleDateString('es-ES')}</span>
+                                    <span><i class="fas fa-tag"></i> ${parseFloat(item.cert.sale_price).toLocaleString()}</span>
+                                    <span><i class="fas fa-expand"></i> {item.cert.dimensions}</span>
+                                </div>
+                            </div>
+                            <div class="art-actions">
+                                <a href={`/validar/${item.cert.uuid}`} target="_blank" class="btn-mini" title="Ver Certificado">
+                                    <i class="fas fa-certificate"></i>
+                                </a>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    </main>
+  </div>
+
+  <!-- Modal Edición -->
+  <div id="edit-modal" class="modal">
+      <div class="modal-content">
+          <h3>Editar Perfil de Coleccionista</h3>
+          <form id="edit-form">
+              <input type="hidden" name="id" value={collector.id} />
+              <div class="form-row">
+                  <div class="form-group">
+                      <label>Nombre</label>
+                      <input type="text" name="name" value={collector.name} required />
+                  </div>
+                  <div class="form-group">
+                      <label>Instagram</label>
+                      <input type="text" name="instagram" value={collector.instagram || ''} placeholder="usuario" />
+                  </div>
+              </div>
+              <div class="form-group">
+                  <label>Estado del Cliente</label>
+                  <select name="status" class="admin-select">
+                      <option value="lead" selected={collector.status === 'lead'}>Interesado (Lead)</option>
+                      <option value="collector" selected={collector.status === 'collector'}>Propietario</option>
+                      <option value="vip" selected={collector.status === 'vip'}>VIP</option>
+                  </select>
+              </div>
+              <div class="form-group">
+                  <label>Notas Privadas</label>
+                  <textarea name="notes" rows="4">{collector.notes || ''}</textarea>
+              </div>
+              <div class="modal-actions">
+                  <button type="button" class="btn-secondary" id="close-modal">Cancelar</button>
+                  <button type="submit" class="btn-primary" id="save-btn">Guardar Cambios</button>
+              </div>
+          </form>
+      </div>
+  </div>
+
+</AdminLayout>
+
+<script is:inline>
+    const modal = document.getElementById('edit-modal');
+    const editBtn = document.getElementById('edit-btn');
+    const closeBtn = document.getElementById('close-modal');
+    const form = document.getElementById('edit-form');
+
+    editBtn?.addEventListener('click', () => modal.style.display = 'flex');
+    closeBtn?.addEventListener('click', () => modal.style.display = 'none');
+
+    form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('save-btn');
+        btn.disabled = true;
+        btn.innerText = 'Guardando...';
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await fetch('/api/admin/update-collector', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.ok) {
+                location.reload();
+            } else {
+                alert(result.error);
+                btn.disabled = false;
+                btn.innerText = 'Guardar Cambios';
+            }
+        } catch (err) {
+            alert('Error al actualizar datos.');
+            btn.disabled = false;
+            btn.innerText = 'Guardar Cambios';
+        }
+    });
+</script>
+
+<style>
+    .back-btn { font-size: 0.7rem; color: #444; text-decoration: none; margin-bottom: 0.5rem; display: block; letter-spacing: 1px; }
+    .header-main h1 { font-size: 1.4rem; font-weight: 300; letter-spacing: 2px; }
+
+    .profile-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; margin-top: 1rem; }
+
+    /* SIDEBAR */
+    .profile-sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+    .admin-card { background: #0c0c0c; border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1.5rem; }
+
+    .stats-card { text-align: center; }
+    .collector-avatar { width: 70px; height: 70px; background: #1a1a1a; color: #dcb14a; font-size: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; border: 1px solid #222; }
+    .collector-name { font-size: 1.2rem; color: #fff; margin-bottom: 0.5rem; }
+    
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 1.5rem; }
+    .status-badge[data-status="vip"] { background: rgba(220,177,74,0.1); color: #dcb14a; border: 1px solid rgba(220,177,74,0.2); }
+    .status-badge[data-status="collector"] { background: rgba(74,158,106,0.1); color: #4a9e6a; }
+    .status-badge[data-status="lead"] { background: rgba(255,255,255,0.05); color: #666; }
+
+    .quick-stats { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #1a1a1a; padding-top: 1.5rem; gap: 1rem; }
+    .stat-item { display: flex; flex-direction: column; }
+    .stat-val { font-size: 1.1rem; color: #fff; font-weight: 600; }
+    .stat-lbl { font-size: 0.55rem; color: #444; letter-spacing: 1px; }
+
+    .details-card h3, .notes-card h3 { font-size: 0.7rem; color: #444; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1.2rem; }
+    .contact-list { list-style: none; display: flex; flex-direction: column; gap: 1rem; }
+    .contact-list li { font-size: 0.85rem; color: #888; display: flex; align-items: center; gap: 0.8rem; }
+    .contact-list i { color: #333; width: 16px; text-align: center; }
+
+    .notes-content { font-size: 0.85rem; color: #666; line-height: 1.6; font-style: italic; }
+
+    /* MAIN CONTENT */
+    .history-card .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .history-card h3 { font-size: 1rem; font-weight: 300; letter-spacing: 1px; color: #eee; }
+    .badge-count { background: #1a1a1a; color: #edbc4a; padding: 2px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
+
+    .empty-history { text-align: center; padding: 5rem 0; opacity: 0.3; }
+    .empty-history i { font-size: 3rem; margin-bottom: 1rem; color: #444; }
+
+    .history-list { display: flex; flex-direction: column; gap: 1rem; }
+    .history-item { background: #111; border: 1px solid #1a1a1a; padding: 1rem; border-radius: 8px; display: flex; align-items: center; gap: 1.5rem; transition: transform 0.2s; }
+    .history-item:hover { transform: translateX(5px); border-color: #222; }
+
+    .art-preview { width: 60px; height: 60px; border-radius: 4px; overflow: hidden; border: 1px solid #222; flex-shrink: 0; }
+    .art-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+    .art-info { flex: 1; }
+    .art-info h4 { font-size: 0.95rem; color: #fff; margin-bottom: 2px; }
+    .serie-name { font-size: 0.65rem; color: #dcb14a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    
+    .sale-meta { display: flex; gap: 1.5rem; }
+    .sale-meta span { font-size: 0.75rem; color: #555; display: flex; align-items: center; gap: 0.5rem; }
+    .sale-meta i { color: #333; font-size: 0.7rem; }
+
+    .btn-mini { background: #1a1a1a; color: #888; width: 34px; height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s; }
+    .btn-mini:hover { background: #dcb14a; color: #000; }
+
+    /* MODAL */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+    .modal-content { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; width: 500px; padding: 2.5rem; box-shadow: 0 20px 70px rgba(0,0,0,0.5); }
+    .modal-content h3 { color: #fff; font-weight: 300; letter-spacing: 1px; margin-bottom: 2rem; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label { display: block; font-size: 0.65rem; color: #444; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .form-group input, .form-group textarea, .admin-select { width: 100%; background: #111; border: 1px solid #1a1a1a; padding: 0.8rem; border-radius: 6px; color: #aaa; outline: none; font-family: inherit; font-size: 0.9rem; }
+    .form-group input:focus, .form-group textarea:focus { border-color: #dcb14a; }
+    
+    .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; border-top: 1px solid #1a1a1a; padding-top: 1.5rem; }
+</style>

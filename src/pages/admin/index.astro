@@ -1,0 +1,133 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+export const prerender = false;
+
+// Mock de estadísticas por ahora (luego vendrán de la DB)
+const stats = [
+  { label: "OBRAS ACTIVAS", value: "56", icon: "fa-image" },
+  { label: "ARTÍCULOS REVISTA", value: "12", icon: "fa-pen-nib" },
+  { label: "CLIENTES", value: "24", icon: "fa-users" },
+  { label: "CERTIFICADOS EMITIDOS", value: "8", icon: "fa-certificate" }
+];
+---
+
+<AdminLayout title="Dashboard" activeTab="dashboard">
+  <header class="content-header">
+    <h1>RESUMEN GENERAL</h1>
+    <div class="date-display">{new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+  </header>
+
+  <div class="stats-grid">
+    {stats.map(s => (
+      <div class="stat-card">
+        <div class="stat-icon-box">
+          <i class={`fas ${s.icon}`}></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{s.value}</span>
+          <span class="stat-label">{s.label}</span>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <div class="shortcut-section">
+    <h3>ACCIONES RÁPIDAS</h3>
+    <div class="shortcuts-grid">
+      <a href="/admin/obras/nueva" class="shortcut-btn">
+         <i class="fas fa-plus"></i> NUEVA OBRA
+      </a>
+      <a href="/admin/revista/nuevo" class="shortcut-btn">
+         <i class="fas fa-pen-nib"></i> NUEVO ARTÍCULO
+      </a>
+      <a href="/admin/certificados/nuevo" class="shortcut-btn">
+         <i class="fas fa-plus-circle"></i> EMITIR CERTIFICADO
+      </a>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-bottom: 5rem;
+  }
+
+  .stat-card {
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .stat-icon-box {
+    width: 50px;
+    height: 50px;
+    background: rgba(220,177,74,0.05);
+    border: 1px solid rgba(220,177,74,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dcb14a;
+    font-size: 1.2rem;
+  }
+
+  .stat-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: #f5f2ed;
+  }
+
+  .stat-label {
+    font-size: 0.55rem;
+    color: #666;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 0.2rem;
+  }
+
+  .shortcut-section h3 {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: #444;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+  }
+
+  .shortcuts-grid {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .shortcut-btn {
+    background: transparent;
+    border: 1px solid #222;
+    padding: 1.5rem 2.5rem;
+    color: rgba(245, 242, 237, 0.5);
+    text-decoration: none;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .shortcut-btn:hover {
+    border-color: #dcb14a;
+    color: #dcb14a;
+    background: rgba(220,177,74,0.02);
+  }
+</style>

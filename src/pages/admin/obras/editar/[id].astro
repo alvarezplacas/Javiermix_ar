@@ -1,0 +1,292 @@
+---
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { db } from '../../../../db/client';
+import { artworks } from '../../../../db/schema';
+import { eq } from 'drizzle-orm';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+let obra = null;
+let error = null;
+let saveOk = false;
+
+// Manejar POST (guardar cambios)
+if (Astro.request.method === 'POST') {
+  try {
+    const data = await Astro.request.formData();
+    await db.update(artworks)
+      .set({
+        title:        data.get('title')?.toString().trim() || '',
+        serie_id:     data.get('serie_id')?.toString().trim() || '',
+        camera:       data.get('camera')?.toString().trim() || null,
+        lens:         data.get('lens')?.toString().trim() || null,
+        paper:        data.get('paper')?.toString().trim() || null,
+        dimensions:   data.get('dimensions')?.toString().trim() || null,
+        date:         data.get('date')?.toString().trim() || null,
+        description:  data.get('description')?.toString().trim() || null,
+        size_small:   data.get('size_small')?.toString().trim() || null,
+        precio_small: data.get('precio_small') ? data.get('precio_small').toString() : null,
+        size_medium:  data.get('size_medium')?.toString().trim() || null,
+        precio_medium: data.get('precio_medium') ? data.get('precio_medium').toString() : null,
+        size_large:   data.get('size_large')?.toString().trim() || null,
+        precio_large: data.get('precio_large') ? data.get('precio_large').toString() : null,
+        stock:        parseInt(data.get('stock')?.toString() || '1'),
+      })
+      .where(eq(artworks.id, parseInt(id)));
+    saveOk = true;
+  } catch (e) {
+    error = 'Error al guardar: ' + e.message;
+  }
+}
+
+// Cargar la obra
+try {
+  const result = await db.select().from(artworks).where(eq(artworks.id, parseInt(id)));
+  obra = result[0] ?? null;
+} catch (e) {
+  error = 'No se pudo cargar la obra.';
+}
+
+function serieToFolder(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+---
+
+<AdminLayout title="Editar Obra" activeTab="obras">
+  <header class="content-header">
+    <div>
+      <a href="/admin/obras" class="back-link"><i class="fas fa-arrow-left"></i> Volver al catálogo</a>
+      <h1 style="margin-top:0.5rem">{obra?.title ?? 'Editar Obra'}</h1>
+    </div>
+    <div class="header-actions">
+      <button type="submit" form="edit-form" class="btn-primary">
+        <i class="fas fa-save"></i> GUARDAR CAMBIOS
+      </button>
+    </div>
+  </header>
+
+  {saveOk && (
+    <div class="alert-ok"><i class="fas fa-check-circle"></i> Cambios guardados correctamente.</div>
+  )}
+  {error && (
+    <div class="error-box"><i class="fas fa-exclamation-triangle"></i> <div>{error}</div></div>
+  )}
+
+  {obra ? (
+    <div class="edit-grid">
+
+      <!-- Preview -->
+      <div class="preview-panel">
+        <img
+          src={`/img/Series/${serieToFolder(obra.serie_id)}/${obra.filename}`}
+          alt={obra.title}
+          class="preview-img"
+          onerror="this.style.opacity='0.1'"
+        />
+        <div class="preview-meta">
+          <span class="file-badge"><i class="fas fa-file-image"></i> {obra.filename}</span>
+          <span class="serie-badge">{obra.serie_id?.replace(/_/g,' ').toUpperCase()}</span>
+        </div>
+      </div>
+
+      <!-- Formulario -->
+      <form id="edit-form" method="POST" class="edit-form">
+
+        <section class="form-section">
+          <h3 class="section-title">Información General</h3>
+          <div class="field-grid">
+            <div class="field full">
+              <label>TÍTULO</label>
+              <input type="text" name="title" value={obra.title} required />
+            </div>
+            <div class="field">
+              <label>SERIE (ID)</label>
+              <input type="text" name="serie_id" value={obra.serie_id} />
+            </div>
+            <div class="field">
+              <label>FECHA</label>
+              <input type="text" name="date" value={obra.date ?? ''} placeholder="DD/MM/AAAA" />
+            </div>
+            <div class="field full">
+              <label>DESCRIPCIÓN</label>
+              <textarea name="description" rows={4}>{obra.description ?? ''}</textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3 class="section-title">Especificaciones Técnicas</h3>
+          <div class="field-grid">
+            <div class="field">
+              <label>CÁMARA</label>
+              <input type="text" name="camera" value={obra.camera ?? ''} />
+            </div>
+            <div class="field">
+              <label>LENTE</label>
+              <input type="text" name="lens" value={obra.lens ?? ''} />
+            </div>
+            <div class="field full">
+              <label>PAPEL / SOPORTE</label>
+              <input type="text" name="paper" value={obra.paper ?? ''} />
+            </div>
+            <div class="field">
+              <label>DIMENSIONES ORIG.</label>
+              <input type="text" name="dimensions" value={obra.dimensions ?? ''} placeholder="115 x 70 cm" />
+            </div>
+            <div class="field">
+              <label>STOCK</label>
+              <input type="number" name="stock" value={obra.stock ?? 1} min="0" />
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h3 class="section-title">Precios por Tamaño</h3>
+          <div class="prices-grid">
+            <div class="price-row">
+              <span class="size-label">PEQUEÑO (S)</span>
+              <input type="text" name="size_small" value={obra.size_small ?? ''} placeholder="20 x 30 cm" />
+              <div class="price-input-wrap">
+                <span>$</span>
+                <input type="number" name="precio_small" value={obra.precio_small ?? ''} placeholder="255" step="0.01" />
+              </div>
+            </div>
+            <div class="price-row">
+              <span class="size-label">MEDIANO (M)</span>
+              <input type="text" name="size_medium" value={obra.size_medium ?? ''} placeholder="30 x 45 cm" />
+              <div class="price-input-wrap">
+                <span>$</span>
+                <input type="number" name="precio_medium" value={obra.precio_medium ?? ''} placeholder="390" step="0.01" />
+              </div>
+            </div>
+            <div class="price-row">
+              <span class="size-label">GRANDE (L)</span>
+              <input type="text" name="size_large" value={obra.size_large ?? ''} placeholder="40 x 60 cm" />
+              <div class="price-input-wrap">
+                <span>$</span>
+                <input type="number" name="precio_large" value={obra.precio_large ?? ''} placeholder="550" step="0.01" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Botón móvil -->
+        <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+          <button type="submit" class="btn-primary">
+            <i class="fas fa-save"></i> GUARDAR CAMBIOS
+          </button>
+        </div>
+
+      </form>
+    </div>
+  ) : (
+    <div class="error-box"><i class="fas fa-search"></i> <div>Obra no encontrada.</div></div>
+  )}
+</AdminLayout>
+
+<style>
+  .back-link {
+    font-size: 0.72rem; color: #555; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #dcb14a; }
+
+  .alert-ok {
+    background: rgba(74,158,106,0.1); border: 1px solid rgba(74,158,106,0.25);
+    color: #4a9e6a; border-radius: 6px; padding: 1rem 1.5rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-bottom: 2rem; font-size: 0.85rem;
+  }
+
+  .edit-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* Preview */
+  .preview-panel {
+    position: sticky; top: 80px;
+    background: #0d0d0d; border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 8px; overflow: hidden;
+  }
+  .preview-img {
+    width: 100%; aspect-ratio: 1;
+    object-fit: cover; display: block;
+  }
+  .preview-meta {
+    padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .file-badge, .serie-badge {
+    font-size: 0.65rem; letter-spacing: 0.5px;
+    color: #555; display: flex; align-items: center; gap: 0.4rem;
+  }
+  .serie-badge { color: #dcb14a; opacity: 0.7; }
+
+  /* Form */
+  .edit-form { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .form-section {
+    background: #0d0d0d; border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 8px; padding: 1.8rem;
+  }
+
+  .section-title {
+    font-size: 0.65rem; letter-spacing: 2px; color: #444;
+    text-transform: uppercase; margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .field.full { grid-column: 1 / -1; }
+
+  .field label {
+    display: block; font-size: 0.6rem; letter-spacing: 1.5px;
+    color: #555; margin-bottom: 0.5rem; text-transform: uppercase;
+  }
+
+  .field input, .field textarea, .field select {
+    width: 100%; background: #141414;
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 5px;
+    padding: 0.75rem 1rem; color: #d0cdc8;
+    font-size: 0.85rem; font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus {
+    outline: none; border-color: rgba(220,177,74,0.4);
+  }
+  .field textarea { resize: vertical; }
+
+  /* Precios */
+  .prices-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+  .price-row {
+    display: grid; grid-template-columns: 110px 1fr 160px;
+    gap: 0.75rem; align-items: center;
+  }
+  .size-label {
+    font-size: 0.6rem; letter-spacing: 1.5px; color: #555;
+    text-transform: uppercase;
+  }
+  .price-row input {
+    background: #141414; border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 5px; padding: 0.7rem 1rem; color: #d0cdc8;
+    font-size: 0.85rem; font-family: inherit; width: 100%;
+    transition: border-color 0.2s;
+  }
+  .price-row input:focus { outline: none; border-color: rgba(220,177,74,0.4); }
+  .price-input-wrap {
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .price-input-wrap span { color: #555; font-size: 0.85rem; }
+  .price-input-wrap input { flex: 1; }
+
+  @media (max-width: 900px) {
+    .edit-grid { grid-template-columns: 1fr; }
+    .preview-panel { position: static; }
+    .price-row { grid-template-columns: 1fr 1fr; }
+    .size-label { grid-column: 1 / -1; }
+  }
+</style>

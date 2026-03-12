@@ -1,0 +1,455 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { db } from '../../../db/client';
+import { artworks } from '../../../db/schema';
+import { desc, sql } from 'drizzle-orm';
+
+export const prerender = false;
+
+// Convierte serie_id del CSV al nombre de carpeta real
+// "rostros_de_metal" → "Rostros_de_metal"
+function serieToFolder(serieId: string): string {
+  if (!serieId) return serieId;
+  return serieId.charAt(0).toUpperCase() + serieId.slice(1);
+}
+
+let allArtworks = [];
+let error = null;
+
+try {
+  allArtworks = await db.select().from(artworks)
+    .where(sql`LOWER(${artworks.filename}) LIKE 'jmx_%'`)
+    .orderBy(desc(artworks.created_at));
+} catch (e) {
+  error = "No se pudo conectar a la base de datos local. Asegúrate de que Docker esté corriendo.";
+  console.error(e);
+}
+---
+
+<AdminLayout title="Gestión de Obras" activeTab="obras">
+  <header class="content-header">
+    <h1>CATÁLOGO DE OBRAS</h1>
+    <div class="header-actions">
+       <a href="/api/admin/download-csv" class="secondary-btn" download>
+          <i class="fas fa-download"></i> DESCARGAR CSV
+       </a>
+       <button id="sync-csv" class="secondary-btn">
+          <i class="fas fa-file-import"></i> IMPORTAR CSV / XLS
+       </button>
+       <a href="/admin/obras/nueva" class="btn-plus">
+         <i class="fas fa-plus"></i> NUEVA OBRA
+       </a>
+    </div>
+  </header>
+
+  {error && (
+    <div class="error-box">
+      <i class="fas fa-exclamation-triangle"></i>
+      <div class="error-text">
+        <strong>Error de Conexión:</strong> {error}
+        <p>Si acabas de instalar Docker, recuerda encender el contenedor.</p>
+      </div>
+    </div>
+  )}
+
+  <div class="table-container">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>VISTA PREVIA</th>
+          <th>TÍTULO / SERIE</th>
+          <th>ESPECIFICACIONES</th>
+          <th>PRECIOS (S / M / L)</th>
+          <th class="actions-col">ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        {allArtworks.length === 0 && !error && (
+          <tr>
+            <td colspan="5" class="empty-state">
+              No hay obras cargadas en la base de datos todavía.
+            </td>
+          </tr>
+        )}
+        {allArtworks.map(obra => (
+          <tr>
+            <td class="preview-td">
+               <img src={`/img/Series/${serieToFolder(obra.serie_id)}/${obra.filename}`} alt={obra.title} class="mini-preview" onerror="this.style.opacity='0.2'" />
+            </td>
+            <td>
+              <div class="title-cell">
+                <strong>{obra.title}</strong>
+                <span>{obra.serie_id.replace(/_/g, ' ')}</span>
+              </div>
+            </td>
+            <td class="specs-cell">
+              <div>{obra.camera}</div>
+              <div>{obra.paper}</div>
+            </td>
+            <td class="prices-cell">
+               <div class="price-chip">S: ${obra.precio_small || '-'}</div>
+               <div class="price-chip">M: ${obra.precio_medium || '-'}</div>
+               <div class="price-chip">L: ${obra.precio_large || '-'}</div>
+            </td>
+            <td class="actions-td">
+              <div class="action-buttons">
+                <a href={`/admin/obras/editar/${obra.id}`} title="Editar" class="action-icon">
+                  <i class="fas fa-pen"></i>
+                </a>
+                <button class="action-icon delete" title="Eliminar" data-id={obra.id}>
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</AdminLayout>
+
+<!-- MODAL IMPORTACIÓN -->
+<div id="import-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+    <h2 class="modal-title"><i class="fas fa-file-import"></i> Importar CSV / Excel</h2>
+    <p class="modal-desc">Arrastrá tu archivo o hacé clic para seleccionarlo. Las obras existentes se actualizarán automáticamente.</p>
+
+    <label class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none" />
+      <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+      <div class="drop-text" id="drop-text">Arrastrá aquí tu CSV o Excel</div>
+      <div class="drop-hint">Formatos: .csv (separado por ; o ,) &nbsp;|&nbsp; .xlsx &nbsp;|&nbsp; .xls</div>
+    </label>
+
+    <div id="import-progress" style="display:none" class="import-progress">
+      <i class="fas fa-spinner fa-spin"></i> Importando...
+    </div>
+    <div id="import-result" class="import-result"></div>
+
+    <div class="modal-footer">
+      <button id="do-import" class="btn-primary" disabled>
+        <i class="fas fa-check"></i> IMPORTAR
+      </button>
+      <button id="modal-cancel" class="btn-secondary">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let selectedFile = null;
+
+  const modal = document.getElementById('import-modal');
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const dropText = document.getElementById('drop-text');
+  const doImport = document.getElementById('do-import');
+  const importProgress = document.getElementById('import-progress');
+  const importResult = document.getElementById('import-result');
+
+  // Abrir modal
+  document.getElementById('sync-csv')?.addEventListener('click', () => {
+    modal.style.display = 'flex';
+    resetModal();
+  });
+
+  // Cerrar modal
+  ['modal-close','modal-cancel'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+  });
+  modal.addEventListener('click', e => { if(e.target === modal) modal.style.display = 'none'; });
+
+  // Selección de archivo
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    setFile(e.dataTransfer.files[0]);
+  });
+
+  function setFile(file) {
+    if (!file) return;
+    selectedFile = file;
+    dropText.textContent = `✓  ${file.name}  (${(file.size/1024).toFixed(1)} KB)`;
+    dropZone.classList.add('has-file');
+    doImport.disabled = false;
+    importResult.innerHTML = '';
+  }
+
+  function resetModal() {
+    selectedFile = null;
+    dropText.textContent = 'Arrastrá aquí tu CSV o Excel';
+    dropZone.classList.remove('has-file','dragover');
+    doImport.disabled = true;
+    importResult.innerHTML = '';
+    importProgress.style.display = 'none';
+  }
+
+  // Importar
+  doImport.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    doImport.disabled = true;
+    importProgress.style.display = 'block';
+    importResult.innerHTML = '';
+
+    const fd = new FormData();
+    fd.append('file', selectedFile);
+
+    try {
+      const res = await fetch('/api/admin/import-csv', { method: 'POST', body: fd });
+      const data = await res.json();
+      importProgress.style.display = 'none';
+
+      if (data.ok) {
+        importResult.innerHTML = `
+          <div class="result-ok">
+            <i class="fas fa-check-circle"></i>
+            <strong>${data.migrated} obras importadas</strong> de ${data.total} registros.
+            ${data.errors > 0 ? `<br><small>${data.errors} errores omitidos.</small>` : ''}
+          </div>`;
+        setTimeout(() => location.reload(), 2000);
+      } else {
+        importResult.innerHTML = `<div class="result-err"><i class="fas fa-times-circle"></i> ${data.error}</div>`;
+        doImport.disabled = false;
+      }
+    } catch(e) {
+      importProgress.style.display = 'none';
+      importResult.innerHTML = `<div class="result-err"><i class="fas fa-times-circle"></i> Error de red.</div>`;
+      doImport.disabled = false;
+    }
+  });
+
+  // Eliminar obra
+  document.querySelectorAll('button.delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('¿Eliminar esta obra de la base de datos?')) return;
+      const id = btn.dataset.id;
+      const res = await fetch(`/api/admin/artworks/${id}`, { method: 'DELETE' });
+      if (res.ok) btn.closest('tr').remove();
+    });
+  });
+</script>
+
+<style>
+  .error-box {
+    background: rgba(255, 68, 68, 0.1);
+    border: 1px solid rgba(255, 68, 68, 0.2);
+    padding: 2rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    margin-bottom: 3rem;
+  }
+
+  .error-box i {
+    font-size: 2rem;
+    color: #ff4444;
+  }
+
+  .error-text strong {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-text p {
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    opacity: 0.7;
+  }
+
+  .secondary-btn {
+    background: transparent;
+    border: 1px solid #333;
+    color: #888;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .secondary-btn:hover {
+    border-color: #666;
+    color: #fff;
+  }
+
+  .table-container {
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.03);
+    overflow-x: auto;
+  }
+
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .admin-table th {
+    font-size: 0.55rem;
+    letter-spacing: 2px;
+    color: #444;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #1a1a1a;
+    text-transform: uppercase;
+  }
+
+  .admin-table td {
+    padding: 1.5rem 2rem;
+    font-size: 0.75rem;
+    border-bottom: 1px solid #1a1a1a;
+    color: #888;
+    vertical-align: middle;
+  }
+
+  .preview-td { width: 120px; }
+  .mini-preview {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border: 1px solid #222;
+  }
+
+  .title-cell strong {
+    display: block;
+    color: #f5f2ed;
+    margin-bottom: 0.3rem;
+    font-size: 0.85rem;
+  }
+
+  .title-cell span {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.5;
+  }
+
+  .specs-cell div {
+    font-size: 0.65rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .prices-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .price-chip {
+    font-size: 0.6rem;
+    background: #151515;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .action-icon {
+    color: #444;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+
+  .action-icon:hover {
+    color: #f5f2ed;
+  }
+
+  .action-icon.delete:hover {
+    color: #ff4444;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 5rem !important;
+    font-style: italic;
+    opacity: 0.4;
+  }
+
+  /* ── MODAL DE IMPORTACIÓN ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-box {
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 2.5rem;
+    width: 100%; max-width: 520px;
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: none; border: none; color: #555;
+    font-size: 1rem; cursor: pointer;
+    transition: color 0.2s;
+  }
+  .modal-close:hover { color: #aaa; }
+
+  .modal-title {
+    font-size: 1rem; font-weight: 600;
+    color: #f5f2ed; margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .modal-title i { color: #dcb14a; }
+
+  .modal-desc {
+    font-size: 0.78rem; color: #555;
+    margin-bottom: 1.8rem; line-height: 1.5;
+  }
+
+  .drop-zone {
+    display: block;
+    border: 2px dashed #222;
+    border-radius: 8px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1.5rem;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: #dcb14a;
+    background: rgba(220,177,74,0.03);
+  }
+  .drop-zone.has-file {
+    border-color: #4a9e6a;
+    background: rgba(74,158,106,0.04);
+  }
+
+  .drop-icon { font-size: 2rem; color: #333; margin-bottom: 0.8rem; }
+  .drop-text { font-size: 0.85rem; color: #888; margin-bottom: 0.4rem; }
+  .drop-hint { font-size: 0.65rem; color: #444; letter-spacing: 0.5px; }
+
+  .import-progress {
+    text-align: center; color: #dcb14a;
+    font-size: 0.82rem; margin-bottom: 1rem;
+  }
+  .import-result { margin-bottom: 1rem; font-size: 0.82rem; }
+  .result-ok { color: #4a9e6a; display: flex; align-items: flex-start; gap: 0.5rem; }
+  .result-err { color: #e05555; display: flex; align-items: flex-start; gap: 0.5rem; }
+
+  .modal-footer {
+    display: flex; gap: 0.75rem; justify-content: flex-end;
+  }
+</style>

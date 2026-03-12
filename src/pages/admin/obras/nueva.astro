@@ -1,0 +1,310 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+
+export const prerender = false;
+
+// Obtener las series (carpetas en public/img/Series)
+const seriesPath = path.join(process.cwd(), 'public', 'img', 'Series');
+let series = [];
+try {
+  series = fs.readdirSync(seriesPath).filter(f => fs.statSync(path.join(seriesPath, f)).isDirectory());
+} catch (e) {
+  console.error("Error leyendo carpetas de series:", e);
+}
+
+// Formatear para mostrar: "Rostros_de_metal" -> "Rostros de metal"
+function formatSerie(name: string) {
+  return name.replace(/_/g, ' ');
+}
+---
+
+<AdminLayout title="Nueva Obra" activeTab="obras">
+  <header class="content-header">
+    <div class="breadcrumb">
+      <a href="/admin/obras">GESTIÓN DE OBRAS</a> / <span>NUEVA OBRA</span>
+    </div>
+    <h1>CREAR NUEVA PIEZA</h1>
+  </header>
+
+  <div class="form-container">
+    <form id="new-artwork-form" enctype="multipart/form-data">
+      <div class="form-grid">
+        <!-- ZONA IZQUIERDA: Imagen y Archivo -->
+        <div class="form-section main-info">
+          <div class="section-title">ARCHIVO Y PREVISUALIZACIÓN</div>
+          
+          <label class="upload-area" id="upload-label">
+            <input type="file" id="image-input" name="image" accept="image/*" style="display:none" />
+            <div id="preview-placeholder">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Haz clic para subir la imagen</p>
+              <span>Se recomienda formato .avif o .jpg de alta calidad</span>
+            </div>
+            <img id="image-preview" style="display:none" />
+          </label>
+
+          <div class="input-group">
+            <label for="filename">NOMBRE DE ARCHIVO FINAL (EJ: JMX_8020.AVIF)</label>
+            <input type="text" id="filename" name="filename" required placeholder="JMX_..." />
+            <small>Asegúrate de incluir el prefijo <strong>JMX_</strong> para que aparezca en el catálogo comercial.</small>
+          </div>
+        </div>
+
+        <!-- ZONA DERECHA: Metadatos -->
+        <div class="form-section metadata">
+          <div class="section-title">DETALLES DE LA OBRA</div>
+          
+          <div class="input-group">
+            <label for="title">TÍTULO DE LA OBRA</label>
+            <input type="text" id="title" name="title" required placeholder="Ej: El Capitán" />
+          </div>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label for="serie_id">SERIE / COLECCIÓN</label>
+              <select id="serie_id" name="serie_id" required>
+                <option value="">Selecciona una serie...</option>
+                {series.map(s => (
+                  <option value={s}>{formatSerie(s)}</option>
+                ))}
+                <option value="new_serie">+ AGREGAR NUEVA SERIE...</option>
+              </select>
+            </div>
+            <div class="input-group" id="new-serie-group" style="display:none">
+              <label for="new_serie_name">NOMBRE DE LA NUEVA SERIE</label>
+              <input type="text" id="new_serie_name" name="new_serie_name" placeholder="Ej: Paisajes del Sur" />
+            </div>
+            <div class="input-group">
+              <label for="date">FECHA DE CAPTURA</label>
+              <input type="text" id="date" name="date" placeholder="DD/MM/YYYY" />
+            </div>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label for="camera">CÁMARA</label>
+              <input type="text" id="camera" name="camera" placeholder="Nikon D5600" />
+            </div>
+            <div class="input-group">
+              <label for="lens">LENTE (OBJETIVO)</label>
+              <input type="text" id="lens" name="lens" placeholder="35mm" />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="paper">PAPEL FOTOGRÁFICO</label>
+            <input type="text" id="paper" name="paper" placeholder="Hahnemühle – Photo Matt Fibre 200 g/m2" />
+          </div>
+
+          <div class="input-group">
+            <label for="description">BREVE RELATO / DESCRIPCIÓN</label>
+            <textarea id="description" name="description" rows="4" placeholder="La historia detrás de la pieza..."></textarea>
+          </div>
+        </div>
+
+        <!-- ZONA PRECIOS -->
+        <div class="form-section prices">
+          <div class="section-title">PRECIOS Y TAMAÑOS (OPCIONAL)</div>
+          <div class="price-grid">
+            <div class="price-item">
+              <label>TAMAÑO SMALL (S)</label>
+              <div class="price-inputs">
+                <input type="text" name="size_small" placeholder="20 x 30 cm" />
+                <input type="number" name="precio_small" placeholder="Precio $" step="0.01" />
+              </div>
+            </div>
+            <div class="price-item">
+              <label>TAMAÑO MEDIUM (M)</label>
+              <div class="price-inputs">
+                <input type="text" name="size_medium" placeholder="30 x 45 cm" />
+                <input type="number" name="precio_medium" placeholder="Precio $" step="0.01" />
+              </div>
+            </div>
+            <div class="price-item">
+              <label>TAMAÑO LARGE (L)</label>
+              <div class="price-inputs">
+                <input type="text" name="size_large" placeholder="40 x 60 cm" />
+                <input type="number" name="precio_large" placeholder="Precio $" step="0.01" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <div id="form-msg"></div>
+        <button type="button" class="btn-secondary" onclick="history.back()">CANCELAR</button>
+        <button type="submit" class="btn-primary" id="save-btn">GUARDAR OBRA</button>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  const form = document.getElementById('new-artwork-form');
+  const imageInput = document.getElementById('image-input');
+  const imagePreview = document.getElementById('image-preview');
+  const placeholder = document.getElementById('preview-placeholder');
+  const msg = document.getElementById('form-msg');
+  const saveBtn = document.getElementById('save-btn');
+
+  // Preview de imagen
+  imageInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        imagePreview.src = ev.target.result;
+        imagePreview.style.display = 'block';
+        placeholder.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  const serieSelect = document.getElementById('serie_id');
+  const newSerieGroup = document.getElementById('new-serie-group');
+  const newSerieInput = document.getElementById('new_serie_name');
+
+  // Mostrar/Ocultar campo de nueva serie
+  serieSelect.addEventListener('change', () => {
+    if (serieSelect.value === 'new_serie') {
+      newSerieGroup.style.display = 'flex';
+      newSerieInput.required = true;
+    } else {
+      newSerieGroup.style.display = 'none';
+      newSerieInput.required = false;
+    }
+  });
+
+  // Envío de formulario
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    saveBtn.disabled = true;
+    msg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo y guardando...';
+
+    // Validación manual de imagen
+    if (!imageInput.files || imageInput.files.length === 0) {
+      msg.innerHTML = '<div class="error-msg">✗ Debes subir una imagen para la obra.</div>';
+      saveBtn.disabled = false;
+      return;
+    }
+
+    // Validación manual de nueva serie
+    if (serieSelect.value === 'new_serie' && !newSerieInput.value.trim()) {
+      msg.innerHTML = '<div class="error-msg">✗ Escribe un nombre para la nueva serie.</div>';
+      saveBtn.disabled = false;
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch('/api/admin/artworks', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        msg.innerHTML = '<div class="success-msg">✓ Obra creada con éxito. Redirigiendo...</div>';
+        setTimeout(() => window.location.href = '/admin/obras', 2000);
+      } else {
+        msg.innerHTML = `<div class="error-msg">✗ Error: ${data.error}</div>`;
+        saveBtn.disabled = false;
+      }
+    } catch (err) {
+      msg.innerHTML = '<div class="error-msg">✗ Error de conexión con el servidor.</div>';
+      saveBtn.disabled = false;
+    }
+  });
+</script>
+
+<style>
+  .breadcrumb { font-size: 0.65rem; letter-spacing: 2px; color: #555; margin-bottom: 0.8rem; }
+  .breadcrumb a { color: inherit; text-decoration: none; transition: color 0.3s; }
+  .breadcrumb a:hover { color: #dcb14a; }
+  .breadcrumb span { color: #dcb14a; font-weight: 600; }
+
+  .form-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 3rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-bottom: 3rem;
+  }
+
+  .form-section { display: flex; flex-direction: column; gap: 1.5rem; }
+  .section-title { font-size: 0.6rem; letter-spacing: 2.5px; color: #444; border-bottom: 1px solid #1a1a1a; padding-bottom: 0.8rem; margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; }
+
+  .upload-area {
+    width: 100%;
+    aspect-ratio: 1/1;
+    border: 2px dashed #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .upload-area:hover { border-color: #dcb14a; background: rgba(220,177,74,0.02); }
+  
+  #preview-placeholder { text-align: center; color: #333; }
+  #preview-placeholder i { font-size: 2.5rem; margin-bottom: 1rem; }
+  #preview-placeholder p { font-size: 0.8rem; color: #888; margin-bottom: 0.3rem; }
+  #preview-placeholder span { font-size: 0.6rem; opacity: 0.5; }
+
+  #image-preview { width: 100%; height: 100%; object-fit: cover; }
+
+  .input-group { display: flex; flex-direction: column; gap: 0.6rem; }
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  label { font-size: 0.6rem; letter-spacing: 1.5px; color: #666; font-weight: 600; }
+  input, select, textarea {
+    background: #080808;
+    border: 1px solid #1a1a1a;
+    padding: 0.9rem;
+    color: #f5f2ed;
+    font-family: inherit;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #dcb14a; }
+  
+  small { font-size: 0.6rem; color: #555; line-height: 1.4; }
+
+  .price-grid { display: flex; flex-direction: column; gap: 1.2rem; }
+  .price-item { display: flex; flex-direction: column; gap: 0.6rem; }
+  .price-inputs { display: grid; grid-template-columns: 1.5fr 1fr; gap: 0.5rem; }
+
+  .prices { grid-column: span 2; }
+
+  .form-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid #1a1a1a;
+  }
+
+  .success-msg { color: #4a9e6a; font-size: 0.8rem; font-weight: 600; }
+  .error-msg { color: #e05555; font-size: 0.8rem; font-weight: 600; }
+
+  @media (max-width: 800px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .prices { grid-column: span 1; }
+  }
+</style>

@@ -1,0 +1,260 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { db } from '../../../db/client';
+import { marketingStrategies } from '../../../db/schema';
+import { desc } from 'drizzle-orm';
+
+export const prerender = false;
+
+// Obtener estrategias de la DB
+const strategies = await db.select()
+    .from(marketingStrategies)
+    .orderBy(desc(marketingStrategies.priority), desc(marketingStrategies.created_at));
+
+const categoryLabels = {
+    social: { label: 'SOCIAL MEDIA', icon: 'fa-share-nodes', color: '#1da1f2' },
+    seo: { label: 'SEO / GOOGLE', icon: 'fa-search', color: '#4285f4' },
+    editorial: { label: 'EDITORIAL', icon: 'fa-book-open', color: '#34a853' },
+    local: { label: 'LOCAL / NETWORKING', icon: 'fa-location-dot', color: '#ea4335' }
+};
+
+const statusLabels = {
+    pending: { label: 'PENDIENTE', class: 'status-pending' },
+    active: { label: 'ACTIVA', class: 'status-active' },
+    completed: { label: 'COMPLETADA', class: 'status-completed' }
+};
+
+const priorityLabels = {
+    high: { label: 'ALTA', class: 'priority-high' },
+    medium: { label: 'MEDIA', class: 'priority-medium' },
+    low: { label: 'BAJA', class: 'priority-low' }
+};
+---
+
+<AdminLayout title="Estrategia de Marketing" activeTab="marketing">
+  <header class="content-header">
+    <div class="header-main">
+      <h1>ESTRATEGIA & CRECIMIENTO</h1>
+      <p class="subtitle">Plan maestro para visibilidad orgánica y engagement 2026</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" id="btn-add-strategy">
+        <i class="fas fa-plus"></i> NUEVA ESTRATEGIA
+      </button>
+    </div>
+  </header>
+
+  <div class="strategies-grid">
+    {strategies.map(s => (
+      <div class={`strategy-card priority-${s.priority}`}>
+        <div class="card-header">
+          <div class="category-tag" style={`--cat-color: ${categoryLabels[s.category]?.color || '#888'}`}>
+            <i class={`fas ${categoryLabels[s.category]?.icon || 'fa-tag'}`}></i>
+            {categoryLabels[s.category]?.label || 'OTRO'}
+          </div>
+          <div class={`priority-badge ${priorityLabels[s.priority]?.class}`}>
+            {priorityLabels[s.priority]?.label}
+          </div>
+        </div>
+        
+        <h3 class="strategy-title">{s.title}</h3>
+        <p class="strategy-desc">{s.description}</p>
+        
+        <div class="card-footer">
+          <div class={`status-select ${statusLabels[s.status]?.class}`}>
+            <span class="status-dot"></span>
+            {statusLabels[s.status]?.label}
+          </div>
+          <div class="strategy-actions">
+            <button class="icon-btn edit-btn" title="Editar"><i class="fas fa-edit"></i></button>
+            <button class="icon-btn delete-btn" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <section class="marketing-insights">
+    <h3><i class="fas fa-lightbulb"></i> TENDENCIAS CLAVE 2026</h3>
+    <div class="insights-row">
+      <div class="insight-box">
+        <strong>VÍDEO PRIMERO</strong>
+        <p>Los algoritmos priorizan Reels y TikTok. Contenido "Behind the scenes" genera 4x más engagement.</p>
+      </div>
+      <div class="insight-box">
+        <strong>SEO SOCIAL</strong>
+        <p>Instagram y TikTok son los nuevos buscadores. Usar palabras clave en captions es vital.</p>
+      </div>
+      <div class="insight-box">
+        <strong>AUTENTICIDAD</strong>
+        <p>Lo imperfecto conecta. Mostrar el taller desordenado o una obra en proceso humaniza la marca.</p>
+      </div>
+    </div>
+  </section>
+</AdminLayout>
+
+<style>
+  .header-main h1 {
+    font-size: 1.4rem;
+    font-weight: 300;
+    color: #f5f2ed;
+    letter-spacing: 1px;
+    margin-bottom: 0.3rem;
+  }
+  .subtitle {
+    font-size: 0.7rem;
+    color: #666;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .strategies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .strategy-card {
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 1.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .strategy-card:hover {
+    border-color: rgba(220,177,74,0.3);
+    transform: translateY(-5px);
+  }
+
+  .strategy-card.priority-high {
+    border-left: 3px solid #e05555;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .category-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--cat-color);
+  }
+
+  .priority-badge {
+    font-size: 0.55rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .priority-high { background: rgba(224,85,85,0.1); color: #e05555; }
+  .priority-medium { background: rgba(220,177,74,0.1); color: #dcb14a; }
+  .priority-low { background: rgba(255,255,255,0.05); color: #888; }
+
+  .strategy-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #f5f2ed;
+    line-height: 1.3;
+  }
+
+  .strategy-desc {
+    font-size: 0.85rem;
+    color: #888;
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .status-select {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+
+  .status-pending { color: #888; }
+  .status-pending .status-dot { background: #555; }
+  .status-active { color: #dcb14a; }
+  .status-active .status-dot { background: #dcb14a; box-shadow: 0 0 8px #dcb14a; }
+  .status-completed { color: #34a853; }
+  .status-completed .status-dot { background: #34a853; }
+
+  .strategy-actions { display: flex; gap: 0.5rem; }
+
+  .icon-btn {
+    background: transparent;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+  }
+  .icon-btn:hover { color: #dcb14a; }
+  .delete-btn:hover { color: #e05555; }
+
+  .marketing-insights {
+    background: rgba(220,177,74,0.03);
+    border: 1px solid rgba(220,177,74,0.1);
+    padding: 2.5rem;
+    border-radius: 8px;
+  }
+
+  .marketing-insights h3 {
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    color: #dcb14a;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .insights-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2.5rem;
+  }
+
+  .insight-box strong {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    color: #f5f2ed;
+    margin-bottom: 0.8rem;
+  }
+
+  .insight-box p {
+    font-size: 0.8rem;
+    color: #666;
+    line-height: 1.6;
+  }
+</style>

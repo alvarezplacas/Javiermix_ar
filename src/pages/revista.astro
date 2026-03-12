@@ -1,0 +1,264 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { db } from '../db/client';
+import { magazine } from '../db/schema';
+import { desc } from 'drizzle-orm';
+
+export const prerender = false;
+
+// Fetch articles from database
+const dbArticles = await db.select()
+  .from(magazine)
+  .orderBy(desc(magazine.created_at));
+
+function resolveMediaURL(url: string | null): string {
+  if (!url) return '/img/placeholder.jpg';
+  if (url.startsWith('http') || url.startsWith('/')) return url;
+  // Si no tiene ruta, asumimos que puede venir de la revista o de obras
+  return `/uploads/magazine/${url}`;
+}
+
+// Map database articles to the UI format
+const articles = dbArticles.map(art => {
+  // Estimate read time
+  const wordCount = art.content_html.replace(/<[^>]*>/g, '').split(/\s+/).length;
+  const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+  return {
+    title: art.title,
+    excerpt: art.content_html.replace(/<[^>]*>/g, '').substring(0, 180) + '...',
+    image: resolveMediaURL(art.featured_image),
+    readTime: `${readTime} min`,
+    link: `/revista/${art.slug}`,
+    location: "Buenos Aires",
+    category: art.tags ? art.tags.split(',')[0].trim() : "Ensayo Visual"
+  };
+});
+---
+
+<Layout
+  title="Revista Digital de Fotografía Fine Art"
+  description="Artículos, ensayos visuales y crónicas sobre fotografía de autor, diseño de interiores y el arte de coleccionar imágenes. Por Javier Mix, Buenos Aires."
+  url="/revista"
+  keywords={['revista de fotografía', 'ensayo fotográfico', 'arte y decoración', 'coleccionar arte', 'fotografía contemporánea argentina', 'interiorismo con fotografía']}
+>
+  <Header currentPath="/revista" theme="dark" />
+
+  <main class="revista-main">
+    <!-- Hero de Revista -->
+    <div class="revista-hero">
+      <div class="hero-bg-line"></div>
+      <span class="issue-tag">Vol. I · 2026</span>
+      <h1 class="revista-title">REVISTA DIGITAL</h1>
+      <p class="revista-subtitle">Crónicas de luz, memoria y potencia estética<br/>para coleccionistas y decoradores de vanguardia.</p>
+    </div>
+
+    <!-- Grid de Artículos -->
+    <div class="articles-wrapper">
+      {articles.length > 0 ? (
+        articles.map((article, index) => (
+          <article class={`article-row ${index % 2 !== 0 ? 'reversed' : ''} reveal`}>
+            
+            <!-- Imagen con efecto tilt -->
+            <div class="article-visual">
+              <div class="tilt-frame" data-index={index}>
+                <img src={article.image} alt={article.title} class="article-img" loading="lazy" onerror="this.onerror=null; this.style.opacity=0;" />
+                <div class="image-glare"></div>
+              </div>
+              <span class="category-tag">{article.category}</span>
+            </div>
+
+            <!-- Contenido -->
+            <div class="article-text">
+              <span class="article-location">{article.location}</span>
+              <h2 class="article-headline">{article.title}</h2>
+              <p class="article-excerpt">{article.excerpt}</p>
+
+              <footer class="article-footer">
+                <div class="read-time">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span>{article.readTime} de lectura</span>
+                </div>
+                <a href={article.link} class="btn-leer">
+                  LEER NOTA
+                  <span class="btn-underline"></span>
+                </a>
+              </footer>
+            </div>
+
+          </article>
+        ))
+      ) : (
+        <div class="empty-state">
+           <p>Próximamente nuevas crónicas y ensayos visuales.</p>
+        </div>
+      )}
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .revista-main {
+    background-color: var(--color-onyx-deep, #050505);
+    min-height: 100vh;
+    padding-top: 5rem;
+  }
+
+  /* Hero */
+  .revista-hero {
+    text-align: center;
+    padding: 8rem 2rem 6rem;
+    position: relative;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+  }
+
+  .hero-bg-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--color-accent, #dcb14a), transparent);
+    opacity: 0.3;
+    transform: translateX(-50%);
+  }
+
+  .issue-tag {
+    display: inline-block;
+    font-family: inherit;
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--color-accent, #dcb14a);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(220, 177, 74, 0.3);
+    padding: 0.4rem 1.2rem;
+  }
+
+  .revista-title {
+    font-family: 'Georgia', serif;
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 300;
+    letter-spacing: 10px;
+    color: #fff;
+    margin-bottom: 2rem;
+    line-height: 1;
+  }
+
+  .revista-subtitle {
+    color: rgba(255,255,255,0.5);
+    font-family: inherit;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    line-height: 2;
+  }
+
+  /* Articles */
+  .articles-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 8rem 5%;
+    display: flex;
+    flex-direction: column;
+    gap: 12rem;
+  }
+
+  .article-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1), transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .article-row.reversed { direction: rtl; }
+  .article-row.reversed > * { direction: ltr; }
+  .article-row.reveal-active { opacity: 1; transform: translateY(0); }
+
+  /* Visual */
+  .article-visual { position: relative; }
+  .tilt-frame {
+    width: 100%; height: 500px; overflow: hidden; position: relative;
+    background: #111; box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    transform-style: preserve-3d; transition: transform 0.1s linear;
+  }
+  .article-img {
+    width: 100%; height: 100%; object-fit: cover; object-position: center top;
+    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s ease;
+    filter: grayscale(30%) brightness(0.85); transform-origin: center;
+  }
+  .tilt-frame:hover .article-img { transform: scale(1.06); filter: grayscale(0%) brightness(1); }
+  .image-glare { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%); pointer-events: none; z-index: 2; }
+
+  .category-tag {
+    position: absolute; bottom: -1rem; left: 2rem; background: var(--color-accent, #dcb14a);
+    color: #000; font-size: 0.65rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 0.5rem 1.2rem;
+  }
+
+  /* Text Content */
+  .article-text { padding: 2rem 0; }
+  .article-location { display: block; font-size: 0.7rem; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 1.5rem; }
+  .article-headline { font-family: 'Georgia', serif; font-size: clamp(2.5rem, 4vw, 3.5rem); font-weight: 400; font-style: italic; color: #fff; line-height: 1.1; margin-bottom: 2rem; }
+  .article-excerpt { color: rgba(255,255,255,0.5); font-size: 0.9rem; line-height: 1.9; margin-bottom: 3rem; }
+
+  .article-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 2rem; }
+  .read-time { display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.4); font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; }
+  .read-time svg { color: var(--color-accent, #dcb14a); flex-shrink: 0; }
+
+  .btn-leer { position: relative; display: inline-flex; flex-direction: column; align-items: flex-start; color: #fff; text-decoration: none; font-size: 0.75rem; font-weight: 700; letter-spacing: 3px; transition: color 0.4s ease; }
+  .btn-underline { display: block; width: 30%; height: 1px; background-color: var(--color-accent, #dcb14a); margin-top: 6px; transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+  .btn-leer:hover { color: var(--color-accent, #dcb14a); }
+  .btn-leer:hover .btn-underline { width: 100%; }
+
+  .empty-state { text-align: center; color: rgba(255,255,255,0.2); padding: 5rem 0; font-family: 'Georgia', serif; font-style: italic; }
+
+  @media (max-width: 900px) {
+    .article-row { grid-template-columns: 1fr; gap: 3rem; direction: ltr !important; }
+    .articles-wrapper { gap: 6rem; padding: 4rem 5%; }
+    .tilt-frame { height: 350px; }
+    .article-row.reversed > * { direction: ltr; }
+  }
+</style>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    // Scroll reveal
+    const rows = document.querySelectorAll('.article-row');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            entry.target.classList.add('reveal-active');
+          }, i * 150);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    rows.forEach(r => observer.observe(r));
+
+    // Tilt on mouse move
+    const frames = document.querySelectorAll('.tilt-frame');
+    frames.forEach(frame => {
+      frame.addEventListener('mousemove', (e) => {
+        const rect = frame.getBoundingClientRect();
+        const x = ((e.clientX - (rect.left + window.scrollX)) / rect.width - 0.5) * 12;
+        const y = ((e.clientY - (rect.top + window.scrollY)) / rect.height - 0.5) * -12;
+        (frame as HTMLElement).style.transform = `perspective(1000px) rotateY(${x}deg) rotateX(${y}deg)`;
+      });
+
+      frame.addEventListener('mouseleave', () => {
+        (frame as HTMLElement).style.transform = 'perspective(1000px) rotateY(0deg) rotateX(0deg)';
+      });
+    });
+  });
+</script>

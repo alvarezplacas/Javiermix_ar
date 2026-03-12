@@ -1,0 +1,254 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { db } from '../../../db/client';
+import { collectors } from '../../../db/schema';
+import { desc } from 'drizzle-orm';
+
+export const prerender = false;
+
+let collectorsList = [];
+let error = null;
+
+try {
+  collectorsList = await db.select().from(collectors).orderBy(desc(collectors.created_at));
+} catch (e) {
+  error = "No se pudo conectar a la base de datos.";
+  console.error(e);
+}
+---
+
+<AdminLayout title="Coleccionistas & CRM" activeTab="coleccionistas">
+  <header class="content-header">
+    <h1>COLECCIONISTAS & CRM</h1>
+    <div class="header-actions">
+      <button id="add-collector-btn" class="btn-primary">
+        <i class="fas fa-user-plus"></i> NUEVO CLIENTE
+      </button>
+    </div>
+  </header>
+
+  {error && (
+    <div class="error-box">
+      <i class="fas fa-exclamation-triangle"></i>
+      <div><strong>Error:</strong> {error}</div>
+    </div>
+  )}
+
+  <div class="search-bar">
+    <i class="fas fa-search"></i>
+    <input type="text" id="search-input" placeholder="Buscar por nombre o email..." />
+  </div>
+
+  <div class="table-container">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>NOMBRE</th>
+          <th>EMAIL</th>
+          <th>TELÉFONO</th>
+          <th>PAÍS</th>
+          <th>REGISTRO</th>
+          <th class="actions-col">ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody id="collectors-body">
+        {collectorsList.map(c => (
+          <tr data-name={c.name.toLowerCase()} data-email={c.email?.toLowerCase()}>
+            <td>
+                <div class="name-cell">
+                    <span class="user-avatar">{c.name.charAt(0)}</span>
+                    <div>
+                        <strong>{c.name}</strong>
+                        <div class={`status-pill ${c.status}`}>{c.status}</div>
+                    </div>
+                </div>
+            </td>
+            <td>{c.email || '—'}</td>
+            <td>{c.phone || '—'}</td>
+            <td>{c.country || '—'}</td>
+            <td>{c.created_at?.toLocaleDateString('es-AR')}</td>
+            <td>
+              <div class="action-buttons">
+                <a href={`/admin/coleccionistas/${c.id}`} class="action-icon" title="Ver Perfil">
+                  <i class="fas fa-user-circle"></i>
+                </a>
+                <a href="/admin/certificados/nuevo" class="action-icon" title="Emitir Certificado">
+                  <i class="fas fa-file-signature"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal para nuevo coleccionista -->
+  <div id="collector-modal" class="modal">
+    <div class="modal-content">
+      <h3>Nuevo Coleccionista</h3>
+      <form id="collector-form">
+        <div class="form-group">
+          <label>Nombre Completo</label>
+          <input type="text" name="name" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" required />
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" name="phone" />
+        </div>
+        <div class="form-group">
+          <label>País</label>
+          <input type="text" name="country" />
+        </div>
+        <div class="form-group">
+          <label>Instagram</label>
+          <input type="text" name="instagram" placeholder="usuario" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="close-modal">Cancelar</button>
+          <button type="submit" class="btn-primary" id="save-collector-btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AdminLayout>
+
+<script is:inline>
+  // Inicialización Segura
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('collector-modal');
+    const addBtn = document.getElementById('add-collector-btn');
+    const closeBtn = document.getElementById('close-modal');
+    const form = document.getElementById('collector-form');
+    const searchInput = document.getElementById('search-input');
+    const rows = document.querySelectorAll('#collectors-body tr');
+
+    console.log('CRM Inicializado:', { addBtn: !!addBtn, modal: !!modal });
+
+    // Abrir Modal
+    if (addBtn && modal) {
+      addBtn.addEventListener('click', () => {
+        console.log('Abriendo modal...');
+        modal.style.display = 'flex';
+      });
+    }
+
+    // Cerrar Modal
+    if (closeBtn && modal) {
+      closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+    }
+
+    // Cerrar al clickear fuera
+    window.addEventListener('click', (e) => {
+      if (e.target === modal) modal.style.display = 'none';
+    });
+
+    // Búsqueda en tiempo real
+    searchInput?.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      rows.forEach(row => {
+        const match = row.innerText.toLowerCase().includes(term);
+        row.style.display = match ? '' : 'none';
+      });
+    });
+
+    // Guardado de Coleccionista
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const saveBtn = document.getElementById('save-collector-btn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = 'Guardando...';
+      }
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch('/api/public/register-collector', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.ok) {
+          location.reload();
+        } else {
+          alert('Error: ' + result.error);
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = 'Guardar';
+          }
+        }
+      } catch (err) {
+        alert('Error de conexión al servidor.');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerText = 'Guardar';
+        }
+      }
+    });
+  });
+</script>
+
+<style>
+  .search-bar {
+    background: #0a0a0a;
+    border: 1px solid #141414;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .search-bar i { color: #333; }
+  .search-bar input {
+    background: transparent;
+    border: none;
+    color: #888;
+    width: 100%;
+    outline: none;
+    font-size: 0.85rem;
+  }
+
+  .mini-preview { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  
+  /* Modal Styles */
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    display: none; align-items: center; justify-content: center; z-index: 1000;
+  }
+  .modal-content {
+    background: #0a0a0a; border: 1px solid #141414;
+    padding: 2.5rem; border-radius: 12px; width: 400px;
+  }
+  .modal-content h3 { margin-bottom: 1.5rem; color: #fff; font-weight: 300; letter-spacing: 1px; }
+
+  .form-group { margin-bottom: 1.25rem; }
+  .form-group label { display: block; font-size: 0.65rem; color: #444; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
+  .form-group input {
+    width: 100%; background: #111; border: 1px solid #1a1a1a;
+    padding: 0.75rem; border-radius: 6px; color: #888; outline: none;
+  }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; }
+  
+  .name-cell { display: flex; align-items: center; gap: 1rem; }
+  .user-avatar { width: 32px; height: 32px; background: #1a1a1a; color: #dcb14a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border: 1px solid #222; }
+  
+  .status-pill { display: inline-block; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 1px; padding: 2px 8px; border-radius: 10px; margin-top: 4px; font-weight: 700; }
+  .status-pill.vip { background: rgba(220,177,74,0.1); color: #dcb14a; }
+  .status-pill.collector { background: rgba(74,158,106,0.1); color: #4a9e6a; }
+  .status-pill.lead { background: rgba(255,255,255,0.05); color: #666; }
+
+  .action-buttons { display: flex; gap: 0.75rem; }
+  .action-icon { background: none; border: none; color: #333; cursor: pointer; font-size: 0.9rem; transition: color 0.2s; text-decoration: none; }
+  .action-icon:hover { color: #dcb14a; }
+  .action-icon.delete:hover { color: #e05555; }
+</style>

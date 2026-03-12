@@ -1,0 +1,107 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { db } from '../../../db/client';
+import { certificates, artworks, collectors } from '../../../db/schema';
+import { desc, eq } from 'drizzle-orm';
+
+export const prerender = false;
+
+let certificatesList = [];
+try {
+  certificatesList = await db.select({
+    id: certificates.id,
+    uuid: certificates.uuid,
+    artworkTitle: artworks.title,
+    collectorName: collectors.name,
+    saleDate: certificates.sale_date,
+    isVerified: certificates.is_verified
+  })
+  .from(certificates)
+  .leftJoin(artworks, eq(certificates.artwork_id, artworks.id))
+  .leftJoin(collectors, eq(certificates.collector_id, collectors.id))
+  .orderBy(desc(certificates.sale_date));
+} catch (e) {
+  console.error(e);
+}
+---
+
+<AdminLayout title="Certificados de Autenticidad" activeTab="certificados">
+  <header class="content-header">
+    <h1>CERTIFICADOS DE AUTENTICIDAD</h1>
+    <div class="header-actions">
+      <a href="/admin/certificados/nuevo" class="btn-primary">
+        <i class="fas fa-plus"></i> EMITIR CERTIFICADO
+      </a>
+    </div>
+  </header>
+
+  <div class="table-container">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>UUID / QR</th>
+          <th>OBRA ORIGINAL</th>
+          <th>COLECCIONISTA</th>
+          <th>FECHA VENTA</th>
+          <th>ESTADO</th>
+          <th class="actions-col">ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        {certificatesList.length === 0 ? (
+          <tr><td colspan="6" class="empty-state">No hay certificados emitidos aún.</td></tr>
+        ) : (
+          certificatesList.map(c => (
+            <tr>
+              <td><code class="uuid-label">{c.uuid.substring(0,8)}...</code></td>
+              <td><strong>{c.artworkTitle}</strong></td>
+              <td>{c.collectorName}</td>
+              <td>{c.saleDate?.toLocaleDateString('es-AR')}</td>
+              <td>
+                <span class={c.isVerified ? 'status-pill tag-primary' : 'status-pill tag-neutral'}>
+                  {c.isVerified ? 'VERIFICADO' : 'PENDIENTE'}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <a href={`/validar/${c.uuid}`} target="_blank" class="action-icon" title="Ver Público">
+                    <i class="fas fa-external-link-alt"></i>
+                  </a>
+                  <button class="action-icon" title="Imprimir / PDF">
+                    <i class="fas fa-print"></i>
+                  </button>
+                  <button class="action-icon delete" title="Anular">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</AdminLayout>
+
+<style>
+  .uuid-label {
+    background: #111;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: #555;
+  }
+  .status-pill {
+    font-size: 0.6rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 50px;
+    font-weight: 700;
+  }
+  .tag-primary { background: rgba(220,177,74,0.1); color: #dcb14a; }
+  .tag-neutral { background: rgba(255,255,255,0.05); color: #555; }
+  
+  .action-buttons { display: flex; gap: 0.75rem; }
+  .action-icon { background: none; border: none; color: #333; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
+  .action-icon:hover { color: #dcb14a; }
+  .action-icon.delete:hover { color: #e05555; }
+</style>

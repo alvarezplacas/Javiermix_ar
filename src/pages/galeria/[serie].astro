@@ -1,0 +1,454 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+import { loadArtworkMetadata } from '../../utils/metadata.js';
+import FramingStudio from '../../components/FramingStudio.astro';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+	const seriesPath = path.join(process.cwd(), 'public', 'img', 'Series');
+	let paths = [];
+
+	if (fs.existsSync(seriesPath)) {
+		const folders = fs.readdirSync(seriesPath).filter(file => fs.statSync(path.join(seriesPath, file)).isDirectory());
+		
+		const metadataMap = loadArtworkMetadata();
+
+		paths = folders.map(folder => {
+			const folderPath = path.join(seriesPath, folder);
+			const items = fs.readdirSync(folderPath).filter(f => f.endsWith('.avif') || f.endsWith('.jpg') || f.endsWith('.png'));
+			
+			// Lógica mejorada con Regex para emparejar
+			const mainImages = items.filter(f => {
+				const low = f.toLowerCase();
+				return low.startsWith('jmx_') || low.startsWith('jmix_');
+			});
+			const otherImages = items.filter(f => {
+				const low = f.toLowerCase();
+				return !low.startsWith('jmx_') && !low.startsWith('jmix_');
+			});
+			
+			let artworks = [];
+			let matchedOtherImages = new Set();
+			
+			mainImages.forEach(mainImg => {
+				const mainNumMatch = mainImg.match(/\d+/);
+				const mainNum = mainNumMatch ? mainNumMatch[0] : null;
+				
+				let roomImgMatch = null;
+				
+				if (mainNum) {
+					roomImgMatch = otherImages.find(f => {
+						const fNumMatch = f.match(/\d+/);
+						return fNumMatch && fNumMatch[0] === mainNum;
+					});
+				}
+				if (!roomImgMatch) {
+					let baseName = mainImg.toLowerCase();
+					if (baseName.startsWith('jmx_')) baseName = baseName.substring(4);
+					else if (baseName.startsWith('jmix_')) baseName = baseName.substring(5);
+					roomImgMatch = otherImages.find(f => f.toLowerCase() === baseName);
+				}
+				
+				if (roomImgMatch) matchedOtherImages.add(roomImgMatch);
+				
+				const meta = metadataMap.get(mainImg);
+
+				artworks.push({
+					mainUrl: `/img/Series/${folder}/${mainImg}`,
+					roomUrl: roomImgMatch ? `/img/Series/${folder}/${roomImgMatch}` : null,
+					title: meta?.title || (mainNum ? mainNum : mainImg.split('.')[0]),
+					fiche: meta?.fiche || null
+				});
+			});
+			
+			// Agregar imágenes huérfanas
+			const standalone = otherImages.filter(f => !matchedOtherImages.has(f));
+			standalone.forEach(img => {
+				artworks.push({
+					mainUrl: `/img/Series/${folder}/${img}`,
+					roomUrl: null,
+					title: img.split('.')[0]
+				});
+			});
+
+			const name = folder.split('_').map(word => word.toUpperCase()).join(' ');
+
+			return {
+				params: { serie: folder },
+				props: { name, artworks }
+			};
+		});
+
+		// Excluir series sin obras para no generar rutas vacías
+		paths = paths.filter(p => p.props.artworks.length > 0);
+	}
+
+	return paths;
+}
+
+const { name, artworks } = Astro.props;
+const serieName = name.replace(/_/g, ' ');
+const coverOg = artworks[0]?.mainUrl || undefined;
+---
+
+<Layout
+  title={`${serieName} | Colección Fine Art`}
+  description={`Descubrí la serie "${serieName}" de Javier Mix: ${artworks.length} obras de fotografía Fine Art de autor. Impresas sobre aluminio con calidad museo. Ideales para coleccionar y decorar espacios de alto diseño.`}
+  url={`/galeria/${Astro.params.serie}`}
+  image={coverOg}
+  keywords={[serieName.toLowerCase(), 'serie de fotografía', 'obra fine art', 'colección fotográfica', 'fotografía decorativa']}
+>
+	<Header currentPath="/galeria" />
+
+	<div class="immersive-header" data-artworks={JSON.stringify(artworks.map(a => a.mainUrl))}>
+		<div class="slideshow-container">
+			<div class="slide-layer active" id="slide-1"></div>
+			<div class="slide-layer" id="slide-2"></div>
+		</div>
+		
+		<div class="header-overlay-mask"></div>
+
+		<header class="serie-header-content">
+			<a href="/galeria" class="back-link">
+				<span class="icon">&larr;</span>
+				<span class="label">Volver a Colecciones</span>
+			</a>
+			<h1 class="serie-title" id="serie-title-display">{name.toLowerCase().split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ')}</h1>
+			<p class="serie-meta">
+				<span class="count">{artworks.length}</span>
+				<span class="label">Obras Disponibles</span>
+			</p>
+		</header>
+	</div>
+
+	<article class="serie-content-container">
+
+		<section class="masonry-grid">
+			{artworks.map((artwork, index) => (
+				<a href={`/obra/${name.toLowerCase().replace(/ /g, '-')}-${artwork.title.toLowerCase().replace(/ /g, '-')}`} class="gallery-artwork-card" tabindex="0">
+					<div class="artwork-figure">
+						<!-- Imagen Principal JMX -->
+						<img src={artwork.mainUrl} alt={`Obra ${name} - ${artwork.title}`} class="artwork-img main-img" loading="lazy" />
+						
+						<!-- Hover de Ambiente (Room View) si existe -->
+						{artwork.roomUrl && (
+							<img src={artwork.roomUrl} alt={`Ambiente ${name} - ${artwork.title}`} class="artwork-img room-img" loading="lazy" />
+						)}
+					</div>
+					
+					<div class="artwork-info-overlay">
+						<span class="view-text">VER OBRA</span>
+					</div>
+				</a>
+			))}
+		</section>
+	</article>
+
+	<script>
+		document.addEventListener('astro:page-load', () => {
+			const header = document.querySelector('.immersive-header');
+			if (!header) return;
+
+			const artworks = JSON.parse(header.getAttribute('data-artworks') || '[]');
+			if (artworks.length === 0) return;
+
+			const slide1 = document.getElementById('slide-1');
+			const slide2 = document.getElementById('slide-2');
+			let currentSlide = 0;
+			let activeLayer = 1;
+
+			// Initialize first slide
+			if (slide1) slide1.style.backgroundImage = `url(${artworks[0]})`;
+			
+			if (artworks.length > 1) {
+				setInterval(() => {
+					currentSlide = (currentSlide + 1) % artworks.length;
+					const nextUrl = artworks[currentSlide];
+
+					if (activeLayer === 1) {
+						if (slide2) {
+							slide2.style.backgroundImage = `url(${nextUrl})`;
+							slide2.classList.add('active');
+						}
+						if (slide1) slide1.classList.remove('active');
+						activeLayer = 2;
+					} else {
+						if (slide1) {
+							slide1.style.backgroundImage = `url(${nextUrl})`;
+							slide1.classList.add('active');
+						}
+						if (slide2) slide2.classList.remove('active');
+						activeLayer = 1;
+					}
+				}, 4000);
+			}
+		});
+	</script>
+</Layout>
+<Footer />
+
+<style>
+
+
+/* Immersive Header Design */
+.immersive-header {
+	position: relative;
+	width: 100%;
+	height: 80vh;
+	background-color: #000;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+
+.slideshow-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+}
+
+.slide-layer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	background-position: center;
+	opacity: 0;
+	transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+	filter: brightness(0.4) contrast(1.1);
+}
+
+.slide-layer.active {
+	opacity: 1;
+}
+
+.header-overlay-mask {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(to bottom, 
+		rgba(5, 5, 5, 0.2) 0%, 
+		rgba(5, 5, 5, 0.4) 50%, 
+		#050505 100%
+	);
+	z-index: 2;
+}
+
+.serie-header-content {
+	position: relative;
+	z-index: 10;
+	padding: 0 5%;
+}
+
+.back-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 2rem;
+	color: rgba(255, 255, 255, 0.5);
+	text-decoration: none;
+	transition: all 0.4s ease;
+}
+
+.back-link .icon {
+	font-size: 1.2rem;
+}
+
+.back-link .label {
+	font-family: var(--font-secondary);
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 3px;
+	font-weight: 600;
+}
+
+.back-link:hover {
+	color: var(--color-accent);
+	transform: translateX(-5px);
+}
+
+.serie-title {
+	font-family: var(--font-primary);
+	font-size: clamp(3rem, 7vw, 6rem);
+	font-weight: 300;
+	letter-spacing: -0.01em;
+	color: #fff;
+	margin-bottom: 1rem;
+	text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.serie-meta {
+	font-family: var(--font-secondary);
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 4px;
+	color: var(--color-accent);
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+}
+
+.serie-meta .count {
+	font-size: 1.2rem;
+	opacity: 0.8;
+}
+
+/* Content Layout Alignment */
+.serie-content-container {
+	max-width: 1600px;
+	margin: -5vh auto 0; /* Pull up to meet the mask */
+	position: relative;
+	z-index: 20;
+	background: transparent;
+	padding: 0 5% 10rem;
+}
+
+/* CSS Masonry Layout Sólido */
+.masonry-grid {
+	column-count: 3;
+	column-gap: 3rem;
+	width: 100%;
+}
+
+.gallery-artwork-card {
+	break-inside: avoid; /* Previene cortes en columnas */
+	margin-bottom: 3rem;
+	position: relative;
+	background-color: #0a0a0a; /* Fondo ultra oscuro fallback */
+	border-radius: 4px; /* Opcional si se quiere diseño sin esquinas afiladas */
+	cursor: pointer;
+	overflow: hidden;
+	display: flex; /* Fuerza al contenedor a arroupar su hijo bloque */
+	flex-direction: column;
+}
+
+.artwork-figure {
+	position: relative;
+	width: 100%;
+	line-height: 0; /* Previene espacios misteriosos en block elements */
+}
+
+/* Image Core Rules */
+.artwork-img {
+	width: 100%;
+	height: auto; /* Mantener la proporcion original de photo vertical/horizontal */
+	display: block;
+	object-fit: cover;
+	transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.6s ease;
+}
+
+/* Hover Room View (Absolute overlay that fades IN) */
+.artwork-img.room-img {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	z-index: 2;
+	pointer-events: none; 
+}
+
+/* Hover effect to show Room Image */
+.gallery-artwork-card:hover .artwork-img.room-img {
+	opacity: 1;
+}
+
+/* Hover efects to dim Main Image slightly? (Opcional, pero se ve mejor en crossfade) */
+.gallery-artwork-card:hover .artwork-img.main-img {
+	transform: scale(1.02); /* Slight zoom en principal as it sits behind */
+}
+
+/* Info Overlay */
+.artwork-info-overlay {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: 50%; /* Cubre solo la mitad inferior suavemente */
+	background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 40%, transparent 100%);
+	z-index: 3;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding-bottom: 3rem;
+	opacity: 0;
+	transition: opacity 0.4s ease;
+	pointer-events: none;
+}
+
+.view-text {
+	color: #fff;
+	font-family: var(--font-secondary, 'Montserrat', sans-serif);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 3px;
+	border: 1px solid rgba(255,255,255,0.7);
+	background: rgba(0,0,0,0.3); /* Caja sutil oscura tras el boton */
+	padding: 0.8rem 2rem;
+	transform: translateY(20px);
+	transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.3s ease;
+	backdrop-filter: blur(2px);
+}
+
+.gallery-artwork-card:hover .artwork-info-overlay {
+	opacity: 1; /* Mostrar gradiente y boton en hover de ambiente */
+}
+
+.gallery-artwork-card:hover .view-text {
+	transform: translateY(0);
+}
+
+/* Responsiveness */
+@media (max-width: 1024px) {
+	.masonry-grid {
+		column-count: 2;
+		column-gap: 2rem;
+	}
+	.gallery-artwork-card {
+		margin-bottom: 2rem;
+	}
+}
+
+@media (max-width: 768px) {
+	.masonry-grid {
+		column-count: 1;
+	}
+	.nav-links {
+		display: none;
+	}
+	.serie-title {
+		font-size: 2.2rem;
+	}
+	
+	/* Para mobile siempre puede mostrar un sutil borde inferior o boton */
+	.artwork-info-overlay {
+		opacity: 1;
+		height: 30%;
+		background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+		padding-bottom: 1.5rem;
+	}
+	.view-text {
+		transform: translateY(0);
+		background: transparent;
+		border-color: transparent;
+		font-weight: 500;
+	}
+}
+</style>

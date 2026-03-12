@@ -1,0 +1,159 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+
+export const prerender = false; // Forzamos SSR
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+    const password = data.get("password");
+
+    // Auth simple por ahora usando la variable de entorno
+    if (password === import.meta.env.ADMIN_PASSWORD) {
+      Astro.cookies.set('admin_session', 'active', { 
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24 // 24 horas
+      });
+      return Astro.redirect('/admin');
+    } else {
+      error = "Contraseña incorrecta";
+    }
+  } catch (e) {
+    error = "Error al procesar el login";
+  }
+}
+---
+
+<Layout title="Admin Login | Javier Mix">
+  <Header currentPath="/admin/login" />
+  
+  <main class="login-container">
+    <div class="login-card">
+      <div class="logo-circle">JAM</div>
+      <h1>DASHBOARD<br/>ADMINISTRADOR</h1>
+      <p>Ingresa para gestionar obras, revista y certificados.</p>
+
+      <form method="POST">
+        <div class="input-group">
+          <label for="password">CONTRASEÑA MAESTRA</label>
+          <input type="password" name="password" id="password" required placeholder="••••••••••••" />
+        </div>
+        
+        {error && <p class="error">{error}</p>}
+        
+        <button type="submit" class="login-btn">INGRESAR AL SISTEMA</button>
+      </form>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .login-container {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #050505;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+  }
+
+  .logo-circle {
+    width: 60px;
+    height: 60px;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+  }
+
+  h1 {
+    font-family: var(--font-primary);
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+    margin-bottom: 1rem;
+    color: var(--color-travertine-light);
+  }
+
+  p {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 3rem;
+  }
+
+  .input-group {
+    text-align: left;
+    margin-bottom: 2rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: #666;
+    margin-bottom: 0.8rem;
+  }
+
+  input {
+    width: 100%;
+    background: #0d0d0d;
+    border: 1px solid #222;
+    padding: 1.2rem;
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+    letter-spacing: 4px;
+    text-align: center;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .login-btn {
+    width: 100%;
+    background: var(--color-accent);
+    color: #000;
+    border: none;
+    padding: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    transition: transform 0.3s ease;
+  }
+
+  .login-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .error {
+    color: #ff4444;
+    font-size: 0.7rem;
+    margin-bottom: 2rem;
+    letter-spacing: 1px;
+  }
+</style>

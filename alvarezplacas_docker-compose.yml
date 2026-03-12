@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web_alvarezplacas:
+    image: nginx:alpine
+    container_name: alvarezplacas_web
+    restart: always
+    volumes:
+      - ./dist:/usr/share/nginx/html
+    ports:
+      - "4322:80"
+    networks:
+      - javiermix_network
+
+networks:
+  javiermix_network:
+    external: true

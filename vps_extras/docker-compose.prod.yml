@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Base de Datos Principal
+  db:
+    image: mariadb:latest
+    container_name: javiermix_db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: javiermix_obras
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - javiermix_network
+
+  # Sitio Web Principal (Astro)
+  web_javiermix:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: javiermix_web
+    restart: always
+    environment:
+      DATABASE_URL: mysql://root:root@db:3306/javiermix_obras
+    networks:
+      - javiermix_network
+
+  # FileBrowser (Gestión de Archivos)
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: javiermix_files
+    restart: always
+    volumes:
+      - ./public/fotos:/srv/fotos
+      - ./filebrowser.db:/database.db
+    networks:
+      - javiermix_network
+
+  # Umami Analytics (Estadísticas)
+  umami:
+    image: ghcr.io/umami-software/umami:mysql-latest
+    container_name: javiermix_stats
+    restart: always
+    environment:
+      DATABASE_URL: mysql://root:root@db:3306/javiermix_obras
+      APP_SECRET: 3L3X1T0LL3G0!#@a
+    networks:
+      - javiermix_network
+
+networks:
+  javiermix_network:
+    external: true
+
+volumes:
+  db_data:

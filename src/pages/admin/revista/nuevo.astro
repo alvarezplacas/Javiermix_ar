@@ -1,0 +1,435 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+export const prerender = false;
+---
+
+<link slot="head" href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
+
+<AdminLayout title="Nuevo Artículo" activeTab="revista">
+  <header class="content-header">
+    <div>
+      <a href="/admin/revista" class="back-link"><i class="fas fa-arrow-left"></i> Volver</a>
+      <h1 style="margin-top:0.5rem">CREAR ARTÍCULO</h1>
+    </div>
+    <div class="header-actions">
+      <button id="save-btn" class="btn-primary">
+        <i class="fas fa-paper-plane"></i> PUBLICAR
+      </button>
+    </div>
+  </header>
+
+  <div id="save-status"></div>
+
+  <div class="admin-editor-container">
+    
+    <!-- LEFT: Editorial Writing -->
+    <section class="editor-main">
+      <input id="title-input" class="editor-title" type="text" placeholder="Título de la nota..." autocomplete="off" />
+      
+      <div id="ql-toolbar-minimized" class="sticky-toolbar">
+        <span class="ql-formats">
+          <select class="ql-header">
+            <option value="1"></option>
+            <option value="2"></option>
+            <option value=""></option>
+          </select>
+          <button class="ql-bold"></button>
+          <button class="ql-italic"></button>
+          <button class="ql-blockquote" title="Cita/Destacado"></button>
+          <button class="ql-link"></button>
+          <button class="ql-list" value="ordered"></button>
+          <button class="ql-list" value="bullet"></button>
+          <button id="custom-callout" title="Bloque de Avance/Resumen"><i class="fas fa-quote-right"></i></button>
+        </span>
+        <span class="ql-formats dividers-group">
+          <button type="button" id="div-dotted" title="Línea de Puntos"><i class="fas fa-ellipsis-h"></i></button>
+          <button type="button" id="div-solid" title="Línea Continua"><i class="fas fa-minus"></i></button>
+          <button type="button" id="div-double" title="Doble Línea"><i class="fas fa-equals"></i></button>
+          <button type="button" id="div-premium" title="Línea Decorativa Premium" class="premium-divider-btn"><i class="fas fa-star"></i></button>
+        </span>
+      </div>
+
+      <div id="ql-editor-body" spellcheck="true"></div>
+      
+      <div class="editor-footer">
+        <span id="word-count">0 palabras</span>
+        <button id="import-word-trigger" class="minimal-btn"><i class="fas fa-file-word"></i> Importar Word</button>
+        <input type="file" id="word-input" accept=".docx" style="display:none" />
+      </div>
+    </section>
+
+    <!-- RIGHT: Media & Config -->
+    <aside class="editor-sidebar">
+      
+      <div class="sidebar-group">
+        <label class="s-label">MEDIA / ARCHIVOS</label>
+        <div class="upload-zone" id="upload-zone">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <span>Subir Video o AVIF</span>
+        </div>
+        <input type="file" id="media-upload-input" multiple style="display:none" />
+        
+        <div id="media-list" class="media-list">
+          <!-- Lista de archivos: compacta y funcional -->
+        </div>
+      </div>
+
+      <div class="sidebar-group">
+        <label class="s-label">CONFIGURACIÓN</label>
+        <div class="input-field">
+          <span>URL / SLUG</span>
+          <input type="text" id="slug-input" placeholder="url-de-la-nota" />
+        </div>
+        <div class="input-field">
+          <span>TAGS (Sep. por coma)</span>
+          <input type="text" id="tags-input" placeholder="Historia, Tecnología, Arte" />
+        </div>
+        <div class="input-field">
+          <span>IMAGEN PORTADA</span>
+          <input type="text" id="featured-image" placeholder="/uploads/..." />
+        </div>
+        <div class="input-field">
+          <span>VIDEO PRINCIPAL</span>
+          <input type="text" id="video-url" placeholder="/uploads/video.mp4" />
+        </div>
+      </div>
+
+      <!-- JSON Técnico Oculto -->
+      <div class="sidebar-group" style="display:none">
+        <label class="s-label">MEDIA JSON</label>
+        <textarea id="media-json" class="json-area"></textarea>
+      </div>
+
+    </aside>
+
+  </div>
+</AdminLayout>
+
+<script is:inline src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+
+<script is:inline>
+window.addEventListener('load', function() {
+  if (typeof Quill === 'undefined') return;
+
+  var BlockEmbed = Quill.import('blots/block/embed');
+  class CalloutBlot extends BlockEmbed {
+    static create(value) {
+      let node = super.create();
+      node.setAttribute('class', 'editorial-callout');
+      node.innerHTML = value;
+      return node;
+    }
+    static value(node) { return node.innerHTML; }
+  }
+  CalloutBlot.blotName = 'callout';
+  CalloutBlot.tagName = 'div';
+  Quill.register(CalloutBlot);
+
+  // DIVIDERS BLOTS
+  class DividerBlot extends BlockEmbed {
+    static create(value) {
+      let node = super.create();
+      node.setAttribute('class', 'editorial-divider ' + value);
+      return node;
+    }
+    static value(node) { return node.getAttribute('class').replace('editorial-divider ', ''); }
+  }
+  DividerBlot.blotName = 'divider';
+  DividerBlot.tagName = 'hr';
+  Quill.register(DividerBlot);
+
+  var quill = new Quill('#ql-editor-body', {
+    theme: 'snow',
+    modules: { toolbar: '#ql-toolbar-minimized' },
+    placeholder: 'Escribí el cuerpo de la nota aquí...',
+  });
+  quill.root.setAttribute('spellcheck', 'true');
+
+  document.getElementById('div-dotted').onclick = (e) => { e.preventDefault(); insertDivider('dotted'); };
+  document.getElementById('div-solid').onclick = (e) => { e.preventDefault(); insertDivider('solid'); };
+  document.getElementById('div-double').onclick = (e) => { e.preventDefault(); insertDivider('double'); };
+  document.getElementById('div-premium').onclick = (e) => { e.preventDefault(); insertDivider('premium'); };
+
+  function insertDivider(type) {
+    var range = quill.getSelection();
+    if (range) {
+      quill.insertEmbed(range.index, 'divider', type);
+      quill.setSelection(range.index + 1);
+    }
+  }
+
+  document.getElementById('custom-callout').onclick = function(e) {
+    e.preventDefault();
+    var range = quill.getSelection();
+    if (range) {
+      var text = prompt('Texto para el Bloque de Avance / Resumen:');
+      if (text) quill.insertEmbed(range.index, 'callout', text);
+    }
+  };
+
+  quill.on('text-change', function() {
+    var words = quill.getText().trim().split(/\s+/).filter(Boolean).length;
+    document.getElementById('word-count').textContent = words + ' palabras';
+  });
+
+  var titleEl = document.getElementById('title-input');
+  var slugEl = document.getElementById('slug-input');
+  titleEl.addEventListener('input', function() {
+    if (!slugEl.dataset.manual) {
+      slugEl.value = titleEl.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-');
+    }
+  });
+  slugEl.addEventListener('input', function() { slugEl.dataset.manual = '1'; });
+
+  document.getElementById('import-word-trigger').onclick = function() { document.getElementById('word-input').click(); };
+  document.getElementById('word-input').onchange = function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      mammoth.convertToHtml({ arrayBuffer: ev.target.result }).then(function(res) {
+        quill.root.innerHTML = res.value;
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  // --- MEDIA MANAGEMENT ---
+  var mediaItemsList = [];
+  var uploadZone = document.getElementById('upload-zone');
+  var mediaInput = document.getElementById('media-upload-input');
+  var listContainer = document.getElementById('media-list');
+  var jsonArea = document.getElementById('media-json');
+
+  function updateMediaUI() {
+    listContainer.innerHTML = '';
+    mediaItemsList.forEach((item, index) => {
+      var entry = document.createElement('div');
+      entry.className = 'media-entry';
+      entry.innerHTML = `
+        <div class="media-thumb" style="background-image: ${item.type.startsWith('image') ? 'url('+item.src+')' : 'none'}">
+          ${item.type.startsWith('video') ? '<i class="fas fa-video"></i>' : ''}
+        </div>
+        <div class="media-info">
+          <span class="media-name">${item.name}</span>
+        </div>
+        <div class="media-actions">
+          <button class="m-action cover" title="Establecer como Portada"><i class="fas fa-image"></i></button>
+          <button class="m-action up" title="Subir"><i class="fas fa-chevron-up"></i></button>
+          <button class="m-action down" title="Bajar"><i class="fas fa-chevron-down"></i></button>
+          <button class="m-action copy" title="URL"><i class="fas fa-link"></i></button>
+          <button class="m-action delete" title="Borrar"><i class="fas fa-trash-alt"></i></button>
+        </div>
+      `;
+
+      entry.querySelector('.up').onclick = () => moveMedia(index, -1);
+      entry.querySelector('.down').onclick = () => moveMedia(index, 1);
+      entry.querySelector('.delete').onclick = () => removeMedia(index);
+      entry.querySelector('.copy').onclick = () => {
+        navigator.clipboard.writeText(item.src);
+        alert('URL copiada!');
+      };
+      entry.querySelector('.cover').onclick = () => {
+        document.getElementById('featured-image').value = item.src;
+        // Visual feedback
+        const btn = entry.querySelector('.cover');
+        const origColor = btn.style.color;
+        btn.style.color = '#dcb14a';
+        setTimeout(() => btn.style.color = origColor, 500);
+      };
+
+      listContainer.appendChild(entry);
+    });
+    
+    // Auto-update JSON
+    var simplified = mediaItemsList.map(m => ({ 
+        type: m.type.startsWith('video') ? 'video' : 'image', 
+        src: m.src, 
+        caption: "" 
+    }));
+    if (jsonArea) jsonArea.value = JSON.stringify(simplified, null, 2);
+  }
+
+  function moveMedia(index, direction) {
+    var newIdx = index + direction;
+    if (newIdx < 0 || newIdx >= mediaItemsList.length) return;
+    var temp = mediaItemsList[index];
+    mediaItemsList[index] = mediaItemsList[newIdx];
+    mediaItemsList[newIdx] = temp;
+    updateMediaUI();
+  }
+
+  function removeMedia(index) {
+    if (confirm('¿Eliminar de la lista?')) {
+      mediaItemsList.splice(index, 1);
+      updateMediaUI();
+    }
+  }
+
+  uploadZone.onclick = () => mediaInput.click();
+  mediaInput.onchange = (e) => {
+    Array.from(e.target.files).forEach(file => uploadFile(file));
+  };
+
+  function uploadFile(file) {
+    var fd = new FormData();
+    fd.append('file', file);
+    
+    var loadingEntry = document.createElement('div');
+    loadingEntry.className = 'media-entry loading';
+    loadingEntry.innerHTML = `<span>Subiendo...</span>`;
+    listContainer.prepend(loadingEntry);
+
+    fetch('/api/admin/upload-media', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        mediaItemsList.push({ name: data.name, src: data.url, type: data.type });
+        updateMediaUI();
+      });
+  }
+
+  // Save
+  document.getElementById('save-btn').onclick = function() {
+    var title = titleEl.value.trim();
+    var slug = slugEl.value.trim();
+    var content = quill.root.innerHTML;
+    if (!title || !slug) return alert('Datos faltantes.');
+
+    var statusEl = document.getElementById('save-status');
+    statusEl.innerHTML = '<div class="s-alert info">Guardando...</div>';
+
+    fetch('/api/admin/save-article', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: title,
+        slug: slug,
+        content_html: content,
+        featured_image: document.getElementById('featured-image').value,
+        video_url: document.getElementById('video-url').value,
+        media_json: jsonArea.value,
+        tags: document.getElementById('tags-input').value
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        statusEl.innerHTML = '<div class="s-alert success">¡Listo!</div>';
+        setTimeout(() => window.location.href = '/admin/revista', 1000);
+      } else {
+        statusEl.innerHTML = '<div class="s-alert error">'+data.error+'</div>';
+      }
+    });
+  };
+});
+</script>
+
+<style is:global>
+/* Editor Minimalista */
+.ql-toolbar.ql-snow {
+  background: transparent !important; border: none !important; border-bottom: 1px solid rgba(255,255,255,0.02) !important;
+  padding: 1rem 0 !important;
+}
+.ql-container.ql-snow { border: none !important; }
+.ql-toolbar .ql-stroke { stroke: #eee !important; }
+.ql-toolbar .ql-fill { fill: #eee !important; }
+.ql-toolbar .ql-active .ql-stroke { stroke: #dcb14a !important; }
+.ql-toolbar button#custom-callout { color: #eee; cursor: pointer; height: 24px; width: 28px; background: none; border: none; }
+.ql-toolbar .ql-picker { color: #eee !important; }
+
+.ql-editor {
+  min-height: 550px; padding: 2.5rem 0 !important; font-family: 'Georgia', serif;
+  font-size: 1.25rem; color: #666; line-height: 1.9; caret-color: #dcb14a;
+}
+.ql-editor.ql-blank::before { color: #1a1a1a !important; font-style: italic; left: 0 !important; }
+
+.editorial-callout {
+    background: rgba(220,177,74,0.03); border: 1px solid rgba(220,177,74,0.06);
+    padding: 2rem; margin: 3rem 0; border-radius: 20px; color: #dcb14a !important;
+    font-size: 1.4rem; font-style: italic; text-align: center; position: relative;
+}
+
+/* STICKY TOOLBAR */
+.sticky-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #111 !important;
+  border-bottom: 2px solid #dcb14a !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  margin-bottom: 2rem;
+  padding: 0.5rem 1.5rem !important;
+  border-radius: 0 0 12px 12px;
+}
+
+/* DIVIDERS */
+.dividers-group { margin-left: 1rem; border-left: 1px solid #222; padding-left: 1rem; }
+.dividers-group button i { font-size: 0.8rem; }
+.premium-divider-btn { color: #dcb14a !important; }
+
+.editorial-divider { border: none; margin: 3rem 0; height: auto; overflow: visible; text-align: center; }
+.editorial-divider.dotted { border-top: 2px dotted #222; width: 100%; }
+.editorial-divider.solid { border-top: 1px solid #1a1a1a; width: 100%; }
+.editorial-divider.double { border-top: 3px double #1a1a1a; width: 100%; }
+.editorial-divider.premium {
+  height: 2px;
+  background: linear-gradient(to right, transparent, #dcb14a, transparent);
+  width: 60%;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+}
+.editorial-divider.premium::after {
+  content: '✦';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: #080808;
+  padding: 0 10px;
+  color: #dcb14a;
+  font-size: 0.8rem;
+}
+</style>
+
+<style>
+.admin-editor-container {
+  display: grid; grid-template-columns: 1fr 340px; gap: 4rem; align-items: start; max-width: 1300px; margin: 0 auto;
+}
+.editor-main { padding-bottom: 6rem; }
+.editor-title {
+  width: 100%; border: none; background: transparent; font-size: 2.8rem; font-family: 'Georgia', serif;
+  color: #b0aca6; outline: none; padding: 2.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+.editor-title::placeholder { color: #1a1a1a; }
+
+.editor-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.02); padding-top: 1.5rem; color: #222; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; }
+.minimal-btn { background: transparent; border: 1px solid #1a1a1a; color: #444; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.65rem; }
+
+/* MEDIA LIST COMPACTA */
+.media-list { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.media-entry { background: #0a0a0a; border: 1px solid #141414; padding: 0.75rem; border-radius: 10px; display: flex; align-items: center; gap: 1rem; }
+.media-thumb { width: 45px; height: 45px; border-radius: 6px; background-size: cover; background-position: center; background-color: #111; display: flex; align-items: center; justify-content: center; color: #333; flex-shrink: 0; }
+.media-info { flex: 1; overflow: hidden; }
+.media-name { display: block; font-size: 0.75rem; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.media-actions { display: flex; gap: 0.4rem; }
+.m-action { background: transparent; border: none; color: #888; cursor: pointer; font-size: 0.8rem; transition: color 0.2s; padding: 4px; }
+.m-action:hover { color: #fff; }
+.m-action.cover:hover { color: #dcb14a; }
+.m-action.delete:hover { color: #e05555; }
+
+/* SIDEBAR */
+.editor-sidebar { background: #070707; padding: 2rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.01); }
+.sidebar-group { margin-bottom: 2.5rem; }
+.s-label { display: block; font-size: 0.6rem; letter-spacing: 3px; color: #333; margin-bottom: 1.2rem; font-weight: 700; }
+
+.upload-zone { border: 1px dashed #1a1a1a; padding: 1.5rem; border-radius: 12px; text-align: center; color: #333; cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.7rem; }
+.input-field { margin-bottom: 1.2rem; }
+.input-field input { width: 100%; background: #0a0a0a; border: 1px solid #141414; padding: 0.6rem 0.8rem; border-radius: 6px; color: #555; font-size: 0.75rem; outline: none; }
+.input-field span { display: block; font-size: 0.55rem; color: #2a2a2a; margin-bottom: 0.5rem; }
+
+.s-alert { padding: 1rem 1.5rem; border-radius: 8px; font-size: 0.8rem; margin-bottom: 2rem; }
+.s-alert.info { color: #dcb14a; }
+.s-alert.success { color: #4a9e6a; }
+</style>

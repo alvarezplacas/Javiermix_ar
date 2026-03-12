@@ -1,0 +1,15 @@
+services:
+  db:
+    image: mariadb:latest
+    container_name: javiermix_db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: javiermix_obras
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:

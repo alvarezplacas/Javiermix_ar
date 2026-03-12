@@ -1,0 +1,182 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { db } from '../../../db/client';
+import { magazine } from '../../../db/schema';
+import { desc } from 'drizzle-orm';
+
+export const prerender = false;
+
+let articles = [];
+let error = null;
+
+try {
+  articles = await db.select().from(magazine).orderBy(desc(magazine.created_at));
+} catch (e) {
+  error = "No se pudo conectar a la base de datos.";
+  console.error(e);
+}
+---
+
+<AdminLayout title="Revista Online" activeTab="revista">
+  <header class="content-header">
+    <h1>REVISTA ONLINE</h1>
+    <div class="header-actions">
+      <a href="/admin/revista/nuevo" class="btn-primary">
+        <i class="fas fa-plus"></i> NUEVO ARTÍCULO
+      </a>
+    </div>
+  </header>
+
+  {error && (
+    <div class="error-box">
+      <i class="fas fa-exclamation-triangle"></i>
+      <div><strong>Error:</strong> {error}</div>
+    </div>
+  )}
+
+  {articles.length === 0 && !error && (
+    <div class="empty-panel">
+      <div class="empty-icon"><i class="fas fa-newspaper"></i></div>
+      <h3>Sin artículos todavía</h3>
+      <p>Creá el primer artículo de la revista haciendo clic en "Nuevo Artículo".</p>
+      <a href="/admin/revista/nuevo" class="btn-primary" style="margin-top:1.5rem">
+        <i class="fas fa-plus"></i> CREAR PRIMER ARTÍCULO
+      </a>
+    </div>
+  )}
+
+  {articles.length > 0 && (
+    <div class="table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>TÍTULO</th>
+            <th>SLUG</th>
+            <th>IMAGEN</th>
+            <th>FECHA</th>
+            <th class="actions-col">ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody>
+          {articles.map(art => (
+            <tr>
+              <td>
+                <div class="title-cell">
+                  <strong>{art.title}</strong>
+                  {art.video_url && <span class="badge-video"><i class="fas fa-film"></i> VIDEO</span>}
+                </div>
+              </td>
+              <td><code class="slug-code">{art.slug}</code></td>
+              <td>
+                {art.featured_image
+                  ? <img src={art.featured_image} alt="" class="mini-preview" />
+                  : <span style="color:#333;font-size:0.7rem">—</span>
+                }
+              </td>
+              <td style="font-size:0.72rem;color:#555">{art.created_at?.toLocaleDateString?.('es-AR') ?? '—'}</td>
+              <td>
+                <div class="action-buttons">
+                  <a href={`/admin/revista/editar/${art.id}`} title="Editar" class="action-icon">
+                    <i class="fas fa-pen"></i>
+                  </a>
+                  <a href={`/revista/${art.slug}`} target="_blank" title="Ver en el sitio" class="action-icon">
+                    <i class="fas fa-external-link-alt"></i>
+                  </a>
+                  <button class="action-icon delete" title="Eliminar" data-id={art.id}>
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</AdminLayout>
+
+<script is:inline>
+  // Manejo de eliminación
+  document.querySelectorAll('.action-icon.delete').forEach(btn => {
+    btn.onclick = async function() {
+      const id = this.dataset.id;
+      const title = this.closest('tr').querySelector('strong').innerText;
+      
+      if (confirm(`¿Estás seguro de que querés eliminar el artículo "${title}"? esta acción no se puede deshacer.`)) {
+        try {
+          const res = await fetch(`/api/admin/magazine/${id}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (data.ok) {
+            this.closest('tr').remove();
+          } else {
+            alert('Error: ' + data.error);
+          }
+        } catch (e) {
+          alert('Error de conexión');
+        }
+      }
+    };
+  });
+</script>
+
+<style>
+  .empty-panel {
+    text-align: center;
+    padding: 6rem 2rem;
+    color: #555;
+  }
+  .empty-icon {
+    font-size: 3rem;
+    color: #222;
+    margin-bottom: 1.5rem;
+  }
+  .empty-panel h3 {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: #888;
+    margin-bottom: 0.75rem;
+  }
+  .empty-panel p {
+    font-size: 0.8rem;
+    color: #444;
+  }
+  .badge-video {
+    display: inline-block;
+    font-size: 0.55rem;
+    background: rgba(220,177,74,0.1);
+    color: #dcb14a;
+    border: 1px solid rgba(220,177,74,0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 0.5rem;
+    letter-spacing: 1px;
+    vertical-align: middle;
+  }
+  .slug-code {
+    font-family: monospace;
+    font-size: 0.72rem;
+    color: #555;
+    background: #111;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .mini-preview {
+    width: 60px; height: 45px;
+    object-fit: cover;
+    border: 1px solid #1a1a1a;
+    border-radius: 3px;
+  }
+  .title-cell strong {
+    display: block;
+    color: #d0cdc8;
+    font-size: 0.85rem;
+  }
+  .action-buttons { display: flex; gap: 0.75rem; }
+  .action-icon {
+    color: #444; cursor: pointer; transition: color 0.2s;
+    background: none; border: none; font-size: 0.85rem;
+    text-decoration: none; font-family: inherit;
+  }
+  .action-icon:hover { color: #d0cdc8; }
+  .action-icon.delete:hover { color: #e05555; }
+</style>

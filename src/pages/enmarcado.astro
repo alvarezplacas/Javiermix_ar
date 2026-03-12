@@ -1,0 +1,167 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import FramingStudio from '../components/FramingStudio.astro';
+
+// Imagen por defecto para el estudio cuando se entra directamente
+const defaultImage = "/img/Series/01_CIUDAD_Y_GEOMETRIA/jmx_01.avif";
+const defaultTitle = "Obra de Autor";
+---
+
+<Layout title="Estudio de Enmarcado | Javier Mix">
+  <Header currentPath="/enmarcado" />
+  
+  <main class="studio-page">
+    <div class="welcome-overlay" id="welcome-msg">
+      <button class="welcome-back" id="btn-welcome-back">← VOLVER</button>
+      <div class="welcome-content">
+        <h1>ESTUDIO DE<br/>ENMARCADO</h1>
+        <p>Experimenta con diferentes marcos, paspartús y ambientes para tus obras.</p>
+        <div class="welcome-actions">
+          <button class="primary-btn" id="start-studio">COMENZAR EXPERIENCIA</button>
+          <button class="secondary-btn" id="upload-trigger-welcome">SUBIR MI PROPIA FOTO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- El Studio se inyecta aquí, pero se controla vía ID -->
+    <FramingStudio imageSrc={defaultImage} title={defaultTitle} showUpload={true} />
+  </main>
+</Layout>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const studio = document.getElementById('framing-studio');
+    const welcome = document.getElementById('welcome-msg');
+    const startBtn = document.getElementById('start-studio');
+    const uploadBtn = document.getElementById('upload-trigger-welcome');
+    
+    // Al entrar a esta página, mostramos el studio inmediatamente después del welcome
+    if (studio) {
+      // Ajuste para que se vea bien como página completa
+      studio.style.display = 'block';
+      studio.classList.add('is-full-page');
+    }
+
+    startBtn?.addEventListener('click', () => {
+      welcome?.style.setProperty('display', 'none', 'important');
+    });
+
+    uploadBtn?.addEventListener('click', () => {
+      welcome?.style.setProperty('display', 'none', 'important');
+      document.getElementById('studio-upload-input')?.click();
+    });
+
+    document.getElementById('btn-welcome-back')?.addEventListener('click', () => {
+      if (history.length > 1) {
+        history.back();
+      } else {
+        window.location.href = '/galeria';
+      }
+    });
+  });
+</script>
+
+<style>
+  .studio-page {
+    height: 100vh;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .welcome-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .welcome-content h1 {
+    font-family: var(--font-primary);
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    letter-spacing: 5px;
+    margin-bottom: 2rem;
+    color: var(--color-travertine-light);
+  }
+
+  .welcome-content p {
+    font-family: var(--font-secondary);
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin-bottom: 3rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .welcome-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+  }
+
+  .primary-btn {
+    background: var(--color-accent);
+    color: #000;
+    border: none;
+    padding: 18px 40px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    transition: var(--transition-premium);
+  }
+
+  .secondary-btn {
+    background: transparent;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    padding: 18px 40px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    transition: var(--transition-premium);
+  }
+
+  .primary-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+  }
+
+  .welcome-back {
+    position: absolute;
+    top: 2rem;
+    left: 2.5rem;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.45);
+    font-family: var(--font-secondary);
+    font-size: 0.65rem;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    transition: color 0.3s ease, transform 0.3s ease;
+  }
+
+  .welcome-back:hover {
+    color: var(--color-travertine-light);
+    transform: translateX(-4px);
+  }
+
+  /* Modificador para el overlay cuando es página completa */
+  :global(.framing-studio-overlay.is-full-page) {
+    background: transparent !important;
+  }
+</style>

@@ -1,0 +1,174 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { db } from '../../../db/client';
+import { artworks, collectors } from '../../../db/schema';
+import { asc } from 'drizzle-orm';
+
+export const prerender = false;
+
+let artworksList = [];
+let collectorsList = [];
+
+try {
+  artworksList = await db.select({ id: artworks.id, title: artworks.title, serie: artworks.serie_id }).from(artworks).orderBy(asc(artworks.title));
+  collectorsList = await db.select({ id: collectors.id, name: collectors.name, email: collectors.email }).from(collectors).orderBy(asc(collectors.name));
+} catch (e) {
+  console.error(e);
+}
+---
+
+<AdminLayout title="Emitir Certificado" activeTab="certificados">
+  <header class="content-header">
+    <div>
+      <a href="/admin/certificados" class="back-link"><i class="fas fa-arrow-left"></i> Volver</a>
+      <h1 style="margin-top:0.5rem">EMITIR NUEVO CERTIFICADO</h1>
+    </div>
+  </header>
+
+  <div class="issue-container">
+    <form id="issue-form" class="admin-card">
+      
+      <div class="form-section">
+        <label class="section-label">1. VINCULAR COLECCIONISTA</label>
+        <div class="form-group">
+          <select name="collector_id" required class="admin-select">
+            <option value="">Seleccionar Cliente...</option>
+            {collectorsList.map(c => (
+              <option value={c.id}>{c.name} ({c.email})</option>
+            ))}
+          </select>
+          <p class="field-hint">Si el cliente no existe, registralo primero en la sección CRM.</p>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label class="section-label">2. SELECCIONAR OBRA</label>
+        <div class="form-group">
+          <select name="artwork_id" id="artwork-select" required class="admin-select">
+            <option value="">Seleccionar Obra...</option>
+            {artworksList.map(a => (
+              <option value={a.id}>[{a.serie}] {a.title}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label class="section-label">3. DETALLES DE VENTA</label>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Precio de Venta (USD)</label>
+            <input type="number" name="sale_price" step="0.01" required placeholder="0.00" />
+          </div>
+          <div class="form-group">
+            <label>Dimensiones Vendidas</label>
+            <input type="text" name="dimensions" required placeholder="Ej: 50x70 cm" />
+          </div>
+        </div>
+        <div class="grid-2" style="margin-top:1rem">
+          <div class="form-group">
+            <label>Número de Edición</label>
+            <input type="text" name="edition_number" placeholder="Ej: 1/5" />
+          </div>
+          <div class="form-group">
+            <label>Fecha de Venta</label>
+            <input type="date" name="sale_date" value={new Date().toISOString().split('T')[0]} />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" id="submit-btn" class="btn-primary">
+          <i class="fas fa-check-circle"></i> GENERAR CERTIFICADO
+        </button>
+      </div>
+    </form>
+    
+    <div id="status-msg"></div>
+  </div>
+</AdminLayout>
+
+<script is:inline>
+  const form = document.getElementById('issue-form');
+  const btn = document.getElementById('submit-btn');
+  const status = document.getElementById('status-msg');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    status.innerHTML = '<p class="loading-inline">Procesando...</p>';
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/api/admin/issue-certificate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      
+      if (result.ok) {
+        const validationUrl = `${window.location.origin}/validar/${result.uuid}`;
+        status.innerHTML = `
+          <div class="success-banner">
+            <h3>¡Certificado Emitido con Éxito!</h3>
+            <p>UUID: ${result.uuid}</p>
+            <div class="qr-result">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(validationUrl)}" />
+            </div>
+            <div class="success-actions">
+              <a href="/admin/certificados" class="btn-secondary">Volver al Listado</a>
+              <a href="${validationUrl}" target="_blank" class="btn-primary">Ver Certificado Público</a>
+            </div>
+          </div>
+        `;
+        form.style.display = 'none';
+      } else {
+        status.innerHTML = `<div class="error-banner">${result.error}</div>`;
+        btn.disabled = false;
+      }
+    } catch (err) {
+      status.innerHTML = '<div class="error-banner">Error de conexión.</div>';
+      btn.disabled = false;
+    }
+  });
+</script>
+
+<style>
+  .issue-container { max-width: 700px; margin: 0 auto; }
+  .admin-card { background: #0a0a0a; border: 1px solid #141414; padding: 3rem; border-radius: 12px; }
+  
+  .form-section { margin-bottom: 3rem; }
+  .section-label { display: block; font-size: 0.6rem; letter-spacing: 2px; color: #444; margin-bottom: 1.5rem; font-weight: 700; }
+  
+  .admin-select {
+    width: 100%; background: #111; border: 1px solid #1a1a1a; padding: 0.9rem; border-radius: 8px; color: #888; font-size: 0.9rem; outline: none; cursor: pointer;
+  }
+  .admin-select:focus { border-color: #dcb14a; }
+
+  .form-group label { display: block; font-size: 0.65rem; color: #555; margin-bottom: 0.6rem; text-transform: uppercase; }
+  .form-group input {
+    width: 100%; background: #111; border: 1px solid #1a1a1a; padding: 0.8rem; border-radius: 6px; color: #aaa; outline: none; font-family: inherit;
+  }
+  .form-group input:focus { border-color: #dcb14a; }
+  
+  .field-hint { font-size: 0.6rem; color: #333; margin-top: 0.8rem; font-style: italic; }
+  
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  
+  .form-footer { border-top: 1px solid #141414; padding-top: 2rem; margin-top: 2rem; display: flex; justify-content: flex-end; }
+  
+  .success-banner { background: rgba(74,158,106,0.05); color: #4a9e6a; padding: 3rem; border-radius: 12px; margin-top: 1rem; text-align: center; border: 1px solid rgba(74,158,106,0.1); }
+  .success-banner h3 { color: #fff; font-weight: 300; margin-bottom: 1rem; }
+  .qr-result { margin: 2rem 0; background: #fff; display: inline-block; padding: 1rem; border-radius: 8px; }
+  .qr-result img { display: block; }
+  .success-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; }
+  
+  .error-banner { background: rgba(224,85,85,0.1); color: #e05555; padding: 1rem; border-radius: 6px; margin-top: 2rem; text-align: center; }
+  .loading-inline { color: #dcb14a; text-align: center; margin-top: 2rem; font-size: 0.8rem; letter-spacing: 1px; }
+
+  .back-link { font-size: 0.65rem; color: #444; text-decoration: none; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 0.5rem; }
+  .back-link:hover { color: #888; }
+</style>
