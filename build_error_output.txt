@@ -1,0 +1,59 @@
+
+> alvarezplacas-astro@1.0.0 build
+> astro build
+
+[2m11:00:48[22m [34m[content][39m Syncing content
+[2m11:00:48[22m [34m[content][39m Synced content
+[2m11:00:48[22m [34m[types][39m Generated [2m87ms[22m
+[2m11:00:48[22m [34m[build][39m output: [34m"static"[39m
+[2m11:00:48[22m [34m[build][39m mode: [34m"static"[39m
+[2m11:00:48[22m [34m[build][39m directory: [34mE:\Alvarezplacas\dist\[39m
+[2m11:00:48[22m [34m[build][39m Collecting build info...
+[2m11:00:48[22m [34m[build][39m [32mÔ£ô Completed in 118ms.[39m
+[2m11:00:50[22m [34m[build][39m Building static entrypoints...
+[33m[1m11:00:57[22m [WARN] [vite][39m [33m[esbuild css minify]
+Ôû▓ [WARNING] Expected identifier but found "#111111" [css-syntax-error]
+
+    <stdin>:1:127:
+      1 Ôöé ...t;color:black!important}.bg-[#111111]{background:white!important...
+        ÔòÁ                                 ~~~~~~~
+
+
+Ôû▓ [WARNING] Expected identifier but found "#1a1a1a" [css-syntax-error]
+
+    <stdin>:1:168:
+      1 Ôöé ...kground:white!important}.bg-[#1a1a1a],.bg-black\/40{background:#...
+        ÔòÁ                                 ~~~~~~~
+
+[39m
+[2m11:00:58[22m [34m[vite][39m [32mÔ£ô built in 7.66s[39m
+[2m11:00:58[22m [34m[build][39m [32mÔ£ô Completed in 7.71s.[39m
+
+[42m[30m building client (vite) [39m[49m
+[2m11:00:58[22m [34m[vite][39m transforming...
+[2m11:00:58[22m [34m[vite][39m [32mÔ£ô[39m 28 modules transformed.
+11:00:58 [ERROR] [vite] Ô£ù Build failed in 74ms
+src/features/Budget/components/BudgetEngine.astro?astro&type=script&index=0&lang.ts (185:13): "budgetItems" is not exported by "src/features/Budget/budgetStore.js", imported by "src/features/Budget/components/BudgetEngine.astro?astro&type=script&index=0&lang.ts".
+file: E:/Alvarezplacas/src/features/Budget/components/BudgetEngine.astro?astro&type=script&index=0&lang.ts:185:13
+
+183:         return '';
+184:     }
+185: 
+     ^
+186:     window.removeSmartPiece = (id) => removePiece(id);
+
+  Hint:
+    Browser APIs are not available on the server.
+    
+    If the code is in a framework component, try to access these objects after rendering using lifecycle methods or use a `client:only` directive to make the component exclusively run on the client.
+    
+    See https://docs.astro.build/en/guides/troubleshooting/#document-or-window-is-not-defined for more information.
+    		
+  Location:
+    E:/Alvarezplacas/src/features/Budget/components/BudgetEngine.astro?astro&type=script&index=0&lang.ts:185:13
+  Stack trace:
+    at getRollupError (file:///E:/Alvarezplacas/node_modules/rollup/dist/es/shared/parseAst.js:402:41)
+    at Module.error (file:///E:/Alvarezplacas/node_modules/rollup/dist/es/shared/node-entry.js:17040:16)
+    at ModuleScope.findVariable (file:///E:/Alvarezplacas/node_modules/rollup/dist/es/shared/node-entry.js:15070:39)
+    at CallExpression.bind (file:///E:/Alvarezplacas/node_modules/rollup/dist/es/shared/node-entry.js:2829:23)
+    at ExpressionStatement.bind (file:///E:/Alvarezplacas/node_modules/rollup/dist/es/shared/node-entry.js:2829:23)

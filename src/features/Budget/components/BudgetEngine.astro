@@ -182,7 +182,7 @@
 </div>
 
 <script>
-    import { budgetItems, addPiece, removePiece, sheetConfig, updateSheetConfig, finalizeSheet, allSheets, getLeptonExport, getVisualSummary } from '../budgetStore';
+    import { currentSheetItems, addPiece, removePiece, sheetConfig, updateSheetConfig, finalizeSheet, allSheets, getLeptonExport, getVisualSummary } from '../budgetStore';
 
     const setupPanel = document.getElementById('step-setup');
     const entryPanel = document.getElementById('step-entry');
@@ -311,7 +311,7 @@
     const statPieces = document.getElementById('stat-pieces');
     const statM2 = document.getElementById('stat-m2');
 
-    budgetItems.subscribe(items => {
+    currentSheetItems.subscribe(items => {
         statPieces.textContent = items.reduce((acc, i) => acc + i.quantity, 0);
         const m2 = items.reduce((acc, i) => acc + (i.length * i.width * i.quantity) / 1000000, 0);
         statM2.textContent = m2.toFixed(2);
