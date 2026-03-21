@@ -20,6 +20,12 @@ export const artworks = mysqlTable('artworks', {
     size_large: varchar('size_large', { length: 50 }),
     precio_large: decimal('precio_large', { precision: 10, scale: 2 }),
     stock: int('stock').default(1),
+    is_limited_edition: int('is_limited_edition').default(0), // 0: no, 1: yes
+    edition_total: int('edition_total').default(0), // max copies available
+    certificate_included: int('certificate_included').default(1), // 1: authentic certificate
+    frame_options: varchar('frame_options', { length: 255 }).default('none'), // None, Oak, Black Wood, Alu
+    is_featured: int('is_featured').default(0),
+    status: varchar('status', { length: 50 }).default('published'), // draft, published, sold_out
     likes: int('likes').default(0),
     created_at: timestamp('created_at').defaultNow(),
 });
@@ -34,6 +40,11 @@ export const magazine = mysqlTable('magazine', {
     video_url: varchar('video_url', { length: 255 }),
     media_json: text('media_json'), // JSON string: [{type:'image'|'video', src:'...', caption:'...'}]
     tags: varchar('tags', { length: 255 }), // Comma separated tags
+    author: varchar('author', { length: 150 }).default('Javier Mix'),
+    is_premium: int('is_premium').default(0), // 1: only for collectors
+    status: varchar('status', { length: 50 }).default('published'),
+    seo_title: varchar('seo_title', { length: 255 }),
+    seo_description: varchar('seo_description', { length: 255 }),
     rating_total: int('rating_total').default(0),
     rating_count: int('rating_count').default(0),
     created_at: timestamp('created_at').defaultNow(),
