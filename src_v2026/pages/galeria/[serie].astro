@@ -193,6 +193,64 @@ const coverOg = artworks[0]?.mainUrl || undefined;
 					}
 				}, 4000);
 			}
+
+			// Grid Likes Logic
+			const likeBtns = document.querySelectorAll('.grid-like-btn');
+			
+			likeBtns.forEach(btn => {
+				const filename = btn.getAttribute('data-filename');
+				const serie = btn.getAttribute('data-serie');
+				const title = btn.getAttribute('data-title');
+				const countSpan = btn.querySelector('.grid-like-count');
+
+				// Prevent card click when clicking like
+				btn.addEventListener('click', async (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+
+					if (btn.hasAttribute('disabled')) return;
+					
+					const isLiked = btn.classList.contains('liked');
+					btn.classList.toggle('liked');
+					btn.setAttribute('disabled', 'true');
+					
+					let current = parseInt(countSpan?.textContent || '0');
+					if (countSpan) countSpan.textContent = (isLiked ? Math.max(0, current - 1) : current + 1).toString();
+					
+					try {
+						const res = await fetch('/api/public/like-artwork', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ filename, serie_id: serie, title })
+						});
+						const data = await res.json();
+						if (data.likes !== undefined && countSpan) {
+							countSpan.textContent = data.likes;
+						}
+						if (data.hasLiked) {
+							btn.classList.add('liked');
+						} else {
+							btn.classList.remove('liked');
+						}
+					} catch (err) {
+						if (countSpan) countSpan.textContent = current.toString();
+						btn.classList.toggle('liked', isLiked);
+					} finally {
+						btn.removeAttribute('disabled');
+					}
+				});
+
+				// Initial Load
+				if (filename) {
+					fetch(`/api/public/like-artwork?filename=${encodeURIComponent(filename)}`)
+						.then(res => res.json())
+						.then(data => {
+							if (data.likes !== undefined && countSpan) countSpan.textContent = data.likes;
+							if (data.hasLiked) btn.classList.add('liked');
+						}).catch(() => {});
+				}
+			});
+
 		});
 	</script>
 </Layout>
