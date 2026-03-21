@@ -1,23 +1,60 @@
 ---
 // src/components/MagazineSection.astro
-const articles = [
-  {
-    title: "Cartógrafo de lo Invisible",
-    excerpt: "Navegando las fronteras entre la sombra y la memoria. Una exploración profunda sobre la arquitectura industrial de Milán y su diálogo con el silencio contemporáneo.",
-    image: "/img/magazine/milan.png",
-    readTime: "8 min",
-    link: "/revista/cartografo-de-lo-invisible",
-    location: "Milán, Italia"
-  },
-  {
-    title: "La Luz en el Interior",
-    excerpt: "Cómo la luz natural transforma el espacio habitado. Un ensayo visual sobre la potencia de la iluminación en el diseño de interiores y la fotografía de autor.",
-    image: "/img/magazine/interior.png",
-    readTime: "6 min",
-    link: "/revista/la-luz-en-el-interior",
-    location: "Estudio Javier Mix"
-  }
-];
+import { db } from '../db/client';
+import { magazine } from '../db/schema';
+import { desc, eq } from 'drizzle-orm';
+
+let fetchedArticles = [];
+try {
+  fetchedArticles = await db.select()
+    .from(magazine)
+    .where(eq(magazine.status, 'published'))
+    .orderBy(desc(magazine.publish_date))
+    .limit(3);
+} catch (e) {
+  console.error("Error fetching magazine articles for Home:", e);
+}
+
+let displayArticles = [];
+
+if (fetchedArticles.length > 0) {
+  displayArticles = fetchedArticles.map(a => ({
+    title: a.title,
+    excerpt: a.excerpt,
+    image: a.cover_image,
+    readTime: `${a.read_time_minutes} min`,
+    link: `/revista/${a.slug}`,
+    location: a.location || 'Estudio Javier Mix'
+  }));
+} else {
+  // Demo / Placeholder aesthetic articles so the site doesn't look empty before first upload
+  displayArticles = [
+    {
+      title: "Cartógrafo de lo Invisible",
+      excerpt: "Navegando las fronteras entre la sombra y la memoria. Una exploración profunda sobre la arquitectura industrial de Milán y su diálogo con el silencio contemporáneo.",
+      image: "/img/magazine/milan.png",
+      readTime: "8 min",
+      link: "#",
+      location: "Milán, Italia"
+    },
+    {
+      title: "La Luz en el Interior",
+      excerpt: "Cómo la luz natural transforma el espacio habitado. Un ensayo visual sobre la potencia de la iluminación en el diseño de interiores y la fotografía de autor.",
+      image: "/img/magazine/interior.png",
+      readTime: "6 min",
+      link: "#",
+      location: "Estudio Javier Mix"
+    },
+    {
+      title: "El Metal Como Memoria",
+      excerpt: "La serie Rostros de Metal desde su concepción hasta su impresión. Materiales, historia y la alquimia de imprimir sobre planchas de aluminio cepillado.",
+      image: "/img/magazine/interior.png",
+      readTime: "5 min",
+      link: "#",
+      location: "Buenos Aires, Argentina"
+    }
+  ];
+}
 ---
 
 <section class="magazine-section">
@@ -27,7 +64,7 @@ const articles = [
   </header>
 
   <div class="articles-container">
-    {articles.map((article, index) => (
+    {displayArticles.map((article, index) => (
       <article class={`magazine-card ${index % 2 === 0 ? 'row' : 'row-reverse'} reveal`}>
         <div class="card-image-wrapper">
           <div class="tilt-container">
