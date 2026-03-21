@@ -142,7 +142,13 @@ const coverOg = artworks[0]?.mainUrl || undefined;
 					</div>
 					
 					<div class="artwork-info-overlay">
-						<span class="view-text">VER OBRA</span>
+						<div class="overlay-actions">
+							<span class="view-text">VER OBRA</span>
+							<button class="grid-like-btn" data-filename={artwork.mainUrl.split('/').pop()} data-serie={name} data-title={artwork.title} aria-label="Me gusta">
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="grid-heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+								<span class="grid-like-count">0</span>
+							</button>
+						</div>
 					</div>
 				</a>
 			))}
@@ -393,6 +399,14 @@ const coverOg = artworks[0]?.mainUrl || undefined;
 	pointer-events: none;
 }
 
+.overlay-actions {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	transform: translateY(20px);
+	transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
 .view-text {
 	color: #fff;
 	font-family: var(--font-secondary, 'Montserrat', sans-serif);
@@ -400,18 +414,59 @@ const coverOg = artworks[0]?.mainUrl || undefined;
 	text-transform: uppercase;
 	letter-spacing: 3px;
 	border: 1px solid rgba(255,255,255,0.7);
-	background: rgba(0,0,0,0.3); /* Caja sutil oscura tras el boton */
+	background: rgba(0,0,0,0.3);
 	padding: 0.8rem 2rem;
-	transform: translateY(20px);
-	transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.3s ease;
 	backdrop-filter: blur(2px);
+	transition: background 0.3s ease;
+}
+
+.grid-like-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	background: rgba(0,0,0,0.6);
+	border: 1px solid rgba(255,255,255,0.2);
+	color: #fff;
+	padding: 0.8rem 1rem;
+	cursor: pointer;
+	backdrop-filter: blur(4px);
+	transition: all 0.3s ease;
+}
+
+.grid-like-btn svg {
+	transition: all 0.3s ease;
+}
+
+.grid-like-btn:hover {
+	border-color: #ff4d4d;
+	background: rgba(255,77,77,0.1);
+}
+
+.grid-like-btn.liked svg {
+	fill: #ff4d4d;
+	stroke: #ff4d4d;
+	animation: heartBeat 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.grid-like-btn.liked .grid-like-count {
+	color: #ff4d4d;
+	font-weight: 700;
+}
+
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 
 .gallery-artwork-card:hover .artwork-info-overlay {
-	opacity: 1; /* Mostrar gradiente y boton en hover de ambiente */
+	opacity: 1;
 }
 
-.gallery-artwork-card:hover .view-text {
+.gallery-artwork-card:hover .overlay-actions {
 	transform: translateY(0);
 }
 
