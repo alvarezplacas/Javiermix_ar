@@ -22,10 +22,10 @@ import Footer from '../components/Footer.astro';
         <!-- Slide Fijo / Video -->
         <div class="slide-item active" style="opacity: 1; z-index: 1;">
           <div class="video-background-container">
-            <video class="home-bg-video active" src="/media/home/00.mp4" playsinline muted></video>
-            <video class="home-bg-video" src="/media/home/01.mp4" playsinline muted></video>
-            <video class="home-bg-video" src="/media/home/02.mp4" playsinline muted></video>
-            <video class="home-bg-video" src="/media/home/03.mp4" playsinline muted></video>
+            <video class="home-bg-video active" src="/media/home/00.mp4" autoplay playsinline muted></video>
+            <video class="home-bg-video" src="/media/home/01.mp4" playsinline muted preload="auto"></video>
+            <video class="home-bg-video" src="/media/home/02.mp4" playsinline muted preload="auto"></video>
+            <video class="home-bg-video" src="/media/home/03.mp4" playsinline muted preload="auto"></video>
             <div class="video-overlay-gradient"></div>
           </div>
           
@@ -348,13 +348,13 @@ import Footer from '../components/Footer.astro';
 
 <script>
   document.addEventListener('astro:page-load', () => {
-    const videos = document.querySelectorAll('.home-bg-video') as NodeListOf<HTMLVideoElement>;
+    const videos = document.querySelectorAll('.home-bg-video');
     if (videos.length === 0) return;
 
     let currentIndex = 0;
     
     // Play the first video safely
-    const playVideo = (vid: HTMLVideoElement) => {
+    const playVideo = (vid) => {
       const playPromise = vid.play();
       if (playPromise !== undefined) {
         playPromise.catch(e => console.log("Video autoplay prevented", e));
@@ -363,7 +363,7 @@ import Footer from '../components/Footer.astro';
     
     playVideo(videos[currentIndex]);
 
-    videos.forEach((vid, i) => {
+    videos.forEach((vid) => {
       // Ensure videos don't accidentally pause, transition smoothly to next
       vid.addEventListener('ended', () => {
         // Fade out current
