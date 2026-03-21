@@ -1,6 +1,5 @@
 services:
   db:
-<<<<<<< HEAD
     image: mariadb:latest
     container_name: javiermix_db
     restart: always
@@ -12,21 +11,25 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
-volumes:
-  db_data:
-=======
-    image: postgres:16-alpine
-    container_name: alvarezplacas_db
-    environment:
-      POSTGRES_USER: alvarez_admin
-      POSTGRES_PASSWORD: alvarez_password
-      POSTGRES_DB: alvarezplacas
+  directus:
+    image: directus/directus:latest
+    container_name: javiermix_directus_local
+    restart: always
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./src/infrastructure/db-schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - "8055:8055"
+    environment:
+      KEY: "9876543210abcdef9876543210abcdef"
+      SECRET: "abcdef0123456789abcdef0123456789"
+      DB_CLIENT: "mysql"
+      DB_HOST: "db"
+      DB_PORT: "3306"
+      DB_DATABASE: "javiermix_obras"
+      DB_USER: "root"
+      DB_PASSWORD: "root"
+      ADMIN_EMAIL: "admin@javiermix.ar"
+      ADMIN_PASSWORD: "JavierMix2026!"
+    depends_on:
+      - db
 
 volumes:
-  postgres_data:
->>>>>>> 194a018340e3ffa41f9f2714b64c01e9779ce8a2
+  db_data:

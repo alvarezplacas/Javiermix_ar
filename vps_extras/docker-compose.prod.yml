@@ -26,14 +26,18 @@ services:
     networks:
       - javiermix_network
 
-  # FileBrowser (Gestión de Archivos)
+  # FileBrowser (Gestión de Archivos Multi-Sitio)
   filebrowser:
     image: filebrowser/filebrowser:latest
     container_name: javiermix_files
     restart: always
+    ports:
+      - "8082:80"
     volumes:
-      - ./public/fotos:/srv/fotos
+      - /home/ubuntu:/srv
       - ./filebrowser.db:/database.db
+    environment:
+      - FB_BASEURL=/
     networks:
       - javiermix_network
 
@@ -45,6 +49,28 @@ services:
     environment:
       DATABASE_URL: mysql://root:root@db:3306/javiermix_obras
       APP_SECRET: 3L3X1T0LL3G0!#@a
+    networks:
+      - javiermix_network
+
+  # Directus (Gestión de Contenido)
+  directus:
+    image: directus/directus:latest
+    container_name: javiermix_directus
+    restart: always
+    environment:
+      KEY: "9876543210abcdef9876543210abcdef"
+      SECRET: "abcdef0123456789abcdef0123456789"
+      DB_CLIENT: "mysql"
+      DB_HOST: "db"
+      DB_PORT: "3306"
+      DB_DATABASE: "javiermix_obras"
+      DB_USER: "root"
+      DB_PASSWORD: "root"
+      PUBLIC_URL: "https://admin.javiermix.ar"
+      ADMIN_EMAIL: "admin@javiermix.ar"
+      ADMIN_PASSWORD: "JavierMix2026!"
+    depends_on:
+      - db
     networks:
       - javiermix_network
 
