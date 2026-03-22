@@ -54,7 +54,7 @@ try {
 function resolveMediaURL(url: string | null): string {
   if (!url) return '/img/placeholder.jpg';
   if (url.startsWith('http') || url.startsWith('/')) return url;
-  return `/uploads/magazine/${url}`;
+  return `/img/magazine/${url}`;
 }
 
 // Build final media list, filtering empty sources

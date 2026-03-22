@@ -22,47 +22,55 @@ export const prerender = false;
                 <div class="form-column">
                     <div class="form-group">
                         <label for="title">Título del Artículo</label>
-                        <input type="text" id="title" name="title" placeholder="Ej. El susurro de la arquitectura urbana" required />
+                        <input type="text" id="title" name="title" placeholder="Ej: La historia del primer daguerrotipo" required />
                     </div>
 
                     <div class="form-group">
-                        <label for="slug">URL Slug (Identificador único)</label>
+                        <label for="slug">URL Slug (Auto-generado)</label>
                         <div class="input-with-prefix">
                             <span>/revista/</span>
-                            <input type="text" id="slug" name="slug" placeholder="el-susurro-urbano" required />
+                            <input type="text" id="slug" name="slug" placeholder="la-historia-del-primer-daguerrotipo" required />
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="tags">Etiquetas (Separadas por comas)</label>
-                        <input type="text" id="tags" name="tags" placeholder="arquitectura, b&n, reflexiones" />
+                        <input type="text" id="tags" name="tags" placeholder="Historia, Fotografía, Argentina" />
                     </div>
 
                     <div class="form-group">
-                        <label for="content_html">Cuerpo del Artículo (HTML Soportado)</label>
-                        <textarea id="content_html" name="content_html" rows="18" placeholder="Escribe aquí el contenido en formato HTML..." required></textarea>
-                        <small class="hint">Puedes usar etiquetas &lt;p&gt;, &lt;h2&gt;, &lt;strong&gt;, etc. para dar formato.</small>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.8rem;">
+                            <label style="margin-bottom: 0;">Cuerpo del Artículo (Editor Visual)</label>
+                            <div class="word-import-wrapper">
+                                <input type="file" id="word-upload" accept=".docx" style="display: none;" />
+                                <button type="button" class="btn-word-import" onclick="document.getElementById('word-upload').click()">
+                                    <i class="fas fa-file-word"></i> IMPORTAR DESDE WORD
+                                </button>
+                            </div>
+                        </div>
+                        <textarea id="content_html" name="content_html" rows="18"></textarea>
+                        <small class="hint">Escribe directamente o importa un archivo de Word para mantener el formato.</small>
                     </div>
                 </div>
 
                 <!-- Columna Derecha: Media & SEO -->
                 <div class="form-column">
                     <div class="form-group">
-                        <label for="featured_image">Imagen Principal (Nombre de archivo en /public/uploads/magazine/)</label>
-                        <input type="text" id="featured_image" name="featured_image" placeholder="ejemplo.jpg" />
-                        <small class="hint">Asegúrate de subir el archivo vía FileBrowser a la carpeta correspondiente.</small>
+                        <label for="featured_image">Imagen Principal (en /public/img/magazine/)</label>
+                        <input type="text" id="featured_image" name="featured_image" placeholder="ejemplo.avif" />
+                        <small class="hint">Sube tus archivos AVIF/MP4 vía FileZilla a la carpeta <code>/img/magazine/</code>.</small>
                     </div>
 
                     <div class="form-group">
                         <label for="video_url">Video de Fondo (Opcional - MP4)</label>
-                        <input type="text" id="video_url" name="video_url" placeholder="video-intro.mp4" />
+                        <input type="text" id="video_url" name="video_url" placeholder="fondo.mp4" />
                     </div>
 
                     <div class="form-group">
                         <label>Estado de Publicación</label>
                         <select name="status">
                             <option value="published">Publicado</option>
-                            <option value="draft">Borrador</option>
+                            <option value="draft" selected>Borrador</option>
                         </select>
                     </div>
 
@@ -70,17 +78,17 @@ export const prerender = false;
 
                     <div class="form-group">
                         <label for="seo_title">Título SEO (Opcional)</label>
-                        <input type="text" id="seo_title" name="seo_title" placeholder="Meta title para Google" />
+                        <input type="text" id="seo_title" name="seo_title" placeholder="Título para buscadores" />
                     </div>
 
                     <div class="form-group">
                         <label for="seo_description">Descripción SEO (Opcional)</label>
-                        <textarea id="seo_description" name="seo_description" rows="3" placeholder="Resumen corto para resultados de búsqueda"></textarea>
+                        <textarea id="seo_description" name="seo_description" rows="3" placeholder="Resumen para Google..."></textarea>
                     </div>
 
                     <div class="form-group" style="margin-top: 2rem;">
                         <button type="submit" class="btn-primary w-full" id="submit-btn">
-                            <i class="fas fa-save"></i> GUARDAR ARTÍCULO
+                            <i class="fas fa-save"></i> GUARDAR CRÓNICA
                         </button>
                     </div>
                 </div>
@@ -90,176 +98,105 @@ export const prerender = false;
 </AdminLayout>
 
 <style>
-    .header-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 3rem;
-    }
-
-    .section-title {
-        font-size: 1.4rem;
-        margin: 0;
-        color: white;
-        font-weight: 500;
-    }
-
-    .section-desc {
-        font-size: 0.8rem;
-        color: rgba(255,255,255,0.4);
-        margin: 5px 0 0;
-    }
-
-    .btn-secondary {
-        background: rgba(255,255,255,0.05);
-        color: white;
-        text-decoration: none;
-        padding: 0.7rem 1.2rem;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        border: 1px solid rgba(255,255,255,0.1);
-        transition: all 0.2s;
-    }
+    .header-actions { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; }
+    .section-title { font-size: 1.4rem; margin: 0; color: white; font-weight: 500; }
+    .section-desc { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin: 5px 0 0; }
+    .btn-secondary { background: rgba(255,255,255,0.05); color: white; text-decoration: none; padding: 0.7rem 1.2rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; }
     .btn-secondary:hover { background: rgba(255,255,255,0.1); }
-
-    .panel {
-        background: rgba(255,255,255,0.02);
-        border: 1px solid rgba(255,255,255,0.05);
-        border-radius: 12px;
-        padding: 3rem;
-    }
-
-    .admin-form .form-grid {
-        display: grid;
-        grid-template-columns: 1.2fr 0.8fr;
-        gap: 4rem;
-    }
-
-    .form-group {
-        margin-bottom: 2rem;
-    }
-
-    .form-group label {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--admin-accent);
-        margin-bottom: 0.8rem;
-    }
-
-    .form-group input, 
-    .form-group textarea, 
-    .form-group select {
-        width: 100%;
-        background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(255,255,255,0.1);
-        padding: 1rem;
-        color: white;
-        border-radius: 4px;
-        font-family: inherit;
-        font-size: 0.9rem;
-        box-sizing: border-box;
-    }
-
-    .form-group input:focus, 
-    .form-group textarea:focus {
-        border-color: var(--admin-accent);
-        outline: none;
-        background: rgba(0,0,0,0.5);
-    }
-
-    .input-with-prefix {
-        display: flex;
-        align-items: center;
-        background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 4px;
-        overflow: hidden;
-    }
-
-    .input-with-prefix span {
-        padding: 0 1rem;
-        color: rgba(255,255,255,0.3);
-        font-size: 0.85rem;
-        font-family: monospace;
-    }
-
-    .input-with-prefix input {
-        border: none;
-        background: transparent;
-    }
-
-    .hint {
-        display: block;
-        margin-top: 5px;
-        font-size: 0.7rem;
-        color: rgba(255,255,255,0.3);
-    }
-
-    .form-divider {
-        margin: 3rem 0 2rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        color: rgba(255,255,255,0.2);
-    }
-
-    .btn-primary {
-        background: var(--admin-accent);
-        color: var(--admin-bg);
-        border: none;
-        padding: 1rem;
-        border-radius: 4px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 0.8rem;
-    }
-
+    .panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 3rem; }
+    .admin-form .form-grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 4rem; }
+    .form-group { margin-bottom: 2rem; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--admin-accent); margin-bottom: 0.8rem; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 1rem; color: white; border-radius: 4px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; }
+    .input-with-prefix { display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .input-with-prefix span { padding: 0 1rem; color: rgba(255,255,255,0.3); font-size: 0.85rem; font-family: monospace; }
+    .input-with-prefix input { border: none; background: transparent; }
+    .hint { display: block; margin-top: 5px; font-size: 0.7rem; color: rgba(255,255,255,0.3); }
+    .btn-word-import { background: #2b5797; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.3s; }
+    .btn-word-import:hover { background: #1e3e6d; }
+    .form-divider { margin: 3rem 0 2rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.2); }
+    .btn-primary { background: var(--admin-accent); color: var(--admin-bg); border: none; padding: 1rem; border-radius: 4px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: center; align-items: center; gap: 0.8rem; }
     .btn-primary:hover { background: white; transform: translateY(-3px); }
     .w-full { width: 100%; }
 
+    /* TinyMCE Dark override */
+    :global(.tox-tinymce) { border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 4px !important; }
+    
     @media (max-width: 1024px) {
         .admin-form .form-grid { grid-template-columns: 1fr; gap: 2rem; }
     }
 </style>
 
+<!-- Scripts -->
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script is:inline src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
 <script>
-    const form = document.getElementById('new-article-form');
+    // Inicializar TinyMCE
+    // @ts-ignore
+    window.onload = () => {
+        // @ts-ignore
+        tinymce.init({
+            selector: '#content_html',
+            skin: 'oxide-dark',
+            content_css: 'dark',
+            plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount',
+            toolbar: 'undo redo | blocks | bold italic underline forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | code help',
+            height: 500,
+            branding: false,
+            setup: function (editor) {
+                editor.on('change', function () {
+                    editor.save();
+                });
+            }
+        });
+    };
+
     const titleInput = document.getElementById('title') as HTMLInputElement;
     const slugInput = document.getElementById('slug') as HTMLInputElement;
 
-    // Auto-slug generation
     titleInput?.addEventListener('input', () => {
-        if (slugInput && !slugInput.value || slugInput.value === slugify(titleInput.value.slice(0, -1))) {
-            slugInput.value = slugify(titleInput.value);
+        if (titleInput.value) {
+            slugInput.value = titleInput.value
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
         }
     });
 
-    function slugify(text: string) {
-        return text.toString().toLowerCase()
-            .replace(/\s+/g, '-')           // Replace spaces with -
-            .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
-            .replace(/\-\-+/g, '-')         // Replace multiple - with single -
-            .replace(/^-+/, '')             // Trim - from start of text
-            .replace(/-+$/, '');            // Trim - from end of text
-    }
+    // Importación desde Word
+    const wordUpload = document.getElementById('word-upload') as HTMLInputElement;
+    wordUpload?.addEventListener('change', function(e) {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
 
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const arrayBuffer = event.target?.result;
+            // @ts-ignore
+            mammoth.convertToHtml({arrayBuffer: arrayBuffer})
+                .then(function(result) {
+                    // @ts-ignore
+                    tinymce.get('content_html').setContent(result.value);
+                })
+                .catch(function(err) {
+                    alert('Error al convertir Word: ' + err);
+                });
+        };
+        // @ts-ignore
+        reader.readAsArrayBuffer(file);
+    });
+
+    const form = document.getElementById('new-article-form');
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        // Asegurar que TinyMCE guarde el contenido antes de enviar
+        // @ts-ignore
+        tinymce.triggerSave();
+
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GUARDANDO...';
 
@@ -275,15 +212,15 @@ export const prerender = false;
 
             const result = await res.json();
             if (result.success) {
-                alert('¡Crónica guardada exitosamente!');
+                alert('¡Crónica guardada con éxito!');
                 window.location.href = '/admin/revista';
             } else {
-                alert('Error al guardar: ' + result.message);
+                alert('Error: ' + result.message);
             }
         } catch (err) {
             alert('Error de conexión con el servidor.');
         } finally {
-            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> GUARDAR ARTÍCULO';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> GUARDAR CRÓNICA';
         }
     });
 </script>
