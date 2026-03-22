@@ -91,59 +91,56 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
   <article class="magazine-article">
     <div class="split-layout">
 
-      <!-- ── LEFT: Narrative Text ── -->
+      <!-- ── LEFT: Narrative Text (Scrolling) ── -->
       <section class="narrative-column">
         <header class="article-header">
-          <span class="eyebrow">REVISTA ONLINE</span>
+          <div class="header-eyebrow-row">
+            <span class="eyebrow">CRÓNICA JHM</span>
+            <span class="separator">/</span>
+            <span class="category-badge">{articulo.tags?.split(',')[0] || 'ARTÍSTICO'}</span>
+          </div>
+          
           <h1 class="headline">{articulo.title}</h1>
 
-          {articulo.tags && (
-            <div class="article-tags">
-              {articulo.tags.split(',').map(tag => (
-                <span class="tag-chip">{tag.trim()}</span>
-              ))}
-            </div>
-          )}
-
           <div class="meta-row">
-            <div class="author-info">Por <strong>Javier Mix</strong> · Buenos Aires</div>
-            <div class="stats-info">
-              <span class="date">{formattedDate}</span>
+            <div class="author-info">Por <strong>Javier Mix</strong></div>
+            <div class="reading-meta">
               <span class="read-time">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                {readingTime} MIN LECTURA
+                <i class="far fa-clock"></i> {readingTime} MIN DE LECTURA
               </span>
+              <span class="date">{formattedDate}</span>
             </div>
           </div>
-
         </header>
 
         <div class="prose-content" id="prose" set:html={articulo.content_html}></div>
 
-        <hr class="header-divider" />
+        <div class="article-divider">
+          <span class="divider-dot"></span>
+        </div>
         
-        <!-- Star Rating System -->
-        <div class="rating-container" id="rating-container" data-slug={articulo.slug}>
-          <div class="stars-row" id="stars-row">
-            <button class="star-btn" data-value="1">★</button>
-            <button class="star-btn" data-value="2">★</button>
-            <button class="star-btn" data-value="3">★</button>
-            <button class="star-btn" data-value="4">★</button>
-            <button class="star-btn" data-value="5">★</button>
-          </div>
-          <div class="rating-stats">
-            <span class="rating-avg" id="rating-avg">0.0</span>
-            <span class="rating-sep">/</span>
-            <span class="rating-count" id="rating-count">0 votos</span>
+        <!-- Star Rating System (Refined) -->
+        <div class="rating-section">
+          <h3>¿Qué te ha parecido esta crónica?</h3>
+          <div class="rating-container" id="rating-container" data-slug={articulo.slug}>
+            <div class="stars-row" id="stars-row">
+              <button class="star-btn" data-value="1">★</button>
+              <button class="star-btn" data-value="2">★</button>
+              <button class="star-btn" data-value="3">★</button>
+              <button class="star-btn" data-value="4">★</button>
+              <button class="star-btn" data-value="5">★</button>
+            </div>
+            <div class="rating-stats">
+              <span class="rating-avg" id="rating-avg">0.0</span>
+              <span class="rating-count" id="rating-count">0 votos</span>
+            </div>
           </div>
         </div>
 
         <!-- ── CONTINUAR COLECCIÓN ── -->
         <section class="collection-invite">
           <div class="invite-header">
-            <span class="invite-eyebrow">CONTINUAR COLECCIÓN</span>
+            <span class="invite-eyebrow">DIÁLOGO VISUAL</span>
             <h3 class="invite-title">Invitación a la Potencia</h3>
             <p class="invite-text">
               Cada obra es un fragmento de una memoria mayor. Te invitamos a completar tu serie o descubrir nuevas resonancias en nuestras colecciones curadas.
@@ -151,53 +148,52 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
           </div>
 
           {suggestedArt && (
-            <a href={`/obra/${suggestedArt.serie_id.toLowerCase().replace(/_/g, '-')}-${suggestedArt.title.toLowerCase().replace(/ /g, '-')}`} class="suggested-artwork-card" style="text-decoration: none;">
+            <a href={`/obra/${suggestedArt.serie_id.toLowerCase().replace(/_/g, '-')}-${suggestedArt.title.toLowerCase().replace(/ /g, '-')}`} class="suggested-artwork-card">
               <div class="art-preview">
                 <img src={`/img/Series/${serieToFolder(suggestedArt.serie_id)}/${suggestedArt.filename}`} alt={suggestedArt.title} onerror="this.onerror=null; this.src='/img/placeholder.jpg';" />
               </div>
               <div class="art-info">
                 <span class="art-serie">{suggestedArt.serie_id.replace(/_/g, ' ')}</span>
                 <h4 class="art-title">{suggestedArt.title}</h4>
-                <span class="btn-acquire">ADQUIRIR OBRA</span>
+                <div class="btn-acquire">ADQUIRIR OBRA</div>
               </div>
             </a>
           )}
 
-          <div class="invite-actions">
-            <a href="/obras" class="collections-link">
-              VER TODAS LAS COLECCIONES
-              <span class="link-underline"></span>
+          <div class="footer-navigation">
+            <a href="/revista" class="back-link">
+              <i class="fas fa-chevron-left"></i> VOLVER A LA REVISTA
             </a>
+            <a href="/obras" class="collections-link">VER COLECCIONES</a>
           </div>
         </section>
-
-        <div class="article-footer-nav">
-          <a href="/revista" class="back-link">← VOLVER A REVISTA</a>
-        </div>
       </section>
 
-      <!-- ── RIGHT: Sticky Media Panel ── -->
+      <!-- ── RIGHT: Sticky Media Panel (Fixed) ── -->
       <aside class="visual-column" id="visual-column" data-media={JSON.stringify(media)}>
         <div class="media-stage" id="media-stage">
           <div class="media-layer active" id="media-layer-A">
             {media[0]?.type === 'video' ? (
               <video src={media[0].src} class="media-video" style="opacity: 1" muted autoplay loop playsinline></video>
             ) : (
-              <img src={media[0]?.src} alt={articulo.title} class="media-img" id="img-A" onerror="this.onerror=null; this.style.opacity=0;" />
+              <img src={media[0]?.src} alt={articulo.title} class="media-img" id="img-A" />
             )}
           </div>
           <div class="media-layer" id="media-layer-B">
-            <img src="" alt="" class="media-img" id="img-B" onerror="this.onerror=null; this.style.opacity=0;" />
+            <img src="" alt="" class="media-img" id="img-B" />
           </div>
           <video class="media-video" id="media-video-dynamic" muted autoplay loop playsinline style="opacity: 0"></video>
         </div>
 
+        <div class="media-overlay"></div>
         <div class="media-caption" id="media-caption"></div>
 
-        <div class="media-dots" id="media-dots">
-          {media.map((_, i) => (
-            <button class={`dot ${i === 0 ? "active" : ""}`} data-index={i} aria-label={`Media ${i + 1}`}></button>
-          ))}
+        <div class="media-controls">
+          <div class="media-dots" id="media-dots">
+            {media.map((_, i) => (
+              <button class={`dot ${i === 0 ? "active" : ""}`} data-index={i}></button>
+            ))}
+          </div>
         </div>
 
         <div class="visual-blend"></div>
@@ -206,26 +202,35 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
   </article>
 
   <style is:global>
-    /* Estilos para el Bloque de Avance (Pull Quote) */
+    @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+
+    .prose-content {
+      font-family: 'Lora', serif;
+      font-size: 1.2rem;
+      line-height: 1.9;
+      color: rgba(255,255,255,0.7);
+      font-weight: 400;
+    }
+    .prose-content p { margin-bottom: 2.5rem; }
+    .prose-content h2 { 
+      font-family: 'Cormorant Garamond', serif; 
+      font-size: 2.2rem; 
+      color: #fff; 
+      margin: 4rem 0 2rem;
+      font-style: italic;
+    }
+    .prose-content strong { color: #fff; font-weight: 500; }
+
     .editorial-callout {
-      background: rgba(220, 177, 74, 0.05);
-      border: 1px solid rgba(220, 177, 74, 0.1);
+      background: rgba(189, 155, 83, 0.03);
+      border-left: 3px solid var(--color-accent, #bd9b53);
       padding: 3rem;
       margin: 4rem 0;
-      border-radius: 30px;
-      color: var(--color-accent, #dcb14a);
-      font-size: 1.8rem;
-      font-family: 'Georgia', serif;
+      color: #fff;
+      font-size: 1.6rem;
+      font-family: 'Cormorant Garamond', serif;
       font-style: italic;
-      text-align: center;
-      position: relative;
       line-height: 1.4;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-    }
-    .editorial-callout::before {
-      content: "“";
-      position: absolute; top: -1.5rem; left: 2rem;
-      font-size: 6rem; color: var(--color-accent); opacity: 0.15;
     }
   </style>
 
@@ -244,7 +249,6 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
       const video = document.getElementById('media-video-dynamic') as HTMLVideoElement;
       const caption = document.getElementById('media-caption');
       const dotsEl = document.getElementById('media-dots');
-      const prose = document.getElementById('prose');
 
       let currentIdx = 0;
       let frontLayer = 'A';
@@ -256,6 +260,7 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
         const item = media[idx];
         if (!item) return;
 
+        // Transition logic with subtle scale
         if (item.type === 'video') {
           video.src = item.src;
           video.style.display = 'block';
@@ -266,16 +271,23 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
         } else {
           video.style.opacity = '0';
           video.pause();
-          setTimeout(() => { if (video.style.opacity === '0') video.style.display = 'none'; }, 1000);
-
+          
           if (frontLayer === 'A') {
             if (imgB) imgB.src = item.src;
-            if (layerB) layerB.style.opacity = '1';
+            if (layerB) {
+              layerB.style.opacity = '1';
+              layerB.style.transform = 'scale(1.05)';
+              setTimeout(() => layerB.style.transform = 'scale(1)', 50);
+            }
             if (layerA) layerA.style.opacity = '0';
             frontLayer = 'B';
           } else {
             if (imgA) imgA.src = item.src;
-            if (layerA) layerA.style.opacity = '1';
+            if (layerA) {
+              layerA.style.opacity = '1';
+              layerA.style.transform = 'scale(1.05)';
+              setTimeout(() => layerA.style.transform = 'scale(1)', 50);
+            }
             if (layerB) layerB.style.opacity = '0';
             frontLayer = 'A';
           }
@@ -285,7 +297,7 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
           caption.style.opacity = '0';
           setTimeout(() => {
             caption.textContent = item.caption || '';
-            caption.style.opacity = item.caption ? '1' : '0';
+            caption.style.opacity = item.caption ? '0.7' : '0';
           }, 400);
         }
 
@@ -294,14 +306,12 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
         });
       }
 
-      // Autoplay every 7 seconds if not manually interrupted lately
       let lastInteratcion = Date.now();
       setInterval(() => {
-        if (Date.now() - lastInteratcion > 10000) { // 10s of idle
-          const nextIdx = (currentIdx + 1) % media.length;
-          showMedia(nextIdx);
+        if (Date.now() - lastInteratcion > 12000) {
+          showMedia((currentIdx + 1) % media.length);
         }
-      }, 7000);
+      }, 6000);
 
       dotsEl?.querySelectorAll('.dot').forEach((btn, i) => {
         btn.addEventListener('click', () => {
@@ -310,7 +320,7 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
         });
       });
 
-      // --- Rating System Logic ---
+      // Rating System (Same logic as before, but with better UI)
       const ratingCont = document.getElementById('rating-container');
       const starsRow = document.getElementById('stars-row');
       const stars = starsRow?.querySelectorAll('.star-btn');
@@ -319,468 +329,210 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
       const slug = ratingCont?.getAttribute('data-slug');
 
       if (ratingCont && slug) {
-        // Fetch initial rating
         fetch(`/api/public/rate-article?slug=${slug}`)
           .then(res => res.json())
           .then(data => {
             if (avgEl) avgEl.textContent = data.average;
             if (countEl) countEl.textContent = `${data.count} votos`;
-            if (data.userScore > 0) {
-              highlightStars(data.userScore);
-            }
+            if (data.userScore > 0) highlightStars(data.userScore);
           });
 
         stars?.forEach(star => {
-          star.addEventListener('mouseenter', () => {
-            const val = parseInt(star.getAttribute('data-value') || '0');
-            previewStars(val);
-          });
-
-          star.addEventListener('mouseleave', () => {
-            const currentScore = ratingCont.getAttribute('data-user-score') || '0';
-            highlightStars(parseInt(currentScore));
-          });
-
+          star.addEventListener('mouseenter', () => previewStars(parseInt(star.getAttribute('data-value') || '0')));
+          star.addEventListener('mouseleave', () => highlightStars(parseInt(ratingCont.getAttribute('data-user-score') || '0')));
           star.addEventListener('click', async () => {
-            const val = parseInt(star.getAttribute('data-value') || '0');
-            ratingCont.setAttribute('disabled', 'true');
-            
-            try {
-              const res = await fetch('/api/public/rate-article', {
+             const val = parseInt(star.getAttribute('data-value') || '0');
+             const res = await fetch('/api/public/rate-article', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ slug, score: val })
               });
-              const data = await res.json();
-              if (data.success) {
-                if (avgEl) avgEl.textContent = data.average;
-                if (countEl) countEl.textContent = `${data.count} votos`;
+              const d = await res.json();
+              if (d.success) {
+                if (avgEl) avgEl.textContent = d.average;
+                if (countEl) countEl.textContent = `${d.count} votos`;
                 ratingCont.setAttribute('data-user-score', val.toString());
                 highlightStars(val);
-                
-                // Visual feedback ping
-                ratingCont.style.transform = 'scale(1.05)';
-                setTimeout(() => ratingCont.style.transform = 'scale(1)', 200);
               }
-            } catch (e) {
-              console.error('Error rating:', e);
-            } finally {
-              ratingCont.removeAttribute('disabled');
-            }
           });
         });
       }
 
       function highlightStars(count: number) {
-        stars?.forEach((s, i) => {
-          s.classList.toggle('active', i < count);
-          s.classList.remove('hover');
-        });
+        stars?.forEach((s, i) => { s.classList.toggle('active', i < count); s.classList.remove('hover'); });
       }
-
       function previewStars(count: number) {
-        stars?.forEach((s, i) => {
-          s.classList.toggle('hover', i < count);
-        });
+        stars?.forEach((s, i) => s.classList.toggle('hover', i < count));
       }
     });
   </script>
-
 </Layout>
 
 <style>
 /* ─────────────────────────────────
-   SPLIT LAYOUT (50 / 50)
+   PREMIUM SPLIT LAYOUT
 ───────────────────────────────── */
 .magazine-article {
   width: 100%;
-  background-color: #050505;
+  background-color: #0c0c0e; /* Soft Deep Black / Charcoal */
 }
 
 .split-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
-  align-items: start;
 }
 
+/* Narrative Column (Left - Scrollable) */
 .narrative-column {
-  padding: 12rem 8% 10rem;
-  grid-column: 1;
+  padding: 15rem 12% 10rem;
+  background: linear-gradient(to bottom, #0c0c0e, #08080a);
 }
 
-.visual-column {
-  grid-column: 2;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.media-stage {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.media-layer {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.media-layer.active {
-  opacity: 1;
-}
-
-.media-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  display: block;
-  filter: brightness(0.75) contrast(1.05);
-}
-
-.media-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 1.2s ease;
-}
-
-.media-caption {
-  position: absolute;
-  bottom: 5rem;
-  left: 0;
-  right: 0;
-  padding: 0 2.5rem;
-  font-family: inherit;
-  font-size: 0.65rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.45);
-  text-align: center;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  z-index: 10;
-}
-
-.media-dots {
-  position: absolute;
-  bottom: 2rem;
-  left: 0;
-  right: 0;
+.header-eyebrow-row {
   display: flex;
-  justify-content: center;
-  gap: 0.6rem;
-  z-index: 10;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.25);
-  border: none;
-  cursor: pointer;
-  transition: all 0.35s ease;
-  padding: 0;
-}
-
-.dot.active {
-  background: var(--color-accent, #dcb14a);
-  transform: scale(1.3);
-}
-
-.visual-blend {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 50px;
-  height: 100%;
-  background: linear-gradient(to right, rgba(5,5,5,0.5), transparent);
-  pointer-events: none;
-  z-index: 5;
-}
-
-/* Typography */
-.article-header {
-  margin-bottom: 5rem;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .eyebrow {
-  display: block;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
-  letter-spacing: 4px;
-  color: var(--color-accent, #dcb14a);
-  margin-bottom: 1.2rem;
+  letter-spacing: 5px;
+  color: var(--color-accent, #bd9b53);
   font-weight: 700;
 }
 
+.separator { color: rgba(255,255,255,0.1); font-size: 0.8rem; }
+
+.category-badge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.03);
+  padding: 0.4rem 0.8rem;
+  border-radius: 2px;
+}
+
 .headline {
-  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.5rem, 6vw, 4.2rem);
   font-weight: 300;
   font-style: italic;
-  line-height: 1.1;
-  margin-bottom: 2rem;
+  line-height: 1.05;
   color: #fff;
-  font-family: 'Georgia', serif;
-}
-
-.article-tags {
-  display: flex;
-  gap: 0.8rem;
-  margin-bottom: 2.5rem;
-  flex-wrap: wrap;
-}
-
-.tag-chip {
-  font-size: 0.6rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
-  border: 1px solid rgba(255,255,255,0.1);
-  padding: 0.4rem 0.8rem;
-  border-radius: 50px;
-  font-family: var(--font-secondary);
+  margin-bottom: 3.5rem;
+  letter-spacing: -1px;
 }
 
 .meta-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.7rem;
-  color: rgba(255,255,255,0.45);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  flex-wrap: wrap;
-  gap: 1rem;
+  padding-bottom: 3rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 5rem;
 }
 
-.author-info strong { color: #fff; font-weight: 700; }
+.author-info { font-size: 0.8rem; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
+.author-info strong { color: #fff; text-transform: uppercase; }
 
-.stats-info {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
+.reading-meta { display: flex; align-items: center; gap: 2rem; color: rgba(255,255,255,0.3); font-size: 0.65rem; letter-spacing: 2px; }
+.read-time i { color: var(--color-accent); margin-right: 5px; }
+
+.article-divider { display: flex; justify-content: center; margin: 6rem 0; }
+.divider-dot { width: 4px; height: 4px; background: var(--color-accent); border-radius: 50%; opacity: 0.3; }
+
+/* Visual Column (Right - Fixed) */
+.visual-column {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
 }
 
-.read-time {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid rgba(255,255,255,0.15);
-  padding: 0.35rem 0.9rem;
-  border-radius: 50px;
+.media-stage { width: 100%; height: 100%; position: relative; }
+.media-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1), transform 2s ease;
 }
+.media-layer.active { opacity: 1; }
 
-.header-divider {
-  border: none;
-  height: 1px;
-  background: linear-gradient(to right, rgba(255,255,255,0.1), transparent);
-  margin-top: 3rem;
-}
+.media-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8); }
+.media-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.5s ease; }
 
-.prose-content {
-  font-family: 'Georgia', serif;
-  font-size: 1.25rem;
-  line-height: 1.95;
-  color: rgba(255,255,255,0.75);
-  font-weight: 300;
-}
+.media-overlay { position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.3) 100%); pointer-events: none; }
 
-.prose-content :global(p) { margin-bottom: 2.5rem; }
-
-/* ── COLLECTION INVITE ── */
-.collection-invite {
-  margin: 8rem 0 4rem;
-  padding: 4rem 0;
-  border-top: 1px solid rgba(255,255,255,0.03);
-}
-
-.invite-eyebrow {
-  display: block;
-  font-size: 0.65rem;
+.media-caption {
+  position: absolute;
+  bottom: 6rem;
+  width: 100%;
+  text-align: center;
+  font-size: 0.6rem;
   letter-spacing: 3px;
-  color: var(--color-accent, #dcb14a);
-  margin-bottom: 1rem;
-  font-weight: 700;
-}
-
-.invite-title {
-  font-family: 'Georgia', serif;
-  font-size: 2.5rem;
-  font-weight: 300;
-  font-style: italic;
+  text-transform: uppercase;
   color: #fff;
-  margin-bottom: 1.5rem;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  z-index: 10;
 }
 
-.invite-text {
-  color: rgba(255,255,255,0.4);
-  font-size: 1rem;
-  line-height: 1.8;
-  max-width: 500px;
-  margin-bottom: 4rem;
-}
+.media-controls { position: absolute; bottom: 3rem; width: 100%; display: flex; justify-content: center; z-index: 10; }
+.media-dots { display: flex; gap: 0.8rem; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.2); border: none; cursor: pointer; transition: all 0.4s; }
+.dot.active { background: var(--color-accent); transform: scale(1.6); }
+
+.visual-blend { position: absolute; top: 0; left: 0; width: 80px; height: 100%; background: linear-gradient(to right, #0c0c0e, transparent); pointer-events: none; }
+
+/* ── RATING & INVITE ── */
+.rating-section { margin: 6rem 0; }
+.rating-section h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-style: italic; color: #fff; margin-bottom: 2rem; }
+.rating-container { display: flex; align-items: center; gap: 2rem; }
+.star-btn { background: none; border: none; font-size: 1.8rem; color: rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s; padding: 0; }
+.star-btn.active, .star-btn.hover { color: var(--color-accent); }
+.rating-stats { font-size: 0.8rem; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
+.rating-avg { color: #fff; font-weight: 700; margin-right: 5px; }
+
+.collection-invite { padding: 6rem 0; border-top: 1px solid rgba(255,255,255,0.05); }
+.invite-eyebrow { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 700; margin-bottom: 1rem; display: block; }
+.invite-title { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-style: italic; color: #fff; margin-bottom: 2rem; }
+.invite-text { color: rgba(255,255,255,0.4); line-height: 1.8; max-width: 500px; margin-bottom: 4rem; }
 
 .suggested-artwork-card {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 2.5rem;
+  display: flex;
+  gap: 3rem;
   background: rgba(255,255,255,0.02);
   padding: 2.5rem;
   border-radius: 4px;
-  align-items: center;
-  margin-bottom: 4rem;
-  border: 1px solid rgba(255,255,255,0.01);
-  transition: transform 0.4s ease, border 0.4s ease;
-}
-
-.suggested-artwork-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(220,177,74,0.15);
-}
-
-.art-preview {
-  width: 100%;
-  aspect-ratio: 4/5;
-  overflow: hidden;
-  border-radius: 2px;
-}
-
-.art-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: brightness(0.85);
-}
-
-.art-serie {
-  display: block;
-  font-size: 0.6rem;
-  letter-spacing: 2px;
-  color: rgba(255,255,255,0.3);
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-}
-
-.art-title {
-  font-family: 'Georgia', serif;
-  font-size: 1.4rem;
-  font-weight: 300;
-  color: #fff;
-  margin-bottom: 2rem;
-}
-
-.btn-acquire {
-  display: inline-block;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #000;
-  background: var(--color-accent, #dcb14a);
-  padding: 0.8rem 1.5rem;
   text-decoration: none;
-  transition: opacity 0.3s ease;
-}
-
-.btn-acquire:hover {
-  opacity: 0.9;
-}
-
-.collections-link {
-  display: inline-flex;
-  flex-direction: column;
-  color: rgba(255,255,255,0.6);
-  text-decoration: none;
-  font-size: 0.75rem;
-  letter-spacing: 2px;
-  font-weight: 700;
-}
-
-.link-underline {
-  display: block;
-  width: 30%;
-  height: 1px;
-  background: var(--color-accent, #dcb14a);
-  margin-top: 8px;
-  transition: width 0.4s ease;
-}
-
-.collections-link:hover .link-underline {
-  width: 100%;
-}
-
-
-/* ── RATING SYSTEM ── */
-.rating-container {
-  display: flex;
+  transition: 0.4s;
   align-items: center;
-  gap: 2rem;
-  margin: 2.5rem 0 1rem;
-  background: rgba(255,255,255,0.02);
-  padding: 1rem 1.5rem;
-  border-radius: 50px;
-  width: fit-content;
-  border: 1px solid rgba(255,255,255,0.05);
 }
+.suggested-artwork-card:hover { transform: translateX(10px); background: rgba(255,255,255,0.04); }
+.art-preview { width: 140px; aspect-ratio: 1; overflow: hidden; }
+.art-preview img { width: 100%; height: 100%; object-fit: contain; }
+.art-serie { font-size: 0.6rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 2px; }
+.art-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: #fff; margin: 0.5rem 0 1.5rem; }
+.btn-acquire { font-size: 0.6rem; font-weight: 700; letter-spacing: 2px; color: var(--color-accent); border: 1px solid var(--color-accent); padding: 0.6rem 1.2rem; display: inline-block; }
 
-.stars-row {
-  display: flex;
-  gap: 0.2rem;
-}
+.footer-navigation { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.03); }
+.back-link, .collections-link { font-size: 0.7rem; letter-spacing: 2px; font-weight: 600; text-decoration: none; color: rgba(255,255,255,0.3); transition: 0.3s; }
+.back-link:hover, .collections-link:hover { color: #fff; }
 
-.star-btn {
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  color: rgba(255,255,255,0.15);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 0;
-  line-height: 1;
-}
-
-.star-btn:hover,
-.star-btn.hover,
-.star-btn.active {
-  color: var(--color-accent, #dcb14a);
-  text-shadow: 0 0 10px rgba(220,177,74,0.4);
-}
-
-.rating-stats {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-secondary);
-  font-size: 0.75rem;
-  letter-spacing: 1px;
-}
-
-.rating-avg {
-  color: #fff;
-  font-weight: 700;
-}
-
-.rating-sep {
-  color: rgba(255,255,255,0.2);
-}
-
-.rating-count {
-  color: rgba(255,255,255,0.4);
-  text-transform: uppercase;
-}
-
+/* ── MOBILE ADAPTATION ── */
 @media (max-width: 1024px) {
-  .split-layout { grid-template-columns: 1fr; }
-  .visual-column { height: 50vh; position: relative; }
-  .narrative-column { padding: 5rem 8% 8rem; }
+  .split-layout { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; }
+  .visual-column { height: 45vh; position: sticky; top: 0; z-index: 10; }
+  .narrative-column { padding: 4rem 10% 8rem; position: relative; z-index: 5; background: #0c0c0e; border-top: 1px solid rgba(255,255,255,0.05); }
+  .headline { font-size: 2.5rem; }
+  .visual-blend { display: none; }
+  .media-caption { bottom: 4rem; }
+  .meta-row { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+  .suggested-artwork-card { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
 }
 </style>
