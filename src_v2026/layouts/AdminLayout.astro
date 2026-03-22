@@ -38,8 +38,8 @@ const currentPath = Astro.url.pathname;
                 <div class="nav-group">
                     <h3>Panel Principal</h3>
                     <a href="/admin" class={currentPath === '/admin' ? 'active' : ''}><i class="fas fa-chart-line"></i> Dashboard</a>
+                    <a href="/admin/ventas" class={currentPath.startsWith('/admin/ventas') ? 'active' : ''}><i class="fas fa-shopping-cart"></i> Ventas & Órdenes</a>
                     <a href="/admin/certificados" class={currentPath.startsWith('/admin/certificados') ? 'active' : ''}><i class="fas fa-certificate"></i> Certificados A4</a>
-                    <!-- Espacio futuro para Ventas/Clientes Nativos -->
                 </div>
 
                 <div class="nav-group">

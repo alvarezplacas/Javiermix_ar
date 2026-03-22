@@ -44,6 +44,26 @@ import Footer from '../components/Footer.astro';
           
           <button type="submit" id="btn-submit-order" class="btn-submit">CONFIRMAR COMPRA <i class="fas fa-arrow-right"></i></button>
         </form>
+
+        <!-- Bloque Oculto que se revela al confirmar la orden -->
+        <div id="transfer-instructions" class="transfer-instructions" style="display: none;">
+            <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+            <h2 class="checkout-title" style="font-size: 1.8rem;">Orden Recibida</h2>
+            <p class="order-number">NÚMERO DE ORDEN: <strong id="dynamic-order-code">#XXX-XXXX</strong></p>
+            
+            <div class="bank-box">
+                <h3>INSTRUCCIONES DE PAGO POR TRANSFERENCIA</h3>
+                <p>Para asegurar su pieza de colección Fine Art, por favor realice una transferencia por el valor de <strong id="dynamic-total-price">U$D 0</strong> a la siguiente cuenta y **utilice el número de orden en el motivo/referencia**:</p>
+                <div class="bank-details">
+                    <div class="bd-row"><span>Billetera / Banco:</span> <strong>Mercado Pago</strong></div>
+                    <div class="bd-row"><span>Titular:</span> <strong>Javier Hernan Alvarez</strong></div>
+                    <div class="bd-row alias-row"><span>Alias:</span> <strong class="alias-code">cobromix</strong></div>
+                </div>
+                <p class="post-transfer-note">Una vez realizado el giro, el sistema lo verificará automáticamente o nos contactaremos directamente con usted para validar el envío y la emisión de su Certificado de Autenticidad A4. Mantenemos el inventario reservado temporalmente para usted.</p>
+            </div>
+            
+            <a href="/" class="btn-submit" style="margin-top:2rem; width: max-content;">Volver a la Galería</a>
+        </div>
       </section>
 
       <!-- Columna Derecha: Resumen -->
@@ -268,12 +288,93 @@ import Footer from '../components/Footer.astro';
     text-align: center;
   }
 
+  /* Transfer Success Section */
+  .transfer-instructions {
+      animation: fadeIn 0.8s ease-out forwards;
+  }
+
+  .success-icon {
+      font-size: 3rem;
+      color: #4a9e6a;
+      margin-bottom: 1rem;
+  }
+
+  .order-number {
+      font-family: var(--font-secondary);
+      font-size: 0.8rem;
+      color: var(--color-accent);
+      letter-spacing: 2px;
+  }
+
+  .bank-box {
+      margin-top: 2rem;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(189, 155, 83, 0.2);
+      padding: 2.5rem;
+      border-radius: 4px;
+  }
+
+  .bank-box h3 {
+      font-family: var(--font-primary);
+      color: var(--color-accent);
+      margin: 0 0 1rem 0;
+      font-size: 1.2rem;
+  }
+
+  .bank-box p {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      margin-bottom: 2rem;
+  }
+
+  .bank-details {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: rgba(0,0,0,0.3);
+      padding: 1.5rem;
+      border-radius: 4px;
+  }
+
+  .bd-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+      padding-bottom: 0.5rem;
+  }
+  .bd-row strong { color: white; }
+
+  .alias-row { border: none; padding-bottom: 0; align-items: center;}
+  .alias-code {
+      font-family: monospace;
+      background: var(--color-accent);
+      color: var(--color-onyx-deep);
+      padding: 0.4rem 1rem;
+      border-radius: 4px;
+      font-size: 1rem;
+  }
+
+  .post-transfer-note {
+      margin-top: 2rem !important;
+      font-size: 0.75rem !important;
+      opacity: 0.7;
+      margin-bottom: 0 !important;
+  }
+
   .feedback-msg {
     font-size: 0.8rem;
     text-align: center;
     min-height: 1.2rem;
     margin-top: 1rem;
     font-weight: 600;
+  }
+
+  @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
   }
 
   @media (max-width: 900px) {
@@ -326,21 +427,68 @@ import Footer from '../components/Footer.astro';
       if (totalEl) totalEl.innerText = `U$D ${total}`;
     });
 
-    // Form submission simulation
+    // Form submission
     if (form && btn && feedback) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         btn.disabled = true;
-        btn.innerHTML = 'PROCESANDO ORDEN...';
+        btn.innerHTML = 'PROCESANDO ORDEN SEGURO...';
         
-        // Simulating Backend Order Creation
-        setTimeout(() => {
-          clearCart();
-          form.style.display = 'none';
-          document.querySelector('.checkout-subtitle')!.innerHTML = '<strong>¡GRACIAS POR SU COMPRA!</strong> Su solicitud ha sido procesada. En breve, el equipo de logística de Javier Mix se pondrá en contacto para coordinar el pago y el envío asegurado.';
-          (document.querySelector('.checkout-title') as HTMLElement).innerText = 'Orden Confirmada';
-        }, 1500);
+        const fd = new FormData(form as HTMLFormElement);
+        const cartValues = Object.values(cartStore.get());
+        const totalAmount = cartValues.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+
+        const payload = {
+            firstName: fd.get('firstName'),
+            lastName: fd.get('lastName'),
+            email: fd.get('email'),
+            phone: fd.get('phone'),
+            address: fd.get('address'),
+            city: fd.get('city'),
+            country: fd.get('country'),
+            notes: fd.get('notes'),
+            cartItems: cartValues,
+            total: totalAmount
+        };
+
+        try {
+            const res = await fetch('/api/public/submit-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+
+            if (res.ok && result.success) {
+                clearCart();
+                
+                // Ocultar formulario y headers de instruccion
+                form.style.display = 'none';
+                (document.querySelector('.checkout-title') as HTMLElement).style.display = 'none';
+                (document.querySelector('.checkout-subtitle') as HTMLElement).style.display = 'none';
+                
+                // Rellenar tickt y mostrar
+                const ticketBlock = document.getElementById('transfer-instructions');
+                const dynCode = document.getElementById('dynamic-order-code');
+                const dynTotal = document.getElementById('dynamic-total-price');
+
+                if (dynCode) dynCode.innerText = result.order_number;
+                if (dynTotal) dynTotal.innerText = `U$D ${totalAmount}`;
+                
+                if (ticketBlock) ticketBlock.style.display = 'block';
+
+            } else {
+                feedback.innerText = result.error || 'Hubo un error al procesar. Por favor reintente.';
+                btn.disabled = false;
+                btn.innerHTML = `CONFIRMAR COMPRA <i class="fas fa-arrow-right"></i>`;
+            }
+        } catch (err) {
+            feedback.innerText = 'Error de red. Verifique su conexión.';
+            btn.disabled = false;
+            btn.innerHTML = `CONFIRMAR COMPRA <i class="fas fa-arrow-right"></i>`;
+        }
       });
     }
   });

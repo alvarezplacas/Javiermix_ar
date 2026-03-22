@@ -103,3 +103,22 @@ export const marketingStrategies = mysqlTable('marketing_strategies', {
     priority: varchar('priority', { length: 20 }).default('medium'), // high, medium, low
     created_at: timestamp('created_at').defaultNow(),
 });
+
+// 8. Órdenes de Compra (E-Commerce)
+export const orders = mysqlTable('orders', {
+    id: bigint('id', { mode: 'number', unsigned: true }).autoincrement().primaryKey(),
+    order_number: varchar('order_number', { length: 50 }).unique().notNull(), // ej. JMX-8042
+    collector_id: bigint('collector_id', { mode: 'number', unsigned: true }), // Se puede enlazar al cliente
+    collector_name: varchar('collector_name', { length: 255 }).notNull(),
+    collector_email: varchar('collector_email', { length: 255 }).notNull(),
+    collector_phone: varchar('collector_phone', { length: 50 }),
+    shipping_address: text('shipping_address'),
+    total_price: decimal('total_price', { precision: 10, scale: 2 }).notNull(),
+    payment_method: varchar('payment_method', { length: 50 }).default('transferencia'),
+    payment_status: varchar('payment_status', { length: 50 }).default('pending'), // pending, paid, cancelled
+    shipping_status: varchar('shipping_status', { length: 50 }).default('unshipped'), // unshipped, shipped, delivered
+    items_json: text('items_json').notNull(), // JSON string de los items del carrito para snapshot histórico
+    notes: text('notes'),
+    created_at: timestamp('created_at').defaultNow(),
+    updated_at: timestamp('updated_at').defaultNow().onUpdateNow(),
+});
