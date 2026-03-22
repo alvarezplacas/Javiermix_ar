@@ -1,19 +1,22 @@
 import { defineMiddleware } from 'astro:middleware';
 
-export const onRequest = defineMiddleware(async (context, next) => {
-    // Solo protegemos las rutas que empiecen con /admin
-    if (context.url.pathname.startsWith('/admin')) {
-        const adminSession = context.cookies.get('admin_session');
-
-        // Permitir acceso a la página de login si no hay sesión
-        if (context.url.pathname === '/admin/login') {
+export const onRequest = defineMiddleware((context, next) => {
+    const url = new URL(context.request.url);
+    
+    // Proteger únicamente el subdirectorio del panel
+    if (url.pathname.startsWith('/admin')) {
+        // Permitir la ruta de login
+        if (url.pathname === '/admin/login') {
             return next();
         }
-
-        if (!adminSession || adminSession.value !== 'active') {
+        
+        // Verificar firma criptográfica simple o token de sesión en cookies
+        const sessionCookie = context.cookies.get('admin_jhm_session');
+        if (!sessionCookie || sessionCookie.value !== 'authenticated_jhm_master') {
+            // Expulsar a login
             return context.redirect('/admin/login');
         }
     }
-
+    
     return next();
 });

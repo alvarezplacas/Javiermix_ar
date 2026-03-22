@@ -1,0 +1,226 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { db } from '../../db/client';
+import { collectors, artworks, certificates } from '../../db/schema';
+import { sql } from 'drizzle-orm';
+
+export const prerender = false;
+
+// Gather stats
+const [artCountRes] = await db.select({ count: sql`count(*)` }).from(artworks);
+const totalArtworks = artCountRes?.count || 0;
+
+const [colCountRes] = await db.select({ count: sql`count(*)` }).from(collectors);
+const totalCollectors = colCountRes?.count || 0;
+
+const [certCountRes] = await db.select({ count: sql`count(*)` }).from(certificates);
+const totalCertificates = certCountRes?.count || 0;
+
+// Gather 5 recent collectors
+const recentCollectors = await db.select()
+  .from(collectors)
+  .orderBy(sql`${collectors.created_at} desc`)
+  .limit(5);
+---
+
+<AdminLayout title="Vista General">
+    <div class="dashboard-grid">
+        <!-- Stats Cards -->
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-image"></i></div>
+            <div class="stat-data">
+                <h3>{totalArtworks}</h3>
+                <p>Obras en Inventario</p>
+            </div>
+        </div>
+        
+        <div class="stat-card highlight">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-data">
+                <h3>{totalCollectors}</h3>
+                <p>Coleccionistas Registrados</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-certificate"></i></div>
+            <div class="stat-data">
+                <h3>{totalCertificates}</h3>
+                <p>Certificados Emitidos</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content-row mt-4">
+        <!-- Recent Leads/Collectors -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Últimas Altas de Colección</h2>
+                <a href="https://admin.javiermix.ar" target="_blank" class="btn-sm">Abrir CRM Directus</a>
+            </div>
+            <div class="panel-body">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Email de Contacto</th>
+                            <th>Estado Actual</th>
+                            <th>Fecha de Ingreso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {recentCollectors.map(col => (
+                            <tr>
+                                <td>{col.name}</td>
+                                <td>{col.email}</td>
+                                <td><span class={`status-badge ${col.status || 'lead'}`}>{col.status || 'lead'}</span></td>
+                                <td>{col.created_at ? new Date(col.created_at).toLocaleDateString('es-AR') : 'N/A'}</td>
+                            </tr>
+                        ))}
+                        {recentCollectors.length === 0 && (
+                            <tr><td colspan="4" style="text-align:center; padding: 3rem; color: #666;">No hay coleccionistas registrados aún.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</AdminLayout>
+
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+    }
+    
+    .stat-card {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        transition: transform 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255,255,255,0.1);
+    }
+
+    .stat-card.highlight {
+        background: rgba(189, 155, 83, 0.04);
+        border-color: rgba(189, 155, 83, 0.15);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        color: var(--admin-accent);
+    }
+    
+    .stat-card.highlight .stat-icon {
+        background: rgba(189, 155, 83, 0.15);
+    }
+
+    .stat-data h3 {
+        font-size: 2.5rem;
+        font-family: var(--font-primary);
+        margin: 0;
+        color: white;
+        line-height: 1;
+    }
+
+    .stat-data p {
+        margin: 0.5rem 0 0;
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.5);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
+    
+    .mt-4 { margin-top: 4rem; }
+    
+    .panel {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .panel-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .panel-header h2 {
+        font-size: 1.1rem;
+        margin: 0;
+        color: white;
+        letter-spacing: 1px;
+        font-weight: 500;
+    }
+
+    .btn-sm {
+        font-size: 0.75rem;
+        color: var(--admin-accent);
+        text-decoration: none;
+        border: 1px solid var(--admin-accent);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        transition: all 0.3s;
+        letter-spacing: 1px;
+    }
+    .btn-sm:hover {
+        background: var(--admin-accent);
+        color: var(--admin-bg);
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .admin-table th, .admin-table td {
+        padding: 1.2rem 2rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+
+    .admin-table th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        background: rgba(0,0,0,0.2);
+    }
+
+    .admin-table td {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.8);
+    }
+
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .status-badge.lead { background: rgba(50, 150, 255, 0.1); color: #6db1ff; }
+    .status-badge.collector { background: rgba(74, 158, 106, 0.1); color: #4a9e6a; }
+    .status-badge.vip { background: rgba(189, 155, 83, 0.15); color: #bd9b53; border: 1px solid rgba(189,155,83,0.3); }
+</style>

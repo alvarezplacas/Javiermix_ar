@@ -1,404 +1,245 @@
 ---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+
 interface Props {
   title: string;
-  activeTab: 'dashboard' | 'obras' | 'revista' | 'clientes' | 'certificados';
 }
 
-const { title, activeTab } = Astro.props;
-
-const navItems = [
-  { id: 'dashboard',      label: 'Dashboard',       href: '/admin',              icon: 'fa-chart-line',   group: 'main' },
-  { id: 'obras',          label: 'Gestión de Obras', href: '/admin/obras',        icon: 'fa-images',       group: 'main' },
-  { id: 'revista',        label: 'Revista Online',   href: '/admin/revista',      icon: 'fa-newspaper',    group: 'main' },
-  { id: 'clientes',       label: 'CRM / Clientes',   href: '/admin/coleccionistas', icon: 'fa-users',        group: 'main' },
-  { id: 'certificados',   label: 'Certificados',     href: '/admin/certificados', icon: 'fa-certificate',  group: 'main' },
-  { id: 'marketing',      label: 'Marketing',        href: '/admin/marketing',    icon: 'fa-bullhorn',     group: 'main' },
-];
+const { title } = Astro.props;
+const currentPath = Astro.url.pathname;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{title} | Admin</title>
-  <link rel="icon" href="/favicon.svg" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
-  <slot name="head" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title} | Admin JHM</title>
+    <!-- ══ Google Fonts ══ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- ══ Font Awesome ══ -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <ClientRouter />
 </head>
-<body>
-  <div class="admin-shell">
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <span class="logo-mark">JM</span>
-        <div>
-          <div class="logo-title">Javier Mix</div>
-          <div class="logo-sub" >Panel de Control</div>
-        </div>
-      </div>
+<body class="admin-body">
+    
+    <div class="admin-container">
+        <!-- Sidebar Inteligente -->
+        <aside class="admin-sidebar" transition:persist>
+            <div class="sidebar-header">
+                <h2 class="admin-brand">JHM</h2>
+                <span class="admin-status">OPERATING SYSTEM</span>
+            </div>
 
-      <nav class="sidebar-nav">
-        <div class="nav-group-label">MÓDULOS</div>
-        {navItems.map(item => (
-          <a href={item.href} class={`nav-link ${activeTab === item.id ? 'active' : ''}`}>
-            <span class="nav-icon"><i class={`fas ${item.icon}`}></i></span>
-            <span class="nav-label">{item.label}</span>
-            {activeTab === item.id && <span class="nav-indicator"></span>}
-          </a>
-        ))}
-      </nav>
+            <nav class="sidebar-nav">
+                <div class="nav-group">
+                    <h3>Panel Principal</h3>
+                    <a href="/admin" class={currentPath === '/admin' ? 'active' : ''}><i class="fas fa-chart-line"></i> Dashboard</a>
+                    <a href="/admin/certificados" class={currentPath.startsWith('/admin/certificados') ? 'active' : ''}><i class="fas fa-certificate"></i> Certificados A4</a>
+                    <!-- Espacio futuro para Ventas/Clientes Nativos -->
+                </div>
 
-      <div class="sidebar-bottom">
-        <a href="/" target="_blank" class="site-link">
-          <i class="fas fa-globe"></i> Ver sitio
-        </a>
-        <button id="logout-btn" class="logout-btn">
-          <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-        </button>
-      </div>
-    </aside>
+                <div class="nav-group">
+                    <h3>Ecosistema Externo</h3>
+                    <a href="https://admin.javiermix.ar" target="_blank"><i class="fas fa-database"></i> Directus (Base de Datos) <i class="fas fa-external-link-alt ext-icon"></i></a>
+                    <a href="https://stats.javiermix.ar" target="_blank"><i class="fas fa-chart-pie"></i> Umami (Métricas) <i class="fas fa-external-link-alt ext-icon"></i></a>
+                    <a href="https://files.javiermix.ar" target="_blank"><i class="fas fa-folder-open"></i> FileBrowser (Nube) <i class="fas fa-external-link-alt ext-icon"></i></a>
+                </div>
+            </nav>
 
-    <!-- CONTENT -->
-    <main class="admin-main">
-      <div class="admin-topbar">
-        <h1 class="page-title">{title}</h1>
-        <div class="topbar-right">
-          <span class="topbar-date">{new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-        </div>
-      </div>
-      <div class="admin-content">
-        <slot />
-      </div>
-    </main>
-  </div>
+            <div class="sidebar-footer">
+                <a href="/" class="btn-exit"><i class="fas fa-sign-out-alt"></i> Salir al Sitio Web</a>
+            </div>
+        </aside>
+
+        <!-- Contenido Dinámico -->
+        <main class="admin-content">
+            <header class="content-header">
+                <h1>{title}</h1>
+                <div class="header-user">
+                    <img src="/img/avatars/jhmix.jpg" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23bd9b53\'/></svg>'" alt="Javier M." class="user-avatar" />
+                    <span>Javier Mix</span>
+                </div>
+            </header>
+            
+            <div class="content-body">
+                <slot />
+            </div>
+        </main>
+    </div>
+
 </body>
 </html>
 
-<script>
-  document.getElementById('logout-btn')?.addEventListener('click', () => {
-    document.cookie = "admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    window.location.href = '/admin/login';
-  });
-</script>
-
 <style is:global>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+        --admin-bg: #090a0d;
+        --admin-sidebar: #12141a;
+        --admin-border: rgba(255,255,255,0.05);
+        --admin-text: #e0e0e0;
+        --admin-accent: #bd9b53;
+    }
 
-  body {
-    font-family: 'Outfit', sans-serif;
-    background: #080808;
-    color: #e0ddd8;
-    overflow-x: hidden;
-  }
+    body.admin-body {
+        background-color: var(--admin-bg);
+        color: var(--admin-text);
+        margin: 0;
+        font-family: var(--font-secondary);
+    }
 
-  /* ─── SHELL ─── */
-  .admin-shell {
-    display: flex;
-    min-height: 100vh;
-  }
+    .admin-container {
+        display: flex;
+        min-height: 100vh;
+    }
 
-  /* ─── SIDEBAR ─── */
-  .sidebar {
-    width: 240px;
-    min-width: 240px;
-    background: #0e0e0e;
-    border-right: 1px solid rgba(255,255,255,0.04);
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0; left: 0;
-    height: 100vh;
-    z-index: 200;
-  }
+    /* Sidebar */
+    .admin-sidebar {
+        width: 300px;
+        background-color: var(--admin-sidebar);
+        border-right: 1px solid var(--admin-border);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        height: 100vh;
+        z-index: 100;
+    }
 
-  .sidebar-logo {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.8rem 1.5rem;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-  }
+    .sidebar-header {
+        padding: 2.5rem 2rem;
+        border-bottom: 1px solid var(--admin-border);
+    }
 
-  .logo-mark {
-    width: 38px; height: 38px;
-    background: #dcb14a;
-    color: #000;
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 1px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
+    .admin-brand {
+        font-family: var(--font-primary);
+        font-size: 2.5rem;
+        font-style: italic;
+        color: var(--admin-accent);
+        margin: 0;
+        letter-spacing: 2px;
+    }
 
-  .logo-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #f5f2ed;
-    letter-spacing: 0.5px;
-  }
+    .admin-status {
+        font-size: 0.6rem;
+        letter-spacing: 3px;
+        color: rgba(255,255,255,0.3);
+        margin-top: 5px;
+        display: block;
+    }
 
-  .logo-sub {
-    font-size: 0.65rem;
-    color: #555;
-    letter-spacing: 0.5px;
-    margin-top: 2px;
-  }
+    .sidebar-nav {
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+    }
 
-  /* ─── NAV ─── */
-  .sidebar-nav {
-    flex: 1;
-    padding: 1.5rem 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    overflow-y: auto;
-  }
+    .nav-group {
+        margin-bottom: 2.5rem;
+    }
 
-  .nav-group-label {
-    font-size: 0.55rem;
-    letter-spacing: 2px;
-    color: #3a3a3a;
-    padding: 0 0.75rem;
-    margin-bottom: 0.8rem;
-    margin-top: 0.5rem;
-  }
+    .nav-group h3 {
+        font-size: 0.65rem;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+    }
 
-  .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    padding: 0.75rem 0.85rem;
-    border-radius: 6px;
-    color: #666;
-    text-decoration: none;
-    font-size: 0.82rem;
-    font-weight: 400;
-    letter-spacing: 0.3px;
-    transition: all 0.2s ease;
-    position: relative;
-  }
+    .nav-group a {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.8rem 1rem;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        transition: all 0.3s;
+        margin-bottom: 0.2rem;
+    }
 
-  .nav-link:hover {
-    background: rgba(255,255,255,0.03);
-    color: #c8c4be;
-  }
+    .nav-group a i {
+        width: 20px;
+        text-align: center;
+        font-size: 1rem;
+    }
 
-  .nav-link.active {
-    background: rgba(220,177,74,0.08);
-    color: #dcb14a;
-    font-weight: 600;
-  }
+    .nav-group a .ext-icon {
+        font-size: 0.6rem;
+        margin-left: auto;
+        opacity: 0.5;
+    }
 
-  .nav-icon {
-    width: 20px;
-    text-align: center;
-    font-size: 0.85rem;
-    flex-shrink: 0;
-  }
+    .nav-group a:hover, .nav-group a.active {
+        background: rgba(189, 155, 83, 0.1);
+        color: var(--admin-accent);
+    }
 
-  .nav-indicator {
-    position: absolute;
-    right: 0; top: 50%;
-    transform: translateY(-50%);
-    width: 3px; height: 18px;
-    background: #dcb14a;
-    border-radius: 2px 0 0 2px;
-  }
+    .sidebar-footer {
+        padding: 2rem;
+        border-top: 1px solid var(--admin-border);
+    }
 
-  /* ─── SIDEBAR BOTTOM ─── */
-  .sidebar-bottom {
-    padding: 1rem 0.75rem;
-    border-top: 1px solid rgba(255,255,255,0.04);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+    .btn-exit {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        color: rgba(255,255,255,0.4);
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: color 0.3s;
+    }
+    .btn-exit:hover { color: #e05555; }
 
-  .site-link {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    padding: 0.7rem 0.85rem;
-    border-radius: 6px;
-    color: #555;
-    text-decoration: none;
-    font-size: 0.78rem;
-    transition: all 0.2s;
-  }
+    /* Content Area */
+    .admin-content {
+        flex: 1;
+        margin-left: 300px;
+        display: flex;
+        flex-direction: column;
+    }
 
-  .site-link:hover { color: #888; background: rgba(255,255,255,0.02); }
+    .content-header {
+        height: 100px;
+        border-bottom: 1px solid var(--admin-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 4rem;
+        background: var(--admin-bg);
+        position: sticky;
+        top: 0;
+        z-index: 90;
+    }
 
-  .logout-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    padding: 0.7rem 0.85rem;
-    border-radius: 6px;
-    background: transparent;
-    border: none;
-    color: #555;
-    font-size: 0.78rem;
-    cursor: pointer;
-    width: 100%;
-    text-align: left;
-    font-family: inherit;
-    transition: all 0.2s;
-  }
+    .content-header h1 {
+        font-family: var(--font-primary);
+        font-size: 1.8rem;
+        margin: 0;
+        font-weight: 400;
+        color: white;
+    }
 
-  .logout-btn:hover { color: #e05555; background: rgba(224,85,85,0.06); }
+    .header-user {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.8);
+    }
 
-  /* ─── MAIN ─── */
-  .admin-main {
-    margin-left: 240px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--admin-accent);
+    }
 
-  .admin-topbar {
-    background: #0c0c0c;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    padding: 1.2rem 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .page-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #f5f2ed;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    font-family: 'Outfit', sans-serif;
-  }
-
-  .topbar-date {
-    font-size: 0.72rem;
-    color: #444;
-    text-transform: capitalize;
-  }
-
-  .admin-content {
-    padding: 2.5rem;
-    flex: 1;
-  }
-
-  /* ─── COMMON COMPONENTS ─── */
-  .content-header {
-    margin-bottom: 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .content-header h1 {
-    font-size: 1.4rem;
-    font-weight: 300;
-    color: #f5f2ed;
-    letter-spacing: 1px;
-  }
-
-  .header-actions { display: flex; align-items: center; gap: 0.75rem; }
-
-  .btn-primary {
-    background: #dcb14a;
-    color: #000;
-    padding: 0.65rem 1.3rem;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    font-weight: 700;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: opacity 0.2s;
-    font-family: inherit;
-  }
-  .btn-primary:hover { opacity: 0.85; }
-
-  .btn-secondary {
-    background: transparent;
-    border: 1px solid #2a2a2a;
-    color: #888;
-    padding: 0.65rem 1.3rem;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s;
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    text-decoration: none;
-  }
-  .btn-secondary:hover { border-color: #555; color: #ccc; }
-
-  /* alias legacies */
-  .btn-plus { background: #dcb14a; color: #000; padding: 0.65rem 1.3rem; font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.6rem; border-radius: 4px; transition: opacity 0.2s; }
-  .btn-plus:hover { opacity: 0.85; }
-  .secondary-btn { background: transparent; border: 1px solid #2a2a2a; color: #888; padding: 0.65rem 1.3rem; font-size: 0.75rem; letter-spacing: 1px; cursor: pointer; border-radius: 4px; transition: all 0.2s; font-family: inherit; display: inline-flex; align-items: center; gap: 0.6rem; }
-  .secondary-btn:hover { border-color: #555; color: #ccc; }
-
-  /* ─── TABLE ─── */
-  .table-container {
-    background: #0d0d0d;
-    border: 1px solid rgba(255,255,255,0.04);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
-
-  .admin-table th {
-    font-size: 0.6rem; letter-spacing: 1.5px; color: #3a3a3a;
-    padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04);
-    text-transform: uppercase; font-weight: 600;
-  }
-
-  .admin-table td {
-    padding: 1rem 1.5rem; font-size: 0.8rem;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-    color: #888; vertical-align: middle;
-  }
-
-  .admin-table tr:last-child td { border-bottom: none; }
-  .admin-table tr:hover td { background: rgba(255,255,255,0.01); }
-
-  .empty-state {
-    text-align: center; padding: 5rem !important;
-    font-style: italic; opacity: 0.3; color: #888;
-  }
-
-  /* ─── ERROR BOX ─── */
-  .error-box {
-    background: rgba(224,85,85,0.08);
-    border: 1px solid rgba(224,85,85,0.2);
-    border-radius: 6px; padding: 1.5rem 2rem;
-    display: flex; gap: 1.2rem; align-items: flex-start;
-    margin-bottom: 2rem; color: #e05555;
-  }
-  .error-box i { font-size: 1.2rem; margin-top: 2px; }
-  .error-box strong { display: block; margin-bottom: 0.3rem; }
-  .error-box p { font-size: 0.78rem; color: #888; margin-top: 0.3rem; }
-
-  @media (max-width: 900px) {
-    .sidebar { display: none; }
-    .admin-main { margin-left: 0; }
-  }
+    .content-body {
+        padding: 4rem;
+        max-width: 1400px;
+    }
 </style>
