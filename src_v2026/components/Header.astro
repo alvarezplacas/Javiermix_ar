@@ -6,7 +6,7 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 <header class={`site-header theme-${theme}`}>
 	<nav class="nav-container" aria-label="Navegación principal">
 		<a href="/" class="nav-logo" aria-label="Ir al Inicio">
-			<span class="brand-name">Javier Mix</span>
+			<span class="brand-name">JHM</span>
 		</a>
 		<div class="nav-links">
 			<a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
@@ -47,12 +47,12 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 
 .brand-name {
 	font-family: var(--font-primary);
-	font-size: 2rem;
+	font-size: 2.2rem; /* Slightly larger for shorter acronym */
 	font-weight: 500;
 	font-style: italic;
 	color: var(--color-white);
-	text-transform: capitalize; /* Cambiamos a capitales para más "carácter" de firma */
-	letter-spacing: 2px;
+	text-transform: uppercase;
+	letter-spacing: 4px; /* Increased spacing */
 	transition: var(--transition-premium);
 	display: block;
 	white-space: nowrap;

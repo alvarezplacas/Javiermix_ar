@@ -259,13 +259,13 @@ const fechaEmision = formatter.format(new Date(record.cert.sale_date));
         /* Párrafo de Certificación */
         .declaration {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 1.15rem;
-            line-height: 1.7;
+            font-size: 1.1rem; /* Slightly smaller for better flow */
+            line-height: 1.6;
             color: #444;
             text-align: justify;
-            margin: 0 10mm 15mm;
+            margin: 0 10mm 10mm; /* Reduced bottom margin */
             border-top: 0.5pt solid #f0f0f0;
-            padding-top: 10mm;
+            padding-top: 8mm;
         }
 
         /* Footer: Firmas y Fecha */
@@ -274,7 +274,7 @@ const fechaEmision = formatter.format(new Date(record.cert.sale_date));
             grid-template-columns: 1.2fr 0.8fr;
             margin-top: auto;
             align-items: flex-end;
-            padding-bottom: 5mm;
+            padding-bottom: 20mm; /* Significantly increased padding to avoid overflow */
         }
 
         .signature-section {
@@ -287,8 +287,9 @@ const fechaEmision = formatter.format(new Date(record.cert.sale_date));
             font-family: 'Pinyon Script', cursive;
             font-size: 3rem;
             color: #222;
-            margin-bottom: -15px;
+            margin-bottom: -10px; /* Adjusted margin */
             margin-left: 10mm;
+            height: 20mm; /* Fixed height to reserve space */
         }
 
         .signature-line {
@@ -425,7 +426,7 @@ const fechaEmision = formatter.format(new Date(record.cert.sale_date));
             <!-- Footer con Firma -->
             <footer class="footer-grid">
                 <div class="signature-section">
-                    <div class="signature-font">Javier Mix</div>
+                    <div class="signature-font"></div> <!-- Libre para firmar -->
                     <div class="signature-line"></div>
                     <div class="signature-label">Firma del Autor</div>
                 </div>
