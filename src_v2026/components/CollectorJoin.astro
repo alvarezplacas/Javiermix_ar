@@ -22,8 +22,13 @@
                 </div>
                 <div id="join-status" class="join-status"></div>
             </form>
+            <div id="success-card" class="success-card" style="display: none;">
+                <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+                <h3>Bienvenido a nuestra Colección</h3>
+                <p>Su solicitud ha sido recibida con éxito. Ha ingresado a nuestro selecto grupo y pronto recibirá catálogos y acceso prioritario a obra inédita.</p>
+            </div>
             
-            <p class="join-privacy">
+            <p id="join-privacy-text" class="join-privacy">
                 Al solicitar acceso, usted acepta ser contactado para fines informativos y de curaduría. Su privacidad es nuestra prioridad absoluta.
             </p>
         </div>
@@ -55,8 +60,16 @@
                 const result = await res.json();
 
                 if (result.ok) {
-                    status.classList.add('success');
-                    status.innerText = 'SOLICITUD ENVIADA. NOS PONDREMOS EN CONTACTO PRONTO.';
+                    form.style.display = 'none';
+                    document.getElementById('join-privacy-text').style.display = 'none';
+                    
+                    const successCard = document.getElementById('success-card');
+                    successCard.style.display = 'flex';
+                    successCard.animate([
+                        { opacity: 0, transform: 'translateY(20px)' },
+                        { opacity: 1, transform: 'translateY(0)' }
+                    ], { duration: 800, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
+                    
                     form.reset();
                 } else {
                     status.classList.add('error');
@@ -193,6 +206,43 @@
         color: rgba(255,255,255,0.3);
         margin-top: 2rem;
         font-style: italic;
+    }
+
+    /* Success Card Premium */
+    .success-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        background: rgba(255,255,255,0.02);
+        padding: 4rem 3rem;
+        border-radius: 4px;
+        border: 1px solid rgba(212,175,55,0.15); /* Subtle gold border */
+        backdrop-filter: blur(10px);
+        margin: 2rem auto 0;
+        max-width: 600px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .success-icon {
+        font-size: 3rem;
+        color: var(--color-accent);
+        margin-bottom: 0.5rem;
+    }
+
+    .success-card h3 {
+        font-family: var(--font-primary);
+        font-size: clamp(1.8rem, 3vw, 2.4rem);
+        color: var(--color-white);
+        font-weight: 300;
+        margin: 0;
+    }
+
+    .success-card p {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.7);
+        line-height: 1.9;
+        margin: 0;
     }
 
     @media (max-width: 768px) {
