@@ -22,7 +22,9 @@ import Footer from '../components/Footer.astro';
         <!-- Slide Fijo / Video -->
         <div class="slide-item active" style="opacity: 1; z-index: 1;">
           <div class="video-background-container">
-            <video class="home-bg-video active" src="/media/home/00.mp4" autoplay playsinline muted></video>
+            <!-- Imagen de carga inicial (2 segundos) -->
+            <img class="home-bg-image active" src="/media/home/00.avif" alt="Javier Mix Fine Art" />
+            <video class="home-bg-video" src="/media/home/00.mp4" playsinline muted preload="auto"></video>
             <video class="home-bg-video" src="/media/home/01.mp4" playsinline muted preload="auto"></video>
             <video class="home-bg-video" src="/media/home/02.mp4" playsinline muted preload="auto"></video>
             <video class="home-bg-video" src="/media/home/03.mp4" playsinline muted preload="auto"></video>
@@ -136,6 +138,7 @@ import Footer from '../components/Footer.astro';
     background-color: var(--color-onyx-deep);
 }
 
+.home-bg-image,
 .home-bg-video {
     position: absolute;
     top: 0;
@@ -148,6 +151,7 @@ import Footer from '../components/Footer.astro';
     z-index: 1;
 }
 
+.home-bg-image.active,
 .home-bg-video.active {
     opacity: 1;
     z-index: 2;
@@ -348,6 +352,7 @@ import Footer from '../components/Footer.astro';
 
 <script>
   document.addEventListener('astro:page-load', () => {
+    const splashImage = document.querySelector('.home-bg-image');
     const videos = document.querySelectorAll('.home-bg-video');
     if (videos.length === 0) return;
 
@@ -361,7 +366,14 @@ import Footer from '../components/Footer.astro';
       }
     };
     
+    // Start pre-playing the first video in background immediately
     playVideo(videos[currentIndex]);
+
+    // Fade out splash image and format first video after 2 seconds
+    setTimeout(() => {
+        if (splashImage) splashImage.classList.remove('active');
+        if (videos[currentIndex]) videos[currentIndex].classList.add('active');
+    }, 2000);
 
     videos.forEach((vid) => {
       // Ensure videos don't accidentally pause, transition smoothly to next

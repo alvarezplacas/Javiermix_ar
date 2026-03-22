@@ -1,0 +1,334 @@
+---
+import QRCode from 'qrcode';
+
+export const prerender = false;
+
+/* 
+   DATOS DE PRUEBA (DUMMY DATA) 
+   Este archivo es solo para previsualizar el diseño de impresión sin necesidad de una venta real.
+*/
+const record = {
+    art: {
+        title: "Epidermis Urbana #885",
+        filename: "JMX_885.avif",
+        serie_id: "Epidermis_urbana"
+    },
+    col: {
+        name: "Coleccionista de Prueba"
+    },
+    cert: {
+        edition_number: "Edición 1 / 10",
+        dimensions: "100x70 cm",
+        sale_date: new Date()
+    }
+};
+
+const uuid = "test-uuid-preview";
+const validationUrl = `https://javiermix.ar/certificados/${uuid}`;
+
+// Generar código QR dinámico apuntando a la web de verificación pública
+const qrCodeDataUri = await QRCode.toDataURL(validationUrl, {
+    width: 220,
+    margin: 0,
+    color: { dark: '#0a0a0a', light: '#ffffff' }
+});
+
+const formatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' });
+const fechaEmision = formatter.format(new Date(record.cert.sale_date));
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Vista Previa Certificado | {record.art?.title}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #bd9b53;
+            --dark: #0f1115;
+            --paper: #fbfbf9;
+            --text-main: #2a2a2a;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .cartulina-a4 {
+            width: 210mm;
+            height: 297mm;
+            background-color: var(--paper);
+            box-sizing: border-box;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1);
+            padding: 15mm;
+            overflow: hidden;
+            border: 1px solid #ddd;
+            margin: 40px 0;
+        }
+
+        /* Borde Interno Decorativo */
+        .marco-interno {
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--gold);
+            padding: 10mm;
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .marco-interno::before, .marco-interno::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gold);
+        }
+        .marco-interno::before { top: 5px; left: 5px; border-right: none; border-bottom: none; }
+        .marco-interno::after { bottom: 5px; right: 5px; border-left: none; border-top: none; }
+
+        .header {
+            text-align: center;
+            margin-top: 15mm;
+            margin-bottom: 10mm;
+        }
+
+        .header-logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.8rem;
+            font-style: italic;
+            color: var(--dark);
+            letter-spacing: 4px;
+            margin: 0;
+        }
+
+        .header-subtitle {
+            font-size: 0.8rem;
+            color: var(--gold);
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .main-title {
+            text-align: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            color: var(--dark);
+            margin: 0 0 15mm 0;
+            line-height: 1;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15mm;
+            flex: 1;
+        }
+
+        .obra-cover-container {
+            width: 100%;
+            height: 100mm;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .obra-cover {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.15);
+            border: 1px solid #eaeaea;
+        }
+
+        .especificaciones {
+            display: flex;
+            flex-direction: column;
+            gap: 6mm;
+        }
+
+        .spec-item {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .spec-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .spec-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .description-paragraph {
+            grid-column: span 2;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            text-align: justify;
+            color: #555;
+            line-height: 1.8;
+            margin: 10mm 15mm 0;
+        }
+
+        .footer-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            margin-top: auto;
+            align-items: end;
+            padding-bottom: 10mm;
+        }
+
+        .firma-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .linea-firma {
+            width: 60mm;
+            height: 1px;
+            background-color: var(--text-main);
+            margin-bottom: 5px;
+        }
+
+        .qr-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .qr-image {
+            width: 30mm;
+            height: 30mm;
+            mix-blend-mode: multiply;
+        }
+
+        .qr-caption {
+            font-size: 0.55rem;
+            color: #888;
+            letter-spacing: 1px;
+            margin-top: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Ocultar elementos en la impresión */
+        .no-print {
+            padding: 20px;
+            text-align: center;
+            background: #2a2a2a;
+            color: white;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        @media print {
+            body { background: white; margin: 0; }
+            .cartulina-a4 { box-shadow: none; border: none; margin: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <div style="text-align: left;">
+            <h3 style="margin: 0; color: var(--gold);">MODO VISTA PREVIA (TEST)</h3>
+            <p style="margin: 5px 0 0; font-size: 0.8rem;">Esta es una simulación del certificado final para impresión en A4.</p>
+        </div>
+        <button onclick="window.print()" style="padding: 12px 24px; background: var(--gold); border: none; font-weight: bold; cursor: pointer; color: white;">IMPRIMIR EJEMPLO</button>
+        <a href="/admin/certificados" style="color: white; font-size: 0.8rem; text-decoration: underline;">Volver al Panel</a>
+    </div>
+
+    <div class="cartulina-a4">
+        <div class="marco-interno">
+            
+            <div class="header">
+                <h1 class="header-logo">Javier Mix</h1>
+                <div class="header-subtitle">Fine Art Collection</div>
+            </div>
+
+            <h2 class="main-title">Certificado de Autenticidad</h2>
+
+            <div class="content-grid">
+                
+                <div class="obra-cover-container">
+                    <img src={`/img/Series/${record.art.serie_id}/${record.art.filename}`} class="obra-cover" alt="Miniatura de la Obra" />
+                </div>
+
+                <div class="especificaciones">
+                    <div class="spec-item">
+                        <span class="spec-label">Título de Obra</span>
+                        <h3 class="spec-value">{record.art.title}</h3>
+                    </div>
+                    
+                    <div class="spec-item">
+                        <span class="spec-label">Coleccionista</span>
+                        <h3 class="spec-value">{record.col.name}</h3>
+                    </div>
+
+                    <div class="spec-item">
+                        <span class="spec-label">Edición / Formato</span>
+                        <h3 class="spec-value">{record.cert.edition_number} — {record.cert.dimensions}</h3>
+                    </div>
+
+                    <div class="spec-item">
+                        <span class="spec-label">Fecha de Emisión</span>
+                        <h3 class="spec-value">{fechaEmision}</h3>
+                    </div>
+                </div>
+
+                <p class="description-paragraph">
+                    El presente documento decreta formalmente que la obra fotográfica impresa identificada en los registros oficiales como "{record.art.title}", adquirida por {record.col.name}, es una copia genuina y auténtica producida en alta resolución bajo la supervisión estética directa de Javier Mix, preservando intacto los estándares Fine-Art y derechos de propiedad intelectual.
+                </p>
+                
+            </div>
+
+            <div class="footer-section">
+                <div class="firma-box">
+                    <div class="linea-firma"></div>
+                    <span class="spec-label">Firma del Autor</span>
+                    <span style="font-family: 'Cormorant Garamond', serif; font-size: 0.9rem;">Javier Mix</span>
+                </div>
+
+                <div class="qr-box">
+                    <img src={qrCodeDataUri} class="qr-image" alt="Código QR de Verificación" />
+                    <span class="qr-caption">ESCANEAR PARA VALIDAR CONTRATO</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
