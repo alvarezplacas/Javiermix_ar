@@ -1,6 +1,6 @@
 ---
-import { db } from '../../../db';
-import { artworks } from '../../../db/schema';
+import { db } from '../../db/client';
+import { artworks } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'node:fs';
 import path from 'node:path';
