@@ -1,0 +1,213 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import Header from '../../../../components/Header.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+import { db } from '../../../../db';
+import { artworks } from '../../../../db/schema';
+import { eq } from 'drizzle-orm';
+import { loadArtworkMetadata } from '../../../../utils/metadata';
+import ExifReader from 'exifreader';
+
+const { filename } = Astro.params;
+const serie = Astro.url.searchParams.get('serie');
+
+if (!filename || !serie) {
+    return Astro.redirect('/admin/obras');
+}
+
+// 1. Obtener datos actuales de la DB
+const dbRecord = await db.select().from(artworks).where(eq(artworks.filename, filename)).then(res => res[0]);
+
+// 2. Obtener datos de Fallback (CSV/IPTC) para mostrar como placeholder/default
+const csvMap = loadArtworkMetadata();
+const csvData = csvMap.get(filename) || {};
+
+let iptcData = {};
+try {
+    const fullPath = path.join(process.cwd(), 'public', 'img', 'Series', serie, filename);
+    if (fs.existsSync(fullPath)) {
+        const tags = await ExifReader.load(fullPath);
+        iptcData = {
+            title: tags['Headline']?.description || tags['ObjectName']?.description || tags['Title']?.description,
+            description: tags['Caption/Abstract']?.description || tags['Description']?.description,
+            camera: tags['Model']?.description,
+            lens: tags['LensModel']?.description,
+            date: tags['DateCreated']?.description
+        };
+    }
+} catch (e) {}
+
+const initialData = {
+    title: dbRecord?.title || csvData.title || iptcData.title || filename.split('.')[0].replace(/_/g, ' '),
+    description: dbRecord?.description || csvData.description || iptcData.description || '',
+    camera: dbRecord?.camera || csvData.camera || iptcData.camera || '',
+    lens: dbRecord?.lens || csvData.lens || iptcData.lens || '',
+    date: dbRecord?.date || csvData.date || iptcData.date || '',
+    precio_small: dbRecord?.precio_small || csvData.precio_small || '0',
+    precio_medium: dbRecord?.precio_medium || csvData.precio_medium || '0',
+    precio_large: dbRecord?.precio_large || csvData.precio_large || '0',
+    stock: dbRecord?.stock ?? 1,
+    status: dbRecord?.status || 'published'
+};
+---
+
+<Layout title={`Editar ${filename} | JHM Admin`}>
+  <Header currentPath="/admin/obras" />
+
+  <main class="admin-container">
+    <div class="breadcrumb">
+        <a href="/admin/obras">← VOLVER A LISTADO</a>
+    </div>
+
+    <header class="admin-header">
+      <h1>Editar Obra</h1>
+      <p class="filename-display">{filename} <span>en {serie.replace(/_/g, ' ')}</span></p>
+    </header>
+
+    <form id="artwork-form" class="edit-grid">
+      <input type="hidden" name="filename" value={filename} />
+      <input type="hidden" name="serie_id" value={serie} />
+
+      <section class="form-section main-info">
+        <div class="field">
+          <label>Título de la Obra</label>
+          <input type="text" name="title" value={initialData.title} required />
+        </div>
+        
+        <div class="field">
+          <label>Historia / Descripción (Fine Art Story)</label>
+          <textarea name="description" rows="6">{initialData.description}</textarea>
+        </div>
+      </section>
+
+      <section class="form-section tech-info">
+        <h3>Datos Técnicos</h3>
+        <div class="field-group">
+          <div class="field">
+            <label>Cámara</label>
+            <input type="text" name="camera" value={initialData.camera} />
+          </div>
+          <div class="field">
+            <label>Lente</label>
+            <input type="text" name="lens" value={initialData.lens} />
+          </div>
+        </div>
+        <div class="field">
+          <label>Fecha / Año</label>
+          <input type="text" name="date" value={initialData.date} placeholder="Ej: 2024" />
+        </div>
+      </section>
+
+      <section class="form-section pricing-info">
+        <h3>Precios & Stock</h3>
+        <div class="pricing-grid">
+          <div class="field">
+            <label>Precio Pequeño (USD)</label>
+            <input type="number" step="0.01" name="precio_small" value={initialData.precio_small} />
+          </div>
+          <div class="field">
+            <label>Precio Mediano (USD)</label>
+            <input type="number" step="0.01" name="precio_medium" value={initialData.precio_medium} />
+          </div>
+          <div class="field">
+             <label>Precio Grande (USD)</label>
+             <input type="number" step="0.01" name="precio_large" value={initialData.precio_large} />
+          </div>
+        </div>
+        
+        <div class="field-group margin-top">
+          <div class="field">
+            <label>Stock Disponible</label>
+            <input type="number" name="stock" value={initialData.stock} />
+          </div>
+          <div class="field">
+            <label>Estado</label>
+            <select name="status">
+              <option value="published" selected={initialData.status === 'published'}>Publicado</option>
+              <option value="draft" selected={initialData.status === 'draft'}>Borrador</option>
+              <option value="sold_out" selected={initialData.status === 'sold_out'}>Agotado</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-save">GUARDAR CAMBIOS EN DB</button>
+      </div>
+    </form>
+  </main>
+
+  <style>
+    .admin-container { max-width: 900px; margin: 0 auto; padding: 8rem 2rem; color: #fff; }
+    .breadcrumb a { color: var(--color-accent); text-decoration: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; }
+    .admin-header { margin: 2rem 0 4rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 2rem; }
+    .admin-header h1 { font-family: var(--font-primary); font-size: 3.5rem; }
+    .filename-display { font-family: monospace; color: var(--color-text-muted); font-size: 1.1rem; }
+    .filename-display span { color: var(--color-accent); margin-left: 1rem; text-transform: uppercase; font-size: 0.8rem; }
+
+    .form-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 3rem; margin-bottom: 2rem; }
+    .form-section h3 { font-family: var(--font-primary); font-size: 1.5rem; margin-bottom: 2rem; color: var(--color-accent); }
+    
+    .field { margin-bottom: 1.5rem; display: flex; flex-direction: column; }
+    .field label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.8rem; color: #888; }
+    
+    input, textarea, select {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 1rem;
+      color: #fff;
+      font-family: var(--font-secondary);
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+    input:focus, textarea:focus { border-color: var(--color-accent); outline: none; }
+    
+    .field-group { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .pricing-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    .margin-top { margin-top: 1rem; }
+
+    .form-actions { text-align: right; margin-top: 3rem; }
+    .btn-save {
+      padding: 1.2rem 3rem;
+      background: var(--color-accent);
+      color: #000;
+      border: none;
+      font-weight: 800;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn-save:hover { background: #fff; transform: scale(1.05); }
+
+    @media (max-width: 768px) {
+      .field-group, .pricing-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <script>
+    const form = document.getElementById('artwork-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form as HTMLFormElement);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch('/api/admin/artworks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        if (res.ok) {
+          alert('¡Datos guardados correctamente!');
+          window.location.href = '/admin/obras';
+        } else {
+          alert('Error al guardar datos.');
+        }
+      } catch (err) {
+        alert('Error de conexión.');
+      }
+    });
+  </script>
+</Layout>

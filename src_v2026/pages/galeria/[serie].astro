@@ -1,6 +1,9 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Footer from '../../components/Footer.astro';
+import { db } from '../../db';
+import { artworks } from '../../db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import Header from '../../components/Header.astro';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -33,6 +36,11 @@ export async function getStaticPaths() {
 			let artworks = [];
 			let matchedOtherImages = new Set();
 			
+			// Consultar DB para Overrides masivos de este folder
+			const filenames = items.map(f => f);
+			const dbRecords = filenames.length > 0 ? await db.select().from(artworks).where(inArray(artworks.filename, filenames)) : [];
+			const dbMap = new Map(dbRecords.map(r => [r.filename, r]));
+
 			for (const mainImg of mainImages) {
 				const baseName = mainImg.split('.')[0].toLowerCase();
 				const contextImages = otherImages.filter(f => {
@@ -42,35 +50,52 @@ export async function getStaticPaths() {
 				
 				contextImages.forEach(img => matchedOtherImages.add(img));
 				
-				const meta = metadataMap.get(mainImg);
-                let title = meta?.title || mainImg.split('.')[0].replace(/_/g, ' ');
-                let fiche = meta?.fiche || null;
+				// Prioridad: 1. DB, 2. CSV, 3. IPTC
+				const dbMeta = dbMap.get(mainImg);
+				const csvMeta = metadataMap.get(mainImg);
+				
+                let title = dbMeta?.title || csvMeta?.title || mainImg.split('.')[0].replace(/_/g, ' ');
+                let fiche = null;
                 
+                // Si hay en DB, usamos eso como base para la ficha
+                if (dbMeta) {
+                    fiche = {
+                        story: dbMeta.description || '',
+                        camera: dbMeta.camera || '',
+                        lens: dbMeta.lens || '',
+                        year: dbMeta.date || '',
+                        author: 'Javier Mix',
+                        // ... precios se pasan aparte si se necesita
+                    };
+                }
+
                 try {
                     const metaPath = path.join(folderPath, mainImg);
                     const tags = await ExifReader.load(metaPath);
                     
-                    // IPTC Core: Titular (Headline) e ObjectName
-                    if (tags['Headline']?.description) title = tags['Headline'].description;
-                    else if (tags['ObjectName']?.description) title = tags['ObjectName'].description;
-                    else if (tags['Title']?.description) title = tags['Title'].description;
-                    
-                    // IPTC Core: Descripción y Creador
-                    const description = tags['Caption/Abstract']?.description || tags['Description']?.description;
-                    const creator = tags['By-line']?.description || tags['Creator']?.description || 'Javier Mix';
-                    
-                    if (description || tags['Model']?.description) {
-                        fiche = {
-                            story: description || '',
-                            camera: tags['Model']?.description || '',
-                            lens: tags['LensModel']?.description || '',
-                            iso: tags['ISOSpeedRatings']?.description || tags['ISO']?.value?.toString() || '',
-                            shutterspeed: tags['ExposureTime']?.description || '',
-                            aperture: tags['FNumber']?.description ? `f/${tags['FNumber'].description}` : '',
-                            year: tags['DateCreated']?.description ? tags['DateCreated'].description.substring(0,4) : '',
-                            location: tags['City']?.description || '',
-                            author: creator
-                        };
+                    if (!dbMeta) {
+                        // IPTC Core: Titular (Headline) e ObjectName
+                        if (tags['Headline']?.description) title = tags['Headline'].description;
+                        else if (tags['ObjectName']?.description) title = tags['ObjectName'].description;
+                        else if (tags['Title']?.description) title = tags['Title'].description;
+                        
+                        // IPTC Core: Descripción y Creador
+                        const description = tags['Caption/Abstract']?.description || tags['Description']?.description;
+                        const creator = tags['By-line']?.description || tags['Creator']?.description || 'Javier Mix';
+                        
+                        if (description || tags['Model']?.description) {
+                            fiche = {
+                                story: description || '',
+                                camera: tags['Model']?.description || '',
+                                lens: tags['LensModel']?.description || '',
+                                iso: tags['ISOSpeedRatings']?.description || tags['ISO']?.value?.toString() || '',
+                                shutterspeed: tags['ExposureTime']?.description || '',
+                                aperture: tags['FNumber']?.description ? `f/${tags['FNumber'].description}` : '',
+                                year: tags['DateCreated']?.description ? tags['DateCreated'].description.substring(0,4) : '',
+                                location: tags['City']?.description || '',
+                                author: creator
+                            };
+                        }
                     }
                 } catch(e) {}
 
