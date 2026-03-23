@@ -13,135 +13,113 @@ import FramingStudio from '../../components/FramingStudio.astro';
 
 export const prerender = false;
 
-export async function getStaticPaths() {
-	const seriesPath = path.join(process.cwd(), 'public', 'img', 'Series');
-	let paths = [];
+const { serie } = Astro.params;
 
-	if (fs.existsSync(seriesPath)) {
-		const folders = fs.readdirSync(seriesPath).filter(file => fs.statSync(path.join(seriesPath, file)).isDirectory());
-		
-		const metadataMap = loadArtworkMetadata();
-
-		paths = await Promise.all(folders.map(async folder => {
-			const folderPath = path.join(seriesPath, folder);
-			const items = fs.readdirSync(folderPath).filter(f => /\.(avif|jpg|jpeg|png)$/i.test(f));
-			
-			// Lógica mejorada con Regex para emparejar
-			const mainImages = items.filter(f => {
-				const low = f.toLowerCase();
-				return (low.startsWith('jmx_') || low.startsWith('jmix_')) && !/_(\d+)\.(avif|jpg|jpeg|png)$/i.test(low);
-			});
-			const otherImages = items.filter(f => !mainImages.includes(f));
-			
-			let artworks = [];
-			let matchedOtherImages = new Set();
-			
-			// Consultar DB para Overrides masivos de este folder
-			const filenames = items.map(f => f);
-			const dbRecords = filenames.length > 0 ? await db.select().from(artworks).where(inArray(artworks.filename, filenames)) : [];
-			const dbMap = new Map(dbRecords.map(r => [r.filename, r]));
-
-			for (const mainImg of mainImages) {
-				const baseName = mainImg.split('.')[0].toLowerCase();
-				const contextImages = otherImages.filter(f => {
-					const fLow = f.toLowerCase();
-					return fLow.startsWith(baseName + '_') && /_(\d+)\.(avif|jpg|jpeg|png)$/i.test(fLow);
-				});
-				
-				contextImages.forEach(img => matchedOtherImages.add(img));
-				
-				// Prioridad: 1. DB, 2. CSV, 3. IPTC
-				const dbMeta = dbMap.get(mainImg);
-				const csvMeta = metadataMap.get(mainImg);
-				
-                let title = dbMeta?.title || csvMeta?.title || mainImg.split('.')[0].replace(/_/g, ' ');
-                let fiche = null;
-                
-                // Si hay en DB, usamos eso como base para la ficha
-                if (dbMeta) {
-                    fiche = {
-                        story: dbMeta.description || '',
-                        camera: dbMeta.camera || '',
-                        lens: dbMeta.lens || '',
-                        year: dbMeta.date || '',
-                        author: 'Javier Mix',
-                        // ... precios se pasan aparte si se necesita
-                    };
-                }
-
-                try {
-                    const metaPath = path.join(folderPath, mainImg);
-                    const tags = await ExifReader.load(metaPath);
-                    
-                    if (!dbMeta) {
-                        // IPTC Core: Titular (Headline) e ObjectName
-                        if (tags['Headline']?.description) title = tags['Headline'].description;
-                        else if (tags['ObjectName']?.description) title = tags['ObjectName'].description;
-                        else if (tags['Title']?.description) title = tags['Title'].description;
-                        
-                        // IPTC Core: Descripción y Creador
-                        const description = tags['Caption/Abstract']?.description || tags['Description']?.description;
-                        const creator = tags['By-line']?.description || tags['Creator']?.description || 'Javier Mix';
-                        
-                        if (description || tags['Model']?.description) {
-                            fiche = {
-                                story: description || '',
-                                camera: tags['Model']?.description || '',
-                                lens: tags['LensModel']?.description || '',
-                                iso: tags['ISOSpeedRatings']?.description || tags['ISO']?.value?.toString() || '',
-                                shutterspeed: tags['ExposureTime']?.description || '',
-                                aperture: tags['FNumber']?.description ? `f/${tags['FNumber'].description}` : '',
-                                year: tags['DateCreated']?.description ? tags['DateCreated'].description.substring(0,4) : '',
-                                location: tags['City']?.description || '',
-                                author: creator
-                            };
-                        }
-                    }
-                } catch(e) {}
-
-				artworks.push({
-					mainUrl: `/img/Series/${folder}/${mainImg}`,
-					roomUrl: contextImages.length > 0 ? `/img/Series/${folder}/${contextImages[0]}` : null,
-                    allImages: contextImages.map(img => `/img/Series/${folder}/${img}`),
-					title: title,
-					fiche: fiche
-				});
-			}
-			
-			// Agregar imágenes huérfanas
-			const standalone = otherImages.filter(f => !matchedOtherImages.has(f));
-			for (const img of standalone) {
-                let title = img.split('.')[0].replace(/_/g, ' ');
-                try {
-                    const metaPath = path.join(folderPath, img);
-                    const tags = await ExifReader.load(metaPath);
-                    if (tags['Title']?.description) title = tags['Title'].description;
-                    else if (tags['ObjectName']?.description) title = tags['ObjectName'].description;
-                } catch(e) {}
-
-				artworks.push({
-					mainUrl: `/img/Series/${folder}/${img}`,
-					roomUrl: null,
-					title: title
-				});
-			}
-
-			const name = folder.replace(/_/g, ' ').toUpperCase();
-
-			return {
-				params: { serie: folder },
-				props: { name, artworks }
-			};
-		}));
-
-		// Excluir series sin obras para no generar rutas vacías
-		paths = paths.filter(p => p.props.artworks.length > 0);
-	}
-
-	return paths;
+const seriesPath = path.join(process.cwd(), 'public', 'img', 'Series');
+if (!serie || !fs.existsSync(path.join(seriesPath, serie))) {
+    return Astro.redirect('/galeria');
 }
 
-const { name, artworks } = Astro.props;
+const metadataMap = loadArtworkMetadata();
+const folderPath = path.join(seriesPath, serie);
+const items = fs.readdirSync(folderPath).filter(f => /\.(avif|jpg|jpeg|png)$/i.test(f));
+
+// Lógica mejorada con Regex para emparejar
+const mainImages = items.filter(f => {
+    const low = f.toLowerCase();
+    return (low.startsWith('jmx_') || low.startsWith('jmix_')) && !/_(\d+)\.(avif|jpg|jpeg|png)$/i.test(low);
+});
+const otherImages = items.filter(f => !mainImages.includes(f));
+
+let artworkData = [];
+let matchedOtherImages = new Set();
+
+// Consultar DB para Overrides masivos de este folder
+const filenames = mainImages;
+const dbRecords = filenames.length > 0 ? await db.select().from(artworks).where(inArray(artworks.filename, filenames)) : [];
+const dbMap = new Map(dbRecords.map(r => [r.filename, r]));
+
+for (const mainImg of mainImages) {
+    const baseName = mainImg.split('.')[0].toLowerCase();
+    const contextImages = otherImages.filter(f => {
+        const fLow = f.toLowerCase();
+        return fLow.startsWith(baseName + '_') && /_(\d+)\.(avif|jpg|jpeg|png)$/i.test(fLow);
+    });
+    
+    contextImages.forEach(img => matchedOtherImages.add(img));
+    
+    // Prioridad: 1. DB, 2. CSV, 3. IPTC
+    const dbMeta = dbMap.get(mainImg);
+    const csvMeta = metadataMap.get(mainImg);
+    
+    let titleText = dbMeta?.title || csvMeta?.title || mainImg.split('.')[0].replace(/_/g, ' ');
+    let fiche = null;
+    if (dbMeta) {
+        fiche = {
+            story: dbMeta.description || '',
+            camera: dbMeta.camera || '',
+            lens: dbMeta.lens || '',
+            year: dbMeta.date || '',
+            author: 'Javier Mix',
+        };
+    }
+
+    try {
+        const metaPath = path.join(folderPath, mainImg);
+        const tags = await ExifReader.load(metaPath);
+        if (!dbMeta) {
+            // IPTC Core: Titular (Headline) e ObjectName
+            if (tags['Headline']?.description) titleText = tags['Headline'].description;
+            else if (tags['ObjectName']?.description) titleText = tags['ObjectName'].description;
+            else if (tags['Title']?.description) titleText = tags['Title'].description;
+            
+            // IPTC Core: Descripción y Creador
+            const description = tags['Caption/Abstract']?.description || tags['Description']?.description;
+            const creator = tags['By-line']?.description || tags['Creator']?.description || 'Javier Mix';
+            
+            if (description || tags['Model']?.description) {
+                fiche = {
+                    story: description || '',
+                    camera: tags['Model']?.description || '',
+                    lens: tags['LensModel']?.description || '',
+                    iso: tags['ISOSpeedRatings']?.description || tags['ISO']?.value?.toString() || '',
+                    shutterspeed: tags['ExposureTime']?.description || '',
+                    aperture: tags['FNumber']?.description ? `f/${tags['FNumber'].description}` : '',
+                    year: tags['DateCreated']?.description ? tags['DateCreated'].description.substring(0,4) : '',
+                    location: tags['City']?.description || '',
+                    author: creator
+                };
+            }
+        }
+    } catch(e) {}
+
+    artworkData.push({
+        mainUrl: `/img/Series/${serie}/${mainImg}`,
+        roomUrl: contextImages.length > 0 ? `/img/Series/${serie}/${contextImages[0]}` : null,
+        allImages: contextImages.map(img => `/img/Series/${serie}/${img}`),
+        title: titleText,
+        fiche: fiche
+    });
+}
+
+// Agregar imágenes huérfanas
+const standalone = otherImages.filter(f => !matchedOtherImages.has(f));
+for (const img of standalone) {
+    let titleText = img.split('.')[0].replace(/_/g, ' ');
+    try {
+        const metaPath = path.join(folderPath, img);
+        const tags = await ExifReader.load(metaPath);
+        if (tags['Title']?.description) titleText = tags['Title'].description;
+    } catch(e) {}
+    artworkData.push({
+        mainUrl: `/img/Series/${serie}/${img}`,
+        roomUrl: null,
+        title: titleText
+    });
+}
+
+const name = serie.replace(/_/g, ' ').toUpperCase();
+const artworks = artworkData;
 const serieName = name.replace(/_/g, ' ');
 const coverOg = artworks[0]?.mainUrl || undefined;
 ---
@@ -149,7 +127,7 @@ const coverOg = artworks[0]?.mainUrl || undefined;
 <Layout
   title={`${serieName} | Colección Fine Art`}
   description={`Descubrí la serie "${serieName}" de Javier Mix: ${artworks.length} obras de fotografía Fine Art de autor. Impresas sobre aluminio con calidad museo. Ideales para coleccionar y decorar espacios de alto diseño.`}
-  url={`/galeria/${Astro.params.serie}`}
+  url={`/galeria/${serie}`}
   image={coverOg}
   keywords={[serieName.toLowerCase(), 'serie de fotografía', 'obra fine art', 'colección fotográfica', 'fotografía decorativa']}
 >
@@ -180,7 +158,7 @@ const coverOg = artworks[0]?.mainUrl || undefined;
 
 		<section class="masonry-grid">
 			{artworks.map((artwork, index) => (
-				<a href={`/obra/${name.toLowerCase().replace(/ /g, '-')}-${artwork.title.toLowerCase().replace(/ /g, '-')}`} class="gallery-artwork-card" tabindex="0">
+				<a href={`/obra/${serie.replace(/_/g, '-').toLowerCase()}-${artwork.title.toLowerCase().replace(/ /g, '-')}`} class="gallery-artwork-card" tabindex="0">
 					<div class="artwork-figure">
 						<!-- Imagen Principal JMX -->
 						<img src={artwork.mainUrl} alt={`Obra ${name} - ${artwork.title}`} class="artwork-img main-img" loading="lazy" />
