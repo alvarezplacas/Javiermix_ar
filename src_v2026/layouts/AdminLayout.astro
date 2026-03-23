@@ -39,6 +39,7 @@ const currentPath = Astro.url.pathname;
                     <h3>Panel Principal</h3>
                     <a href="/admin" class={currentPath === '/admin' ? 'active' : ''}><i class="fas fa-chart-line"></i> Dashboard</a>
                     <a href="/admin/ventas" class={currentPath.startsWith('/admin/ventas') ? 'active' : ''}><i class="fas fa-shopping-cart"></i> Ventas & Órdenes</a>
+                    <a href="/admin/obras" class={currentPath.startsWith('/admin/obras') ? 'active' : ''}><i class="fas fa-images"></i> Gestión de Obras</a>
                     <a href="/admin/certificados" class={currentPath.startsWith('/admin/certificados') ? 'active' : ''}><i class="fas fa-certificate"></i> Certificados A4</a>
                     <a href="/admin/revista" class={currentPath.startsWith('/admin/revista') ? 'active' : ''}><i class="fas fa-newspaper"></i> Revista Online</a>
                 </div>
@@ -47,7 +48,6 @@ const currentPath = Astro.url.pathname;
                     <h3>Ecosistema Externo</h3>
                     <a href="https://admin.javiermix.ar" target="_blank"><i class="fas fa-database"></i> Directus (Base de Datos) <i class="fas fa-external-link-alt ext-icon"></i></a>
                     <a href="https://stats.javiermix.ar" target="_blank"><i class="fas fa-chart-pie"></i> Umami (Métricas) <i class="fas fa-external-link-alt ext-icon"></i></a>
-                    <a href="https://files.javiermix.ar" target="_blank"><i class="fas fa-folder-open"></i> FileBrowser (Nube) <i class="fas fa-external-link-alt ext-icon"></i></a>
                 </div>
             </nav>
 
