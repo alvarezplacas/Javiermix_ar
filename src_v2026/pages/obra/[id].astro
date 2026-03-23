@@ -24,31 +24,37 @@ if (id && fs.existsSync(seriesPath)) {
         if (!id.startsWith(folderSlug + '-')) continue;
 
         const folderPath = path.join(seriesPath, folder);
-        const items = fs.readdirSync(folderPath).filter(f => /\.(avif|jpg|jpeg|png)$/i.test(f));
+        const allItems = fs.readdirSync(folderPath).filter(f => /\.(avif|jpg|jpeg|png)$/i.test(f));
         
-        for (const f of items) {
+        // Solo escanear imágenes principales (no variantes _2, _3, etc.)
+        const mainImages = allItems.filter(f => {
+            const low = f.toLowerCase();
+            return (low.startsWith('jmx_') || low.startsWith('jmix_')) && !/_(\d+)\.(avif|jpg|jpeg|png)$/i.test(low);
+        });
+        
+        for (const f of mainImages) {
             const meta = metadataMap.get(f);
-            const lowName = f.split('.')[0].replace(/_/g, '-').toLowerCase();
             
-            // Reconstruir el ID para comparar
-            let titleText = meta?.title || f.split('.')[0];
+            // Reconstruir el ID: usar nombre de archivo como título base
+            let titleText = meta?.title || f.split('.')[0].replace(/_/g, ' ');
             try {
                 const tags = await ExifReader.load(path.join(folderPath, f));
-                if (tags['Title']?.description) titleText = tags['Title'].description;
+                if (tags['Headline']?.description) titleText = tags['Headline'].description;
                 else if (tags['ObjectName']?.description) titleText = tags['ObjectName'].description;
+                else if (tags['Title']?.description) titleText = tags['Title'].description;
             } catch(e) {}
 
             const cleanTitle = titleText.toLowerCase().replace(/ /g, '-');
             const candidateId = `${folderSlug}-${cleanTitle}`;
 
             if (candidateId === id) {
-                // ENCONTRADO
+                // ENCONTRADO - cargar información completa
                 const dbMeta = await db.select().from(artworks).where(eq(artworks.filename, f)).then(res => res[0]);
                 const serieName = folder.replace(/_/g, ' ').toUpperCase();
                 
-                // Imágenes de contexto
+                // Imágenes de contexto (ambiente/hover)
                 const baseName = f.split('.')[0].toLowerCase();
-                const contextImages = items.filter(img => {
+                const contextImages = allItems.filter(img => {
                     const fLow = img.toLowerCase();
                     return fLow !== f.toLowerCase() && fLow.startsWith(baseName + '_') && /_(\d+)\.(avif|jpg|jpeg|png)$/i.test(fLow);
                 });
