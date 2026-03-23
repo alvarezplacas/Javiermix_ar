@@ -19,9 +19,13 @@ if (id && fs.existsSync(seriesPath)) {
     const folders = fs.readdirSync(seriesPath).filter(file => fs.statSync(path.join(seriesPath, file)).isDirectory());
     const metadataMap = loadArtworkMetadata();
 
+    // Clean the ID for lookup (strip -2, -3 suffixes that might come from EXIF titles)
+    const cleanId = id.replace(/-(\d+)$/, '');
+
     find_artwork: for (const folder of folders) {
         const folderSlug = folder.replace(/_/g, '-').toLowerCase();
-        if (!id.startsWith(folderSlug + '-')) continue;
+        // Check both exact and clean ID prefix
+        if (!id.startsWith(folderSlug + '-') && !cleanId.startsWith(folderSlug + '-')) continue;
 
         const folderPath = path.join(seriesPath, folder);
         const allItems = fs.readdirSync(folderPath).filter(f => /\.(avif|jpg|jpeg|png)$/i.test(f));
@@ -29,10 +33,10 @@ if (id && fs.existsSync(seriesPath)) {
         // Scan main images
         const mainImages = allItems.filter(f => {
             const low = f.toLowerCase();
-            return (low.startsWith('jmx_') || low.startsWith('jmix_') || low.startsWith('jhm_')) && !/_(\d+)\.(avif|jpg|jpeg|png)$/i.test(low);
+            return (low.startsWith('jmx_') || low.startsWith('jmix_') || low.startsWith('jhm_') || /^\d+/.test(low)) && !/_(\d+)\.(avif|jpg|jpeg|png)$/i.test(low);
         });
 
-        // 1. Check DB first for all files in this series to find a title match
+        // 1. Check DB first
         const dbSeriesArtworks = mainImages.length > 0 
             ? await db.select().from(artworks).where(inArray(artworks.filename, mainImages))
             : [];
@@ -42,13 +46,11 @@ if (id && fs.existsSync(seriesPath)) {
             const dbMeta = dbMap.get(f);
             const csvMeta = metadataMap.get(f);
             
-            // Potential titles for this file
             let titlesToTry = new Set();
             if (dbMeta?.title) titlesToTry.add(dbMeta.title);
             if (csvMeta?.title) titlesToTry.add(csvMeta.title);
             titlesToTry.add(f.split('.')[0].replace(/_/g, ' '));
             
-            // Try EXIF titles too
             try {
                 const tags = await ExifReader.load(path.join(folderPath, f));
                 if (tags['Headline']?.description) titlesToTry.add(tags['Headline'].description);
@@ -60,7 +62,8 @@ if (id && fs.existsSync(seriesPath)) {
                 const cleanTitle = t.toLowerCase().trim().replace(/\s+/g, '-');
                 const candidateId = `${folderSlug}-${cleanTitle}`;
 
-                if (candidateId === id) {
+                // Try multiple match strategies
+                if (candidateId === id || candidateId === cleanId || candidateId.replace(/-(\d+)$/, '') === cleanId) {
                     // ENCONTRADO
                     const serieName = folder.replace(/_/g, ' ').toUpperCase();
                     const baseName = f.split('.')[0].toLowerCase();
@@ -130,6 +133,7 @@ if (id && fs.existsSync(seriesPath)) {
 }
 
 if (!artworkData) {
+    console.error(`[Astro Obra] Artwork not found for ID: ${id}`);
     return Astro.redirect('/galeria');
 }
 
