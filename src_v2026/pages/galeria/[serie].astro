@@ -1,8 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Footer from '../../components/Footer.astro';
-import { db } from '../../db';
-import { artworks } from '../../db/schema';
+import { db } from '../../../db';
+import { artworks } from '../../../db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import Header from '../../components/Header.astro';
 import fs from 'node:fs';
