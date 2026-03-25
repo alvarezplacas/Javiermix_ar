@@ -21,13 +21,8 @@ services:
       dockerfile: Dockerfile.prod
     container_name: javiermix_web
     restart: always
-    environment:
-      DATABASE_URL: mysql://root:root@db:3306/javiermix_obras
-    volumes:
-      - /home/ubuntu/javiermix_web/public/img:/app/public/img
-      - /home/ubuntu/javiermix_web/public/img:/app/dist/client/img
-      - /home/ubuntu/javiermix_web/public/media:/app/public/media
-      - /home/ubuntu/javiermix_web/public/media:/app/dist/client/media
+    env_file:
+      - ../.env
     networks:
       - javiermix_network
 

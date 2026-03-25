@@ -1,0 +1,462 @@
+---
+// h:\Javiermix_web_v2\frontend\pages\index.astro
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import MagazineSection from '../components/MagazineSection.astro';
+import CollectorJoin from '../components/CollectorJoin.astro';
+
+export const prerender = false;
+
+// 1. Fetching Home visual assets from Directus via API (Public)
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'https://admin.javiermix.ar';
+
+let homeAssets = [];
+try {
+    console.log(`[Home] Fetching assets from: ${DIRECTUS_URL}`);
+    // 1. Find the folder named "home" via API (case-insensitive filter)
+    const folderRes = await fetch(`${DIRECTUS_URL}/folders?filter[name][_icontains]=home`);
+    if (!folderRes.ok) throw new Error(`HTTP error! status: ${folderRes.status}`);
+    
+    const foldersData = await folderRes.json();
+    const folder = foldersData.data?.find(f => f.name.toLowerCase() === 'home');
+
+    if (folder) {
+        console.log(`[Home] Folder "home" found with ID: ${folder.id}`);
+        // 2. Get files in that folder
+        const filesRes = await fetch(`${DIRECTUS_URL}/files?filter[folder][_eq]=${folder.id}&sort=filename_download`);
+        const filesData = await filesRes.json();
+        homeAssets = filesData.data || [];
+        console.log(`[Home] Found ${homeAssets.length} assets in "home" folder.`);
+    } else {
+        console.warn("[Home] Folder 'home' not found via API.");
+    }
+
+    // 3. Fallback: if no folder found or empty, try any recent files
+    if (homeAssets.length === 0) {
+        const anyRes = await fetch(`${DIRECTUS_URL}/files?limit=5&sort=-created_on`);
+        const anyData = await anyRes.json();
+        homeAssets = anyData.data || [];
+    }
+} catch (error) {
+    console.error("[Home] Error fetching home assets via API:", error);
+}
+
+// Global Fallback if everything fails
+if (homeAssets.length === 0) {
+    homeAssets = [{ id: 'fallback', filename_download: '00.avif', type: 'image/avif' }];
+}
+
+function getAssetUrl(id: string) {
+    if (id === 'fallback') return '/img/Series/Monumentos/01.avif'; 
+    return `${DIRECTUS_URL}/assets/${id}`;
+}
+---
+
+<Layout 
+  title="Javier Mix | Fotografía Fine Art" 
+  description="Obra fotográfica de autor sobre metales y papeles premium. Fotografía contemporánea para coleccionistas y espacios exclusivos."
+>
+  <Header currentPath="/" theme="dark" />
+  
+  <main class="home-main">
+    <div class="split-screen">
+      <!-- Left side: Immersive Visual -->
+      <aside class="split-visual">
+        <div class="hero-visual-container">
+            {/* 1. Capa Maestra de Poster (Fija 2s) */}
+            {homeAssets.find(a => a.type?.startsWith('image/')) && (
+                <div 
+                    class="hero-poster-master" 
+                    style={`background-image: url(${getAssetUrl(homeAssets.find(a => a.type?.startsWith('image/')).id)});`}
+                ></div>
+            )}
+
+            {/* 2. Capa de Contenido Mixto (Bucle Infinito) */}
+            <div class="hero-main-stack" id="hero-assets-loop">
+                {homeAssets.filter(a => a.type?.startsWith('video/') || a.type?.startsWith('image/')).map((asset, index) => {
+                    const isVid = asset.type?.startsWith('video/');
+                    return isVid ? (
+                        <video 
+                            src={getAssetUrl(asset.id)} 
+                            class={`hero-media-item ${index === 0 ? 'active' : ''}`}
+                            muted 
+                            loop={false}
+                            playsinline
+                            data-type="video"
+                        ></video>
+                    ) : (
+                        <img 
+                            src={getAssetUrl(asset.id)} 
+                            alt={asset.title || "Obra Javier Mix"} 
+                            class={`hero-media-item ${index === 0 ? 'active' : ''}`} 
+                            data-type="image"
+                        />
+                    );
+                })}
+            </div>
+
+            {/* 3. Overlay de Botones/CTAs */}
+            <div class="immersive-cta-overlay">
+                <div class="glass-cta-stack">
+                    <a href="/galeria" class="glass-cta-btn">
+                        <span class="btn-label">VER COLECCIÓN</span>
+                        <span class="btn-hover-bg"></span>
+                    </a>
+                    <a href="/enmarcado" class="glass-cta-btn secondary">
+                        <span class="btn-label">STUDIO ENMARCADO</span>
+                        <span class="btn-hover-bg"></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+      </aside>
+
+      <!-- Right side: Narrative Content -->
+      <section class="split-content">
+        <header class="hero-text">
+          <h1 class="main-heading">
+            <span class="weight-light gold-text">Memoria y Potencia</span>
+          </h1>
+          <p class="intro-text">
+            La fotografía no es solo captura; es la luz escribiendo la historia de nuestra resistencia. En cada obra, buscamos el lenguaje de la luz. Entender de dónde venimos es lo que nos permite capturar con autoridad hacia dónde vamos.
+          </p>
+        </header>
+
+        <div class="home-section">
+            <h3>LEGADO VISUAL</h3>
+            <p>Especializado en técnica mixta y soportes metálicos, mi trabajo explora la relación entre el tiempo y la materia.</p>
+        </div>
+
+        <div class="home-section">
+            <h3>PARA EL COLECCIONISTA</h3>
+            <p>Cada pieza se entrega con certificado de autenticidad y opciones de montaje museum-grade. No solo vendemos imágenes, proveemos presencia y valor estético para espacios de alta jerarquía.</p>
+        </div>
+
+        <div class="home-closing">
+            Capturando el lenguaje de la luz.
+        </div>
+
+        <!-- Social Links (Floating Bottom Right based on CSS) -->
+        <div class="home-social-links-floating">
+           <a href="#" class="social-circle-btn"><i class="fab fa-instagram"></i></a>
+           <a href="#" class="social-circle-btn"><i class="fab fa-whatsapp"></i></a>
+           <a href="#" class="social-circle-btn"><i class="fab fa-behance"></i></a>
+        </div>
+      </section>
+    </div>
+
+    <!-- Nueva Sección de Revista Digital -->
+    <MagazineSection />
+
+    <!-- Registro de Coleccionistas -->
+    <CollectorJoin />
+  </main>
+
+  <Footer />
+
+  <script>
+    // Bucle Infinito Hero (Mixto)
+    const mediaItems = document.querySelectorAll('.hero-media-item');
+    let currentIndex = 0;
+    let loopTimeout;
+
+    function showNext() {
+        if (mediaItems.length <= 1) return;
+        
+        const currentItem = mediaItems[currentIndex];
+        const nextIndex = (currentIndex + 1) % mediaItems.length;
+        const nextItem = mediaItems[nextIndex];
+
+        // Pausar video si el actual lo es
+        if (currentItem.dataset.type === 'video') {
+            (currentItem as HTMLVideoElement).pause();
+        }
+
+        currentItem.classList.remove('active');
+        nextItem.classList.add('active');
+        currentIndex = nextIndex;
+
+        // Reproducir si el siguiente es video
+        if (nextItem.dataset.type === 'video') {
+            const vid = nextItem as HTMLVideoElement;
+            vid.currentTime = 0;
+            vid.play();
+            
+            // Si el video es largo, esperar a que termine (con un cap de 10s para fluidez)
+            const duration = Math.min(vid.duration || 8, 10) * 1000;
+            loopTimeout = setTimeout(showNext, duration);
+        } else {
+            // Si es imagen, esperar 6s
+            loopTimeout = setTimeout(showNext, 6000);
+        }
+    }
+
+    // Iniciar bucle tras el poster inicial (2s poster + 1.8s fade)
+    setTimeout(() => {
+        const first = mediaItems[0];
+        if (first && first.dataset.type === 'video') (first as HTMLVideoElement).play();
+        loopTimeout = setTimeout(showNext, 6000);
+    }, 4500);
+  </script>
+</Layout>
+
+<style>
+.split-screen {
+    display: flex;
+    min-height: 100dvh;
+    width: 100vw;
+    margin-top: 0;
+}
+
+/* Left: Immersive Image */
+.split-visual {
+    flex: 0 0 50%;
+    width: 50%;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow: hidden;
+    background-color: var(--color-onyx-deep);
+}
+
+.hero-visual-container, .hero-main-stack {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 92%, rgba(0,0,0,0) 100%);
+    -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 92%, rgba(0,0,0,0) 100%);
+}
+
+.hero-poster-master {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    z-index: 10;
+    animation: fadeHeroPoster 1.8s ease-out forwards;
+    animation-delay: 2s;
+    pointer-events: none;
+}
+
+@keyframes fadeHeroPoster {
+    from { opacity: 1; filter: blur(0); }
+    to { opacity: 0; filter: blur(20px); visibility: hidden; }
+}
+
+.hero-media-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 2;
+    transition: opacity 1.5s ease-in-out;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.hero-media-item.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Immersive CTA Styles */
+.immersive-cta-overlay {
+    position: absolute;
+    bottom: 10%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    pointer-events: auto;
+    display: flex;
+    justify-content: center;
+}
+
+.glass-cta-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    width: 60%;
+}
+
+.glass-cta-btn {
+    position: relative;
+    padding: 1.1rem 2rem;
+    width: 100%;
+    background: rgba(13, 13, 13, 0.4);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-white);
+    text-decoration: none;
+    overflow: hidden;
+    transition: var(--transition-premium);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.glass-cta-btn .btn-label {
+    font-family: var(--font-secondary);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    z-index: 2;
+}
+
+.glass-cta-btn .btn-hover-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: var(--color-accent);
+    opacity: 0;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.8s ease, height 0.8s ease, opacity 0.4s ease;
+    z-index: 1;
+}
+
+.glass-cta-btn:hover {
+    border-color: var(--color-accent);
+    transform: translateX(10px);
+    box-shadow: 0 20px 50px rgba(13, 13, 13, 0.5);
+}
+
+.glass-cta-btn:hover .btn-label {
+    color: var(--color-onyx-deep);
+}
+
+.glass-cta-btn:hover .btn-hover-bg {
+    width: 350px;
+    height: 350px;
+    opacity: 1;
+}
+
+.glass-cta-btn.secondary {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.split-content {
+    flex: 0 0 50%;
+    width: 50%;
+    background-color: var(--color-onyx-soft);
+    padding: 6rem 4% 10rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100dvh;
+    position: relative;
+    box-sizing: border-box;
+    border-left: 1px solid var(--glass-border);
+}
+
+.main-heading {
+    margin-bottom: 2rem;
+    line-height: 1.1;
+    display: block;
+}
+
+.main-heading .gold-text {
+    font-weight: 300;
+    color: #C5A059;
+    letter-spacing: -0.01em;
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.intro-text {
+    font-size: 1.1rem;
+    color: var(--color-travertine-light);
+    margin-bottom: 3.5rem;
+    max-width: 85%;
+    line-height: 1.8;
+    font-weight: 300;
+}
+
+.home-section {
+    margin-bottom: 3.5rem;
+}
+
+.home-section h3 {
+    font-family: var(--font-secondary);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.75rem;
+    color: var(--color-white);
+    font-weight: 700;
+}
+
+.home-section p {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.7;
+    max-width: 90%;
+    font-weight: 300;
+}
+
+.home-closing {
+    font-family: var(--font-primary);
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--color-accent);
+    margin-top: 2rem;
+    margin-bottom: 4rem;
+    line-height: 1.5;
+}
+
+.home-social-links-floating {
+    position: absolute;
+    bottom: 2rem;
+    right: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.social-circle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-white);
+    transition: var(--transition-premium);
+}
+
+.social-circle-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    transform: translateY(-5px);
+}
+
+@media (max-width: 1024px) {
+    .split-screen {
+        flex-direction: column;
+    }
+    .split-visual, .split-content {
+        width: 100%;
+        flex: none;
+    }
+    .split-visual {
+        height: 60vh;
+        position: relative;
+    }
+}
+</style>

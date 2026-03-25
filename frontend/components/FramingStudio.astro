@@ -1,0 +1,278 @@
+---
+// h:\Javiermix_web_v2\frontend\components\FramingStudio.astro
+interface Props {
+  imageSrc: string;
+  title: string;
+  showUpload?: boolean;
+}
+
+const { imageSrc, title, showUpload = false } = Astro.props;
+---
+
+<div id="framing-studio" class="framing-studio-overlay">
+  <div class="studio-container">
+    <!-- Visualizer Area -->
+    <div id="studio-visualizer" class="visualizer-area env-plaster">
+      <div id="frame-box" class="frame-wrapper frame-black">
+        <div id="glass-layer" class="glass-layer"></div>
+        <img src={imageSrc} alt={title} id="studio-img" class="framed-image" />
+      </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <aside class="controls-panel">
+      <div class="studio-header">
+        <button id="close-studio" class="secondary-action">← CERRAR ESTUDIO</button>
+        <h2 style="margin-top: 20px;">ESTUDIO DE<br/>ENMARCADO</h2>
+      </div>
+
+      {showUpload && (
+        <div class="control-group" style="padding: 20px; background: rgba(220, 177, 74, 0.05); border: 1px dashed rgba(220, 177, 74, 0.3); margin-bottom: 30px;">
+          <h3 style="color: var(--color-accent); margin-bottom: 10px;">¿QUIERES PROBAR CON TU FOTO?</h3>
+          <button id="upload-trigger" class="secondary-action" style="width: 100%; border-color: var(--color-accent); color: var(--color-accent);">SUBIR MI OBRA</button>
+          <input type="file" id="studio-upload-input" accept="image/*" style="display: none;" />
+          <p style="font-size: 0.5rem; color: #666; margin-top: 8px; text-align: center;">Formatos: JPG, PNG, AVIF. Máx 5MB.</p>
+        </div>
+      )}
+
+      <div class="control-group">
+        <h3>ACABADO DEL MARCO</h3>
+        <div class="swatch-grid" id="frame-swatches">
+          <div class="swatch active" data-frame="black" style="background: #111;" title="Negro Matte"></div>
+          <div class="swatch" data-frame="gold" style="background: linear-gradient(45deg, #bf953f, #fcf6ba);" title="Dorado Envejecido"></div>
+          <div class="swatch" data-frame="brown" style="background: #3d2b1f;" title="Nogal Natural"></div>
+          <div class="swatch" data-frame="white" style="background: #eee;" title="Blanco Galería"></div>
+          <div class="swatch" data-frame="green" style="background: #1a3c31;" title="Verde Museo"></div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div style="display: flex; justify-content: space-between;">
+            <h3>PASPARTÚ (MAT)</h3>
+            <span id="mat-val" style="font-size: 0.6rem; color: var(--color-accent);">40mm</span>
+        </div>
+        <input type="range" id="mat-range" min="0" max="150" value="40" step="5" />
+        
+        <div class="mat-color-section">
+          <h3 style="margin-top: 14px; margin-bottom: 10px;">COLOR DE PASPARTÚ</h3>
+          <div class="mat-swatch-grid" id="mat-swatches">
+            <button class="mat-swatch active" data-mat-color="white" title="Blanco Galería" style="--mc: #f5f2ed;">
+              <span class="mat-swatch-inner"></span>
+              <span class="mat-label">Blanco</span>
+            </button>
+            <button class="mat-swatch" data-mat-color="black" title="Negro Matte" style="--mc: #1a1a1a;">
+              <span class="mat-swatch-inner"></span>
+              <span class="mat-label">Negro</span>
+            </button>
+            <button class="mat-swatch" data-mat-color="red" title="Rojo Burdeos" style="--mc: #6b1020;">
+              <span class="mat-swatch-inner"></span>
+              <span class="mat-label">Rojo</span>
+            </button>
+            <button class="mat-swatch" data-mat-color="green" title="Verde Museo" style="--mc: #1e3a2f;">
+              <span class="mat-swatch-inner"></span>
+              <span class="mat-label">Verde</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div style="display: flex; justify-content: space-between;">
+            <h3>GROSOR DEL MARCO</h3>
+            <span id="frame-val" style="font-size: 0.6rem; color: var(--color-accent);">20mm</span>
+        </div>
+        <input type="range" id="frame-range" min="10" max="80" value="20" step="2" />
+      </div>
+
+      <div class="control-group">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h3 style="margin: 0;">EXPLORACIÓN 3D</h3>
+          <button id="toggle-3d-btn" class="toggle-3d-btn" title="Activar/Desactivar 3D">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l10 5v10l-10 5-10-5v-10l10-5z"></path>
+              <path d="M12 22V12"></path>
+              <path d="M22 7l-10 5-10-5"></path>
+            </svg>
+          </button>
+        </div>
+        <p id="toggle-msg" style="font-size: 0.55rem; color: #666; margin-top: 5px;">Presiona el icono para inclinar la obra.</p>
+      </div>
+
+      <div class="control-group">
+        <h3>TEMPERATURA DE LUZ</h3>
+        <div class="temp-grid" id="light-temps">
+          <button class="temp-btn" data-temp="6000k" title="Luz Dorada">6000K</button>
+          <button class="temp-btn" data-temp="3000k" title="Luz de Día">3000K</button>
+          <button class="temp-btn" data-temp="1000k" title="Luz de Noche">1000K</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h3>ENTORNO / PARED</h3>
+        <div class="swatch-grid" id="env-swatches">
+          <div class="swatch active" data-env="plaster" style="background: #f2ede4;" title="Yeso Suave"></div>
+          <div class="swatch" data-env="linen" style="background: #e0dcd3;" title="Lino Natural"></div>
+          <div class="swatch" data-env="concrete" style="background: #bababa;" title="Hormigón Visto"></div>
+          <div class="swatch" data-env="brick" style="background: #7a3a23; background-image: url('https://www.transparenttextures.com/patterns/brick-wall.png');" title="Ladrillo Inglés"></div>
+          <div class="swatch" data-env="dark" style="background: #1a1a1a;" title="Antracita"></div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h3>TIPO DE VIDRIO</h3>
+        <select id="glass-select" style="width: 100%; background: #222; border: 1px solid #333; color: #fff; padding: 10px; font-size: 0.7rem; letter-spacing: 1px;">
+          <option value="none">SIN VIDRIO / PROTECCIÓN UV</option>
+          <option value="standard">VIDRIO STANDARD (2mm)</option>
+          <option value="museum" selected>VIDRIO MUSEO (ANTIRREFLEJO / UV 99%)</option>
+        </select>
+      </div>
+
+      <div class="studio-actions">
+        <button id="save-framing" class="primary-action">GUARDAR CONFIGURACIÓN</button>
+        <p style="font-size: 0.5rem; text-align: center; color: #444; text-transform: uppercase; letter-spacing: 1px;">Esta configuración se enviará con su pedido</p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const studio = document.getElementById('framing-studio');
+    const visualizer = document.getElementById('studio-visualizer');
+    const frameBox = document.getElementById('frame-box');
+    const glassLayer = document.getElementById('glass-layer');
+    
+    // Controls
+    const matRange = document.getElementById('mat-range') as HTMLInputElement;
+    const frameRange = document.getElementById('frame-range') as HTMLInputElement;
+    const matVal = document.getElementById('mat-val');
+    const frameVal = document.getElementById('frame-val');
+    const glassSelect = document.getElementById('glass-select') as HTMLSelectElement;
+    
+    // 1. Swatches: Frame Color
+    document.querySelectorAll('#frame-swatches .swatch').forEach(sw => {
+      sw.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const color = target.dataset.frame;
+        document.querySelectorAll('#frame-swatches .swatch').forEach(s => s.classList.remove('active'));
+        target.classList.add('active');
+        frameBox!.className = 'frame-wrapper frame-' + color;
+      });
+    });
+
+    // 2. Swatches: Environment
+    document.querySelectorAll('#env-swatches .swatch').forEach(sw => {
+      sw.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const env = target.dataset.env;
+        document.querySelectorAll('#env-swatches .swatch').forEach(s => s.classList.remove('active'));
+        target.classList.add('active');
+        visualizer!.className = 'visualizer-area env-' + env;
+      });
+    });
+
+    // 3. Sliders: Mat & Frame Width
+    matRange?.addEventListener('input', (e) => {
+      const val = (e.target as HTMLInputElement).value;
+      document.body.style.setProperty('--mat-size', val + 'px');
+      if(matVal) matVal.textContent = val + 'mm';
+    });
+
+    frameRange?.addEventListener('input', (e) => {
+      const val = (e.target as HTMLInputElement).value;
+      document.body.style.setProperty('--frame-width', val + 'px');
+      if(frameVal) frameVal.textContent = val + 'mm';
+    });
+
+    // 4. Glass Effect
+    glassSelect?.addEventListener('change', (e) => {
+      const val = (e.target as HTMLSelectElement).value;
+      glassLayer!.className = 'glass-layer';
+      if(val !== 'none') {
+        glassLayer!.classList.add('glass-' + val);
+      }
+    });
+
+    // 5. 3D Rotation
+    const toggle3DBtn = document.getElementById('toggle-3d-btn');
+    const toggleMsg = document.getElementById('toggle-msg');
+    let is3DActive = false;
+    let isDragging = false;
+    let zoomLevel = 1;
+    let targetRotateX = 0, targetRotateY = 0;
+    let currentRotateX = 0, currentRotateY = 0;
+    let lastMouseX = 0, lastMouseY = 0;
+    let velocityX = 0, velocityY = 0;
+    const friction = 0.95, lerpSpeed = 0.15;
+
+    const update3DTransform = () => {
+      if (!is3DActive && currentRotateX === 0 && currentRotateY === 0) return;
+      if (!isDragging) {
+          targetRotateX += velocityX;
+          targetRotateY += velocityY;
+          velocityX *= friction;
+          velocityY *= friction;
+      }
+      currentRotateX += (targetRotateX - currentRotateX) * lerpSpeed;
+      currentRotateY += (targetRotateY - currentRotateY) * lerpSpeed;
+      currentRotateX = Math.max(Math.min(currentRotateX, 45), -45);
+      currentRotateY = Math.max(Math.min(currentRotateY, 45), -45);
+      document.body.style.setProperty('--rotate-x', currentRotateX + 'deg');
+      document.body.style.setProperty('--rotate-y', currentRotateY + 'deg');
+      const reflectX = 50 + (currentRotateY * 1.5);
+      const reflectY = 50 - (currentRotateX * 1.5);
+      document.body.style.setProperty('--reflection-pos', `${reflectX}% ${reflectY}%`);
+      const ambientX = -5 - (currentRotateY * 0.3);
+      const ambientY = -5 + (currentRotateX * 0.3);
+      document.body.style.setProperty('--ambient-pos', `${ambientX}% ${ambientY}%`);
+      requestAnimationFrame(update3DTransform);
+    };
+
+    const handleStart = (clientX: number, clientY: number) => {
+      if (!is3DActive) return;
+      isDragging = true;
+      lastMouseX = clientX; lastMouseY = clientY;
+      velocityX = 0; velocityY = 0;
+    };
+
+    const handleMove = (clientX: number, clientY: number) => {
+      if (!is3DActive || !isDragging) return;
+      const deltaX = clientX - lastMouseX;
+      const deltaY = clientY - lastMouseY;
+      targetRotateY += deltaX * 0.2;
+      targetRotateX -= deltaY * 0.2;
+      velocityX = deltaX * 0.2; velocityY = -deltaY * 0.2;
+      lastMouseX = clientX; lastMouseY = clientY;
+    };
+
+    const handleEnd = () => { isDragging = false; };
+
+    visualizer?.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+    visualizer?.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
+    document.addEventListener('mouseup', handleEnd);
+
+    toggle3DBtn?.addEventListener('click', () => {
+      is3DActive = !is3DActive;
+      if (is3DActive) {
+        frameBox!.classList.add('mode-3d');
+        toggle3DBtn.classList.add('active');
+        requestAnimationFrame(update3DTransform);
+      } else {
+        frameBox!.classList.remove('mode-3d');
+        toggle3DBtn.classList.remove('active');
+        document.body.style.setProperty('--rotate-x', '0deg');
+        document.body.style.setProperty('--rotate-y', '0deg');
+      }
+    });
+
+    // Close logic
+    document.getElementById('close-studio')?.addEventListener('click', () => {
+      studio!.style.display = 'none';
+      document.body.style.overflow = 'auto'; 
+    });
+  });
+</script>
+
+<style>
+  @import "../styles/framing.css";
+</style>
