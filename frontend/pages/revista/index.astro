@@ -17,15 +17,19 @@ try {
 
 function resolveMediaURL(url: string | null): string {
   if (!url) return '/img/placeholder.jpg';
-  if (url.startsWith('http') || url.startsWith('/')) return url;
+  
+  // Si hay múltiples nombres separados por coma, tomar el primero
+  const cleanUrl = url.includes(',') ? url.split(',')[0].trim() : url;
+  
+  if (cleanUrl.startsWith('http') || cleanUrl.startsWith('/')) return cleanUrl;
   
   // Directus UUID support
-  if (url.length === 36 && url.includes('-')) {
-    return `https://admin.javiermix.ar/assets/${url}`;
+  if (cleanUrl.length === 36 && cleanUrl.includes('-')) {
+    return `https://admin.javiermix.ar/assets/${cleanUrl}`;
   }
   
   // Legacy Filezilla upload fallback
-  return `/uploads/revista/${url}`;
+  return `/uploads/revista/${cleanUrl}`;
 }
 
 const articles = dbArticles.map(art => {
