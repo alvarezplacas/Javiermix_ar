@@ -15,9 +15,9 @@ const INTERNAL_DIRECTUS_URL = process.env.INTERNAL_DIRECTUS_URL || PUBLIC_DIRECT
 
 let homeAssets = [];
 try {
-    console.log(`[Home] Fetching assets from: ${DIRECTUS_URL}`);
+    console.log(`[Home] Fetching assets (Internal)`);
     // 1. Find the folder named "home" via API (case-insensitive filter)
-    const folderRes = await fetch(`${DIRECTUS_URL}/folders?filter[name][_icontains]=home`);
+    const folderRes = await fetch(`${INTERNAL_DIRECTUS_URL}/folders?filter[name][_icontains]=home`);
     if (!folderRes.ok) throw new Error(`HTTP error! status: ${folderRes.status}`);
     
     const foldersData = await folderRes.json();
