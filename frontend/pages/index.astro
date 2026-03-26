@@ -8,45 +8,39 @@ import CollectorJoin from '../components/CollectorJoin.astro';
 
 export const prerender = false;
 
-// 1. Fetching Home visual assets from Directus via API (Public)
-// Configuración de URLs (Pública vs Interna para Docker)
-const PUBLIC_DIRECTUS_URL = process.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-const INTERNAL_DIRECTUS_URL = process.env.INTERNAL_DIRECTUS_URL || PUBLIC_DIRECTUS_URL;
+import { fetchFromDirectus, PUBLIC_DIRECTUS_URL } from '@conexion/directus';
 
 let homeAssets = [];
 try {
-    console.log(`[Home] Fetching assets (Internal)`);
-    // 1. Find the folder named "home" via API (case-insensitive filter)
-    const folderRes = await fetch(`${INTERNAL_DIRECTUS_URL}/folders?filter[name][_icontains]=home`);
-    if (!folderRes.ok) throw new Error(`HTTP error! status: ${folderRes.status}`);
-    
+    // 1. Find the folder named "home" via API
+    const folderRes = await fetchFromDirectus(`/folders?filter[name][_icontains]=home`);
     const foldersData = await folderRes.json();
     const folder = foldersData.data?.find(f => f.name.toLowerCase() === 'home');
 
     if (folder) {
-        console.log(`[Home] Folder "home" found with ID: ${folder.id}`);
+        console.log(`[Home Debug] Folder 'home' found (ID: ${folder.id})`);
         // 2. Get files in that folder
-        const filesRes = await fetch(`${INTERNAL_DIRECTUS_URL}/files?filter[folder][_eq]=${folder.id}&sort=filename_download`);
+        const filesRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${folder.id}&sort=filename_download`);
         const filesData = await filesRes.json();
         homeAssets = filesData.data || [];
-        console.log(`[Home] Found ${homeAssets.length} assets in "home" folder.`);
     } else {
-        console.warn("[Home] Folder 'home' not found via API.");
+        console.warn("[Home Warning] Folder 'home' not found.");
     }
 
     // 3. Fallback: if no folder found or empty, try any recent files
     if (homeAssets.length === 0) {
-        const anyRes = await fetch(`${INTERNAL_DIRECTUS_URL}/files?limit=5&sort=-created_on`);
+        console.log("[Home Fallback] No assets found in folder. Trying recent files...");
+        const anyRes = await fetchFromDirectus(`/files?limit=5&sort=-created_on`);
         const anyData = await anyRes.json();
         homeAssets = anyData.data || [];
     }
 } catch (error) {
-    console.error("[Home] Error fetching home assets via API:", error);
+    console.error("[Home Error] SSR Fetch failed:", error);
 }
 
 // Global Fallback if everything fails
 if (homeAssets.length === 0) {
-    homeAssets = [{ id: 'fallback', filename_download: '00.avif', type: 'image/avif' }];
+    homeAssets = [{ id: 'fallback', filename_download: '01.avif', type: 'image/avif' }];
 }
 
 function getAssetUrl(id: string) {
