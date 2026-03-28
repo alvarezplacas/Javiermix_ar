@@ -1,0 +1,15 @@
+services:
+  frontend:
+    build: .
+    container_name: javiermix-frontend
+    restart: always
+    ports:
+      - "4321:4321"
+    env_file:
+      - .env
+    networks:
+      - javiermix_network
+
+networks:
+  javiermix_network:
+    external: true

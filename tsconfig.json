@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@conexion/*": ["frontend/conexion/*"],
+      "@components/*": ["frontend/components/*"],
+      "@layouts/*": ["frontend/layouts/*"],
+      "@utils/*": ["frontend/utils/*"],
+      "@styles/*": ["frontend/styles/*"]
+    },
+    "jsx": "preserve",
+    "jsxImportSource": "astro",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM"]
+  },
+  "exclude": ["node_modules", "dist"]
+}

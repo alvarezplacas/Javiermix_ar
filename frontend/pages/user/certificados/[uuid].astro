@@ -1,0 +1,74 @@
+---
+// h:\Javiermix_web_v2\frontend\user\certificados\[uuid].astro
+import { db, certificates, artworks, collectors } from '@conexion/db';
+import { eq } from 'drizzle-orm';
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/Header.astro';
+
+export const prerender = false;
+
+const { uuid } = Astro.params;
+if (!uuid) return Astro.redirect('/404');
+
+let certData = [];
+try {
+    certData = await db.select({
+        cert: certificates,
+        art: artworks,
+        col: collectors
+    }).from(certificates)
+      .where(eq(certificates.uuid, uuid))
+      .leftJoin(artworks, eq(certificates.artwork_id, artworks.id))
+      .leftJoin(collectors, eq(certificates.collector_id, collectors.id))
+      .limit(1);
+} catch (e) {
+    console.error("Error verifying certificate:", e);
+}
+
+const isValid = certData && certData.length > 0;
+const record = isValid ? certData[0] : null;
+
+const formatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'long', timeStyle: 'short' });
+const fechaEmision = record?.cert.sale_date ? formatter.format(new Date(record.cert.sale_date)) : 'N/A';
+---
+
+<Layout title="Verificación de Autenticidad | Javier Mix Fine Art">
+  <Header currentPath="" />
+
+  <main class="verification-main">
+      <div class="verification-card">
+          {isValid && record ? (
+            <div class="status-box valid">
+               <h1 class="status-title">OBRA AUTÉNTICA REGISTRADA</h1>
+               <div class="verification-details">
+                  <div class="detail-row">
+                      <span class="detail-label">IDENTIFICADOR</span>
+                      <span class="detail-value">{record.cert.uuid}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">OBRA</span>
+                      <span class="detail-value">{record.art?.title || 'Unknown Art'}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">COLECCIONISTA</span>
+                      <span class="detail-value">{record.col?.name || 'Venta Privada'}</span>
+                  </div>
+               </div>
+            </div>
+          ) : (
+            <div class="status-box invalid">
+               <h1 class="status-title">CERTIFICADO NO ENCONTRADO</h1>
+            </div>
+          )}
+      </div>
+  </main>
+</Layout>
+
+<style>
+  .verification-main { padding: 6rem 5%; background: var(--color-onyx-deep); min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+  .verification-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 4rem; width: 100%; max-width: 600px; }
+  .status-title { font-family: var(--font-primary); color: var(--color-accent); font-size: 2rem; margin-bottom: 2rem; }
+  .detail-row { margin-bottom: 1.5rem; }
+  .detail-label { display: block; font-size: 0.7rem; letter-spacing: 2px; color: rgba(255,255,255,0.4); margin-bottom: 0.5rem; }
+  .detail-value { font-size: 1.2rem; color: #fff; }
+</style>
