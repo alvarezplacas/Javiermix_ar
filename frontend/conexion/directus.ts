@@ -6,7 +6,7 @@
 export const PUBLIC_DIRECTUS_URL = 'https://admin.javiermix.ar';
 export const INTERNAL_DIRECTUS_URL = 'http://javiermix_directus:8055';
 
-export const DIRECTUS_STATIC_TOKEN = 'cUeA7kBwUSS-jhhObI4fUdUX6DiwCYci';
+export const DIRECTUS_STATIC_TOKEN = 'M0EdtP3KJRovELkD-xj4bpWUZLs_6Goa';
 
 /**
  * Utility to fetch from Directus with internal/public fallback
