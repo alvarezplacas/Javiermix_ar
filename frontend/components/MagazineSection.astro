@@ -32,14 +32,19 @@ const placeholderArticles = [
 ];
 
 const articles = fetchedArticles.length > 0 
-  ? fetchedArticles.map(a => ({
-      title: a.title,
-      excerpt: a.content_html ? a.content_html.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : '',
-      image: a.featured_image ? resolveMediaURL(a.featured_image) : null,
-      link: `/revista/${a.slug}`,
-      location: "Buenos Aires",
-      readTime: "5 min"
-    }))
+  ? fetchedArticles.map(a => {
+      // Fix for potential comma-separated filenames or malformed strings
+      const rawImage = a.featured_image ? (typeof a.featured_image === 'string' ? a.featured_image.split(',')[0].trim() : a.featured_image) : null;
+      
+      return {
+        title: a.title,
+        excerpt: a.content_html ? a.content_html.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : '',
+        image: rawImage ? resolveMediaURL(rawImage) : null,
+        link: `/revista/${a.slug}`,
+        location: "Buenos Aires",
+        readTime: "5 min"
+      }
+    })
   : placeholderArticles;
 ---
 

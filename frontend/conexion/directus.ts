@@ -81,8 +81,8 @@ export async function getArtworkById(id: string) {
 
 export function getAssetUrl(id: string) {
   if (!id) return null;
-  // Route to Astro API proxy for secure streaming without exposing token
-  return `/api/assets/${id}`;
+  // Bypass local proxy and point directly to Directus public assets
+  return `https://admin.javiermix.ar/assets/${id}`;
 }
 
 export async function getArticles(token?: string) {
