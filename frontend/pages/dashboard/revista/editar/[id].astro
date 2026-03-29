@@ -121,7 +121,7 @@ if (article) {
                {/* Pre-render existing media */}
                {Array.isArray(article.media_json) && article.media_json.map((fid: string) => (
                   <div class="media-item" data-id={fid}>
-                    <img src={`https://admin.javiermix.ar/assets/${fid}?width=150&height=150&fit=cover`} />
+                    <img src={`/api/assets/${fid}?width=150&height=150&fit=cover`} />
                     <button type="button" class="remove-btn">×</button>
                   </div>
                ))}
@@ -288,7 +288,7 @@ if (article) {
             mediaJsonInput.value = JSON.stringify(uploadedMedia);
             
             item.innerHTML = `
-                <img src="https://admin.javiermix.ar/assets/${result.id}?width=150&height=150&fit=cover" />
+                <img src="/api/assets/${result.id}?width=150&height=150&fit=cover" />
                 <button type="button" class="remove-btn">×</button>
             `;
             item.dataset.id = result.id;

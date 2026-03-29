@@ -25,7 +25,7 @@ function resolveMediaURL(url: string | null): string {
   
   // Directus UUID support
   if (cleanUrl.length === 36 && cleanUrl.includes('-')) {
-    return `https://admin.javiermix.ar/assets/${cleanUrl}`;
+    return `/api/assets/${cleanUrl}`;
   }
   
   // Legacy Filezilla upload fallback

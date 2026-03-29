@@ -6,10 +6,20 @@
 export const PUBLIC_DIRECTUS_URL = 'https://admin.javiermix.ar';
 export const INTERNAL_DIRECTUS_URL = 'http://javiermix_directus:8055';
 
+export const DIRECTUS_STATIC_TOKEN = 'cUeA7kBwUSS-jhhObI4fUdUX6DiwCYci';
+
 /**
  * Utility to fetch from Directus with internal/public fallback
  */
 export async function fetchFromDirectus(path: string, options: RequestInit = {}) {
+    // Inject secure static token if none provided in headers
+    if (DIRECTUS_STATIC_TOKEN) {
+        options.headers = {
+            'Authorization': `Bearer ${DIRECTUS_STATIC_TOKEN}`,
+            ...options.headers
+        };
+    }
+
     // Try Internal first (High speed within Docker)
     try {
         console.log(`[Directus Debug] Trying Internal: ${INTERNAL_DIRECTUS_URL}${path}`);
@@ -71,7 +81,8 @@ export async function getArtworkById(id: string) {
 
 export function getAssetUrl(id: string) {
   if (!id) return null;
-  return `${PUBLIC_DIRECTUS_URL}/assets/${id}`;
+  // Route to Astro API proxy for secure streaming without exposing token
+  return `/api/assets/${id}`;
 }
 
 export async function getArticles(token?: string) {

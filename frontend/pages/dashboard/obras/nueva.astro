@@ -200,8 +200,8 @@ const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javie
         if (imgPreview) {
           const isAvif = file.name.toLowerCase().endsWith('.avif');
           const src = isAvif 
-            ? `https://admin.javiermix.ar/assets/${result.id}`
-            : `https://admin.javiermix.ar/assets/${result.id}?width=300`;
+            ? `/api/assets/${result.id}`
+            : `/api/assets/${result.id}?width=300`;
           imgPreview.innerHTML = `<img src="${src}" />`;
         }
       } else {
