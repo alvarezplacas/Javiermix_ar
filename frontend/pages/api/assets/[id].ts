@@ -10,8 +10,11 @@ export const GET: APIRoute = async ({ params, request }) => {
         return new Response('Asset ID missing', { status: 400 });
     }
 
+    // Capture search parameters (width, quality, format, etc.)
+    const { search } = new URL(request.url);
+    
     // Usar la URL interna del Docker si es posible para puente rápido, o fallar al público
-    const targetUrl = `${INTERNAL_DIRECTUS_URL}/assets/${assetId}`;
+    const targetUrl = `${INTERNAL_DIRECTUS_URL}/assets/${assetId}${search}`;
     
     try {
         const headers = new Headers();
@@ -38,7 +41,7 @@ export const GET: APIRoute = async ({ params, request }) => {
         // Fallback a Public si falla interno 
         if (!response.ok && response.status !== 206) {
             console.warn(`[Asset Proxy Debug] Internal failed (${response.status}). Trying Public.`);
-            const publicTarget = `${PUBLIC_DIRECTUS_URL}/assets/${assetId}`;
+            const publicTarget = `${PUBLIC_DIRECTUS_URL}/assets/${assetId}${search}`;
             response = await fetch(publicTarget, { headers });
             
             if (!response.ok && response.status !== 206) {

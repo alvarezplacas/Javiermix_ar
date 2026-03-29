@@ -3,7 +3,8 @@
  * Soporta resolución de UUIDs de Directus y optimización al vuelo.
  */
 
-const DIRECTUS_URL = 'https://admin.javiermix.ar';
+// URL base del Proxy seguro en Astro para saltar el error 403 de Directus
+const ASSET_PROXY_URL = '/api/assets';
 
 /**
  * Resuelve una URL de medio basándose en si es un UUID de Directus o una ruta local/externa.
@@ -18,7 +19,7 @@ export function resolveMediaURL(url: string | null): string {
   
   // Si es un UUID de Directus (36 caracteres con guiones)
   if (url.length === 36 && url.includes('-')) {
-    return `${DIRECTUS_URL}/assets/${url}`;
+    return `${ASSET_PROXY_URL}/${url}`;
   }
   
   // Fallback para rutas relativas (ej. legadas de V1)
@@ -56,5 +57,5 @@ export function getOptimizedImageURL(id: string | null, options: OptimizationOpt
   if (options.format) params.set('format', options.format);
 
   const queryString = params.toString();
-  return `${DIRECTUS_URL}/assets/${id}${queryString ? `?${queryString}` : ''}`;
+  return `${ASSET_PROXY_URL}/${id}${queryString ? `?${queryString}` : ''}`;
 }

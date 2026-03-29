@@ -1,6 +1,6 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\dashboard\obras\nueva.astro
-import AdminLayout from '../../../layouts/AdminLayout.astro';
+import AdminLayout from '@layouts/AdminLayout.astro';
 
 export const prerender = false;
 
@@ -14,8 +14,6 @@ const url = new URL(Astro.request.url);
 const preFileId = url.searchParams.get('fileId');
 const preTitle = url.searchParams.get('title');
 const preSerie = url.searchParams.get('serie');
-
-const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
 ---
 
 <AdminLayout title="Añadir Nueva Obra">
@@ -132,8 +130,8 @@ const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javie
           <div class="image-upload-box" id="image-preview">
              {preFileId ? (
                <img src={preFileId.toString().toLowerCase().endsWith('.avif') 
-                 ? `${DIRECTUS_URL}/assets/${preFileId}` 
-                 : `${DIRECTUS_URL}/assets/${preFileId}?width=300`} />
+                 ? `/api/assets/${preFileId}` 
+                 : `/api/assets/${preFileId}?width=300`} />
              ) : (
                <>
                  <i class="fas fa-cloud-upload-alt"></i>
@@ -175,7 +173,7 @@ const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javie
 </style>
 
 <script>
-  import { createArtwork, uploadFile } from '../../../conexion/directus';
+  import { createArtwork, uploadFile } from '@conexion/directus';
 
   document.addEventListener('astro:page-load', () => {
     const form = document.getElementById('artwork-form') as HTMLFormElement;

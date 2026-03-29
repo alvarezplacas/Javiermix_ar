@@ -1,7 +1,7 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\dashboard\revista\index.astro
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { getArticles } from '../../../conexion/directus';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { getArticles } from '@conexion/directus';
 
 export const prerender = false;
 
@@ -70,7 +70,7 @@ try {
 </AdminLayout>
 
 <script>
-  import { DIRECTUS_URL } from '../../../conexion/directus';
+  import { DIRECTUS_URL } from '@conexion/directus';
 
   document.addEventListener('astro:page-load', () => {
     // Escuchar clics en botones de borrar

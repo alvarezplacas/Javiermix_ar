@@ -1,25 +1,15 @@
 ---
 // h:\Javiermix_web_v2\frontend\components\MagazineSection.astro
-const DIRECTUS_URL = process.env.DIRECTUS_URL || 'https://admin.javiermix.ar';
+import { fetchFromDirectus } from '@conexion/directus';
+import { resolveMediaURL } from '@utils/media';
 
 let fetchedArticles = [];
 try {
-  const response = await fetch(`${DIRECTUS_URL}/items/magazine?filter[status][_eq]=published&sort=-created_at&limit=3`);
+  const response = await fetchFromDirectus(`/items/magazine?filter[status][_eq]=published&sort=-created_at&limit=3`);
   const data = await response.json();
   fetchedArticles = data.data || [];
 } catch (e) {
-  console.error("Error fetching magazine articles for Home via API:", e);
-}
-
-function resolveMediaURL(url: string | null): string {
-  if (!url) return '/img/placeholder.jpg';
-  
-  // Si hay múltiples nombres separados por coma, tomar el primero
-  const cleanUrl = url.includes(',') ? url.split(',')[0].trim() : url;
-  
-  if (cleanUrl.startsWith('http') || cleanUrl.startsWith('/')) return cleanUrl;
-  if (cleanUrl.length === 36 && cleanUrl.includes('-')) return `/api/assets/${cleanUrl}`;
-  return `/uploads/revista/${cleanUrl}`;
+  console.error("Error fetching magazine articles for Home:", e);
 }
 
 const placeholderArticles = [

@@ -1,7 +1,7 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\dashboard\obras\editar\[id].astro
-import AdminLayout from '../../../../layouts/AdminLayout.astro';
-import { getArtworkById } from '../../../../conexion/directus';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { getArtworkById } from '@conexion/directus';
 
 export const prerender = false;
 
@@ -18,7 +18,7 @@ if (!adminToken) {
   return Astro.redirect('/dashboard/login');
 }
 
-const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
+const artwork = await getArtworkById(id!);
 ---
 
 <AdminLayout title={`Editar Obra: ${artwork.title}`}>
@@ -136,8 +136,8 @@ const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javie
           <div class="image-upload-box" id="image-preview">
              {artwork.filename ? (
                <img src={artwork.filename.toLowerCase().endsWith('.avif') 
-                 ? `${DIRECTUS_URL}/assets/${artwork.filename}` 
-                 : `${DIRECTUS_URL}/assets/${artwork.filename}?width=300`} />
+                 ? `/api/assets/${artwork.filename}` 
+                 : `/api/assets/${artwork.filename}?width=300`} />
              ) : (
                <>
                  <i class="fas fa-cloud-upload-alt"></i>
@@ -287,7 +287,7 @@ const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javie
 </style>
 
 <script>
-  import { updateArtwork, uploadFile } from '../../../../conexion/directus';
+  import { updateArtwork, uploadFile } from '@conexion/directus';
 
   document.addEventListener('astro:page-load', () => {
     const form = document.getElementById('artwork-form') as HTMLFormElement;

@@ -175,7 +175,7 @@ import Layout from '../../layouts/Layout.astro';
 </style>
 
 <script>
-  import { loginAdmin } from '../../conexion/directus';
+  import { loginAdmin } from '@conexion/directus';
 
   document.addEventListener('astro:page-load', () => {
     const form = document.getElementById('login-form') as HTMLFormElement;

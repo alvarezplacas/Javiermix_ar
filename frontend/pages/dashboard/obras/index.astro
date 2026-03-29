@@ -1,7 +1,7 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\dashboard\obras\index.astro
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { getArtworks, getCatalogoFiles } from '../../../conexion/directus';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { getArtworks, getCatalogoFiles } from '@conexion/directus';
 
 // Verificación de Sesión (SSR)
 const adminToken = Astro.cookies.get('jhm_admin_token')?.value;
@@ -10,8 +10,6 @@ if (!adminToken) {
 }
 
 export const prerender = false;
-
-const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
 
 // 1. Obtener datos
 const dbArtworks = await getArtworks();
@@ -92,8 +90,8 @@ const seriesNames = Object.keys(groupedBySeries).sort();
                       {item.type.startsWith('image/') ? (
                         <img 
                           src={item.type === 'image/avif' 
-                            ? `${DIRECTUS_URL}/assets/${item.fileId}` 
-                            : `${DIRECTUS_URL}/assets/${item.fileId}?width=100&height=100&fit=cover`} 
+                            ? `/api/assets/${item.fileId}` 
+                            : `/api/assets/${item.fileId}?width=100&height=100&fit=cover`} 
                           alt={item.title} 
                           loading="lazy"
                         />
