@@ -20,17 +20,13 @@ export async function fetchFromDirectus(path: string, options: RequestInit = {})
         };
     }
 
-    // Try Internal first (High speed within Docker)
+    // Use Public directly to avoid internal networking issues causing crashes
     try {
-        console.log(`[Directus Debug] Trying Internal: ${INTERNAL_DIRECTUS_URL}${path}`);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000); 
-        
-        const res = await fetch(`${INTERNAL_DIRECTUS_URL}${path}`, { ...options, signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (res.ok) return res;
+        console.log(`[Directus Debug] Fetching: ${PUBLIC_DIRECTUS_URL}${path}`);
+        return fetch(`${PUBLIC_DIRECTUS_URL}${path}`, options);
     } catch (e: any) {
-        console.warn(`[Directus Warning] Internal failed (${e.message}). Falling back to Public.`);
+        console.error(`[Directus Error] Public fetch failed: ${e.message}`);
+        throw e;
     }
 
     // Fallback to Public (Internet)

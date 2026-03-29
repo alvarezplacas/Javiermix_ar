@@ -57,12 +57,18 @@ if (homeAssets.length === 0) {
       <aside class="split-visual">
         <div class="hero-visual-container">
             {/* 1. Capa Maestra de Poster (Fija 2s) */}
-            {homeAssets.find(a => a.type?.startsWith('image/')) && (
-                <div 
-                    class="hero-poster-master" 
-                    style={`background-image: url(${getAssetUrl(homeAssets.find(a => a.type?.startsWith('image/')).id)});`}
-                ></div>
-            )}
+            {(() => {
+                const heroImg = homeAssets.find(a => a.type?.startsWith('image/'));
+                if (heroImg) {
+                    return (
+                        <div 
+                            class="hero-poster-master" 
+                            style={`background-image: url(${getAssetUrl(heroImg.id)});`}
+                        ></div>
+                    );
+                }
+                return null;
+            })()}
 
             {/* 2. Capa de Contenido Mixto (Bucle Infinito) */}
             <div class="hero-main-stack" id="hero-assets-loop">
