@@ -17,8 +17,6 @@ const adminToken = Astro.cookies.get('jhm_admin_token')?.value;
 if (!adminToken) {
   return Astro.redirect('/dashboard/login');
 }
-
-const artwork = await getArtworkById(id!);
 ---
 
 <AdminLayout title={`Editar Obra: ${artwork.title}`}>
