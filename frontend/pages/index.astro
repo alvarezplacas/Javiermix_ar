@@ -8,7 +8,7 @@ import CollectorJoin from '@components/CollectorJoin.astro';
 
 export const prerender = false;
 
-import { fetchFromDirectus, PUBLIC_DIRECTUS_URL } from '@conexion/directus';
+import { fetchFromDirectus, PUBLIC_DIRECTUS_URL, getAssetUrl } from '@conexion/directus';
 
 let homeAssets = [];
 try {
