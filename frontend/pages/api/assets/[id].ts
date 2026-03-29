@@ -11,15 +11,13 @@ export const GET: APIRoute = async ({ params, request }) => {
     }
 
     // Usar la URL interna del Docker si es posible para puente rápido, o fallar al público
-    let targetUrl = `${INTERNAL_DIRECTUS_URL}/assets/${assetId}`;
+    const targetUrl = `${INTERNAL_DIRECTUS_URL}/assets/${assetId}`;
     
-    // Add token if exists and not already provided
-    if (DIRECTUS_STATIC_TOKEN) {
-        targetUrl += `?access_token=${DIRECTUS_STATIC_TOKEN}`;
-    }
-
     try {
         const headers = new Headers();
+        if (DIRECTUS_STATIC_TOKEN) {
+            headers.set('Authorization', `Bearer ${DIRECTUS_STATIC_TOKEN}`);
+        }
         
         // Forward Range headers for video streaming
         const rangeHeader = request.headers.get('Range');
@@ -39,15 +37,16 @@ export const GET: APIRoute = async ({ params, request }) => {
 
         // Fallback a Public si falla interno 
         if (!response.ok && response.status !== 206) {
-            console.warn(`[Asset Proxy] Internal failed with ${response.status}. Trying Public Directus.`);
-            let publicTarget = `${PUBLIC_DIRECTUS_URL}/assets/${assetId}`;
-            if (DIRECTUS_STATIC_TOKEN) publicTarget += `?access_token=${DIRECTUS_STATIC_TOKEN}`;
-            
+            console.warn(`[Asset Proxy Debug] Internal failed (${response.status}). Trying Public.`);
+            const publicTarget = `${PUBLIC_DIRECTUS_URL}/assets/${assetId}`;
             response = await fetch(publicTarget, { headers });
             
             if (!response.ok && response.status !== 206) {
-                return new Response('Asset not found or forbidden', { status: response.status });
+                console.error(`[Asset Proxy Error] Public also failed: ${response.status}`);
+                return new Response('Asset Forbidden', { status: response.status });
             }
+        } else {
+            console.log(`[Asset Proxy Debug] Success fetching ${assetId}`);
         }
 
         // Clone headers to pass browser caching and ranges
