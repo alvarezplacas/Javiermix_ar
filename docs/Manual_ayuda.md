@@ -6,11 +6,13 @@ Este documento es una guía viva para que los agentes de IA y desarrolladores ma
 
 Basado en las tendencias de 2024-2026, la estructura óptima para este VPS es la **Contenedorización Total**.
 
-### 1. Organización del Sistema de Archivos
-Evita colocar proyectos sueltos en `/home/ubuntu`. Usa una jerarquía clara:
-- `/home/ubuntu/prod/`: Aplicaciones de cara al público (Astro).
-- `/home/ubuntu/infra/`: Servicios de soporte (Nginx Proxy Manager, Directus, Redis).
-- `/home/ubuntu/backups/`: Volúmenes y dumps de base de datos.
+### 1. Organización del Sistema de Archivos (Golden Master)
+La raíz del proyecto está reservada exclusivamente para el código operacional. Toda la inteligencia reside en `/docs`:
+- `docs/`: Manuales, planos de arquitectura, diseño y la carpeta histórica `vps_extras/`.
+- `src/`: Código fuente de Astro (Frontend).
+- `public/`: Assets estáticos.
+- `docker-compose.yml`: Archivo maestro de orquestación (en la raíz).
+- `.dockerignore`: Filtro crítico para mantener imágenes ligeras en producción.
 
 ### 2. Stack Tecnológico Estándar
 - **Frontend**: Astro 5 con adaptador `@astrojs/node` en modo `standalone`.
@@ -55,5 +57,11 @@ Todos los contenedores deben compartir una red común (ej: `web_network`) para c
 - Las animaciones de entrada deben ser sutiles (`0.6s` con `cubic-bezier`).
 
 ---
-*Ultima actualización: 2026-03-29 by Antigravity*
+## ⚡ Optimización de Rendimiento (Misión Redis)
+- **Caché en Directus**: Habilitado nativamente para reducir consultas a MariaDB.
+- **Lógica de Likes**: Implementa un flujo Redis-Primario -> Directus-Sincrónico. 
+- **Spam Prevention**: Usa el prefijo `track:filename:ip` en Redis para bloquear votos duplicados por 1 semana.
+
+---
+*Ultima actualización: 2026-04-01 by Antigravity*
 *Mensaje para el próximo agente: Respeta el alias @conexion y no modifiques alvarezplacas.*
