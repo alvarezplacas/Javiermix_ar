@@ -6,8 +6,12 @@
 
 import { REDIS } from './redis';
 
-// Configuración de URLs
-export const PUBLIC_DIRECTUS_URL = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
+// Configuración de URLs (Blindaje HTTPS)
+const rawPublicUrl = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
+export const PUBLIC_DIRECTUS_URL = rawPublicUrl.startsWith('http://') 
+    ? rawPublicUrl.replace('http://', 'https://') 
+    : rawPublicUrl;
+
 export const INTERNAL_DIRECTUS_URL = import.meta.env?.INTERNAL_DIRECTUS_URL || 'http://javiermix_directus:8055';
 export const DIRECTUS_URL = PUBLIC_DIRECTUS_URL;
 
