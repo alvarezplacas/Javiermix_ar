@@ -1,0 +1,597 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Footer from '../../components/Footer.astro';
+import { db } from '../../db/client';
+import { artworks } from '../../db/schema';
+import { eq, inArray } from 'drizzle-orm';
+import Header from '../../components/Header.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+import { loadArtworkMetadata } from '../../utils/metadata.js';
+import ExifReader from 'exifreader';
+import FramingStudio from '../../components/FramingStudio.astro';
+
+export const prerender = false;
+
+const { serie } = Astro.params;
+
+const seriesPath = path.join(process.cwd(), 'public', 'img', 'Series');
+if (!serie || !fs.existsSync(path.join(seriesPath, serie))) {
+    return Astro.redirect('/galeria');
+}
+
+const metadataMap = loadArtworkMetadata();
+const folderPath = path.join(seriesPath, serie);
+const items = fs.readdirSync(folderPath).filter(f => /\.(avif|jpg|jpeg|png)$/i.test(f));
+
+// Lógica mejorada con Regex para emparejar
+const mainImages = items.filter(f => {
+    const low = f.toLowerCase();
+    return (low.startsWith('jmx_') || low.startsWith('jmix_') || low.startsWith('jhm_')) && !/_(\d+)\.(avif|jpg|jpeg|png)$/i.test(low);
+});
+const otherImages = items.filter(f => !mainImages.includes(f));
+
+let artworkData = [];
+let matchedOtherImages = new Set();
+
+// Consultar DB para Overrides masivos de este folder
+const filenames = mainImages;
+const dbRecords = filenames.length > 0 ? await db.select().from(artworks).where(inArray(artworks.filename, filenames)) : [];
+const dbMap = new Map(dbRecords.map(r => [r.filename, r]));
+
+for (const mainImg of mainImages) {
+    const baseName = mainImg.split('.')[0].toLowerCase();
+    const contextImages = otherImages.filter(f => {
+        const fLow = f.toLowerCase();
+        // Soporte para _ y - en variantes (ej: JHM_01_2 o JHM_01-2)
+        return (fLow.startsWith(baseName + '_') || fLow.startsWith(baseName + '-')) && 
+               /(_|-)(\d+)\.(avif|jpg|jpeg|png)$/i.test(fLow);
+    });
+    
+    contextImages.forEach(img => matchedOtherImages.add(img));
+    
+    // Prioridad: 1. DB, 2. CSV, 3. IPTC
+    const dbMeta = dbMap.get(mainImg);
+    const csvMeta = metadataMap.get(mainImg);
+    
+    let titleText = dbMeta?.title || csvMeta?.title || mainImg.split('.')[0].replace(/_/g, ' ');
+    let fiche = null;
+    if (dbMeta) {
+        fiche = {
+            story: dbMeta.description || '',
+            camera: dbMeta.camera || '',
+            lens: dbMeta.lens || '',
+            year: dbMeta.date || '',
+            author: 'Javier Mix',
+        };
+    }
+
+    try {
+        const metaPath = path.join(folderPath, mainImg);
+        const tags = await ExifReader.load(metaPath);
+        if (!dbMeta) {
+            // IPTC Core: Titular (Headline) e ObjectName
+            if (tags['Headline']?.description) titleText = tags['Headline'].description;
+            else if (tags['ObjectName']?.description) titleText = tags['ObjectName'].description;
+            else if (tags['Title']?.description) titleText = tags['Title'].description;
+            
+            // IPTC Core: Descripción y Creador
+            const description = tags['Caption/Abstract']?.description || tags['Description']?.description;
+            const creator = tags['By-line']?.description || tags['Creator']?.description || 'Javier Mix';
+            
+            if (description || tags['Model']?.description) {
+                fiche = {
+                    story: description || '',
+                    camera: tags['Model']?.description || '',
+                    lens: tags['LensModel']?.description || '',
+                    iso: tags['ISOSpeedRatings']?.description || tags['ISO']?.value?.toString() || '',
+                    shutterspeed: tags['ExposureTime']?.description || '',
+                    aperture: tags['FNumber']?.description ? `f/${tags['FNumber'].description}` : '',
+                    year: tags['DateCreated']?.description ? tags['DateCreated'].description.substring(0,4) : '',
+                    location: tags['City']?.description || '',
+                    author: creator
+                };
+            }
+        }
+    } catch(e) {}
+
+    artworkData.push({
+        mainUrl: `/img/Series/${serie}/${mainImg}`,
+        roomUrl: contextImages.length > 0 ? `/img/Series/${serie}/${contextImages[0]}` : null,
+        allImages: contextImages.map(img => `/img/Series/${serie}/${img}`),
+        title: titleText,
+        fiche: fiche
+    });
+}
+
+// Agregar imágenes huérfanas
+const standalone = otherImages.filter(f => !matchedOtherImages.has(f));
+for (const img of standalone) {
+    let titleText = img.split('.')[0].replace(/_/g, ' ');
+    try {
+        const metaPath = path.join(folderPath, img);
+        const tags = await ExifReader.load(metaPath);
+        if (tags['Title']?.description) titleText = tags['Title'].description;
+    } catch(e) {}
+    artworkData.push({
+        mainUrl: `/img/Series/${serie}/${img}`,
+        roomUrl: null,
+        title: titleText
+    });
+}
+
+const name = serie.replace(/_/g, ' ').toUpperCase();
+const artworks = artworkData;
+const serieName = name.replace(/_/g, ' ');
+const coverOg = artworks[0]?.mainUrl || undefined;
+---
+
+<Layout
+  title={`${serieName} | Colección Fine Art`}
+  description={`Descubrí la serie "${serieName}" de Javier Mix: ${artworks.length} obras de fotografía Fine Art de autor. Impresas sobre aluminio con calidad museo. Ideales para coleccionar y decorar espacios de alto diseño.`}
+  url={`/galeria/${serie}`}
+  image={coverOg}
+  keywords={[serieName.toLowerCase(), 'serie de fotografía', 'obra fine art', 'colección fotográfica', 'fotografía decorativa']}
+>
+	<Header currentPath="/galeria" />
+
+	<div class="immersive-header" data-artworks={JSON.stringify(artworks.map(a => a.mainUrl))}>
+		<div class="slideshow-container">
+			<div class="slide-layer active" id="slide-1"></div>
+			<div class="slide-layer" id="slide-2"></div>
+		</div>
+		
+		<div class="header-overlay-mask"></div>
+
+		<header class="serie-header-content">
+			<a href="/galeria" class="back-link">
+				<span class="icon">&larr;</span>
+				<span class="label">Volver a Colecciones</span>
+			</a>
+			<h1 class="serie-title" id="serie-title-display">{name.toLowerCase().split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ')}</h1>
+			<p class="serie-meta">
+				<span class="count">{artworks.length}</span>
+				<span class="label">Obras Disponibles</span>
+			</p>
+		</header>
+	</div>
+
+	<article class="serie-content-container">
+
+		<section class="masonry-grid">
+			{artworks.map((artwork, index) => (
+				<a href={`/obra/${serie.toLowerCase().replace(/_/g, '-')}-${artwork.title.toLowerCase().trim().replace(/\s+/g, '-')}`} class="gallery-artwork-card" tabindex="0">
+					<div class="artwork-figure">
+						<!-- Imagen Principal JMX -->
+						<img src={artwork.mainUrl} alt={`Obra ${name} - ${artwork.title}`} class="artwork-img main-img" loading="lazy" />
+						
+						<!-- Hover de Ambiente (Room View) si existe -->
+						{artwork.roomUrl && (
+							<img src={artwork.roomUrl} alt={`Ambiente ${name} - ${artwork.title}`} class="artwork-img room-img" loading="lazy" />
+						)}
+					</div>
+					
+					<div class="artwork-info-overlay">
+						<div class="overlay-actions">
+							<span class="view-text">VER OBRA</span>
+							<button class="grid-like-btn" data-filename={artwork.mainUrl.split('/').pop()} data-serie={name} data-title={artwork.title} aria-label="Me gusta">
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="grid-heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+								<span class="grid-like-count">0</span>
+							</button>
+						</div>
+					</div>
+				</a>
+			))}
+		</section>
+	</article>
+
+	<script>
+		document.addEventListener('astro:page-load', () => {
+			const header = document.querySelector('.immersive-header');
+			if (!header) return;
+
+			const artworks = JSON.parse(header.getAttribute('data-artworks') || '[]');
+			if (artworks.length === 0) return;
+
+			const slide1 = document.getElementById('slide-1');
+			const slide2 = document.getElementById('slide-2');
+			let currentSlide = 0;
+			let activeLayer = 1;
+
+			// Initialize first slide
+			if (slide1) slide1.style.backgroundImage = `url(${artworks[0]})`;
+			
+			if (artworks.length > 1) {
+				setInterval(() => {
+					currentSlide = (currentSlide + 1) % artworks.length;
+					const nextUrl = artworks[currentSlide];
+
+					if (activeLayer === 1) {
+						if (slide2) {
+							slide2.style.backgroundImage = `url(${nextUrl})`;
+							slide2.classList.add('active');
+						}
+						if (slide1) slide1.classList.remove('active');
+						activeLayer = 2;
+					} else {
+						if (slide1) {
+							slide1.style.backgroundImage = `url(${nextUrl})`;
+							slide1.classList.add('active');
+						}
+						if (slide2) slide2.classList.remove('active');
+						activeLayer = 1;
+					}
+				}, 4000);
+			}
+
+			// Grid Likes Logic
+			const likeBtns = document.querySelectorAll('.grid-like-btn');
+			
+			likeBtns.forEach(btn => {
+				const filename = btn.getAttribute('data-filename');
+				const serie = btn.getAttribute('data-serie');
+				const title = btn.getAttribute('data-title');
+				const countSpan = btn.querySelector('.grid-like-count');
+
+				// Prevent card click when clicking like
+				btn.addEventListener('click', async (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+
+					if (btn.hasAttribute('disabled')) return;
+					
+					const isLiked = btn.classList.contains('liked');
+					btn.classList.toggle('liked');
+					btn.setAttribute('disabled', 'true');
+					
+					let current = parseInt(countSpan?.textContent || '0');
+					if (countSpan) countSpan.textContent = (isLiked ? Math.max(0, current - 1) : current + 1).toString();
+					
+					try {
+						const res = await fetch('/api/public/like-artwork', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ filename, serie_id: serie, title })
+						});
+						const data = await res.json();
+						if (data.likes !== undefined && countSpan) {
+							countSpan.textContent = data.likes;
+						}
+						if (data.hasLiked) {
+							btn.classList.add('liked');
+						} else {
+							btn.classList.remove('liked');
+						}
+					} catch (err) {
+						if (countSpan) countSpan.textContent = current.toString();
+						btn.classList.toggle('liked', isLiked);
+					} finally {
+						btn.removeAttribute('disabled');
+					}
+				});
+
+				// Initial Load
+				if (filename) {
+					fetch(`/api/public/like-artwork?filename=${encodeURIComponent(filename)}`)
+						.then(res => res.json())
+						.then(data => {
+							if (data.likes !== undefined && countSpan) countSpan.textContent = data.likes;
+							if (data.hasLiked) btn.classList.add('liked');
+						}).catch(() => {});
+				}
+			});
+
+		});
+	</script>
+</Layout>
+<Footer />
+
+<style>
+
+
+/* Immersive Header Design */
+.immersive-header {
+	position: relative;
+	width: 100%;
+	height: 80vh;
+	background-color: #000;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+
+.slideshow-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+}
+
+.slide-layer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	background-position: center;
+	opacity: 0;
+	transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+	filter: brightness(0.4) contrast(1.1);
+}
+
+.slide-layer.active {
+	opacity: 1;
+}
+
+.header-overlay-mask {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(to bottom, 
+		rgba(5, 5, 5, 0.2) 0%, 
+		rgba(5, 5, 5, 0.4) 50%, 
+		#050505 100%
+	);
+	z-index: 2;
+}
+
+.serie-header-content {
+	position: relative;
+	z-index: 10;
+	padding: 0 5%;
+}
+
+.back-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 2rem;
+	color: rgba(255, 255, 255, 0.5);
+	text-decoration: none;
+	transition: all 0.4s ease;
+}
+
+.back-link .icon {
+	font-size: 1.2rem;
+}
+
+.back-link .label {
+	font-family: var(--font-secondary);
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 3px;
+	font-weight: 600;
+}
+
+.back-link:hover {
+	color: var(--color-accent);
+	transform: translateX(-5px);
+}
+
+.serie-title {
+	font-family: var(--font-primary);
+	font-size: clamp(3rem, 7vw, 6rem);
+	font-weight: 300;
+	letter-spacing: -0.01em;
+	color: #fff;
+	margin-bottom: 1rem;
+	text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.serie-meta {
+	font-family: var(--font-secondary);
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 4px;
+	color: var(--color-accent);
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+}
+
+.serie-meta .count {
+	font-size: 1.2rem;
+	opacity: 0.8;
+}
+
+/* Content Layout Alignment */
+.serie-content-container {
+	max-width: 1600px;
+	margin: -5vh auto 0; /* Pull up to meet the mask */
+	position: relative;
+	z-index: 20;
+	background: transparent;
+	padding: 0 5% 10rem;
+}
+
+/* CSS Masonry Layout Sólido */
+.masonry-grid {
+	column-count: 3;
+	column-gap: 3rem;
+	width: 100%;
+}
+
+.gallery-artwork-card {
+	break-inside: avoid; /* Previene cortes en columnas */
+	margin-bottom: 3rem;
+	position: relative;
+	background-color: #0a0a0a; /* Fondo ultra oscuro fallback */
+	border-radius: 4px; /* Opcional si se quiere diseño sin esquinas afiladas */
+	cursor: pointer;
+	overflow: hidden;
+	display: flex; /* Fuerza al contenedor a arroupar su hijo bloque */
+	flex-direction: column;
+}
+
+.artwork-figure {
+	position: relative;
+	width: 100%;
+	line-height: 0; /* Previene espacios misteriosos en block elements */
+}
+
+/* Image Core Rules */
+.artwork-img {
+	width: 100%;
+	height: auto; /* Mantener la proporcion original de photo vertical/horizontal */
+	display: block;
+	object-fit: cover;
+	transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.6s ease;
+}
+
+/* Hover Room View (Absolute overlay that fades IN) */
+.artwork-img.room-img {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	z-index: 2;
+	pointer-events: none; 
+}
+
+/* Hover effect to show Room Image */
+.gallery-artwork-card:hover .artwork-img.room-img {
+	opacity: 1;
+}
+
+/* Hover efects to dim Main Image slightly? (Opcional, pero se ve mejor en crossfade) */
+.gallery-artwork-card:hover .artwork-img.main-img {
+	transform: scale(1.02); /* Slight zoom en principal as it sits behind */
+}
+
+/* Info Overlay */
+.artwork-info-overlay {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: 50%; /* Cubre solo la mitad inferior suavemente */
+	background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 40%, transparent 100%);
+	z-index: 3;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding-bottom: 3rem;
+	opacity: 0;
+	transition: opacity 0.4s ease;
+	pointer-events: none;
+}
+
+.overlay-actions {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	transform: translateY(20px);
+	transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.view-text {
+	color: #fff;
+	font-family: var(--font-secondary, 'Montserrat', sans-serif);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 3px;
+	border: 1px solid rgba(255,255,255,0.7);
+	background: rgba(0,0,0,0.3);
+	padding: 0.8rem 2rem;
+	backdrop-filter: blur(2px);
+	transition: background 0.3s ease;
+}
+
+.grid-like-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	background: rgba(0,0,0,0.6);
+	border: 1px solid rgba(255,255,255,0.2);
+	color: #fff;
+	padding: 0.8rem 1rem;
+	cursor: pointer;
+	backdrop-filter: blur(4px);
+	transition: all 0.3s ease;
+}
+
+.grid-like-btn svg {
+	transition: all 0.3s ease;
+}
+
+.grid-like-btn:hover {
+	border-color: #ff4d4d;
+	background: rgba(255,77,77,0.1);
+}
+
+.grid-like-btn.liked svg {
+	fill: #ff4d4d;
+	stroke: #ff4d4d;
+	animation: heartBeat 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.grid-like-btn.liked .grid-like-count {
+	color: #ff4d4d;
+	font-weight: 700;
+}
+
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.gallery-artwork-card:hover .artwork-info-overlay {
+	opacity: 1;
+}
+
+.gallery-artwork-card:hover .overlay-actions {
+	transform: translateY(0);
+}
+
+/* Responsiveness */
+@media (max-width: 1024px) {
+	.masonry-grid {
+		column-count: 2;
+		column-gap: 2rem;
+	}
+	.gallery-artwork-card {
+		margin-bottom: 2rem;
+	}
+}
+
+@media (max-width: 768px) {
+	.masonry-grid {
+		column-count: 1;
+	}
+	.nav-links {
+		display: none;
+	}
+	.serie-title {
+		font-size: 2.2rem;
+	}
+	
+	/* Para mobile siempre puede mostrar un sutil borde inferior o boton */
+	.artwork-info-overlay {
+		opacity: 1;
+		height: 30%;
+		background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+		padding-bottom: 1.5rem;
+	}
+	.view-text {
+		transform: translateY(0);
+		background: transparent;
+		border-color: transparent;
+		font-weight: 500;
+	}
+}
+</style>

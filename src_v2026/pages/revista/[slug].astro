@@ -1,0 +1,538 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import { db } from '../../db/client';
+import { magazine, artworks } from '../../db/schema';
+import { eq, ne, sql } from 'drizzle-orm';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/revista');
+}
+
+// Fetch article from database
+const articlesList = await db.select()
+  .from(magazine)
+  .where(eq(magazine.slug, slug))
+  .limit(1);
+
+if (articlesList.length === 0) {
+  return Astro.redirect('/revista');
+}
+
+const articulo = articlesList[0];
+
+// Fetch suggested artwork (random one from artworks with JMX prefix)
+const suggestedArtworks = await db.select()
+  .from(artworks)
+  .where(sql`LOWER(filename) LIKE 'jmx_%' OR LOWER(filename) LIKE 'jmix_%'`)
+  .orderBy(sql`RAND()`)
+  .limit(1);
+
+const suggestedArt = suggestedArtworks[0];
+
+function serieToFolder(serieId: string): string {
+  if (!serieId) return serieId;
+  return serieId.charAt(0).toUpperCase() + serieId.slice(1);
+}
+
+// Parse media items from DB (featured + JSON list)
+let mediaItems = [];
+try {
+  if (articulo.media_json) {
+    mediaItems = typeof articulo.media_json === 'string' 
+      ? JSON.parse(articulo.media_json) 
+      : articulo.media_json;
+  }
+} catch (e) {
+  console.error('Error parsing media_json', e);
+}
+
+function resolveMediaURL(url: string | null): string {
+  if (!url) return '/img/placeholder.jpg';
+  if (url.startsWith('http') || url.startsWith('/')) return url;
+  return `/img/magazine/${url}`;
+}
+
+// Build final media list, filtering empty sources
+const rawMedia = [
+  articulo.video_url ? { type: 'video', src: resolveMediaURL(articulo.video_url), caption: '' } : null,
+  articulo.featured_image ? { type: 'image', src: resolveMediaURL(articulo.featured_image), caption: '' } : null,
+  ...mediaItems.map(m => ({ ...m, src: resolveMediaURL(m.src) }))
+].filter(Boolean);
+
+// Fallback if no media at all
+const media = rawMedia.length > 0 ? rawMedia : [{ type: 'image', src: '/img/placeholder.jpg', caption: 'Imagen no disponible' }];
+
+// Formatear fecha
+const formattedDate = articulo.created_at ? new Date(articulo.created_at).toLocaleDateString('es-ES', {
+  day: 'numeric', month: 'long', year: 'numeric'
+}) : '';
+
+// Tiempo de lectura estimado (aprox 200 ppm)
+const wordCount = articulo.content_html.replace(/<[^>]*>/g, '').split(/\s+/).length;
+const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+---
+
+<Layout
+  title={articulo.title}
+  description={articulo.title}
+  type="article"
+  url={`/revista/${articulo.slug}`}
+  image={articulo.featured_image || ''}
+  pubDate={articulo.created_at?.toISOString()}
+  author="Javier Mix"
+>
+  <Header currentPath="/revista" />
+
+  <article class="magazine-article">
+    <div class="split-layout">
+
+      <!-- ── LEFT: Narrative Text (Scrolling) ── -->
+      <section class="narrative-column">
+        <header class="article-header">
+          <div class="header-eyebrow-row">
+            <span class="eyebrow">CRÓNICA JHM</span>
+            <span class="separator">/</span>
+            <span class="category-badge">{articulo.tags?.split(',')[0] || 'ARTÍSTICO'}</span>
+          </div>
+          
+          <h1 class="headline">{articulo.title}</h1>
+
+          <div class="meta-row">
+            <div class="author-info">Por <strong>Javier Mix</strong></div>
+            <div class="reading-meta">
+              <span class="read-time">
+                <i class="far fa-clock"></i> {readingTime} MIN DE LECTURA
+              </span>
+              <span class="date">{formattedDate}</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="prose-content" id="prose" set:html={articulo.content_html}></div>
+
+        <div class="article-divider">
+          <span class="divider-dot"></span>
+        </div>
+        
+        <!-- Star Rating System (Refined) -->
+        <div class="rating-section">
+          <h3>¿Qué te ha parecido esta crónica?</h3>
+          <div class="rating-container" id="rating-container" data-slug={articulo.slug}>
+            <div class="stars-row" id="stars-row">
+              <button class="star-btn" data-value="1">★</button>
+              <button class="star-btn" data-value="2">★</button>
+              <button class="star-btn" data-value="3">★</button>
+              <button class="star-btn" data-value="4">★</button>
+              <button class="star-btn" data-value="5">★</button>
+            </div>
+            <div class="rating-stats">
+              <span class="rating-avg" id="rating-avg">0.0</span>
+              <span class="rating-count" id="rating-count">0 votos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CONTINUAR COLECCIÓN ── -->
+        <section class="collection-invite">
+          <div class="invite-header">
+            <span class="invite-eyebrow">DIÁLOGO VISUAL</span>
+            <h3 class="invite-title">Invitación a la Potencia</h3>
+            <p class="invite-text">
+              Cada obra es un fragmento de una memoria mayor. Te invitamos a completar tu serie o descubrir nuevas resonancias en nuestras colecciones curadas.
+            </p>
+          </div>
+
+          {suggestedArt && (
+            <a href={`/obra/${suggestedArt.serie_id.toLowerCase().replace(/_/g, '-')}-${suggestedArt.title.toLowerCase().replace(/ /g, '-')}`} class="suggested-artwork-card">
+              <div class="art-preview">
+                <img src={`/img/Series/${serieToFolder(suggestedArt.serie_id)}/${suggestedArt.filename}`} alt={suggestedArt.title} onerror="this.onerror=null; this.src='/img/placeholder.jpg';" />
+              </div>
+              <div class="art-info">
+                <span class="art-serie">{suggestedArt.serie_id.replace(/_/g, ' ')}</span>
+                <h4 class="art-title">{suggestedArt.title}</h4>
+                <div class="btn-acquire">ADQUIRIR OBRA</div>
+              </div>
+            </a>
+          )}
+
+          <div class="footer-navigation">
+            <a href="/revista" class="back-link">
+              <i class="fas fa-chevron-left"></i> VOLVER A LA REVISTA
+            </a>
+            <a href="/obras" class="collections-link">VER COLECCIONES</a>
+          </div>
+        </section>
+      </section>
+
+      <!-- ── RIGHT: Sticky Media Panel (Fixed) ── -->
+      <aside class="visual-column" id="visual-column" data-media={JSON.stringify(media)}>
+        <div class="media-stage" id="media-stage">
+          <div class="media-layer active" id="media-layer-A">
+            {media[0]?.type === 'video' ? (
+              <video src={media[0].src} class="media-video" style="opacity: 1" muted autoplay loop playsinline></video>
+            ) : (
+              <img src={media[0]?.src} alt={articulo.title} class="media-img" id="img-A" />
+            )}
+          </div>
+          <div class="media-layer" id="media-layer-B">
+            <img src="" alt="" class="media-img" id="img-B" />
+          </div>
+          <video class="media-video" id="media-video-dynamic" muted autoplay loop playsinline style="opacity: 0"></video>
+        </div>
+
+        <div class="media-overlay"></div>
+        <div class="media-caption" id="media-caption"></div>
+
+        <div class="media-controls">
+          <div class="media-dots" id="media-dots">
+            {media.map((_, i) => (
+              <button class={`dot ${i === 0 ? "active" : ""}`} data-index={i}></button>
+            ))}
+          </div>
+        </div>
+
+        <div class="visual-blend"></div>
+      </aside>
+    </div>
+  </article>
+
+  <style is:global>
+    @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+
+    .prose-content {
+      font-family: 'Lora', serif;
+      font-size: 1.2rem;
+      line-height: 1.9;
+      color: rgba(255,255,255,0.7);
+      font-weight: 400;
+    }
+    .prose-content p { margin-bottom: 2.5rem; }
+    .prose-content h2 { 
+      font-family: 'Cormorant Garamond', serif; 
+      font-size: 2.2rem; 
+      color: #fff; 
+      margin: 4rem 0 2rem;
+      font-style: italic;
+    }
+    .prose-content strong { color: #fff; font-weight: 500; }
+
+    .editorial-callout {
+      background: rgba(189, 155, 83, 0.03);
+      border-left: 3px solid var(--color-accent, #bd9b53);
+      padding: 3rem;
+      margin: 4rem 0;
+      color: #fff;
+      font-size: 1.6rem;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      line-height: 1.4;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('astro:page-load', () => {
+      const visualCol = document.getElementById('visual-column');
+      if (!visualCol) return;
+
+      const media = JSON.parse(visualCol.getAttribute('data-media') || '[]');
+      if (media.length === 0) return;
+
+      const layerA = document.getElementById('media-layer-A');
+      const layerB = document.getElementById('media-layer-B');
+      const imgA = document.getElementById('img-A') as HTMLImageElement;
+      const imgB = document.getElementById('img-B') as HTMLImageElement;
+      const video = document.getElementById('media-video-dynamic') as HTMLVideoElement;
+      const caption = document.getElementById('media-caption');
+      const dotsEl = document.getElementById('media-dots');
+
+      let currentIdx = 0;
+      let frontLayer = 'A';
+
+      function showMedia(idx: number) {
+        if (idx === currentIdx) return;
+        currentIdx = idx;
+
+        const item = media[idx];
+        if (!item) return;
+
+        // Transition logic with subtle scale
+        if (item.type === 'video') {
+          video.src = item.src;
+          video.style.display = 'block';
+          video.play();
+          video.style.opacity = '1';
+          if (layerA) layerA.style.opacity = '0';
+          if (layerB) layerB.style.opacity = '0';
+        } else {
+          video.style.opacity = '0';
+          video.pause();
+          
+          if (frontLayer === 'A') {
+            if (imgB) imgB.src = item.src;
+            if (layerB) {
+              layerB.style.opacity = '1';
+              layerB.style.transform = 'scale(1.05)';
+              setTimeout(() => layerB.style.transform = 'scale(1)', 50);
+            }
+            if (layerA) layerA.style.opacity = '0';
+            frontLayer = 'B';
+          } else {
+            if (imgA) imgA.src = item.src;
+            if (layerA) {
+              layerA.style.opacity = '1';
+              layerA.style.transform = 'scale(1.05)';
+              setTimeout(() => layerA.style.transform = 'scale(1)', 50);
+            }
+            if (layerB) layerB.style.opacity = '0';
+            frontLayer = 'A';
+          }
+        }
+
+        if (caption) {
+          caption.style.opacity = '0';
+          setTimeout(() => {
+            caption.textContent = item.caption || '';
+            caption.style.opacity = item.caption ? '0.7' : '0';
+          }, 400);
+        }
+
+        dotsEl?.querySelectorAll('.dot').forEach((d, i) => {
+          d.classList.toggle('active', i === idx);
+        });
+      }
+
+      let lastInteratcion = Date.now();
+      setInterval(() => {
+        if (Date.now() - lastInteratcion > 12000) {
+          showMedia((currentIdx + 1) % media.length);
+        }
+      }, 6000);
+
+      dotsEl?.querySelectorAll('.dot').forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          lastInteratcion = Date.now();
+          showMedia(i);
+        });
+      });
+
+      // Rating System (Same logic as before, but with better UI)
+      const ratingCont = document.getElementById('rating-container');
+      const starsRow = document.getElementById('stars-row');
+      const stars = starsRow?.querySelectorAll('.star-btn');
+      const avgEl = document.getElementById('rating-avg');
+      const countEl = document.getElementById('rating-count');
+      const slug = ratingCont?.getAttribute('data-slug');
+
+      if (ratingCont && slug) {
+        fetch(`/api/public/rate-article?slug=${slug}`)
+          .then(res => res.json())
+          .then(data => {
+            if (avgEl) avgEl.textContent = data.average;
+            if (countEl) countEl.textContent = `${data.count} votos`;
+            if (data.userScore > 0) highlightStars(data.userScore);
+          });
+
+        stars?.forEach(star => {
+          star.addEventListener('mouseenter', () => previewStars(parseInt(star.getAttribute('data-value') || '0')));
+          star.addEventListener('mouseleave', () => highlightStars(parseInt(ratingCont.getAttribute('data-user-score') || '0')));
+          star.addEventListener('click', async () => {
+             const val = parseInt(star.getAttribute('data-value') || '0');
+             const res = await fetch('/api/public/rate-article', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug, score: val })
+              });
+              const d = await res.json();
+              if (d.success) {
+                if (avgEl) avgEl.textContent = d.average;
+                if (countEl) countEl.textContent = `${d.count} votos`;
+                ratingCont.setAttribute('data-user-score', val.toString());
+                highlightStars(val);
+              }
+          });
+        });
+      }
+
+      function highlightStars(count: number) {
+        stars?.forEach((s, i) => { s.classList.toggle('active', i < count); s.classList.remove('hover'); });
+      }
+      function previewStars(count: number) {
+        stars?.forEach((s, i) => s.classList.toggle('hover', i < count));
+      }
+    });
+  </script>
+</Layout>
+
+<style>
+/* ─────────────────────────────────
+   PREMIUM SPLIT LAYOUT
+───────────────────────────────── */
+.magazine-article {
+  width: 100%;
+  background-color: #0c0c0e; /* Soft Deep Black / Charcoal */
+}
+
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+/* Narrative Column (Left - Scrollable) */
+.narrative-column {
+  padding: 15rem 12% 10rem;
+  background: linear-gradient(to bottom, #0c0c0e, #08080a);
+}
+
+.header-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.eyebrow {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  color: var(--color-accent, #bd9b53);
+  font-weight: 700;
+}
+
+.separator { color: rgba(255,255,255,0.1); font-size: 0.8rem; }
+
+.category-badge {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.03);
+  padding: 0.4rem 0.8rem;
+  border-radius: 2px;
+}
+
+.headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.5rem, 6vw, 4.2rem);
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.05;
+  color: #fff;
+  margin-bottom: 3.5rem;
+  letter-spacing: -1px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 3rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 5rem;
+}
+
+.author-info { font-size: 0.8rem; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
+.author-info strong { color: #fff; text-transform: uppercase; }
+
+.reading-meta { display: flex; align-items: center; gap: 2rem; color: rgba(255,255,255,0.3); font-size: 0.65rem; letter-spacing: 2px; }
+.read-time i { color: var(--color-accent); margin-right: 5px; }
+
+.article-divider { display: flex; justify-content: center; margin: 6rem 0; }
+.divider-dot { width: 4px; height: 4px; background: var(--color-accent); border-radius: 50%; opacity: 0.3; }
+
+/* Visual Column (Right - Fixed) */
+.visual-column {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+.media-stage { width: 100%; height: 100%; position: relative; }
+.media-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1), transform 2s ease;
+}
+.media-layer.active { opacity: 1; }
+
+.media-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8); }
+.media-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.5s ease; }
+
+.media-overlay { position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.3) 100%); pointer-events: none; }
+
+.media-caption {
+  position: absolute;
+  bottom: 6rem;
+  width: 100%;
+  text-align: center;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  z-index: 10;
+}
+
+.media-controls { position: absolute; bottom: 3rem; width: 100%; display: flex; justify-content: center; z-index: 10; }
+.media-dots { display: flex; gap: 0.8rem; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.2); border: none; cursor: pointer; transition: all 0.4s; }
+.dot.active { background: var(--color-accent); transform: scale(1.6); }
+
+.visual-blend { position: absolute; top: 0; left: 0; width: 80px; height: 100%; background: linear-gradient(to right, #0c0c0e, transparent); pointer-events: none; }
+
+/* ── RATING & INVITE ── */
+.rating-section { margin: 6rem 0; }
+.rating-section h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-style: italic; color: #fff; margin-bottom: 2rem; }
+.rating-container { display: flex; align-items: center; gap: 2rem; }
+.star-btn { background: none; border: none; font-size: 1.8rem; color: rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s; padding: 0; }
+.star-btn.active, .star-btn.hover { color: var(--color-accent); }
+.rating-stats { font-size: 0.8rem; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
+.rating-avg { color: #fff; font-weight: 700; margin-right: 5px; }
+
+.collection-invite { padding: 6rem 0; border-top: 1px solid rgba(255,255,255,0.05); }
+.invite-eyebrow { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 700; margin-bottom: 1rem; display: block; }
+.invite-title { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-style: italic; color: #fff; margin-bottom: 2rem; }
+.invite-text { color: rgba(255,255,255,0.4); line-height: 1.8; max-width: 500px; margin-bottom: 4rem; }
+
+.suggested-artwork-card {
+  display: flex;
+  gap: 3rem;
+  background: rgba(255,255,255,0.02);
+  padding: 2.5rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: 0.4s;
+  align-items: center;
+}
+.suggested-artwork-card:hover { transform: translateX(10px); background: rgba(255,255,255,0.04); }
+.art-preview { width: 140px; aspect-ratio: 1; overflow: hidden; }
+.art-preview img { width: 100%; height: 100%; object-fit: contain; }
+.art-serie { font-size: 0.6rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 2px; }
+.art-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: #fff; margin: 0.5rem 0 1.5rem; }
+.btn-acquire { font-size: 0.6rem; font-weight: 700; letter-spacing: 2px; color: var(--color-accent); border: 1px solid var(--color-accent); padding: 0.6rem 1.2rem; display: inline-block; }
+
+.footer-navigation { display: flex; justify-content: space-between; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.03); }
+.back-link, .collections-link { font-size: 0.7rem; letter-spacing: 2px; font-weight: 600; text-decoration: none; color: rgba(255,255,255,0.3); transition: 0.3s; }
+.back-link:hover, .collections-link:hover { color: #fff; }
+
+/* ── MOBILE ADAPTATION ── */
+@media (max-width: 1024px) {
+  .split-layout { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; }
+  .visual-column { height: 45vh; position: sticky; top: 0; z-index: 10; }
+  .narrative-column { padding: 4rem 10% 8rem; position: relative; z-index: 5; background: #0c0c0e; border-top: 1px solid rgba(255,255,255,0.05); }
+  .headline { font-size: 2.5rem; }
+  .visual-blend { display: none; }
+  .media-caption { bottom: 4rem; }
+  .meta-row { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+  .suggested-artwork-card { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+}
+</style>

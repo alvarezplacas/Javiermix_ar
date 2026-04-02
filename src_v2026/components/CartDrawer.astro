@@ -1,0 +1,320 @@
+---
+// src/components/CartDrawer.astro
+---
+
+<div id="cart-drawer-overlay" class="cart-overlay" style="display: none;"></div>
+<aside id="cart-drawer" class="cart-drawer">
+    <div class="cart-header">
+        <h2>TU COLECCIÓN</h2>
+        <button id="close-cart-btn" class="close-btn" aria-label="Cerrar Carrito"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="cart-items" id="cart-items-container">
+        <!-- Rendered via NanoStores Subscription in JS -->
+    </div>
+    
+    <div class="cart-footer">
+        <div class="cart-total">
+            <span class="total-label">SUBTOTAL:</span>
+            <span id="cart-subtotal-display" class="total-value">U$D 0</span>
+        </div>
+        <p class="cart-disclaimer">Los gastos de envío seguros y cuidados aduaneros (si aplican) se estimarán en el Checkout.</p>
+        <a href="/checkout" class="btn-checkout" id="btn-checkout">PROCEDER AL PAGO <i class="fas fa-shield-alt"></i></a>
+    </div>
+</aside>
+
+<style>
+    .cart-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        z-index: 10000;
+    }
+
+    .cart-drawer {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 100%;
+        max-width: 450px;
+        height: 100vh;
+        background-color: var(--color-onyx-deep);
+        border-left: 1px solid rgba(255,255,255,0.05);
+        z-index: 10001;
+        display: flex;
+        flex-direction: column;
+        transition: right 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        box-shadow: -20px 0 50px rgba(0,0,0,0.5);
+    }
+
+    .cart-drawer.open {
+        right: 0;
+    }
+
+    .cart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2rem;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .cart-header h2 {
+        font-family: var(--font-secondary);
+        font-size: 0.9rem;
+        letter-spacing: 3px;
+        color: var(--color-white);
+        margin: 0;
+    }
+
+    .close-btn {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+    .close-btn:hover { color: var(--color-accent); }
+
+    .cart-items {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    /* Scrollbar */
+    .cart-items::-webkit-scrollbar { width: 5px; }
+    .cart-items::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+
+    :global(.empty-cart-msg) {
+        text-align: center;
+        color: rgba(255,255,255,0.4);
+        font-size: 0.9rem;
+        margin-top: 2rem;
+        font-style: italic;
+    }
+
+    :global(.cart-item) {
+        display: flex;
+        gap: 1rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+
+    :global(.cart-item-img) {
+        width: 80px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 2px;
+    }
+
+    :global(.cart-item-info) {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    :global(.cart-item-info h4) {
+        font-family: var(--font-primary);
+        font-size: 1.1rem;
+        color: var(--color-white);
+        margin: 0 0 0.3rem 0;
+        font-weight: 400;
+    }
+
+    :global(.cart-item-size) {
+        font-size: 0.75rem;
+        color: var(--color-accent);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    :global(.cart-item-price-row) {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+    }
+
+    :global(.cart-item-qty) {
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+    }
+
+    :global(.cart-item-price) {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--color-white);
+    }
+
+    :global(.remove-item-btn) {
+        background: transparent;
+        border: none;
+        color: rgba(255,255,255,0.2);
+        cursor: pointer;
+        transition: color 0.3s;
+        height: min-content;
+        padding: 0.5rem;
+    }
+    :global(.remove-item-btn:hover) {
+        color: #e05555;
+    }
+
+    /* Footer */
+    .cart-footer {
+        padding: 2rem;
+        background: rgba(0,0,0,0.3);
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .cart-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .total-label {
+        font-family: var(--font-secondary);
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+        color: var(--color-text-muted);
+    }
+
+    .total-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--color-white);
+    }
+
+    .cart-disclaimer {
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.3);
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-checkout {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 1rem;
+        background: var(--color-accent);
+        color: var(--color-onyx-deep);
+        text-decoration: none;
+        font-family: var(--font-secondary);
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+    .btn-checkout:hover {
+        background: var(--color-white);
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 480px) {
+        .cart-drawer {
+            max-width: 100%;
+        }
+    }
+</style>
+
+<script>
+    import { cartStore, removeCartItem } from '../store/cartStore';
+
+    document.addEventListener('astro:page-load', () => {
+        const cartBtn = document.getElementById('nav-cart-btn');
+        const closeBtn = document.getElementById('close-cart-btn');
+        const drawer = document.getElementById('cart-drawer');
+        const overlay = document.getElementById('cart-drawer-overlay');
+        const itemsContainer = document.getElementById('cart-items-container');
+        const subtotalDisplay = document.getElementById('cart-subtotal-display');
+        const badge = document.getElementById('cart-count-badge');
+        
+        if (!drawer || !overlay) return;
+
+        function toggleCart() {
+            const isVisible = drawer?.classList.contains('open');
+            if (isVisible) {
+                drawer?.classList.remove('open');
+                if(overlay) overlay.style.display = 'none';
+                document.body.style.overflow = '';
+            } else {
+                drawer?.classList.add('open');
+                if(overlay) overlay.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        if (cartBtn) cartBtn.addEventListener('click', toggleCart);
+        if (closeBtn) closeBtn.addEventListener('click', toggleCart);
+        if (overlay) overlay.addEventListener('click', toggleCart);
+        
+        document.addEventListener('cartUpdated', () => {
+            if (!drawer?.classList.contains('open')) {
+                toggleCart();
+            }
+        });
+
+        // Initialize nano store logic safely
+        if (typeof cartStore !== 'undefined') {
+            cartStore.subscribe((cart) => {
+                const items = Object.values(cart);
+                
+                const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+                if (badge) {
+                    badge.innerText = totalItems.toString();
+                    badge.style.display = totalItems > 0 ? 'flex' : 'none';
+                }
+
+                if (itemsContainer) {
+                    if (items.length === 0) {
+                        itemsContainer.innerHTML = '<p class="empty-cart-msg">Tu colección privada aguarda su primera obra.</p>';
+                    } else {
+                        itemsContainer.innerHTML = items.map(item => `
+                            <div class="cart-item">
+                                <img src="${item.image}" alt="${item.title}" class="cart-item-img"/>
+                                <div class="cart-item-info">
+                                    <h4>${item.title}</h4>
+                                    <span class="cart-item-size">${item.size}</span>
+                                    <div class="cart-item-price-row">
+                                        <span class="cart-item-qty">${item.quantity}x</span>
+                                        <span class="cart-item-price">U$D ${item.price}</span>
+                                    </div>
+                                </div>
+                                <button class="remove-item-btn" data-id="${item.id}" aria-label="Remover Obra"><i class="fas fa-trash"></i></button>
+                            </div>
+                        `).join('');
+                        
+                        document.querySelectorAll('.remove-item-btn').forEach(btn => {
+                            btn.addEventListener('click', (e) => {
+                                const target = e.currentTarget as HTMLElement;
+                                const id = target.getAttribute('data-id');
+                                if (id) removeCartItem(id);
+                            });
+                        });
+                    }
+                }
+
+                if (subtotalDisplay) {
+                    const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                    subtotalDisplay.innerText = `U$D ${total}`;
+                }
+            });
+        }
+    });
+</script>

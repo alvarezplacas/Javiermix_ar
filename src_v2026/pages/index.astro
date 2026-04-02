@@ -1,0 +1,395 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import MagazineSection from '../components/MagazineSection.astro';
+import CollectorJoin from '../components/CollectorJoin.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout
+  title="Fotografía Fine Art de Autor"
+  description="Javier Mix: fotógrafo de autor en Buenos Aires. Colecciones exclusivas de obra Fine Art sobre aluminio para coleccionistas de arte y decoradores de interiores. Impresión de alta calidad, estudio de enmarcado virtual."
+  url="/"
+  keywords={['fotografía fine art argentina', 'coleccionar fotografía', 'obra sobre aluminio', 'impresión baryta', 'decoración con fotografía', 'fotógrafo arte contemporáneo']}
+>
+  <!-- Top Bar Menu Placeholder -->
+  <!-- Deployment Test: Automation Verified -->
+
+  <main class="split-screen" id="home-intro">
+    <!-- Left: Visual Immersive (50%) -->
+    <div class="split-visual">
+      <div class="hero-slider">
+        <!-- Slide Fijo / Video -->
+        <div class="slide-item active" style="opacity: 1; z-index: 1;">
+          <div class="video-background-container">
+            <!-- Imagen de carga inicial (2 segundos) -->
+            <img class="home-bg-image active" src="/media/home/00.avif" alt="Javier Mix Fine Art" />
+            <video class="home-bg-video" src="/media/home/00.mp4" playsinline muted preload="auto"></video>
+            <video class="home-bg-video" src="/media/home/01.mp4" playsinline muted preload="auto"></video>
+            <video class="home-bg-video" src="/media/home/02.mp4" playsinline muted preload="auto"></video>
+            <video class="home-bg-video" src="/media/home/03.mp4" playsinline muted preload="auto"></video>
+            <div class="video-overlay-gradient"></div>
+          </div>
+          
+          <!-- Immersive Glass CTA Container -->
+          <div class="immersive-cta-overlay">
+            <div class="glass-cta-stack">
+              <a href="/galeria" class="glass-cta-btn secondary">
+                <span class="btn-label">VER COLECCIÓN</span>
+                <span class="btn-hover-bg"></span>
+              </a>
+              <a href="/revista" class="glass-cta-btn primary">
+                <span class="btn-label">REVISTA ONLINE</span>
+                <span class="btn-hover-bg"></span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Narrative Content (50%) -->
+    <div class="split-content">
+      
+      <Header currentPath="/" theme="dark" />
+
+      <header class="hero-text" style="position: relative;">
+
+        <h1 class="main-heading">
+          <span class="text-burgundy">La Luz:</span>
+          <span class="weight-light">Memoria y Potencia</span>
+        </h1>
+
+        <p class="intro-text">La fotografía no es solo captura; es la luz escribiendo la historia de nuestra resistencia. Este espacio nace de una convicción: que la verdadera potencia estética solo se alcanza cuando se reconoce el suelo que nos forjó.</p>
+
+        <div class="home-section">
+          <h3>Obra de Autor</h3>
+          <p>Una curaduría de piezas Fine Art diseñadas para quienes buscan en el arte una presencia sólida y honesta. Son obras que habitan la altura del diseño contemporáneo sin soltar la mano de sus raíces; imágenes donde el barro y el metal se transforman en piezas de colección.</p>
+        </div>
+
+        <div class="home-section">
+          <h3>Crónica y Legado</h3>
+          <p>A través de nuestra revista online, exploramos la historia y la técnica de la fotografía. No solo vendemos imágenes, documentamos el lenguaje de la luz. Entender de dónde venimos es lo que nos permite capturar con autoridad hacia dónde vamos.</p>
+        </div>
+
+        <div class="home-closing">
+          <p>Bienvenido a una mirada donde lo cotidiano se vuelve trascendente y el esfuerzo se convierte en arte.</p>
+        </div>
+        
+        <!-- Removed legacy JS Intersection observer for performance; using Scroll-Driven Animations natively in CSS -->
+
+
+
+        <!-- Redundant hero-actions removed as they are now immersive CTAs on the left -->
+
+        <!-- Social Links (Floating Bottom Right based on CSS) -->
+        <div class="home-social-links-floating">
+           <a href="#" class="social-circle-btn"><i class="fab fa-instagram"></i></a>
+           <a href="#" class="social-circle-btn"><i class="fab fa-whatsapp"></i></a>
+           <a href="#" class="social-circle-btn"><i class="fab fa-behance"></i></a>
+        </div>
+
+      </header>
+    </div>
+  </main>
+
+  <!-- Nueva Sección de Revista Digital -->
+  <MagazineSection />
+
+  <!-- Registro de Coleccionistas -->
+  <CollectorJoin />
+  
+  <Footer />
+</Layout>
+
+<style>
+/* 
+   Solo CSS local (Scoped) vital para la pantalla dividida. Variables y Tipografía referenciadas de global.css
+*/
+.split-screen {
+    display: flex;
+    min-height: 100dvh;
+    width: 100vw;
+    margin-top: 0;
+}
+
+/* Left: Immersive Image */
+.split-visual {
+    flex: 0 0 50%;
+    width: 50%;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    overflow: hidden;
+    background-color: var(--color-onyx-deep);
+    
+    /* Hover Effect removed to allow pure video experience */
+}
+
+.hero-slider, .slide-item {
+    width: 100%;
+    height: 100%;
+}
+
+.video-background-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: var(--color-onyx-deep);
+}
+
+.home-bg-image,
+.home-bg-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+    z-index: 1;
+}
+
+.home-bg-image.active,
+.home-bg-video.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+.video-overlay-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(8,8,8,0.1) 0%, rgba(8,8,8,0.8) 100%);
+    z-index: 3;
+    pointer-events: none;
+}
+
+/* Immersive CTA Styles */
+.immersive-cta-overlay {
+    position: absolute;
+    bottom: 10%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    pointer-events: auto;
+    display: flex;
+    justify-content: center;
+}
+
+.glass-cta-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    width: 60%;
+}
+
+.glass-cta-btn {
+    position: relative;
+    padding: 1.1rem 2rem;
+    width: 100%;
+    background: rgba(13, 13, 13, 0.4);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-white);
+    text-decoration: none;
+    overflow: hidden;
+    transition: var(--transition-premium);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.glass-cta-btn .btn-label {
+    font-family: var(--font-secondary);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    z-index: 2;
+}
+
+.glass-cta-btn .btn-hover-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: var(--color-accent);
+    opacity: 0;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.8s ease, height 0.8s ease, opacity 0.4s ease;
+    z-index: 1;
+}
+
+.glass-cta-btn:hover {
+    border-color: var(--color-accent);
+    transform: translateX(10px);
+    box-shadow: 0 20px 50px rgba(13, 13, 13, 0.5);
+}
+
+.glass-cta-btn:hover .btn-label {
+    color: var(--color-onyx-deep);
+}
+
+.glass-cta-btn:hover .btn-hover-bg {
+    width: 350px;
+    height: 350px;
+    opacity: 1;
+}
+
+.glass-cta-btn.secondary {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.split-content {
+    flex: 0 0 50%;
+    width: 50%;
+    background-color: var(--color-onyx-soft);
+    padding: 6rem 4% 10rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100dvh;
+    position: relative;
+    box-sizing: border-box;
+    border-left: 1px solid var(--glass-border);
+}
+
+.main-heading {
+    margin-bottom: 2rem;
+    line-height: 1.1;
+    display: block; /* Flow naturally like a line */
+}
+
+.main-heading .text-burgundy {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.main-heading .weight-light {
+    font-weight: 300;
+    color: var(--color-white);
+    letter-spacing: -0.01em;
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    margin-left: 0.2em;
+}
+
+.intro-text {
+    font-size: 1rem;
+    color: var(--color-travertine-light);
+    margin-bottom: 3.5rem;
+    max-width: 85%;
+    line-height: 1.8;
+}
+
+.home-section {
+    margin-bottom: 3.5rem;
+    animation: simple-fade-in 1.5s ease-out forwards;
+}
+
+@keyframes simple-fade-in {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.home-section h3 {
+    font-family: var(--font-secondary); /* Modern sans-serif for section headers */
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.75rem;
+    color: var(--color-white);
+    font-weight: 700;
+}
+
+.home-section p {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.7;
+    max-width: 90%;
+}
+
+.home-closing {
+    font-family: var(--font-primary);
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--color-accent);
+    margin-top: 2rem;
+    margin-bottom: 4rem;
+    line-height: 1.5;
+    
+    animation: simple-fade-in 1.5s ease-out forwards;
+}
+
+/* Responsividad Fiel al Original */
+@media (max-width: 992px) {
+    .split-content {
+        padding: 6rem 8% 6rem;
+    }
+    .main-heading {
+        font-size: calc(var(--text-h1) * 0.8);
+    }
+}
+
+@media (max-width: 768px) {
+    .main-heading .text-burgundy,
+    .main-heading .weight-light {
+        font-size: clamp(1.4rem, 6vw, 2rem);
+    }
+    .main-heading {
+        margin-bottom: 1.2rem;
+    }
+}
+</style>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const splashImage = document.querySelector('.home-bg-image');
+    const videos = document.querySelectorAll('.home-bg-video');
+    if (videos.length === 0) return;
+
+    let currentIndex = 0;
+    
+    // Play the first video safely
+    const playVideo = (vid) => {
+      const playPromise = vid.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(e => console.log("Video autoplay prevented", e));
+      }
+    };
+    
+    // Start pre-playing the first video in background immediately
+    playVideo(videos[currentIndex]);
+
+    // Fade out splash image and format first video after 2 seconds
+    setTimeout(() => {
+        if (splashImage) splashImage.classList.remove('active');
+        if (videos[currentIndex]) videos[currentIndex].classList.add('active');
+    }, 2000);
+
+    videos.forEach((vid) => {
+      // Ensure videos don't accidentally pause, transition smoothly to next
+      vid.addEventListener('ended', () => {
+        // Fade out current
+        vid.classList.remove('active');
+        
+        // Next video
+        currentIndex = (currentIndex + 1) % videos.length;
+        const nextVid = videos[currentIndex];
+        
+        // Reset time and play
+        nextVid.currentTime = 0;
+        nextVid.classList.add('active');
+        playVideo(nextVid);
+      });
+    });
+  });
+</script>

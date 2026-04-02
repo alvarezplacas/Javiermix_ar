@@ -1,0 +1,230 @@
+---
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { db } from '../../../../db/client';
+import { magazine } from '../../../../db/schema';
+import { eq } from 'drizzle-orm';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+
+if (!id) {
+    return Astro.redirect('/admin/revista');
+}
+
+const article = await db.select().from(magazine).where(eq(magazine.id, Number(id))).limit(1);
+
+if (article.length === 0) {
+    return Astro.redirect('/admin/revista');
+}
+
+const art = article[0];
+---
+
+<AdminLayout title={`Editar Artículo: ${art.title}`}>
+    <div class="header-actions">
+        <div>
+            <h2 class="section-title">Editar Crónica</h2>
+            <p class="section-desc">Modificando: <strong>{art.title}</strong></p>
+        </div>
+        <a href="/admin/revista" class="btn-secondary">
+            <i class="fas fa-arrow-left"></i> VOLVER AL LISTADO
+        </a>
+    </div>
+
+    <div class="panel">
+        <form id="edit-article-form" class="admin-form" data-id={art.id}>
+            <div class="form-grid">
+                <!-- Columna Izquierda: Datos Básicos -->
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="title">Título del Artículo</label>
+                        <input type="text" id="title" name="title" value={art.title} required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="slug">URL Slug (Identificador único)</label>
+                        <div class="input-with-prefix">
+                            <span>/revista/</span>
+                            <input type="text" id="slug" name="slug" value={art.slug} required />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tags">Etiquetas (Separadas por comas)</label>
+                        <input type="text" id="tags" name="tags" value={art.tags} />
+                    </div>
+
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.8rem;">
+                            <label style="margin-bottom: 0;">Cuerpo del Artículo (Editor Visual)</label>
+                            <div class="word-import-wrapper">
+                                <input type="file" id="word-upload" accept=".docx" style="display: none;" />
+                                <button type="button" class="btn-word-import" onclick="document.getElementById('word-upload').click()">
+                                    <i class="fas fa-file-word"></i> IMPORTAR DESDE WORD
+                                </button>
+                            </div>
+                        </div>
+                        <textarea id="content_html" name="content_html" rows="18">{art.content_html}</textarea>
+                        <small class="hint">Escribe directamente o importa un archivo de Word para mantener el formato.</small>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Media & SEO -->
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="featured_image">Imagen Principal (en /public/img/magazine/)</label>
+                        <input type="text" id="featured_image" name="featured_image" value={art.featured_image} />
+                        <small class="hint">Archivos en <code>/img/magazine/</code>.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="video_url">Video de Fondo (Opcional - MP4)</label>
+                        <input type="text" id="video_url" name="video_url" value={art.video_url} />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estado de Publicación</label>
+                        <select name="status">
+                            <option value="published" selected={art.status === 'published'}>Publicado</option>
+                            <option value="draft" selected={art.status === 'draft'}>Borrador</option>
+                        </select>
+                    </div>
+
+                    <div class="form-divider">SEO & Metadatos</div>
+
+                    <div class="form-group">
+                        <label for="seo_title">Título SEO (Opcional)</label>
+                        <input type="text" id="seo_title" name="seo_title" value={art.seo_title} />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="seo_description">Descripción SEO (Opcional)</label>
+                        <textarea id="seo_description" name="seo_description" rows="3">{art.seo_description}</textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 2rem;">
+                        <button type="submit" class="btn-primary w-full" id="submit-btn">
+                            <i class="fas fa-save"></i> ACTUALIZAR ARTÍCULO
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</AdminLayout>
+
+<style>
+    .header-actions { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; }
+    .section-title { font-size: 1.4rem; margin: 0; color: white; font-weight: 500; }
+    .section-desc { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin: 5px 0 0; }
+    .btn-secondary { background: rgba(255,255,255,0.05); color: white; text-decoration: none; padding: 0.7rem 1.2rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; border: 1px solid rgba(255,255,255,0.1); }
+    .panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 3rem; }
+    .admin-form .form-grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 4rem; }
+    .form-group { margin-bottom: 2rem; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--admin-accent); margin-bottom: 0.8rem; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 1rem; color: white; border-radius: 4px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; }
+    .input-with-prefix { display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .input-with-prefix span { padding: 0 1rem; color: rgba(255,255,255,0.3); font-size: 0.85rem; font-family: monospace; }
+    .input-with-prefix input { border: none; background: transparent; }
+    .hint { display: block; margin-top: 5px; font-size: 0.7rem; color: rgba(255,255,255,0.3); }
+    .btn-word-import { background: #2b5797; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.3s; }
+    .btn-word-import:hover { background: #1e3e6d; }
+    .form-divider { margin: 3rem 0 2rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.2); }
+    .btn-primary { background: var(--admin-accent); color: var(--admin-bg); border: none; padding: 1rem; border-radius: 4px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: center; align-items: center; gap: 0.8rem; }
+    .btn-primary:hover { background: white; transform: translateY(-3px); }
+    .w-full { width: 100%; }
+
+    /* TinyMCE Dark override */
+    :global(.tox-tinymce) { border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 4px !important; }
+    
+    @media (max-width: 1024px) {
+        .admin-form .form-grid { grid-template-columns: 1fr; gap: 2rem; }
+    }
+</style>
+
+<!-- Scripts -->
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script is:inline src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+<script>
+    // Inicializar TinyMCE
+    // @ts-ignore
+    window.onload = () => {
+        // @ts-ignore
+        tinymce.init({
+            selector: '#content_html',
+            skin: 'oxide-dark',
+            content_css: 'dark',
+            plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount',
+            toolbar: 'undo redo | blocks | bold italic underline forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | code help',
+            height: 500,
+            branding: false,
+            setup: function (editor) {
+                editor.on('change', function () {
+                    editor.save();
+                });
+            }
+        });
+    };
+
+    // Importación desde Word
+    const wordUpload = document.getElementById('word-upload') as HTMLInputElement;
+    wordUpload?.addEventListener('change', function(e) {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const arrayBuffer = event.target?.result;
+            // @ts-ignore
+            mammoth.convertToHtml({arrayBuffer: arrayBuffer})
+                .then(function(result) {
+                    // @ts-ignore
+                    tinymce.get('content_html').setContent(result.value);
+                })
+                .catch(function(err) {
+                    alert('Error al convertir Word: ' + err);
+                });
+        };
+        // @ts-ignore
+        reader.readAsArrayBuffer(file);
+    });
+
+    const form = document.getElementById('edit-article-form');
+    const articleId = form?.getAttribute('data-id');
+
+    form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Asegurar que TinyMCE guarde el contenido antes de enviar
+        // @ts-ignore
+        tinymce.triggerSave();
+
+        const submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ACTUALIZANDO...';
+
+        const formData = new FormData(form as HTMLFormElement);
+        const data = { ...Object.fromEntries(formData.entries()), id: articleId };
+
+        try {
+            const res = await fetch('/api/admin/magazine', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            if (result.success) {
+                alert('¡Crónica actualizada!');
+                window.location.href = '/admin/revista';
+            } else {
+                alert('Error al actualizar: ' + result.message);
+            }
+        } catch (err) {
+            alert('Error de conexión.');
+        } finally {
+            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> ACTUALIZAR ARTÍCULO';
+        }
+    });
+</script>

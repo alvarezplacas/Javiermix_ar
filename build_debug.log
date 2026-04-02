@@ -1,0 +1,96 @@
+[2m00:09:26[22m [34m[@astrojs/node][39m Enabling sessions with filesystem storage
+
+2026-03-21T03:09:25.505Z astro:cli --verbose flag enabled! Enabling: DEBUG="astro:*,vite:*"
+2026-03-21T03:09:25.505Z astro:cli Tip: Set the DEBUG env variable directly for more control. Example: "DEBUG=astro:*,vite:* astro build".
+2026-03-21T03:09:25.882Z astro:telemetry [notify] telemetry has been disabled
+2026-03-21T03:09:26.315Z astro:telemetry {
+  context: {
+    isGit: true,
+    anonymousProjectId: '3107b85c1cdb3e4b77ac960098ce8ae8c2d50ed2a14c8b859d59e0678762198c',
+    packageManager: 'npm',
+    packageManagerVersion: '11.6.1',
+    anonymousId: 'CI.UNKNOWN',
+    anonymousSessionId: 'b5957f542e0cac0bff011ab7fcaec8d5c186eb0d7bf354966dbf00b5bc191003'
+  },
+  meta: {
+    nodeVersion: '24.11.0',
+    viteVersion: '6.4.1',
+    astroVersion: '5.18.0',
+    systemPlatform: 'win32',
+    systemRelease: '10.0.26200',
+    systemArchitecture: 'x64',
+    cpuCount: 20,
+    cpuModel: '12th Gen Intel(R) Core(TM) i7-12700',
+    cpuSpeed: 2112,
+    memoryInMb: 65276,
+    isDocker: false,
+    isTTY: undefined,
+    isWSL: false,
+    isCI: true,
+    ciName: null
+  }
+}
+2026-03-21T03:09:26.315Z astro:telemetry [
+  {
+    "eventName": "ASTRO_CLI_SESSION_STARTED",
+    "payload": {
+      "cliCommand": "build",
+      "config": {
+        "output": "server",
+        "adapter": "@astrojs/node",
+        "build": {},
+        "server": true,
+        "image": {},
+        "markdown": {},
+        "experimental": {},
+        "legacy": {}
+      }
+    }
+  }
+]
+2026-03-21T03:09:26.320Z astro:build Initial setup...
+2026-03-21T03:09:26.327Z astro:telemetry {
+  context: {
+    isGit: true,
+    anonymousProjectId: '3107b85c1cdb3e4b77ac960098ce8ae8c2d50ed2a14c8b859d59e0678762198c',
+    packageManager: 'npm',
+    packageManagerVersion: '11.6.1',
+    anonymousId: 'CI.UNKNOWN',
+    anonymousSessionId: 'b5957f542e0cac0bff011ab7fcaec8d5c186eb0d7bf354966dbf00b5bc191003'
+  },
+  meta: {
+    nodeVersion: '24.11.0',
+    viteVersion: '6.4.1',
+    astroVersion: '5.18.0',
+    systemPlatform: 'win32',
+    systemRelease: '10.0.26200',
+    systemArchitecture: 'x64',
+    cpuCount: 20,
+    cpuModel: '12th Gen Intel(R) Core(TM) i7-12700',
+    cpuSpeed: 2112,
+    memoryInMb: 65276,
+    isDocker: false,
+    isTTY: undefined,
+    isWSL: false,
+    isCI: true,
+    ciName: null
+  }
+}
+2026-03-21T03:09:26.327Z astro:telemetry [
+  {
+    "eventName": "ASTRO_CLI_ERROR",
+    "payload": {
+      "name": "Error",
+      "cliCommand": "build",
+      "isFatal": true,
+      "anonymousMessageHint": "EPERM"
+    }
+  }
+]
+EPERM: operation not permitted, scandir 'H:\Javiermix_web\src\pages\api\admin\artworks'
+  [1mStack trace:[22m
+[2m    at Object.readdirSync (node:fs:1569:26)
+    at walk (file:///H:/Javiermix_web/node_modules/astro/dist/core/routing/manifest/create.js:147:9)
+    at walk (file:///H:/Javiermix_web/node_modules/astro/dist/core/routing/manifest/create.js:147:9)
+    at createRoutesList (file:///H:/Javiermix_web/node_modules/astro/dist/core/routing/manifest/create.js:311:27)
+    at async AstroBuilder.run (file:///H:/Javiermix_web/node_modules/astro/dist/core/build/index.js:186:23)[22m

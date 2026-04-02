@@ -1,0 +1,184 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { db } from '../../db/client';
+import { orders } from '../../db/schema';
+import { desc } from 'drizzle-orm';
+
+export const prerender = false;
+
+const history = await db.select().from(orders).orderBy(desc(orders.created_at));
+
+const formatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeStyle: 'short' });
+---
+
+<AdminLayout title="Ventas y Órdenes de Compra">
+    <div class="header-actions">
+        <h2 class="section-title">Control de Transferencias y Envíos</h2>
+        <a href="https://admin.javiermix.ar" target="_blank" class="btn-primary">
+            <i class="fas fa-tasks"></i> GESTIONAR ESTADOS (DIRECTUS CRM)
+        </a>
+    </div>
+
+    <div class="panel">
+        <div class="panel-body">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Nº Orden</th>
+                        <th>Cliente y Contacto</th>
+                        <th>Monto Total</th>
+                        <th>Estado Pago</th>
+                        <th>Estado Envío</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {history.map(order => (
+                        <tr>
+                            <td><strong class="order-id">{order.order_number}</strong></td>
+                            <td>
+                                <div class="col-cell">
+                                    <span class="col-name">{order.collector_name}</span>
+                                    <span class="col-email">{order.collector_email}</span>
+                                    <span class="col-phone">{order.collector_phone || 'Sin tel.'}</span>
+                                </div>
+                            </td>
+                            <td><span class="price-badge">U$D {order.total_price}</span></td>
+                            <td>
+                                <span class={`status-badge payment ${order.payment_status}`}>
+                                    {order.payment_status === 'pending' ? 'ESPERANDO TRANSFERENCIA' : order.payment_status.toUpperCase()}
+                                </span>
+                            </td>
+                            <td>
+                                <span class={`status-badge shipping ${order.shipping_status}`}>
+                                    {order.shipping_status === 'unshipped' ? 'EN ESPERA' : order.shipping_status.toUpperCase()}
+                                </span>
+                            </td>
+                            <td class="date-cell">{order.created_at ? formatter.format(new Date(order.created_at)) : 'N/A'}</td>
+                        </tr>
+                    ))}
+                    {history.length === 0 && (
+                        <tr><td colspan="6" style="text-align:center; padding: 4rem; color: #666; font-style: italic;">No hay órdenes registradas todavía. Cuando alguien compre, aparecerá aquí.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</AdminLayout>
+
+<style>
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        margin: 0;
+        color: white;
+        font-weight: 400;
+        letter-spacing: 1px;
+    }
+
+    .btn-primary {
+        background: var(--admin-accent);
+        color: var(--admin-bg);
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 4px;
+        font-family: var(--font-secondary);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-primary:hover {
+        background: white;
+        transform: translateY(-2px);
+    }
+
+    .panel {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .admin-table th, .admin-table td {
+        padding: 1.5rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+
+    .admin-table th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        background: rgba(0,0,0,0.2);
+    }
+
+    .admin-table td {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.8);
+        vertical-align: middle;
+    }
+
+    .order-id {
+        font-family: monospace;
+        letter-spacing: 0;
+        font-size: 0.95rem;
+        color: white;
+        background: rgba(255,255,255,0.05);
+        padding: 0.3rem 0.6rem;
+        border-radius: 4px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .col-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    .col-name { color: white; font-weight: 600; }
+    .col-email { font-size: 0.75rem; color: #888; }
+    .col-phone { font-size: 0.7rem; color: var(--admin-accent); }
+
+    .price-badge {
+        font-weight: 700;
+        color: #4a9e6a;
+        font-size: 1rem;
+    }
+
+    .status-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        display: inline-block;
+        border: 1px solid transparent;
+    }
+
+    .payment.pending { background: rgba(224, 85, 85, 0.1); color: #e05555; border-color: rgba(224,85,85,0.2); }
+    .payment.paid { background: rgba(74, 158, 106, 0.1); color: #4a9e6a; border-color: rgba(74,158,106,0.2); }
+    
+    .shipping.unshipped { background: rgba(255,255,255,0.05); color: #aaa; }
+    .shipping.shipped { background: rgba(50, 150, 255, 0.1); color: #6db1ff; border-color: rgba(50,150,255,0.2); }
+
+    .date-cell {
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.5);
+    }
+</style>

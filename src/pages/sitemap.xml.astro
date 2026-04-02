@@ -1,0 +1,64 @@
+---
+// sitemap.xml.astro — Sitemap dinámico que se regenera con cada build
+import fs from 'node:fs';
+import path from 'node:path';
+import { getCollection } from 'astro:content';
+
+const SITE_URL = 'https://www.javiermix.com';
+const today = new Date().toISOString().split('T')[0];
+
+// ── Páginas estáticas ──
+const staticPages = [
+  { url: '/',          priority: '1.0', changefreq: 'weekly'  },
+  { url: '/galeria',   priority: '0.9', changefreq: 'weekly'  },
+  { url: '/revista',   priority: '0.8', changefreq: 'weekly'  },
+  { url: '/enmarcado', priority: '0.7', changefreq: 'monthly' },
+];
+
+// ── Series dinámicas de la galería ──
+const seriesPath = path.join(process.cwd(), 'public', 'img', 'Series');
+let seriesPages: { url: string; priority: string; changefreq: string }[] = [];
+
+try {
+  if (fs.existsSync(seriesPath)) {
+    const folders = fs.readdirSync(seriesPath).filter(f =>
+      fs.statSync(path.join(seriesPath, f)).isDirectory()
+    );
+    seriesPages = folders.map(folder => ({
+      url: `/galeria/${folder}`,
+      priority: '0.8',
+      changefreq: 'monthly',
+    }));
+  }
+} catch {}
+
+// ── Artículos de revista ──
+let articlePages: { url: string; priority: string; changefreq: string; date?: string }[] = [];
+
+try {
+  const articulos = await getCollection('revista');
+  articlePages = articulos.map(a => ({
+    url: `/revista/${a.slug}`,
+    priority: '0.7',
+    changefreq: 'monthly',
+    date: a.data.pubDate?.toISOString().split('T')[0] || today,
+  }));
+} catch {}
+
+const allPages = [...staticPages, ...seriesPages, ...articlePages];
+---
+
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+>
+  {allPages.map(page => (
+    <url>
+      <loc>{SITE_URL}{page.url}</loc>
+      <lastmod>{(page as any).date || today}</lastmod>
+      <changefreq>{page.changefreq}</changefreq>
+      <priority>{page.priority}</priority>
+    </url>
+  ))}
+</urlset>

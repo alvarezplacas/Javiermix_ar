@@ -1,0 +1,210 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/Header.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+import { db } from '../../../db/client';
+import { artworks } from '../../../db/schema';
+import { eq } from 'drizzle-orm';
+
+// Escaneamos las obras físicas
+const seriesPath = path.join(process.cwd(), 'public', 'img', 'Series');
+let allArtworks = [];
+
+if (fs.existsSync(seriesPath)) {
+    const folders = fs.readdirSync(seriesPath).filter(file => fs.statSync(path.join(seriesPath, file)).isDirectory());
+    
+    for (const folder of folders) {
+        const folderPath = path.join(seriesPath, folder);
+        const files = fs.readdirSync(folderPath).filter(f => /\.(avif|jpg|jpeg|png)$/i.test(f));
+        
+        // Solo las principales
+        const mains = files.filter(f => {
+            const low = f.toLowerCase();
+            return (low.startsWith('jmx_') || low.startsWith('jmix_')) && !/_(\d+)\.(avif|jpg|jpeg|png)$/i.test(low);
+        });
+
+        for (const f of mains) {
+            allArtworks.push({
+                filename: f,
+                serie: folder,
+                path: `/img/Series/${folder}/${f}`
+            });
+        }
+    }
+}
+
+// Consultamos la DB para ver cuáles tienen Overrides
+const dbArtworks = await db.select().from(artworks);
+const dbMap = new Map(dbArtworks.map(a => [a.filename, a]));
+
+const artworksWithStatus = allArtworks.map(a => ({
+    ...a,
+    dbRecord: dbMap.get(a.filename) || null
+}));
+---
+
+<Layout title="Gestión de Obras | JHM Admin">
+  <Header currentPath="/admin/obras" />
+
+  <main class="admin-container">
+    <header class="admin-header">
+      <div class="header-content">
+        <h1>Catálogo de Obras</h1>
+        <p>Gestiona la información técnica y precios de tus fotografías Fine Art.</p>
+      </div>
+      <a href="/admin/ayuda" class="btn-secondary">GUÍA DE AYUDA</a>
+    </header>
+
+    <section class="artworks-table-container">
+      <table class="artworks-table">
+        <thead>
+          <tr>
+            <th>Vista</th>
+            <th>Archivo</th>
+            <th>Serie</th>
+            <th>Estado Meta</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {artworksWithStatus.map((art) => (
+            <tr>
+              <td>
+                <img src={art.path} alt={art.filename} class="preview-img" />
+              </td>
+              <td>
+                <span class="filename">{art.filename}</span>
+              </td>
+              <td>
+                <span class="serie-tag">{art.serie.replace(/_/g, ' ')}</span>
+              </td>
+              <td>
+                {art.dbRecord ? (
+                  <span class="status-badge manual">MANUAL / DB</span>
+                ) : (
+                  <span class="status-badge auto">AUTOMÁTICO (IPTC)</span>
+                )}
+              </td>
+              <td>
+                <a href={`/admin/obras/editar/${art.filename}?serie=${art.serie}`} class="btn-edit">
+                  EDITAR DATOS
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <style>
+    .admin-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 8rem 2rem;
+      color: #fff;
+    }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 4rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 2rem;
+    }
+    .admin-header h1 {
+      font-family: var(--font-primary);
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+    .admin-header p {
+      color: var(--color-text-muted);
+      letter-spacing: 1px;
+    }
+    .btn-secondary {
+       padding: 0.8rem 1.5rem;
+       border: 1px solid var(--color-accent);
+       color: var(--color-accent);
+       text-decoration: none;
+       font-size: 0.8rem;
+       font-weight: 700;
+       transition: all 0.3s ease;
+    }
+    .btn-secondary:hover {
+       background: var(--color-accent);
+       color: #000;
+    }
+
+    .artworks-table-container {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      overflow-x: auto;
+    }
+    .artworks-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .artworks-table th {
+      padding: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--color-accent);
+    }
+    .artworks-table td {
+      padding: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: middle;
+    }
+    .preview-img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .filename {
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+    .serie-tag {
+      background: rgba(255,255,255,0.05);
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+    .status-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      letter-spacing: 1px;
+    }
+    .status-badge.auto {
+      background: rgba(255,255,255,0.1);
+      color: #aaa;
+    }
+    .status-badge.manual {
+      background: rgba(var(--h-gold), var(--s-gold), 15%);
+      color: var(--color-accent);
+      border: 1px solid var(--color-accent);
+    }
+    .btn-edit {
+      display: inline-block;
+      padding: 0.6rem 1.2rem;
+      background: #fff;
+      color: #000;
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+    }
+    .btn-edit:hover {
+      background: var(--color-accent);
+      transform: scale(1.05);
+    }
+  </style>
+</Layout>

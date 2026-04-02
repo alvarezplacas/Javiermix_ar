@@ -1,0 +1,169 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+let errorMessage = '';
+
+if (Astro.request.method === 'POST') {
+  try {
+    const data = await Astro.request.formData();
+    const password = data.get('password');
+    
+    // Contraseña blindada para acceso
+    if (password === 'JavierMix2026!') {
+      Astro.cookies.set('admin_jhm_session', 'authenticated_jhm_master', {
+        path: '/',
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 7 // 1 semana
+      });
+      return Astro.redirect('/admin');
+    } else {
+      errorMessage = 'Acceso denegado. Credencial incorrecta.';
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error.message);
+    }
+  }
+}
+
+// Omitir login si ya hay sesión activa
+const session = Astro.cookies.get('admin_jhm_session');
+if (session && session.value === 'authenticated_jhm_master') {
+    return Astro.redirect('/admin');
+}
+---
+
+<Layout title="Acceso Restringido JHM">
+  <div class="login-wrapper">
+    <div class="login-card">
+        <h1 class="logo-text">JHM</h1>
+        <p class="subtitle">MÓDULO DE SEGURIDAD</p>
+        
+        <form method="POST" class="login-form" data-astro-reload>
+            <div class="input-group">
+                <i class="fas fa-key"></i>
+                <input type="password" name="password" placeholder="CLAVE MAESTRA" autofocus required />
+            </div>
+            
+            {errorMessage && <p class="error-msg">{errorMessage}</p>}
+            
+            <button type="submit" class="btn-login">DESBLOQUEAR SISTEMA</button>
+        </form>
+        <a href="/" class="back-link">Volver al sitio público</a>
+    </div>
+  </div>
+</Layout>
+
+<style>
+    .login-wrapper {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(circle at center, var(--color-onyx) 0%, var(--color-onyx-deep) 100%);
+    }
+
+    .login-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        padding: 4rem 3rem;
+        border-radius: 8px;
+        text-align: center;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    .logo-text {
+        font-family: var(--font-primary);
+        font-size: 3rem;
+        font-style: italic;
+        color: var(--color-gold, #bd9b53);
+        margin: 0;
+        letter-spacing: 5px;
+    }
+
+    .subtitle {
+        font-family: var(--font-secondary);
+        font-size: 0.65rem;
+        letter-spacing: 4px;
+        color: rgba(255,255,255,0.4);
+        margin-top: 0.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-group i {
+        position: absolute;
+        left: 1rem;
+        color: rgba(255,255,255,0.3);
+    }
+
+    .input-group input {
+        width: 100%;
+        background: rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 1rem 1rem 1rem 3rem;
+        color: white;
+        font-family: var(--font-secondary);
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+        outline: none;
+        transition: all 0.3s;
+        border-radius: 4px;
+    }
+
+    .input-group input:focus {
+        border-color: var(--color-gold, #bd9b53);
+        background: rgba(0,0,0,0.4);
+    }
+
+    .btn-login {
+        background: var(--color-white);
+        color: var(--color-onyx-deep);
+        border: none;
+        padding: 1rem;
+        font-family: var(--font-secondary);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border-radius: 4px;
+    }
+
+    .btn-login:hover {
+        background: var(--color-gold, #bd9b53);
+        color: white;
+    }
+
+    .error-msg {
+        color: #e05555;
+        font-size: 0.75rem;
+        margin: 0;
+    }
+
+    .back-link {
+        display: block;
+        margin-top: 2rem;
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.3);
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    .back-link:hover { color: white; }
+</style>

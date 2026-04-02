@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import FramingStudio from '../components/FramingStudio.astro';
+---
+
+<Layout
+  title="Studio de Enmarcado Virtual"
+  description="Personaliza el enmarcado de tus obras Fine Art. Visualiza diferentes molduras, paspartús y acabados en tiempo real."
+  url="/enmarcado"
+>
+  <Header currentPath="/enmarcado" />
+  
+  <main class="enmarcado-page">
+    <FramingStudio isFullPage={true} />
+    
+    <!-- CTA de Retorno a la Galería -->
+    <div class="enmarcado-footer-cta">
+        <p>¿Tienes el marco ideal?</p>
+        <button id="btn-welcome-back" class="btn-primary">VOLVER A LA GALERÍA</button>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .enmarcado-page {
+    background-color: var(--color-onyx-deep);
+    min-height: 100vh;
+    padding-top: 80px; /* Offset for sticky header */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .enmarcado-footer-cta {
+    padding: 4rem 5%;
+    background-color: var(--color-onyx-soft);
+    text-align: center;
+    border-top: 1px solid var(--glass-border);
+  }
+
+  .enmarcado-footer-cta p {
+    font-family: var(--font-primary);
+    font-size: 1.5rem;
+    color: var(--color-white);
+    margin-bottom: 2rem;
+  }
+
+  .btn-primary {
+    padding: 1rem 2.5rem;
+    background: transparent;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    font-family: var(--font-secondary);
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent);
+    color: var(--color-onyx-deep);
+  }
+
+  /* Overrides para que el componente ocupe todo el espacio dinámico */
+  :global(.framing-studio-overlay.is-full-page) {
+    background: transparent !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    flex: 1;
+    z-index: 1 !important;
+  }
+</style>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    document.getElementById('btn-welcome-back')?.addEventListener('click', () => {
+      window.location.href = '/galeria';
+    });
+  });
+</script>

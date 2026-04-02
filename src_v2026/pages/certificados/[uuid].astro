@@ -1,0 +1,248 @@
+---
+// src/pages/certificados/[uuid].astro
+import { db } from '../../db/client';
+import { certificates, artworks, collectors } from '../../db/schema';
+import { eq } from 'drizzle-orm';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+
+export const prerender = false; // SSR route to validate UUID dynamically against current Database
+
+const { uuid } = Astro.params;
+
+if (!uuid) return Astro.redirect('/404');
+
+// Cross-reference data
+const certData = await db.select({
+    cert: certificates,
+    art: artworks,
+    col: collectors
+}).from(certificates)
+  .where(eq(certificates.uuid, uuid))
+  .leftJoin(artworks, eq(certificates.artwork_id, artworks.id))
+  .leftJoin(collectors, eq(certificates.collector_id, collectors.id))
+  .limit(1);
+
+const isValid = certData && certData.length > 0;
+const record = isValid ? certData[0] : null;
+
+const formatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'long', timeStyle: 'short' });
+const fechaEmision = record?.cert.sale_date ? formatter.format(new Date(record.cert.sale_date)) : 'N/A';
+---
+
+<Layout title="Verificación de Autenticidad | Javier Mix Fine Art">
+  <Header currentPath="" />
+
+  <main class="verification-main">
+      <div class="verification-card">
+          
+          {isValid && record ? (
+            <div class="status-box valid">
+               <div class="icon-ring">
+                  <i class="fas fa-check-circle"></i>
+               </div>
+               <h1 class="status-title">OBRA AUTÉNTICA REGISTRADA</h1>
+               <p class="status-desc">El certificado físico escaneado coincide con los metadatos protegidos de nuestra base de datos. Usted posee una pieza original de la Colección Javier Mix.</p>
+               
+               <hr class="verification-divider" />
+               
+               <div class="verification-details">
+                  <div class="detail-row">
+                      <span class="detail-label">IDENTIFICADOR ENCRIPTADO</span>
+                      <span class="detail-value id-hash">{record.cert.uuid}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">NOMBRE DE LA OBRA</span>
+                      <span class="detail-value">{record.art?.title || 'Unknown Art'}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">FORMATO FÍSICO AVALADO</span>
+                      <span class="detail-value">{record.cert.dimensions}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">NÚMERO DE EDICIÓN LIMITADA</span>
+                      <span class="detail-value">{record.cert.edition_number || 'Edición Única'}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">FECHA DE EMISIÓN DE CERTIFICADO</span>
+                      <span class="detail-value">{fechaEmision}</span>
+                  </div>
+                  <div class="detail-row highlight-row">
+                      <span class="detail-label">COLECCIONISTA ORIGINAL</span>
+                      <span class="detail-value">{record.col?.name || 'Venta Privada'}</span>
+                  </div>
+               </div>
+
+               <div class="authenticity-seal">
+                   <div class="auth-signature"></div> <!-- Libre para firma -->
+                   <div class="auth-role">CURADORÍA Y ARCHIVO FINE ART</div>
+               </div>
+            </div>
+          ) : (
+            <div class="status-box invalid">
+               <div class="icon-ring error">
+                  <i class="fas fa-times-circle"></i>
+               </div>
+               <h1 class="status-title error-title">CERTIFICADO NO ENCONTRADO</h1>
+               <p class="status-desc">El código UUID capturado no existe o ha sido revocado en nuestra base de datos Maestra. Si usted cree que esto es un error, por favor contacte a emergencias del estudio.</p>
+            </div>
+          )}
+
+      </div>
+  </main>
+</Layout>
+
+<style>
+  .verification-main {
+      min-height: 80vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 6rem 5%;
+      background: radial-gradient(circle at center, var(--color-onyx) 0%, var(--color-onyx-deep) 100%);
+  }
+
+  .verification-card {
+      width: 100%;
+      max-width: 700px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(15px);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+  }
+
+  .status-box {
+      padding: 4rem 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+  }
+
+  .status-box.valid {
+      border-top: 4px solid #4a9e6a; /* Green security accent */
+  }
+
+  .status-box.invalid {
+      border-top: 4px solid #e05555; /* Red security accent */
+  }
+
+  .icon-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(74, 158, 106, 0.1);
+      color: #4a9e6a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 30px rgba(74, 158, 106, 0.2);
+  }
+
+  .icon-ring.error {
+      background: rgba(224, 85, 85, 0.1);
+      color: #e05555;
+      box-shadow: 0 0 30px rgba(224, 85, 85, 0.2);
+  }
+
+  .status-title {
+      font-family: var(--font-primary);
+      font-size: 2rem;
+      color: #4a9e6a;
+      letter-spacing: 2px;
+      margin: 0 0 1rem 0;
+  }
+
+  .error-title {
+      color: #e05555;
+  }
+
+  .status-desc {
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.8;
+      max-width: 500px;
+  }
+
+  .verification-divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      margin: 3rem 0;
+  }
+
+  .verification-details {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      text-align: left;
+  }
+
+  .detail-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+  }
+
+  .detail-label {
+      font-size: 0.65rem;
+      color: var(--color-accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 600;
+  }
+
+  .detail-value {
+      font-family: var(--font-primary);
+      font-size: 1.4rem;
+      color: var(--color-white);
+  }
+
+  .detail-value.id-hash {
+      font-family: monospace;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0px;
+  }
+
+  .highlight-row {
+      padding: 1.5rem;
+      background: rgba(212, 175, 85, 0.05); /* very subtle gold */
+      border-radius: 4px;
+      border: 1px solid rgba(212, 175, 85, 0.1);
+  }
+
+  .authenticity-seal {
+      margin-top: 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+  }
+
+  .auth-signature {
+      font-family: var(--font-primary);
+      font-style: italic;
+      font-size: 2.2rem;
+      color: rgba(255,255,255,0.8);
+      opacity: 0.7;
+  }
+
+  .auth-role {
+      font-size: 0.6rem;
+      letter-spacing: 4px;
+      color: rgba(255,255,255,0.4);
+  }
+
+  @media (max-width: 600px) {
+      .status-box { padding: 3rem 2rem; }
+      .status-title { font-size: 1.6rem; }
+      .detail-value { font-size: 1.2rem; }
+  }
+</style>

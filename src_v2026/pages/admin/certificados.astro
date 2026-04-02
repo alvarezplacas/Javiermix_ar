@@ -1,0 +1,220 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { db } from '../../db/client';
+import { certificates, artworks, collectors } from '../../db/schema';
+import { eq, desc } from 'drizzle-orm';
+
+export const prerender = false;
+
+// Obtener todo el historial de certificados cruzando con Obras y Coleccionistas
+const certsList = await db.select({
+    cert: certificates,
+    art: artworks,
+    col: collectors
+}).from(certificates)
+  .leftJoin(artworks, eq(certificates.artwork_id, artworks.id))
+  .leftJoin(collectors, eq(certificates.collector_id, collectors.id))
+  .orderBy(desc(certificates.sale_date));
+
+const formatter = new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium' });
+---
+
+<AdminLayout title="Emisión de Certificados">
+    <div class="header-actions">
+        <h2 class="section-title">Historial de Autenticidad</h2>
+        <div class="actions-group">
+            <a href="/admin/test-certificate" target="_blank" class="btn-secondary">
+                <i class="fas fa-eye"></i> VER EJEMPLO DE DISEÑO
+            </a>
+            <a href="https://admin.javiermix.ar" target="_blank" class="btn-primary">
+                <i class="fas fa-external-link-alt"></i> ABRIR DIRECTUS PARA REGISTRO
+            </a>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-body">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Obra</th>
+                        <th>Coleccionista</th>
+                        <th>Fecha de Venta</th>
+                        <th>Edición</th>
+                        <th>Validación QR</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {certsList.map(({ cert, art, col }) => (
+                        <tr>
+                            <td>
+                                <div class="obra-cell">
+                                    <span class="obra-title">{art?.title || 'Borrador'}</span>
+                                    <span class="obra-dim">{cert.dimensions}</span>
+                                </div>
+                            </td>
+                            <td>{col?.name || 'Cliente Privado'}</td>
+                            <td>{cert.sale_date ? formatter.format(new Date(cert.sale_date)) : 'N/A'}</td>
+                            <td><span class="edition-badge">{cert.edition_number || '1/1'}</span></td>
+                            <td>
+                                {cert.is_verified === 1 ? 
+                                    <span class="qr-status ok"><i class="fas fa-check-circle"></i> ACTIVO</span> : 
+                                    <span class="qr-status rev"><i class="fas fa-times-circle"></i> REVOCADO</span>
+                                }
+                            </td>
+                            <td>
+                                <a href={`/admin/imprimir-certificado/${cert.uuid}`} target="_blank" class="btn-print" title="Generar Lámina A4 para Impresión">
+                                    <i class="fas fa-print"></i> Imprimir A4
+                                </a>
+                            </td>
+                        </tr>
+                    ))}
+                    {certsList.length === 0 && (
+                        <tr><td colspan="6" style="text-align:center; padding: 4rem; color: #666; font-style: italic;">No se han emitido certificados aún. Ve a Directus para registrar la primera venta.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</AdminLayout>
+
+<style>
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        margin: 0;
+        color: white;
+        font-weight: 400;
+        letter-spacing: 1px;
+    }
+
+    .actions-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-primary, .btn-secondary {
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 4px;
+        font-family: var(--font-secondary);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        background: var(--admin-accent);
+        color: var(--admin-bg);
+    }
+    .btn-primary:hover {
+        background: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: rgba(255,255,255,0.05);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-secondary:hover {
+        background: rgba(255,255,255,0.1);
+        transform: translateY(-2px);
+    }
+
+    .panel {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .admin-table th, .admin-table td {
+        padding: 1.2rem 1.5rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+
+    .admin-table th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        background: rgba(0,0,0,0.2);
+    }
+
+    .admin-table td {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.8);
+        vertical-align: middle;
+    }
+
+    .obra-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    .obra-title {
+        color: white;
+        font-weight: 600;
+    }
+    .obra-dim {
+        font-size: 0.7rem;
+        color: var(--admin-accent);
+    }
+
+    .edition-badge {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+    }
+
+    .qr-status {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .qr-status.ok { color: #4a9e6a; }
+    .qr-status.rev { color: #e05555; }
+
+    .btn-print {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(189, 155, 83, 0.1);
+        color: var(--admin-accent);
+        text-decoration: none;
+        padding: 0.6rem 1rem;
+        border-radius: 4px;
+        border: 1px solid rgba(189, 155, 83, 0.2);
+        font-size: 0.75rem;
+        transition: all 0.3s;
+    }
+    .btn-print:hover {
+        background: var(--admin-accent);
+        color: var(--admin-bg);
+    }
+</style>

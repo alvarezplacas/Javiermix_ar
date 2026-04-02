@@ -1,0 +1,1338 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+import { loadArtworkMetadata } from '../../utils/metadata.js';
+import FramingStudio from '../../components/FramingStudio.astro';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+	const seriesPath = path.join(process.cwd(), 'public', 'img', 'Series');
+	let paths = [];
+
+	if (fs.existsSync(seriesPath)) {
+		const folders = fs.readdirSync(seriesPath).filter(file => fs.statSync(path.join(seriesPath, file)).isDirectory());
+		
+		const metadataMap = loadArtworkMetadata();
+
+		folders.forEach(folder => {
+			const folderPath = path.join(seriesPath, folder);
+			const items = fs.readdirSync(folderPath).filter(f => f.endsWith('.avif') || f.endsWith('.jpg') || f.endsWith('.png'));
+			
+			const mainImages = items.filter(f => {
+				const low = f.toLowerCase();
+				return low.startsWith('jmx_') || low.startsWith('jmix_');
+			});
+			const otherImages = items.filter(f => {
+				const low = f.toLowerCase();
+				return !low.startsWith('jmx_') && !low.startsWith('jmix_');
+			});
+			
+			let matchedOtherImages = new Set();
+			const folderSlug = folder.split('_').map(word => word.toUpperCase()).join(' ').toLowerCase().replace(/ /g, '-');
+            const serieName = folder.split('_').map(word => word.toUpperCase()).join(' ');
+			
+			mainImages.forEach(mainImg => {
+				const mainNumMatch = mainImg.match(/\d+/);
+				const mainNum = mainNumMatch ? mainNumMatch[0] : null;
+				let roomImgMatch = null;
+				
+				if (mainNum) {
+					roomImgMatch = otherImages.find(f => {
+						const fNumMatch = f.match(/\d+/);
+						return fNumMatch && fNumMatch[0] === mainNum;
+					});
+				}
+				if (!roomImgMatch) {
+					let baseName = mainImg.toLowerCase();
+					if (baseName.startsWith('jmx_')) baseName = baseName.substring(4);
+					else if (baseName.startsWith('jmix_')) baseName = baseName.substring(5);
+					roomImgMatch = otherImages.find(f => f.toLowerCase() === baseName);
+				}
+				
+				if (roomImgMatch) matchedOtherImages.add(roomImgMatch);
+				
+                const meta = metadataMap.get(mainImg);
+                const titleText = meta?.title || (mainNum ? mainNum : mainImg.split('.')[0]);
+                const cleanTitle = titleText.toLowerCase().replace(/ /g, '-');
+                const uniqueId = `${folderSlug}-${cleanTitle}`;
+
+				// Build sizes array from CSV pricing columns
+                const sizes = [];
+                if (meta?.size_small && meta?.precio_small) {
+                    sizes.push({ label: 'Small', dimensions: meta.size_small, price: meta.precio_small });
+                }
+                if (meta?.size_medium && meta?.precio_medium) {
+                    sizes.push({ label: 'Medium', dimensions: meta.size_medium, price: meta.precio_medium });
+                }
+                if (meta?.size_large && meta?.precio_large) {
+                    sizes.push({ label: 'Large', dimensions: meta.size_large, price: meta.precio_large });
+                }
+
+				paths.push({
+                    params: { id: uniqueId },
+                    props: { 
+                        title: titleText, 
+                        serieName: serieName,
+                        coverImage: `/img/Series/${folder}/${mainImg}`,
+                        roomImage: roomImgMatch ? `/img/Series/${folder}/${roomImgMatch}` : null,
+                        precio: sizes.length > 0 ? sizes[0].price : 250,
+                        etiqueta: "Fine Art Print",
+                        meta: meta || null,
+                        sizes: sizes
+                    }
+                });
+			});
+			
+			// Imágenes huérfanas
+			const standalone = otherImages.filter(f => !matchedOtherImages.has(f));
+			standalone.forEach(img => {
+                const meta = metadataMap.get(img);
+                const titleText = meta?.title || img.split('.')[0];
+                const cleanTitle = titleText.toLowerCase().replace(/ /g, '-');
+                const uniqueId = `${folderSlug}-${cleanTitle}`;
+
+				// Build sizes array from CSV pricing columns
+                const standaloneSizes = [];
+                if (meta?.size_small && meta?.precio_small) {
+                    standaloneSizes.push({ label: 'Small', dimensions: meta.size_small, price: meta.precio_small });
+                }
+                if (meta?.size_medium && meta?.precio_medium) {
+                    standaloneSizes.push({ label: 'Medium', dimensions: meta.size_medium, price: meta.precio_medium });
+                }
+                if (meta?.size_large && meta?.precio_large) {
+                    standaloneSizes.push({ label: 'Large', dimensions: meta.size_large, price: meta.precio_large });
+                }
+
+				paths.push({
+                    params: { id: uniqueId },
+                    props: { 
+                        title: titleText, 
+                        serieName: serieName,
+                        coverImage: `/img/Series/${folder}/${img}`,
+                        roomImage: null,
+                        precio: standaloneSizes.length > 0 ? standaloneSizes[0].price : 250,
+                        etiqueta: "Fine Art Print",
+                        meta: meta || null,
+                        sizes: standaloneSizes
+                    }
+                });
+			});
+		});
+	}
+	return paths;
+}
+
+const { title, serieName, coverImage, roomImage, precio, etiqueta, meta, sizes = [] } = Astro.props;
+
+// Phone format for WhatsApp link
+const whatsappNumber = "5491100000000"; // Replace con el real luego
+const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%20en%20adquirir%20la%20obra%20${encodeURIComponent(title)}%20de%20la%20colección%20${encodeURIComponent(serieName)}.`;
+---
+
+<Layout title={`${title} | Obra Fine Art`}>
+  <Header currentPath="/galeria" />
+
+  <article class="obra-container">
+    <div class="split-layout">
+      
+      <!-- Columna Izquierda: Imagen Interactiva -->
+      <section class="image-column">
+        <div class="sticky-image-container">
+          <div class="image-wrapper">
+            <img src={coverImage} alt={`Obra ${title}`} class="main-artwork" id="primary-image" />
+            {roomImage && (
+              <img src={roomImage} alt={`Vista en Ambiente de ${title}`} class="room-artwork" id="secondary-image" />
+            )}
+          </div>
+          
+          <div class="image-controls">
+            {roomImage ? (
+               <button class="control-btn active" id="btn-obra">VER EN SALA</button>
+            ) : (
+               <button class="control-btn" style="opacity: 0.3; cursor: not-allowed;" disabled>SIN VISTA EN SALA</button>
+            )}
+            <button class="control-btn" id="btn-3d">VER EN 3D</button>
+            <button class="control-btn" id="btn-marco">PROBAR MARCO</button>
+          </div>
+          
+          <div class="share-controls">
+            <span>COMPARTIR:</span>
+            <div class="social-icons">
+               <i class="fab fa-whatsapp"></i>
+               <i class="fab fa-x-twitter"></i>
+               <i class="fab fa-facebook-f"></i>
+               <i class="fab fa-instagram"></i>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Columna Derecha: Información y Venta -->
+      <section class="info-column">
+        <a href={`/galeria/${coverImage.split('/')[3]}`} class="back-link">← VOLVER A {serieName}</a>
+        
+        <div class="serie-label">SERIE: {serieName}</div>
+        <h1 class="obra-title">{title}</h1>
+        
+        <div class="tags-container">
+          {etiqueta && <span class="tag-accent">{etiqueta}</span>}
+          <span class="tag-outline">CERTIFICADO DE AUTENTICIDAD</span>
+          <span class="tag-outline">CALIDAD MUSEO</span>
+        </div>
+        
+        <hr class="divider" />
+        
+        <!-- Tabs de información -->
+        <div class="tabs-header">
+          <button class="tab-btn active" data-target="historia">HISTORIA</button>
+          <button class="tab-btn" data-target="ficha">FICHA TÉCNICA</button>
+          <button class="tab-btn" data-target="terminos">TÉRMINOS</button>
+        </div>
+        
+        <div class="tab-content" id="tab-historia" style="display: block;">
+          <div class="prose-content">
+            <h2 class="prose-title">La Historia detrás de la Imagen</h2>
+            {meta?.description ? (
+              <p>{meta.description}</p>
+            ) : (
+              <p>Esta pieza de autor es parte de una selección curada rigurosamente. Refleja nuestro compromiso con el legado fotográfico y el diseño contemporáneo, donde cada textura, sombra y captura de luz está cuidada bajo los más altos estándares Fine Art.</p>
+            )}
+            <p>La edición es estricta y controlada, asegurando el valor de obra única a lo largo del tiempo.</p>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-ficha" style="display: none;">
+          <div class="technical-grid">
+            <div class="tech-section">
+              <h3 class="tech-category">THE PRINT (CALIDAD MUSEO)</h3>
+              <ul class="tech-list">
+                <li><i class="fas fa-scroll"></i> {meta?.paper || 'Papel Algodón 100% (Hahnemühle)'}</li>
+                <li><i class="fas fa-expand-arrows-alt"></i> Dimensiones: {meta?.dimensions || 'A convenir'}</li>
+                <li><i class="fas fa-certificate"></i> Certificado de Autenticidad</li>
+                <li><i class="fas fa-infinity"></i> Pigmentos Minerales (+100 Años)</li>
+              </ul>
+            </div>
+            
+            <div class="tech-section">
+              <h3 class="tech-category">THE SHOT (DATOS TÉCNICOS)</h3>
+              <div class="shot-data-grid">
+                <div class="shot-item">
+                   <i class="fas fa-camera"></i>
+                   <span class="label">CÁMARA</span>
+                   <span class="value">{meta?.camera || 'Nikon Fine Art'}</span>
+                </div>
+                <div class="shot-item">
+                   <i class="fas fa-circle-notch"></i>
+                   <span class="label">LENTE</span>
+                   <span class="value">{meta?.lens || 'Finesse Optics'}</span>
+                </div>
+                <div class="shot-item">
+                   <i class="fas fa-calendar-alt"></i>
+                   <span class="label">FECHA</span>
+                   <span class="value">{meta?.date || '2024'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="tab-content" id="tab-terminos" style="display: none;">
+          <div class="legal-content">
+            <h2 class="legal-title">Términos y Condiciones de Venta | Javier Mix Fine Art</h2>
+            <p>Al adquirir una obra de la serie <strong>"Cartografía de la Rebeldía"</strong> o cualquier pieza del catálogo de <strong>javiermix.ar</strong>, el comprador acepta los siguientes términos:</p>
+            
+            <div class="legal-section">
+              <h3>1. Naturaleza del Producto</h3>
+              <p>Cada fotografía es una impresión de alta calidad (Fine Art) realizada bajo estándares profesionales para garantizar su longevidad y fidelidad cromática. El valor expresado en el catálogo corresponde exclusivamente a la pieza impresa en el formato seleccionado (Estándar, Mediano o Grande).</p>
+            </div>
+            
+            <div class="legal-section">
+              <h3>2. Exclusiones Importantes</h3>
+              <p><strong>Enmarcado:</strong> El precio de venta no incluye marco, paspartú, ni ningún tipo de montaje o estructura de exhibición por el momento. La obra se entrega como una lámina impresa lista para ser enmarcada a gusto del comprador.</p>
+              <p><strong>Envío:</strong> El costo de envío no está incluido en el valor de la obra. Los gastos de logística, embalaje especial para obras de arte y transporte correrán por cuenta del comprador y serán coordinados de forma privada tras la compra.</p>
+            </div>
+            
+            <div class="legal-section">
+              <h3>3. Autenticidad y Derechos</h3>
+              <p>Todas las obras se entregan firmadas por el autor bajo el nombre artístico <strong>Javier Mix</strong>. La compra de la impresión física no transfiere derechos de reproducción comercial sobre la imagen, los cuales permanecen como propiedad intelectual del autor.</p>
+            </div>
+          </div>
+        </div>
+        
+        <hr class="divider" />
+
+        <!-- Selector de Tamaño -->
+        {sizes.length > 0 && (
+          <div class="size-selector-section">
+            <span class="size-selector-label">SELECCIONA TAMAÑO:</span>
+            <div class="size-options" id="size-options">
+              {sizes.map((s, i) => (
+                <button
+                  class={`size-option${i === 0 ? ' active' : ''}`}
+                  data-price={s.price}
+                  data-dimensions={s.dimensions}
+                  data-label={s.label}
+                >
+                  <span class="size-dimensions">{s.dimensions}</span>
+                  <span class="size-label-text">{s.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Canvas Material Info (aparece solo al seleccionar Large) -->
+        <div class="canvas-info" id="canvas-info" aria-live="polite">
+          <div class="canvas-info-inner">
+            <span class="canvas-badge">GRAN FORMATO · EDICIÓN LIMITADA</span>
+            <h4 class="canvas-title">Canson Museum Pro Canvas · 385 g/m²</h4>
+            <p class="canvas-body">
+              El formato Grande se imprime sobre un canvas <strong>100% algodón libre de ácidos</strong>, pensado para durar décadas sin perder ni un tono. Su textura profunda añade presencia táctil a cada imagen —el óxido, el metal, la luz capturada cobran un relieve que el papel no puede igualar. El acabado mate resistente al agua elimina la necesidad de vidrio: sin reflejos, la obra habla directamente al espectador. Con 385 g de gramaje, la pieza adquiere cuerpo y solidez de objeto de arte. Cada ejemplar se entrega firmado: <em>Javier Mix pinxit</em>.
+            </p>
+          </div>
+        </div>
+        
+        <!-- Checkout Area -->
+        <div class="checkout-area">
+          <div class="price-box">
+             <span class="price-label">PRECIO</span>
+             <div class="price-value">
+               <span class="number" id="price-display">{precio}</span>
+               <span class="currency">U$D</span>
+             </div>
+          </div>
+          
+          <div class="action-buttons">
+             <a href={waLink} target="_blank" class="btn-buy" id="btn-buy-link">
+               ADQUIRIR OBRA
+             </a>
+             
+             <div class="secondary-actions">
+                <button class="btn-favorite" id="btn-like" aria-label="Añadir a favoritos" data-filename={coverImage.split('/').pop()} data-serie={serieName} data-title={title}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                  <span id="like-count" class="like-number">0</span>
+                </button>
+                <button class="btn-collection">
+                   AGREGAR A MINI COLECCIÓN
+                </button>
+             </div>
+          </div>
+        </div>
+        
+      </section>
+
+    </div>
+  </article>
+
+  <FramingStudio imageSrc={coverImage} title={title} />
+</Layout>
+
+<script>
+  // standard 2026: astro:page-load for View Transitions compatibility
+  document.addEventListener('astro:page-load', () => {
+    // Tabs Logic
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    function switchTab(btn) {
+        const targetId = btn.getAttribute('data-target');
+        
+        // Update Buttons
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update Contents
+        tabContents.forEach(c => {
+            const content = c as HTMLElement;
+            if (content.id === `tab-${targetId}`) {
+                content.style.display = 'block';
+                content.classList.add('fade-in-content');
+                setTimeout(() => content.classList.remove('fade-in-content'), 600);
+            } else {
+                content.style.display = 'none';
+            }
+        });
+    }
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn));
+    });
+
+    // Room view hover simulate
+    const btnObra = document.getElementById('btn-obra');
+    const imgPrim = document.getElementById('primary-image');
+    const imgSec = document.getElementById('secondary-image');
+    
+    if(btnObra && imgPrim && imgSec) {
+        btnObra.addEventListener('mouseenter', () => {
+             imgPrim.style.opacity = '0';
+             imgSec.style.opacity = '1';
+        });
+        btnObra.addEventListener('mouseleave', () => {
+             imgPrim.style.opacity = '1';
+             imgSec.style.opacity = '0';
+        });
+    }
+
+    // Framing Studio Trigger
+    const btnMarco = document.getElementById('btn-marco');
+    const studio = document.getElementById('framing-studio');
+    
+    if (btnMarco && studio) {
+      btnMarco.addEventListener('click', () => {
+        studio.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Bloquear scroll
+      });
+    }
+
+    // VER EN 3D Trigger
+    const btn3D = document.getElementById('btn-3d');
+
+    if (btn3D && studio) {
+      btn3D.addEventListener('click', () => {
+        studio.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        // Use the new global function defined in FramingStudio
+        if ((window as any).activate3DInStudio) {
+            (window as any).activate3DInStudio();
+        }
+      });
+    }
+
+    // Smart Orientation Detection Algorithm
+    const primaryImg = document.getElementById('primary-image') as HTMLImageElement;
+    const wrapper = document.querySelector('.image-wrapper');
+
+    function updateOrientation() {
+      if (!primaryImg || !wrapper) return;
+      const isPortrait = primaryImg.naturalHeight > primaryImg.naturalWidth;
+      wrapper.classList.toggle('is-portrait', isPortrait);
+      wrapper.classList.toggle('is-landscape', !isPortrait);
+    }
+
+    if (primaryImg) {
+      if (primaryImg.complete) updateOrientation();
+      else primaryImg.addEventListener('load', updateOrientation);
+    }
+
+    // Unified Move Handler (Mouse & Touch)
+    function handleMove(e: any) {
+      if (!wrapper || !primaryImg) return;
+      
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+      const { left, top, width, height } = wrapper.getBoundingClientRect();
+      const x = (clientX - left) / width;
+      const y = (clientY - top) / height;
+
+      // Master-level refinement: High magnification (1.6x) for detail inspection
+      const moveX = (x - 0.5) * -60; // Inverted and increased for "panning" feel
+      const moveY = (y - 0.5) * -60;
+      
+      primaryImg.style.transition = 'transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.8s ease';
+      primaryImg.style.transform = `scale(1.6) translate(${moveX}px, ${moveY}px)`;
+    }
+
+    function handleReset() {
+      if (!primaryImg) return;
+      primaryImg.style.transition = 'transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.8s ease';
+      primaryImg.style.transform = `scale(1) translate(0, 0)`;
+    }
+
+    if (wrapper) {
+      wrapper.addEventListener('mousemove', handleMove);
+      wrapper.addEventListener('mouseleave', handleReset);
+      
+      // Mobile Touch Support
+      wrapper.addEventListener('touchmove', (e) => {
+        handleMove(e);
+        // Prevent scroll when interacting with the artwork
+        if (e.cancelable) e.preventDefault();
+      }, { passive: false });
+      
+      wrapper.addEventListener('touchend', handleReset);
+    }
+
+    // Size Selector Logic
+    const sizeOptions = document.querySelectorAll('.size-option');
+    const priceDisplay = document.getElementById('price-display');
+    const btnBuyLink = document.getElementById('btn-buy-link');
+    const baseWaLink = btnBuyLink ? btnBuyLink.getAttribute('href') : '';
+
+    const canvasInfo = document.getElementById('canvas-info');
+
+    function selectSize(btn: HTMLElement) {
+      sizeOptions.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const price = btn.getAttribute('data-price') || '';
+      const dimensions = btn.getAttribute('data-dimensions') || '';
+      const label = btn.getAttribute('data-label') || '';
+
+      // Update displayed price
+      if (priceDisplay && price) {
+        priceDisplay.textContent = price;
+        priceDisplay.classList.add('price-pop');
+        setTimeout(() => priceDisplay.classList.remove('price-pop'), 400);
+      }
+
+      // Update WhatsApp link to include selected size
+      if (btnBuyLink && baseWaLink) {
+        const sizeText = encodeURIComponent(` — Tamaño: ${dimensions} (${label})`);
+        btnBuyLink.setAttribute('href', baseWaLink + sizeText);
+      }
+
+      // Show canvas info only for Large
+      if (canvasInfo) {
+        if (label === 'Large') {
+          canvasInfo.classList.add('visible');
+        } else {
+          canvasInfo.classList.remove('visible');
+        }
+      }
+    }
+
+    sizeOptions.forEach((btn) => {
+      btn.addEventListener('click', () => selectSize(btn as HTMLElement));
+    });
+
+    // Set first size as default if available
+    if (sizeOptions.length > 0) {
+      selectSize(sizeOptions[0] as HTMLElement);
+    }
+
+    // Likes Logic 2026
+    const btnLike = document.getElementById('btn-like');
+    const likeCount = document.getElementById('like-count');
+    const heartIcon = document.getElementById('heart-icon');
+    
+    if (btnLike && likeCount && heartIcon) {
+        const filename = btnLike.getAttribute('data-filename');
+        const serie = btnLike.getAttribute('data-serie');
+        const title = btnLike.getAttribute('data-title');
+
+        // Initial load of likes
+        fetch(`/api/public/like-artwork?filename=${encodeURIComponent(filename || '')}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.likes !== undefined) {
+                    likeCount.textContent = data.likes;
+                }
+                if (data.hasLiked) {
+                    btnLike.classList.add('liked');
+                }
+            })
+            .catch(() => console.log('Error fetching likes'));
+
+        btnLike.addEventListener('click', async () => {
+             if (btnLike.getAttribute('disabled')) return;
+             
+             // Visual feedback optimistic
+             const isAlreadyLiked = btnLike.classList.contains('liked');
+             btnLike.classList.toggle('liked');
+             btnLike.setAttribute('disabled', 'true');
+             btnLike.style.opacity = '0.5';
+             btnLike.style.cursor = 'wait';
+             
+             let current = parseInt(likeCount.textContent || '0');
+             likeCount.textContent = (isAlreadyLiked ? Math.max(0, current - 1) : current + 1).toString();
+             
+             try {
+                const res = await fetch('/api/public/like-artwork', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename, serie_id: serie, title })
+                });
+                const data = await res.json();
+                if (data.likes !== undefined) {
+                    likeCount.textContent = data.likes;
+                }
+                if (data.hasLiked) {
+                    btnLike.classList.add('liked');
+                } else {
+                    btnLike.classList.remove('liked');
+                }
+             } catch (e) {
+                console.error('Error liking:', e);
+                // Rollback visual on error
+                btnLike.classList.toggle('liked', isAlreadyLiked);
+                likeCount.textContent = current.toString();
+             } finally {
+                btnLike.removeAttribute('disabled');
+                btnLike.style.opacity = '1';
+                btnLike.style.cursor = 'pointer';
+             }
+        });
+    }
+  });
+</script>
+
+<style>
+
+.obra-container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  color: var(--color-travertine-light);
+  min-height: 100vh; /* Changed from calc to avoid small jumps */
+}
+
+.split-layout {
+  display: block; /* Independent panels */
+  width: 100%;
+  position: relative;
+}
+
+.image-column {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 50vw;
+  height: 100dvh;
+  background: #0d0d0d;
+  padding: 0 5%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-right: 1px solid rgba(255,255,255,0.03);
+  z-index: 5;
+}
+
+.info-column {
+  margin-left: 50vw;
+  width: 50vw;
+  padding: 160px 8% 10rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #050505; 
+  min-height: 100dvh;
+}
+@media (max-width: 1024px) {
+  .split-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .image-column {
+    position: relative;
+    width: 100%;
+    height: 70dvh;
+    padding: 2rem 5%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .info-column {
+    margin-left: 0;
+    width: 100%;
+    padding: 3rem 8% 6rem;
+  }
+}
+
+.image-wrapper {
+  position: relative;
+  width: 100%;
+  height: calc(100dvh - 350px);
+  max-height: calc(100dvh - 350px);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.main-artwork, .room-artwork {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+  filter: drop-shadow(0 20px 60px rgba(0,0,0,0.6));
+  will-change: transform, opacity;
+}
+
+/* 80% Smart Rule Implementation */
+.image-wrapper.is-portrait .main-artwork,
+.image-wrapper.is-portrait .room-artwork {
+  height: 80%;
+  width: auto;
+}
+
+.image-wrapper.is-landscape .main-artwork,
+.image-wrapper.is-landscape .room-artwork {
+  width: 80%;
+  height: auto;
+}
+
+.room-artwork {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 2;
+}
+
+.image-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.control-btn {
+  background: rgba(255, 255, 255, 0.05); /* Proximity glass */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-travertine-muted);
+  padding: 0.9rem 1.6rem;
+  font-family: inherit;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 0; /* Modern architectural edge */
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  flex: 1;
+}
+
+.control-btn:hover, .control-btn.active {
+  border-color: var(--color-accent);
+  background: rgba(220, 177, 74, 0.15);
+  color: var(--color-travertine-light);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.share-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 1px;
+}
+
+.social-icons {
+  display: flex;
+  gap: 1rem;
+  font-size: 1rem;
+}
+
+.social-icons i {
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.social-icons i:hover {
+  color: #fff;
+}
+
+/* Right Column */
+.back-link {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--color-travertine-light);
+  text-decoration: none;
+  margin-bottom: 2rem;
+  transition: var(--transition-premium);
+}
+
+.back-link:hover {
+  color: var(--color-accent);
+  transform: translateX(-5px);
+}
+
+.serie-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--color-accent);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.obra-title {
+  font-family: var(--font-primary);
+  font-size: clamp(2rem, 3.5vw, 3.2rem); /* Refined safe scale for narrow columns */
+  font-weight: 500;
+  margin-bottom: 2rem;
+  line-height: 1.1;
+  color: var(--color-travertine-light);
+  word-break: break-word; /* Crucial for long titles like Belgrano... */
+}
+
+.tags-container {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 4rem;
+  flex-wrap: wrap;
+}
+
+.tag-accent {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+}
+
+.tag-outline {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--color-text-muted);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  padding: 0.5rem 1rem;
+}
+
+.divider {
+  border: none;
+  height: 1px;
+  background: var(--glass-border);
+  margin: 3rem 0;
+}
+
+/* Tabs Estilo Fichero (Solapa Profesional) */
+.tabs-header {
+  display: flex;
+  margin-bottom: 4rem;
+  border-bottom: 1px solid var(--color-accent); /* Thinner line for subtlety */
+  gap: 0;
+  padding-left: 0.5rem;
+}
+
+.tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-secondary);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 0.8rem 2rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border-radius: 10px 10px 0 0;
+  font-weight: 600;
+  margin-bottom: -1px; /* Pulls it down to sit ON the border-bottom */
+  z-index: 1;
+}
+
+.tab-btn:hover {
+  color: var(--color-travertine-light);
+  background: rgba(220, 177, 74, 0.03); /* Subtle gold hint */
+}
+
+.tab-btn.active {
+  color: var(--color-accent);
+  background: var(--color-onyx-deep); /* Match container background */
+  border: 1px solid var(--color-accent);
+  border-bottom: 2px solid var(--color-onyx-deep); /* Thicker overlap to hide the bottom line perfectly */
+  z-index: 2;
+}
+
+.prose-content {
+  font-size: 1.05rem;
+  line-height: 2;
+  color: var(--color-text-muted);
+  font-family: var(--font-secondary);
+}
+
+.prose-title {
+  text-align: center;
+  font-family: var(--font-primary);
+  font-size: 1.6rem;
+  margin-bottom: 3rem;
+  color: var(--color-travertine-light);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.terms-section {
+  margin-bottom: 2.5rem;
+}
+
+.terms-section h3 {
+  font-family: var(--font-primary);
+  color: var(--color-travertine-light);
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--glass-border);
+  display: inline-block;
+  padding-bottom: 0.25rem;
+}
+
+.tab-content {
+  min-height: 400px; /* Rigid stability */
+  position: relative;
+}
+
+.fade-in-content {
+  animation: slideInSheet 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes slideInSheet {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Legal Content Refinement */
+.legal-content {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--color-text-muted); /* Low contrast as requested */
+  font-family: var(--font-secondary); /* Sans-serif */
+}
+
+.legal-title {
+  font-family: var(--font-secondary);
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  color: var(--color-travertine-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.legal-section {
+  margin-bottom: 2rem;
+}
+
+.legal-section h3 {
+  font-family: var(--font-secondary);
+  font-size: 0.85rem;
+  color: var(--color-travertine-muted); /* No yellow/gold */
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: none;
+}
+
+.prose-content :global(p):first-of-type::first-letter {
+  float: left;
+  font-size: 4.5rem;
+  line-height: 0.8;
+  padding-right: 0.8rem;
+  padding-top: 0.5rem;
+  color: var(--color-accent);
+  font-family: var(--font-primary);
+  font-weight: 600;
+}
+
+.specs-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.specs-list li {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--glass-border);
+  font-size: 0.9rem;
+  display: grid;
+  grid-template-columns: 200px 1fr; /* Fixed width for labels to prevent content pushing */
+  align-items: baseline;
+}
+
+.specs-list li strong {
+  color: var(--color-travertine-light);
+  font-weight: 600;
+}
+
+/* Technical Tab Professional Styling */
+.technical-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  font-family: var(--font-secondary); /* Sans-serif for technical data */
+}
+
+.tech-category {
+  font-family: var(--font-secondary);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: var(--color-travertine-light);
+  margin-bottom: 2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.tech-list {
+  list-style: none;
+  padding: 0;
+}
+
+.tech-list li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+  color: var(--color-travertine-muted);
+}
+
+.tech-list i {
+  color: var(--color-accent);
+  width: 18px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.shot-data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.shot-item {
+  background: rgba(255,255,255,0.03);
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 2px;
+}
+
+.shot-item i {
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+  color: rgba(255,255,255,0.4);
+}
+
+.shot-item .label {
+  font-size: 0.55rem;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.3);
+  font-weight: 600;
+}
+
+.shot-item .value {
+  font-size: 0.85rem;
+  color: var(--color-travertine-light);
+  font-weight: 500;
+}
+
+/* Checkout */
+.checkout-area {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  margin-top: 4rem;
+}
+
+.price-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-label {
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.price-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--font-secondary);
+}
+
+.price-value .number {
+  font-size: 3.5rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--color-travertine-light);
+}
+
+.price-value .currency {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  letter-spacing: 1px;
+}
+
+.action-buttons {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.btn-buy {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: var(--color-onyx-deep);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  padding: 1.5rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  transition: var(--transition-premium);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn-buy:hover {
+  background: var(--color-accent);
+  color: var(--color-onyx-deep);
+}
+
+.secondary-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-favorite {
+  background: var(--color-onyx-charcoal);
+  border: 1px solid var(--glass-border);
+  color: var(--color-travertine-light);
+  width: auto;
+  min-width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 0 1.5rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  position: relative;
+}
+
+.like-number {
+  font-family: var(--font-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-travertine-muted);
+}
+
+.btn-favorite:hover {
+  border-color: #ff4d4d;
+  background: rgba(255, 77, 77, 0.05);
+}
+
+.btn-favorite:hover svg, .btn-favorite.liked svg {
+  color: #ff4d4d !important;
+  fill: #ff4d4d !important;
+  transform: scale(1.1);
+}
+
+.btn-favorite.liked .like-number {
+  color: #ff4d4d;
+}
+
+.btn-collection {
+  flex: 1;
+  background: var(--color-onyx-charcoal);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: var(--transition-premium);
+  font-weight: 600;
+}
+
+.btn-collection:hover {
+  color: var(--color-white);
+  background: var(--color-onyx-soft);
+}
+
+/* Size Selector */
+.size-selector-section {
+  margin-bottom: 3rem;
+}
+
+.size-selector-label {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.size-options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.size-option {
+  flex: 1;
+  min-width: 100px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  color: var(--color-travertine-muted);
+  padding: 1rem 1.2rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.35s cubic-bezier(0.19, 1, 0.22, 1);
+  font-family: inherit;
+}
+
+.size-option:hover {
+  border-color: rgba(220, 177, 74, 0.5);
+  background: rgba(220, 177, 74, 0.06);
+  color: var(--color-travertine-light);
+}
+
+.size-option.active {
+  border-color: var(--color-accent);
+  background: rgba(220, 177, 74, 0.12);
+  color: var(--color-travertine-light);
+  box-shadow: 0 0 20px rgba(220, 177, 74, 0.08);
+}
+
+.size-dimensions {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.size-label-text {
+  font-size: 0.6rem;
+  font-style: italic;
+  opacity: 0.6;
+  letter-spacing: 1px;
+}
+
+/* Canvas Material Info Block */
+.canvas-info {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.5s ease, margin 0.4s ease;
+  margin-bottom: 0;
+}
+
+.canvas-info.visible {
+  max-height: 300px;
+  opacity: 1;
+  margin-bottom: 2.5rem;
+}
+
+.canvas-info-inner {
+  background: rgba(220, 177, 74, 0.04);
+  border: 1px solid rgba(220, 177, 74, 0.2);
+  border-left: 3px solid var(--color-accent);
+  padding: 1.5rem 1.8rem;
+}
+
+.canvas-badge {
+  display: inline-block;
+  font-size: 0.55rem;
+  letter-spacing: 2.5px;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+
+.canvas-title {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-travertine-light);
+  margin: 0 0 0.8rem 0;
+  letter-spacing: 0.5px;
+}
+
+.canvas-body {
+  font-family: var(--font-secondary);
+  font-size: 0.8rem;
+  line-height: 1.8;
+  color: var(--color-travertine-muted);
+  margin: 0;
+}
+
+.canvas-body strong {
+  color: var(--color-travertine-light);
+}
+
+.canvas-body em {
+  color: var(--color-accent);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Price pop animation on size change */
+@keyframes pricePop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.15); color: var(--color-accent); }
+  100% { transform: scale(1); }
+}
+
+.price-pop {
+  animation: pricePop 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+/* Responsiveness */
+@media (max-width: 1024px) {
+  .split-layout {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .obra-container, .nav-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  .image-controls {
+    flex-wrap: wrap;
+  }
+  .checkout-area {
+    flex-direction: column;
+  }
+  .size-options {
+    gap: 0.5rem;
+  }
+  .size-option {
+    padding: 0.8rem 0.8rem;
+  }
+}
+
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.btn-favorite.liked svg {
+  animation: heartBeat 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+</style>

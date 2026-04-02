@@ -1,0 +1,256 @@
+---
+---
+<section class="collector-join-section">
+    <div class="join-container">
+        <div class="join-content">
+            <span class="join-tag">EXCLUSIVIDAD Y LEGADO</span>
+            <h2 class="join-title">Únase a la Colección</h2>
+            <p class="join-description">
+                Sea parte de una comunidad selecta de coleccionistas. Al registrarse, recibirá información técnica privilegiada, catálogos de nuevas series y acceso prioritario a piezas de edición limitada antes de su lanzamiento público.
+            </p>
+            
+            <form id="public-collector-form" class="join-form">
+                <div class="form-row">
+                    <input type="text" name="name" placeholder="NOMBRE COMPLETO" required />
+                    <input type="email" name="email" placeholder="CORREO ELECTRÓNICO" required />
+                </div>
+                <div class="form-row">
+                    <input type="text" name="instagram" placeholder="INSTAGRAM (OPCIONAL)" />
+                    <button type="submit" id="join-submit-btn" class="join-btn">
+                        SOLICITAR ACCESO <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div id="join-status" class="join-status"></div>
+            </form>
+            <div id="success-card" class="success-card" style="display: none;">
+                <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+                <h3>Bienvenido a nuestra Colección</h3>
+                <p>Su solicitud ha sido recibida con éxito. Ha ingresado a nuestro selecto grupo y pronto recibirá catálogos y acceso prioritario a obra inédita.</p>
+            </div>
+            
+            <p id="join-privacy-text" class="join-privacy">
+                Al solicitar acceso, usted acepta ser contactado para fines informativos y de curaduría. Su privacidad es nuestra prioridad absoluta.
+            </p>
+        </div>
+    </div>
+</section>
+
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('public-collector-form');
+        const status = document.getElementById('join-status');
+        const btn = document.getElementById('join-submit-btn');
+
+        form?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            btn.disabled = true;
+            btn.innerHTML = 'PROCESANDO...';
+            status.className = 'join-status';
+            status.innerText = '';
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const res = await fetch('/api/public/register-collector', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+
+                if (result.ok) {
+                    form.style.display = 'none';
+                    document.getElementById('join-privacy-text').style.display = 'none';
+                    
+                    const successCard = document.getElementById('success-card');
+                    successCard.style.display = 'flex';
+                    successCard.animate([
+                        { opacity: 0, transform: 'translateY(20px)' },
+                        { opacity: 1, transform: 'translateY(0)' }
+                    ], { duration: 800, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
+                    
+                    form.reset();
+                } else {
+                    status.classList.add('error');
+                    status.innerText = result.error || 'ERROR AL ENVIAR SOLICITUD.';
+                }
+            } catch (err) {
+                status.classList.add('error');
+                status.innerText = 'ERROR DE CONEXIÓN.';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'SOLICITAR ACCESO <i class="fas fa-chevron-right"></i>';
+            }
+        });
+    });
+</script>
+
+<style>
+    .collector-join-section {
+        padding: 8rem 4%;
+        background-color: var(--color-onyx-deep);
+        border-top: 1px solid var(--glass-border);
+        display: flex;
+        justify-content: center;
+    }
+
+    .join-container {
+        max-width: 900px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .join-tag {
+        font-family: var(--font-secondary);
+        font-size: 0.7rem;
+        letter-spacing: 4px;
+        color: var(--color-accent);
+        display: block;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+    }
+
+    .join-title {
+        font-family: var(--font-primary);
+        font-size: clamp(2rem, 4vw, 3.5rem);
+        color: var(--color-white);
+        margin-bottom: 2rem;
+        font-weight: 300;
+    }
+
+    .join-description {
+        font-size: 1rem;
+        color: rgba(255,255,255,0.6);
+        line-height: 1.8;
+        margin-bottom: 4rem;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .join-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        background: rgba(255,255,255,0.02);
+        padding: 3rem;
+        border-radius: 4px;
+        border: 1px solid rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .join-form input {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding: 1rem 0.5rem;
+        color: var(--color-white);
+        font-family: var(--font-secondary);
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    .join-form input:focus {
+        border-color: var(--color-accent);
+    }
+
+    .join-btn {
+        background: var(--color-accent);
+        color: var(--color-onyx-deep);
+        border: none;
+        padding: 1rem;
+        font-family: var(--font-secondary);
+        font-weight: 700;
+        letter-spacing: 2px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .join-btn:hover {
+        background: var(--color-white);
+        transform: translateY(-2px);
+    }
+
+    .join-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .join-status {
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        margin-top: 1rem;
+        text-align: center;
+        min-height: 1rem;
+    }
+
+    .join-status.success { color: #4a9e6a; }
+    .join-status.error { color: #e05555; }
+
+    .join-privacy {
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.3);
+        margin-top: 2rem;
+        font-style: italic;
+    }
+
+    /* Success Card Premium */
+    .success-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        background: rgba(255,255,255,0.02);
+        padding: 4rem 3rem;
+        border-radius: 4px;
+        border: 1px solid rgba(212,175,55,0.15); /* Subtle gold border */
+        backdrop-filter: blur(10px);
+        margin: 2rem auto 0;
+        max-width: 600px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .success-icon {
+        font-size: 3rem;
+        color: var(--color-accent);
+        margin-bottom: 0.5rem;
+    }
+
+    .success-card h3 {
+        font-family: var(--font-primary);
+        font-size: clamp(1.8rem, 3vw, 2.4rem);
+        color: var(--color-white);
+        font-weight: 300;
+        margin: 0;
+    }
+
+    .success-card p {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.7);
+        line-height: 1.9;
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        .join-form {
+            padding: 2rem 1.5rem;
+        }
+    }
+</style>

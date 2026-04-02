@@ -1,0 +1,165 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+---
+
+<Layout title="Guía de Uso | JHM Admin">
+  <Header currentPath="/admin/ayuda" />
+
+  <main class="help-container">
+    <header class="help-header">
+      <h1>Guía de Gestión JHM</h1>
+      <p>Instrucciones detalladas para mantener tu portfolio y revista.</p>
+    </header>
+
+    <div class="help-grid">
+      <!-- Sección 1: Revista -->
+      <section class="help-card">
+        <div class="card-icon"><i class="fas fa-newspaper"></i></div>
+        <h2>Gestión de Revista</h2>
+        <div class="card-content">
+          <h3>Editor Avanzado (TinyMCE)</h3>
+          <p>Utiliza el editor visual para dar formato a tus artículos sin tocar código. Puedes insertar links, negritas, y manejar la estructura del texto fácilmente.</p>
+          
+          <h3>Importar desde Word</h3>
+          <p>Puedes arrastrar o seleccionar archivos <strong>.docx</strong>. El sistema traducirá el formato de Word a HTML limpio para la web automáticamente.</p>
+
+          <h3>Multimedia en Artículos</h3>
+          <p>Sube tus fotos <strong>.avif</strong> y videos <strong>.mp4</strong> a la carpeta <code>/img/magazine/</code> vía FileZilla. Luego, en el editor, usa el nombre del archivo para referenciarlos.</p>
+        </div>
+      </section>
+
+      <!-- Sección 2: Galería Series -->
+      <section class="help-card">
+        <div class="card-icon"><i class="fas fa-images"></i></div>
+        <h2>Galería & Series</h2>
+        <div class="card-content">
+          <h3>Convención de Nombres</h3>
+          <ul>
+            <li><strong>Obra Principal:</strong> <code>JMX_9742.avif</code></li>
+            <li><strong>Vistas de Ambiente/Hover:</strong> Agrega un guion bajo y un número: <code>JMX_9742_2.avif</code>, <code>JMX_9742_3.avif</code>.</li>
+            <li>El sistema detectará automáticamente las fotos que terminan en <code>_N</code> como muestras de la obra principal.</li>
+          </ul>
+
+          <h3>Metadatos (IPTC Core)</h3>
+          <p>Escribe la información directamente en la foto principal (JMX_XXXX.avif) y la web la leerá:</p>
+          <ul>
+            <li><strong>Titular (Headline):</strong> Nombre de la obra.</li>
+            <li><strong>Descripción:</strong> Historia o datos técnicos de la toma.</li>
+            <li><strong>Creador:</strong> Tu nombre.</li>
+          </ul>
+          <p><em>Las fotos de ambiente heredan estos datos automáticamente de la principal.</em></p>
+        </div>
+      </section>
+
+      <!-- Sección 3: Carpetas y FileZilla -->
+      <section class="help-card">
+        <div class="card-icon"><i class="fas fa-folder-open"></i></div>
+        <h2>Organización de Archivos</h2>
+        <div class="card-content">
+          <p>Para que la web detecte tus nuevas obras, usa esta estructura en el servidor:</p>
+          <ul>
+            <li><strong>Revista:</strong> <code>public/img/magazine/</code></li>
+            <li><strong>Series:</strong> <code>public/img/Series/[Nombre_de_la_Serie]/</code></li>
+          </ul>
+          <p><strong>Importante:</strong> Gracias a la nueva actualización de "Volúmenes", los archivos que subas aparecerán en la web al instante.</p>
+        </div>
+      </section>
+    </div>
+
+    <div class="help-footer">
+      <p>¿Necesitas más ayuda? Contacta con soporte técnico directametne.</p>
+      <a href="mailto:soporte@javiermix.ar" class="help-btn">SOPORTE POR EMAIL</a>
+    </div>
+  </main>
+
+  <style>
+    .help-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 8rem 2rem 10rem;
+      color: #fff;
+      font-family: var(--font-secondary);
+    }
+    .help-header {
+      text-align: center;
+      margin-bottom: 5rem;
+    }
+    .help-header h1 {
+      font-family: var(--font-primary);
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+    }
+    .help-header p {
+      color: var(--color-accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 3rem;
+    }
+    .help-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 3rem;
+      transition: var(--transition-premium);
+    }
+    .help-card:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: var(--color-accent);
+      transform: translateY(-5px);
+    }
+    .card-icon {
+      font-size: 2.5rem;
+      color: var(--color-accent);
+      margin-bottom: 2rem;
+    }
+    .help-card h2 {
+      font-family: var(--font-primary);
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+    .card-content h3 {
+      font-size: 1rem;
+      color: var(--color-white);
+      margin-bottom: 1rem;
+      margin-top: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 0.5rem;
+    }
+    .card-content p, .card-content li {
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    .card-content ul {
+      padding-left: 1.2rem;
+    }
+    .help-footer {
+      margin-top: 8rem;
+      text-align: center;
+      padding: 4rem;
+      background: rgba(var(--h-gold), var(--s-gold), 5%);
+      border: 1px dashed var(--color-accent);
+    }
+    .help-btn {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 1rem 3rem;
+      background: var(--color-accent);
+      color: var(--color-onyx-deep);
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: 2px;
+      transition: var(--transition-premium);
+    }
+    .help-btn:hover {
+      background: #fff;
+      transform: scale(1.05);
+    }
+  </style>
+</Layout>
