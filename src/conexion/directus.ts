@@ -23,12 +23,10 @@ export async function fetchFromDirectus(path: string, options: RequestInit = {})
         ...options.headers
     };
 
-    // Si no hay Authorization en los headers, usamos el token por defecto
     if (!headers['Authorization']) {
         headers['Authorization'] = `Bearer ${DIRECTUS_TOKEN}`;
     }
 
-    // Try Internal first (High speed within Docker)
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000); 
@@ -40,16 +38,34 @@ export async function fetchFromDirectus(path: string, options: RequestInit = {})
         });
         clearTimeout(timeoutId);
         if (res.ok) return res;
-    } catch (e: any) {
-        // Fallback silencioso a la URL pública
-    }
+    } catch (e: any) {}
 
-    // Fallback to Public (Internet)
     try {
         return await fetch(`${PUBLIC_DIRECTUS_URL}${path}`, { ...options, headers });
     } catch (err: any) {
         console.error("[Directus Error] Fallback fetch failed:", err.message);
         throw err;
+    }
+}
+
+/* ==========================================================================
+   SECCIÓN: AUTENTICACIÓN
+   ========================================================================== */
+
+export async function loginAdmin(email: string, password: string) {
+    try {
+        const res = await fetch(`${PUBLIC_DIRECTUS_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            return { success: true, accessToken: data.data.access_token };
+        }
+        return { success: false, message: data.errors?.[0]?.message || "Credenciales inválidas" };
+    } catch (e) {
+        return { success: false, message: "Error de conexión con el servidor" };
     }
 }
 
@@ -83,7 +99,6 @@ export async function getSeries() {
         };
     }));
   } catch (e: any) {
-    console.error("Error fetching series:", e);
     return [];
   }
 }
@@ -92,24 +107,44 @@ export async function getSerieDetails(folderId: string) {
     try {
         const folderRes = await fetchFromDirectus(`/folders/${folderId}`);
         const folderData = await folderRes.json();
-        
         const filesRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${folderId}&sort=filename_download`);
         const filesData = await filesRes.json();
-        
         const items = (filesData.data || []).filter((f: any) => f.type.includes('image'));
-
-        return {
-            name: folderData.data?.name || "Serie",
-            items
-        };
+        return { name: folderData.data?.name || "Serie", items };
     } catch (e) {
-        console.error("Error fetching serie details:", e);
         return { name: "Error", items: [] };
     }
 }
 
+export async function getCatalogoFiles() {
+    try {
+        const folderRes = await fetchFromDirectus(`/folders?filter[name][_eq]=Catalogo`);
+        const folderData = await folderRes.json();
+        const rootId = folderData.data?.[0]?.id;
+        if (!rootId) return [];
+
+        const subsRes = await fetchFromDirectus(`/folders?filter[parent][_eq]=${rootId}`);
+        const subsData = await subsRes.json();
+        const seriesFolders = subsData.data || [];
+        const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name]));
+
+        const folderIds = seriesFolders.map((f: any) => f.id);
+        if (folderIds.length === 0) return [];
+
+        const filesRes = await fetchFromDirectus(`/files?filter[folder][_in]=${folderIds.join(',')}&limit=-1`);
+        const filesData = await filesRes.json();
+
+        return (filesData.data || []).map((file: any) => ({
+            ...file,
+            serie_name: seriesMap.get(file.folder) || "Sin Serie"
+        }));
+    } catch (e) {
+        return [];
+    }
+}
+
 /* ==========================================================================
-   SECCIÓN: OBRAS Y LIKES (CON REDIS)
+   SECCIÓN: OBRAS (ARTWORKS)
    ========================================================================== */
 
 export async function getArtworks() {
@@ -121,6 +156,64 @@ export async function getArtworks() {
     return [];
   }
 }
+
+export async function getArtworkById(id: string) {
+  try {
+    // Buscar por ID numérico o por filename_download
+    const res = await fetchFromDirectus(`/items/artworks?filter[filename][_eq]=${id}`); 
+    const data = await res.json();
+    // Si no lo encuentra por filename, intentar por ID directo
+    if (!data.data?.[0]) {
+        const resId = await fetchFromDirectus(`/items/artworks/${id}`);
+        const dataId = await resId.json();
+        return dataId.data || null;
+    }
+    return data.data?.[0] || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function getArtworkDetails(id: string) {
+    try {
+        const fileRes = await fetchFromDirectus(`/files/${id}`);
+        const fileData = await fileRes.json();
+        const mainFile = fileData.data;
+        if (!mainFile) return null;
+
+        const res = await fetchFromDirectus(`/items/artworks?filter[filename][_eq]=${mainFile.filename_download}`);
+        const data = await res.json();
+        const meta = data.data?.[0] || null;
+
+        return { mainFile, meta };
+    } catch (e) {
+        return null;
+    }
+}
+
+export async function createArtwork(data: any, token: string) {
+    const res = await fetchFromDirectus(`/items/artworks`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    return { success: !result.errors, ...result };
+}
+
+export async function updateArtwork(id: string, data: any, token: string) {
+    const res = await fetchFromDirectus(`/items/artworks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    return { success: !result.errors, ...result };
+}
+
+/* ==========================================================================
+   SECCIÓN: LIKES (CON REDIS)
+   ========================================================================== */
 
 export async function getArtworkLikes(artworkId: string) {
   try {
@@ -193,13 +286,23 @@ export async function getArticles(token?: string) {
     try {
         const options: any = {};
         if (token) options.headers = { 'Authorization': `Bearer ${token}` };
-        
         const res = await fetchFromDirectus(`/items/magazine?sort=-created_at&fields=*,user_created.*`, options);
         const data = await res.json();
         return data.data || [];
     } catch (e) {
-        console.error("Error fetching articles:", e);
         return [];
+    }
+}
+
+export async function getArticleDetails(id: string, token?: string) {
+    try {
+        const options: any = {};
+        if (token) options.headers = { 'Authorization': `Bearer ${token}` };
+        const res = await fetchFromDirectus(`/items/magazine/${id}?fields=*,user_created.*`, options);
+        const data = await res.json();
+        return data.data || null;
+    } catch (e) {
+        return null;
     }
 }
 
@@ -209,7 +312,18 @@ export async function createArticle(data: any, token: string) {
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(data)
     });
-    return await res.json();
+    const result = await res.json();
+    return { success: !result.errors, ...result };
+}
+
+export async function updateArticle(id: string, data: any, token: string) {
+    const res = await fetchFromDirectus(`/items/magazine/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    return { success: !result.errors, ...result };
 }
 
 /* ==========================================================================
@@ -220,7 +334,6 @@ export async function getCertificates(token?: string) {
     try {
         const options: any = {};
         if (token) options.headers = { 'Authorization': `Bearer ${token}` };
-        
         const res = await fetchFromDirectus(`/items/sales?fields=*,artwork_id.*,collector_id.*&sort=-sale_date`, options);
         const data = await res.json();
         return data.data || [];
@@ -233,7 +346,6 @@ export async function getCertificateByUuid(uuid: string, token?: string) {
     try {
         const options: any = {};
         if (token) options.headers = { 'Authorization': `Bearer ${token}` };
-        
         const res = await fetchFromDirectus(`/items/sales?filter[uuid][_eq]=${uuid}&fields=*,artwork_id.*,collector_id.*`, options);
         const data = await res.json();
         return data.data?.[0] || null;
@@ -249,13 +361,13 @@ export async function getCertificateByUuid(uuid: string, token?: string) {
 export async function uploadFile(file: File, token: string) {
     const formData = new FormData();
     formData.append('file', file);
-
     const res = await fetch(`${PUBLIC_DIRECTUS_URL}/files`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
     });
-    return await res.json();
+    const result = await res.json();
+    return { success: !result.errors, id: result.data?.id, ...result };
 }
 
 export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number } = {}) {
