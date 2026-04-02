@@ -63,5 +63,15 @@ Todos los contenedores deben compartir una red común (ej: `web_network`) para c
 - **Spam Prevention**: Usa el prefijo `track:filename:ip` en Redis para bloquear votos duplicados por 1 semana.
 
 ---
-*Ultima actualización: 2026-04-01 by Antigravity*
-*Mensaje para el próximo agente: Respeta el alias @conexion y no modifiques alvarezplacas.*
+## 🛡️ Protocolo Verde (Seguridad HTTPS Total)
+
+Para garantizar el "Candado Verde" y evitar avisos de "No seguro" (Mixed Content):
+
+1. **CSP Mastery**: Incluye siempre `<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">` en el Layout principal. Esto obliga al navegador a intentar cargar cualquier asset HTTP por HTTPS automáticamente.
+2. **Proxy Aware**: Directus debe tener la variable `EXTENSIONS_CHECK_PROXY_HEADERS: "true"` para reconocer el protocolo del Proxy (Nginx).
+3. **Middleware de Redirección**: Usa `src/middleware.ts` en Astro para detectar `x-forwarded-proto: http` y redirigir permanentemente (301) a la versión segura.
+4. **Blindaje de URLs**: La función `getAssetUrl` debe forzar el protocolo `https://` en la cadena de retorno si el servidor devuelve por error un enlace inseguro.
+
+---
+*Ultima actualización: 2026-04-02 by Antigravity*
+*Lección aprendida: El contenido mixto (AVIF/MP4 por HTTP) rompe la confianza del usuario.*

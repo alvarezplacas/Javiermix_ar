@@ -1,19 +1,13 @@
-import { defineMiddleware } from 'astro:middleware';
+import { defineMiddleware } from "astro:middleware";
 
 export const onRequest = defineMiddleware(async (context, next) => {
-    // Solo protegemos las rutas que empiecen con /admin
-    if (context.url.pathname.startsWith('/admin')) {
-        const adminSession = context.cookies.get('admin_session');
+  const protocol = context.request.headers.get("x-forwarded-proto") || "http";
+  const host = context.request.headers.get("host");
 
-        // Permitir acceso a la página de login si no hay sesión
-        if (context.url.pathname === '/admin/login') {
-            return next();
-        }
+  // Si detectamos que la petición viene por HTTP a través del proxy, redirigimos a HTTPS
+  if (protocol === "http" && !host?.includes("localhost") && !host?.includes("127.0.0.1")) {
+    return context.redirect(`https://${host}${context.url.pathname}${context.url.search}`, 301);
+  }
 
-        if (!adminSession || adminSession.value !== 'active') {
-            return context.redirect('/admin/login');
-        }
-    }
-
-    return next();
+  return next();
 });

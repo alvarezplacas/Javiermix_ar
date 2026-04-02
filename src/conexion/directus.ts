@@ -377,5 +377,6 @@ export async function uploadFile(file: File, token: string) {
 export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number } = {}) {
     if (!id) return null;
     const { width = 1200, format = 'avif', quality = 80 } = options;
-    return `${PUBLIC_DIRECTUS_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`;
+    const url = `${PUBLIC_DIRECTUS_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`;
+    return url.replace('http://', 'https://');
 }
