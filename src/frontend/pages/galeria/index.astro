@@ -1,0 +1,242 @@
+---
+// h:\Javiermix_web_v2\frontend\/galeria/\index.astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { getSeries } from '../../conexion/directus';
+import { getOptimizedImageURL } from '../../utils/media';
+
+export const prerender = false;
+
+const seriesFromAPI = await getSeries();
+const seriesList = seriesFromAPI.map(s => ({
+    ...s,
+    coverUrl: getOptimizedImageURL(s.coverId, { width: 800, format: 'avif' })
+}));
+---
+
+<Layout
+  title="Galería Fine Art | Javier Mix"
+  description="Explore las series fotográficas de Javier Mix."
+  url="/galeria"
+  image={seriesList[0]?.coverUrl}
+>
+    
+    <Header currentPath="/galeria" />
+
+	<main class="gallery-container" style="padding-top: 5rem;">
+		<header class="gallery-header">
+			<h1 class="gallery-title">Fine Art Portfolio</h1>
+			<p class="gallery-subtitle">Selección Exclusiva de Obras Disponibles</p>
+		</header>
+
+		<div class="gallery-search-container" id="gallery-search-overlay">
+			<div class="search-input-wrapper" style="position: relative;">
+				<input type="text" id="gallery-search-input" placeholder="Buscar por color, tema o título..." aria-label="Buscar obras">
+			</div>
+		</div>
+
+		<div id="view-series" class="gallery-view active">
+			<section class="series-snap-container" style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
+				{seriesList.length === 0 ? (
+					<div class="empty-state">No se encontraron colecciones</div>
+				) : (
+					seriesList.map((serie) => (
+						<a href={`/galeria/${serie.id}`} class="series-card">
+							<div class="series-card-bg" style={`background-image: url('${serie.coverUrl}');`}></div>
+							<div class="series-card-content">
+								<h2 class="series-title">{serie.name}</h2>
+								<p class="series-count">{serie.count} Obras</p>
+								<span class="series-cta">Explorar Serie &rarr;</span>
+							</div>
+						</a>
+					))
+				)}
+			</section>
+		</div>
+	</main>
+
+	<Footer />
+</Layout>
+
+<style>
+.gallery-container {
+    background-color: var(--color-onyx-deep);
+    min-height: 100vh;
+}
+
+.gallery-header {
+    text-align: center;
+    padding: 6rem 1rem 4rem;
+}
+
+.gallery-title {
+    font-size: var(--text-h1);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+    font-family: var(--font-primary);
+    color: var(--color-white);
+    font-weight: 600;
+}
+
+.gallery-subtitle {
+    color: var(--color-text-muted);
+    font-family: var(--font-secondary);
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+}
+
+.gallery-search-container {
+    text-align: center;
+    margin: 2rem auto;
+    width: 100%;
+    max-width: 800px;
+    position: relative;
+    padding: 0 1rem;
+}
+
+#gallery-search-input {
+    width: 100%;
+    padding: 1.25rem 2rem;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--color-white);
+    font-family: var(--font-secondary);
+    font-size: 1rem;
+    backdrop-filter: blur(12px);
+    transition: var(--transition-premium);
+}
+
+#gallery-search-input:focus {
+    background: var(--color-onyx-charcoal);
+    border-color: var(--color-accent);
+    outline: none;
+}
+
+.series-snap-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+    gap: 3rem;
+    padding-bottom: 6rem;
+}
+
+.series-card {
+    position: relative;
+    display: block;
+    height: 500px;
+    overflow: hidden;
+    text-decoration: none;
+    transition: var(--transition-premium);
+    background-color: var(--color-onyx-charcoal);
+}
+
+.series-card-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.series-card:hover .series-card-bg {
+    transform: scale(1.1);
+}
+
+.series-card-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 3rem;
+    background: linear-gradient(to top, var(--color-onyx-deep) 0%, transparent 100%);
+    color: var(--color-white);
+    transform: translateY(10px);
+    transition: var(--transition-premium);
+}
+
+.series-card:hover .series-card-content {
+    transform: translateY(0);
+}
+
+.series-title {
+    font-family: var(--font-primary);
+    font-size: 2.8rem;
+    margin: 0 0 0.5rem 0;
+    color: var(--color-white);
+    font-weight: 600;
+    line-height: 1;
+}
+
+.series-count {
+    font-family: var(--font-secondary);
+    font-size: 0.8rem;
+    color: var(--color-accent);
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 600;
+}
+
+.series-cta {
+    font-family: var(--font-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--color-white);
+    opacity: 0; 
+    transform: translateX(-10px);
+    transition: var(--transition-premium);
+    display: inline-block;
+    border-bottom: 1px solid var(--color-accent);
+    padding-bottom: 4px;
+}
+
+.series-card:hover .series-cta {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+    .series-snap-container {
+        display: block;
+        height: 75vh;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        scrollbar-width: none;
+    }
+    .series-card {
+        height: 75vh;
+        scroll-snap-align: start;
+        margin-bottom: 1rem !important;
+        border-radius: 12px;
+    }
+    .series-cta {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    .series-card-content {
+        transform: translateY(0);
+    }
+}
+</style>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const searchInput = document.getElementById('gallery-search-input') as HTMLInputElement;
+    const cards = document.querySelectorAll('.series-card');
+    
+    searchInput?.addEventListener('input', (e) => {
+      const term = (e.target as HTMLInputElement).value.toLowerCase();
+      cards.forEach(card => {
+        const title = card.querySelector('.series-title')?.textContent?.toLowerCase() || '';
+        const isMatch = title.includes(term);
+        (card as HTMLElement).style.display = isMatch ? 'block' : 'none';
+      });
+    });
+  });
+</script>

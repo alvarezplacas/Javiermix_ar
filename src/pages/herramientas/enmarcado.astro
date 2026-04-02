@@ -1,0 +1,68 @@
+---
+// h:\Javiermix_web_v2\frontend\herramientas\enmarcado.astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import FramingStudio from '../../components/FramingStudio.astro';
+---
+
+<Layout
+  title="Studio de Enmarcado Virtual | Javier Mix"
+  description="Personaliza el enmarcado de tus obras Fine Art en tiempo real."
+  url="/herramientas/enmarcado"
+>
+  <Header currentPath="/herramientas/enmarcado" />
+  
+  <main class="enmarcado-page">
+    <FramingStudio imageSrc="/img/placeholder.jpg" title="Tu Obra" showUpload={true} />
+    
+    <div class="enmarcado-footer-cta">
+        <p>¿Tienes el marco ideal?</p>
+        <a href="/galeria" class="btn-primary">VOLVER A LA GALERÍA</a>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .enmarcado-page {
+    background-color: var(--color-onyx-deep);
+    min-height: 100vh;
+    padding-top: 80px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .enmarcado-footer-cta {
+    padding: 4rem 5%;
+    background-color: var(--color-onyx-soft);
+    text-align: center;
+    border-top: 1px solid var(--glass-border);
+  }
+
+  .enmarcado-footer-cta p {
+    font-family: var(--font-primary);
+    font-size: 1.5rem;
+    color: var(--color-white);
+    margin-bottom: 2rem;
+  }
+
+  .btn-primary {
+    display: inline-block;
+    padding: 1rem 2.5rem;
+    background: transparent;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    font-family: var(--font-secondary);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent);
+    color: var(--color-onyx-deep);
+  }
+</style>

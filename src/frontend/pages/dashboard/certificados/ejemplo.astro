@@ -1,0 +1,357 @@
+---
+// h:\Javiermix_web_v2\frontend\pages\dashboard\certificados\ejemplo.astro
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+export const prerender = true;
+
+const dummyData = {
+    uuid: "CERT-DEMO-8822-X99",
+    obra: {
+        title: "VÓRTICE DE SOMBRA",
+        serie_id: "Arquitecturas del Silencio",
+        paper: "Hahnemühle Photo Rag 308gsm",
+        thumbnail: "https://picsum.photos/seed/art74/1200/600" 
+    },
+    cert: {
+        dimensions: "60x90 cm",
+        edition_number: "01 / 10",
+        sale_date: new Date()
+    },
+    comprador: {
+        name: "Luciano Valenzuela"
+    }
+};
+
+const verificationUrl = "https://javiermix.ar/verificar/demo";
+const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(verificationUrl)}&color=1a1a1a&bgcolor=ffffff`;
+---<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Certificado JHM - EJEMPLO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    
+    <style is:global>
+        :root {
+            --gold: #C5A059;
+            --ink: #000000;
+            --paper: #ffffff;
+            --stage: #111111;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--stage);
+            font-family: 'Inter', sans-serif;
+            color: var(--ink);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Barra de herramientas flotante */
+        .coa-toolbar {
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid #333;
+            color: #fff;
+        }
+        .toolbar-info { font-size: 0.75rem; letter-spacing: 1px; font-weight: 600; }
+        .btn-download {
+            background: var(--gold);
+            color: #000;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            font-weight: 800;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s;
+        }
+        .btn-download:hover { transform: scale(1.05); }
+
+        /* Escenario de visualización */
+        .coa-viewer-stage {
+            display: flex;
+            justify-content: center;
+            padding: 4rem 2rem;
+            min-height: 100vh;
+        }
+
+        /* PÁGINA A4 */
+        .a4-page {
+            width: 210mm;
+            height: 297mm;
+            background: var(--paper) !important;
+            padding: 12mm;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.9);
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Detalle Fino: Guilloche Border */
+        .guilloche-border {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 15mm solid transparent;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .guilloche-inner {
+            width: 100%;
+            height: 100%;
+            border: 0.5mm solid var(--gold);
+            position: relative;
+        }
+        .guilloche-inner::before {
+            content: '';
+            position: absolute;
+            top: -4mm; left: -4mm; right: -4mm; bottom: -4mm;
+            border: 0.1mm solid var(--gold);
+            opacity: 0.3;
+        }
+
+        .certificate-content {
+            position: relative;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8mm;
+            flex: 1;
+        }
+
+        /* Marcas de Agua Reales */
+        .watermark-central {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 14rem;
+            font-weight: 900;
+            color: rgba(0,0,0,0.02) !important;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* Header Premium */
+        .coa-header { text-align: center; margin-top: 5mm; }
+        .logo-emblem {
+            width: 45px;
+            height: 45px;
+            border: 1.5px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            color: var(--gold);
+            font-weight: 800;
+            border-radius: 50%;
+            font-size: 0.9rem;
+        }
+        .coa-main-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            margin: 0;
+            font-weight: 400;
+        }
+        .coa-brand-sub {
+            font-size: 0.6rem;
+            letter-spacing: 5px;
+            color: #666;
+            margin-top: 8px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .coa-line-gold { height: 1px; background: var(--gold); width: 80%; margin: 25px auto; opacity: 0.4; }
+
+        /* Seccion de Obra */
+        .artwork-showcase { text-align: center; margin: 15px 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .artwork-intro { font-size: 0.85rem; line-height: 1.8; color: #444; font-style: italic; max-width: 85%; margin: 0 auto 30px; }
+        
+        .artwork-matte {
+            background: #fff;
+            padding: 5mm;
+            border: 0.1mm solid #eee;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            display: inline-block;
+            margin: 0 auto 25px;
+            max-width: fit-content;
+        }
+        .artwork-img { width: 145mm; height: 75mm; object-fit: cover; background: #000; display: block; }
+
+        .artwork-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            margin: 0 0 20px;
+            font-weight: 700;
+        }
+
+        .artwork-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 90%;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .meta-item { border-left: 0.5mm solid var(--gold); padding-left: 12px; }
+        .meta-label { font-size: 0.55rem; font-weight: 800; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .meta-value { font-size: 0.75rem; font-weight: 700; color: #111; }
+
+        /* Collector Section */
+        .provenance { margin-top: 30px; text-align: center; }
+        .acquired-label { font-size: 0.65rem; color: #999; letter-spacing: 2px; text-transform: uppercase; }
+        .collector-name { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin: 8px 0; color: #111; }
+        .coa-date { font-size: 0.6rem; color: #bbb; letter-spacing: 2px; font-weight: 800; }
+
+        /* Footer Multi-sec */
+        .coa-footer { 
+            border-top: 0.1mm solid #eee; 
+            padding-top: 20px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            margin-top: auto;
+            position: relative;
+        }
+        
+        .footer-content-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .qr-box { padding: 2px; border: 0.1mm solid #eee; background: #fff; line-height: 0; }
+        .qr-img { width: 55px; height: 55px; }
+        .qr-meta { text-align: left; }
+        .qr-tag { font-size: 0.45rem; font-weight: 800; color: #333; letter-spacing: 1px; margin-bottom: 2px; }
+        .qr-id { font-size: 0.4rem; color: #aaa; font-family: monospace; }
+
+        .signature-area { text-align: left; width: 220px; }
+        .signature-line { border-top: 0.5mm solid #000; margin-bottom: 8px; }
+        .signature-name { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-style: italic; font-weight: 700; display: block; }
+        .signature-role { font-size: 0.5rem; color: var(--gold); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+
+        @media print {
+            @page { size: A4; margin: 0; }
+            body { background: #fff !important; }
+            .coa-toolbar { display: none !important; }
+            .coa-viewer-stage { padding: 0 !important; margin: 0 !important; display: block !important; }
+            .a4-page { box-shadow: none !important; margin: 0 !important; width: 210mm !important; height: 297mm !important; border: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="coa-toolbar no-print">
+        <div class="toolbar-info">
+            <i class="fas fa-file-pdf"></i> EJEMPLO DE CERTIFICADO — MODO PREPARACIÓN PDF
+        </div>
+        <button onclick="window.print()" class="btn-download">
+            <i class="fas fa-file-download"></i> Descargar Ejemplo (PDF)
+        </button>
+    </div>
+
+    <div class="coa-viewer-stage">
+        <article class="a4-page">
+            <!-- Guilloche & Security Details -->
+            <div class="guilloche-border">
+                <div class="guilloche-inner"></div>
+            </div>
+            <div class="watermark-central">JHM</div>
+
+            <div class="certificate-content">
+                <header class="coa-header">
+                    <div class="logo-emblem">JM</div>
+                    <h1 class="coa-main-title">Certificado de Autenticidad</h1>
+                    <p class="coa-brand-sub">JHM FINE ART PHOTOGRAPHY — BUENOS AIRES</p>
+                </header>
+
+                <div class="coa-line-gold"></div>
+
+                <main class="artwork-showcase">
+                    <p class="artwork-intro">
+                        Por la presente se certifica que la obra aquí descrita es una pieza original y auténtica 
+                        de <strong>JAVIER MIX</strong>, producida bajo estándares internacionales de Fine Art.
+                    </p>
+
+                    <div class="artwork-matte">
+                        <img src={dummyData.obra.thumbnail} alt={dummyData.obra.title} class="artwork-img" />
+                    </div>
+
+                    <h2 class="artwork-title">{dummyData.obra.title}</h2>
+
+                    <div class="artwork-meta-grid">
+                        <div class="meta-item">
+                            <span class="meta-label">SERIE</span>
+                            <span class="meta-value">{dummyData.obra.serie_id}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">DIMENSIONES</span>
+                            <span class="meta-value">{dummyData.cert.dimensions}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">EDICIÓN</span>
+                            <span class="meta-value">{dummyData.cert.edition_number}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">SOPORTE</span>
+                            <span class="meta-value">{dummyData.obra.paper}</span>
+                        </div>
+                    </div>
+
+                    <div class="provenance">
+                        <p class="acquired-label">ADQUIRIDA POR:</p>
+                        <h3 class="collector-name">{dummyData.comprador.name}</h3>
+                        <p class="coa-date">REGISTRADO EL DÍA {dummyData.cert.sale_date.toLocaleDateString('es-AR').toUpperCase()}</p>
+                    </div>
+                </main>
+
+                <footer class="coa-footer">
+                    <div class="footer-content-wrapper">
+                        <!-- QR a la izquierda del nombre -->
+                        <div class="footer-left-qr">
+                            <div class="qr-box">
+                                <img src={qrUrl} alt="QR Verification" class="qr-img" />
+                            </div>
+                        </div>
+
+                        <div class="signature-area">
+                            <div class="signature-line"></div>
+                            <span class="signature-name">Javier Mix</span>
+                            <span class="signature-role">Firma del Autor / JHM REF: DEMO-XXXX</span>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </article>
+    </div>
+
+</body>
+</html>

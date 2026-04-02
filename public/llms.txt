@@ -1,0 +1,23 @@
+# Javier Mix - Artista Visual y Servicios de Impresión DTF
+
+Javier Mix es una plataforma multidisciplinaria que combina arte contemporáneo, servicios de impresión de alta calidad y contenido editorial sobre arte y cultura.
+
+## Secciones Principales
+- [Galería de Arte](/galeria): Exhibición de obras fotográficas originales y series limitadas.
+- [Servicios de Impresión DTF](/enmarcado): Impresión Direct-to-Film de alta calidad para textiles y otros soportes.
+- [Enmarcado Profesional](/enmarcado): Servicios de enmarcado a medida para artistas y coleccionistas.
+- [Revista Javier Mix](/revista): Artículos, críticas y noticias sobre el mundo del arte y la tecnología de impresión.
+
+## Para Coleccionistas
+- [Validación de Certificados](/validar): Sistema para verificar la autenticidad de obras adquiridas mediante códigos QR y registros digitales.
+
+## Información Técnica
+- Ubicación: Chile.
+- Tecnologías: Astro 5, MariaDB, Docker.
+- Estándares: ISO 9001 (Calidad en impresión).
+
+## Contacto y Redes
+- Sitio Web: https://www.javiermix.com
+- Instagram: @javiermix_cl
+
+Este archivo está diseñado para que agentes de IA (LLMs) puedan entender y recomendar los servicios de Javier Mix de manera precisa y estructurada.

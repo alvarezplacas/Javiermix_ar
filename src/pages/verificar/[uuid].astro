@@ -1,0 +1,146 @@
+---
+// h:\Javiermix_web_v2\frontend\pages\verificar\[uuid].astro
+import Layout from '../../layouts/Layout.astro';
+import { getCertificateByUuid } from '../../conexion/directus';
+
+export const prerender = false;
+
+const { uuid } = Astro.params;
+
+// 1. Buscar el certificado vía Directus
+const certData = await getCertificateByUuid(uuid!);
+
+const isValid = !!certData;
+const data = isValid ? {
+    cert: certData,
+    obra: certData.artwork_id,
+    comprador: certData.collector_id
+} : null;
+---
+
+<Layout title={isValid ? `Verificación: ${data.obra.title}` : "Certificado no encontrado"}>
+    <main class="verification-page">
+        <div class="glass-container reveal">
+            {isValid ? (
+                <div class="certificate-badge">
+                    <div class="seal">
+                        <i class="fas fa-check-circle"></i>
+                        <span>AUTENTICIDAD VERIFICADA</span>
+                    </div>
+                    
+                    <header class="cert-header">
+                        <p class="cert-id">ID: {uuid}</p>
+                        <h1 class="obra-title">{data.obra.title}</h1>
+                        <p class="obra-serie">Serie: {data.obra.serie_id}</p>
+                    </header>
+
+                    <div class="cert-details">
+                        <div class="detail-row">
+                            <span class="label">COLECCIONISTA:</span>
+                            <span class="value">{data.comprador.name}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">FECHA DE EMISIÓN:</span>
+                            <span class="value">{new Date(data.cert.sale_date!).toLocaleDateString('es-AR')}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">DIMENSIONES:</span>
+                            <span class="value">{data.cert.dimensions}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">EDICIÓN:</span>
+                            <span class="value">{data.cert.edition_number}</span>
+                        </div>
+                    </div>
+
+                    <div class="artist-signature">
+                        <span class="sig-label">Firma del Autor:</span>
+                        <div class="sig-placeholder">Javier Mix</div>
+                        <p class="sig-note">Documento digital firmado bajo el sistema de Bóveda JHM.</p>
+                    </div>
+                </div>
+            ) : (
+                <div class="error-badge">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h2>Certificado no válido</h2>
+                    <p>El código proporcionado no existe en nuestros registros oficiales.</p>
+                    <a href="/" class="btn-home">Volver al inicio</a>
+                </div>
+            )}
+        </div>
+    </main>
+</Layout>
+
+<style>
+    .verification-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
+        padding: 2rem;
+    }
+
+    .glass-container {
+        width: 100%;
+        max-width: 600px;
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 4rem;
+        box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+    }
+
+    .certificate-badge { text-align: center; }
+
+    .seal {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        background: rgba(197, 160, 89, 0.1);
+        color: #C5A059;
+        padding: 1rem 2rem;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        letter-spacing: 3px;
+        font-weight: 700;
+        margin-bottom: 4rem;
+        border: 1px solid rgba(197, 160, 89, 0.2);
+    }
+
+    .cert-id { font-size: 0.6rem; color: rgba(255,255,255,0.3); letter-spacing: 2px; margin-bottom: 1rem; }
+    .obra-title { font-size: 2.5rem; color: #fff; margin-bottom: 0.5rem; font-family: var(--font-primary); font-weight: 300; }
+    .obra-serie { font-size: 0.8rem; color: #C5A059; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4rem; }
+
+    .cert-details {
+        text-align: left;
+        border-top: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 3rem 0;
+        margin-bottom: 4rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-row:last-child { margin-bottom: 0; }
+
+    .label { font-size: 0.7rem; color: rgba(255,255,255,0.4); letter-spacing: 2px; }
+    .value { font-size: 0.85rem; color: #fff; font-weight: 600; }
+
+    .artist-signature { text-align: center; }
+    .sig-label { font-size: 0.65rem; color: rgba(255,255,255,0.3); display: block; margin-bottom: 1rem; }
+    .sig-placeholder { font-family: 'Playfair Display', serif; font-size: 2.5rem; color: #C5A059; font-style: italic; opacity: 0.8; }
+    .sig-note { font-size: 0.6rem; color: rgba(255,255,255,0.2); margin-top: 2rem; letter-spacing: 1px; }
+
+    .error-badge { text-align: center; color: #fff; }
+    .error-badge i { font-size: 4rem; color: #ef4444; margin-bottom: 2rem; }
+    .error-badge h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+    .error-badge p { color: rgba(255,255,255,0.5); margin-bottom: 2rem; }
+    .btn-home { display: inline-block; color: #C5A059; border: 1px solid #C5A059; padding: 1rem 2rem; text-decoration: none; font-size: 0.8rem; font-weight: 700; transition: all 0.3s; }
+    .btn-home:hover { background: #C5A059; color: #000; }
+</style>

@@ -1,0 +1,197 @@
+/* =========================================================================
+   JAVIER MIX - GLOBAL DESIGN SYSTEM (2026)
+   Centralized CSS for Typography, Colors, and Reusable Layout Utility Classes
+   ========================================================================= */
+
+:root {
+	/* --- 1. CORE BRAND PALETTE (HSL for precision) --- */
+	--h-gold: 44;
+	--s-gold: 69%;
+	--l-gold: 58%;
+	/* #DCB14A */
+	--h-burgundy: 349;
+	--s-burgundy: 70%;
+	--l-burgundy: 45%;
+	/* #BF1534 refined to a softer tone */
+
+	/* Neutral Tones (Onyx & Travertine) */
+	--color-onyx-deep: hsl(0, 0%, 2%);
+	/* #050505 */
+	--color-onyx-soft: hsl(0, 0%, 7%);
+	/* #111111 */
+	--color-onyx-charcoal: hsl(0, 0%, 5%);
+	/* #0D0D0D */
+
+	--color-travertine-light: hsl(12, 13%, 83%);
+	/* #D9CFCC */
+	--color-travertine-mid: hsl(28, 9%, 62%);
+	/* #A69C94 */
+	--color-travertine-dark: hsl(12, 5%, 34%);
+	/* #595351 */
+
+	/* Brand Aliases */
+	--color-gold: hsl(var(--h-gold), var(--s-gold), var(--l-gold));
+	--color-burgundy: hsl(var(--h-burgundy), var(--s-burgundy), var(--l-burgundy));
+	--color-white: hsl(0, 0%, 100%);
+
+	/* Semantic Colors */
+	--color-bg: var(--color-onyx-deep);
+	--color-text: var(--color-travertine-light);
+	--color-text-muted: var(--color-travertine-mid);
+	--color-accent: var(--color-gold);
+
+	/* --- 2. FLUID TYPOGRAPHY SYSTEM (2026 Ready) --- */
+	--font-primary: 'Cormorant Garamond', serif;
+	--font-secondary: 'Montserrat', sans-serif;
+
+	/* Fluid steps: min 16px -> max 20px */
+	--text-base: clamp(1rem, 0.9rem + 0.4vw, 1.25rem);
+
+	/* Heading Scale */
+	--text-h1: clamp(2.5rem, 5vw, 5.5rem);
+	--text-h2: clamp(2rem, 4vw, 3.5rem);
+	--text-h3: clamp(1.5rem, 3vw, 2.5rem);
+
+	/* --- 3. SPACING & SHADOWS --- */
+	--space-unit: clamp(1rem, 2vw, 2.5rem);
+	--container-max: 1600px;
+	--glass-bg: rgba(13, 13, 13, 0.85);
+	--glass-border: rgba(255, 255, 255, 0.05);
+
+	--transition-premium: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- 2. CSS RESET & GLOBAL BASICS --- */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	min-height: 100%;
+	overflow-y: scroll;
+	/* Force scrollbar presence for absolute stability */
+	scrollbar-gutter: stable;
+}
+
+body {
+	min-height: 100dvh;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--color-onyx-deep);
+	/* Master deep black */
+	color: var(--color-text);
+	font-family: var(--font-secondary);
+	font-size: var(--text-base);
+	line-height: 1.75;
+	/* Increased for premium readability */
+	letter-spacing: -0.01em;
+	/* Subtle modern tightness */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	margin: 0;
+}
+
+/* Ensure main grows to push footer down */
+main {
+	flex: 1 0 auto;
+}
+
+/* --- 3. TYPOGRAPHY DEFAULTS --- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--font-primary);
+	font-weight: 600;
+	margin-top: 0;
+	color: var(--color-white);
+	line-height: 1.1;
+}
+
+h1 {
+	font-size: var(--text-h1);
+	letter-spacing: 0.05em;
+	/* Luxury brand spacing */
+	text-transform: uppercase;
+}
+
+h2 {
+	font-size: var(--text-h2);
+}
+
+h3 {
+	font-size: var(--text-h3);
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+	transition: color 0.3s ease;
+}
+
+a:hover {
+	color: var(--color-accent);
+}
+
+/* --- 4. LAYOUT UTILITIES --- */
+.container {
+	max-width: 1400px;
+	margin: 0 auto;
+	padding: 0 4rem;
+}
+
+@media (max-width: 768px) {
+	.container {
+		padding: 0 2rem;
+	}
+}
+
+/* --- 5. UI COMPONENTS (Buttons, Forms, Effects) --- */
+.btn-premium {
+	display: inline-block;
+	padding: 1.25rem 3rem;
+	background-color: transparent;
+	border: 1px solid var(--color-accent);
+	color: var(--color-accent);
+	font-weight: 600;
+	font-family: var(--font-secondary);
+	text-transform: uppercase;
+	letter-spacing: 2px;
+	font-size: 0.75rem;
+	text-decoration: none;
+	transition: var(--transition-premium);
+	cursor: pointer;
+}
+
+.btn-premium:hover {
+	background-color: var(--color-accent);
+	color: var(--color-bg);
+	transform: translateY(-2px);
+	box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.link-secondary {
+	font-family: var(--font-primary);
+	font-size: 1.1rem;
+	color: var(--color-travertine-mid);
+	text-decoration: none;
+	transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+	border-bottom: 1px solid rgba(166, 156, 148, 0.2);
+	padding-bottom: 2px;
+}
+
+.link-secondary:hover {
+	color: var(--color-accent);
+	border-bottom-color: var(--color-accent);
+}
+
+/* Tipografía de resalte */
+.text-burgundy {
+	color: var(--color-burgundy);
+}
