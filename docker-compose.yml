@@ -10,7 +10,7 @@ services:
       MARIADB_USER: javiermix_usr
       MARIADB_PASSWORD: "JavierMix_Db_2026*"
     volumes:
-      - db_data:/var/lib/mysql
+      - javiermix_web_javiermix_db_data:/var/lib/mysql
     networks:
       - javiermix_network
 
@@ -86,7 +86,7 @@ services:
       LOCK_STORE: "redis"
       LOCK_REDIS: "redis://redis:6379"
     volumes:
-      - directus_uploads:/directus/uploads
+      - /home/ubuntu/prod/javiermix_web/public/uploads:/directus/uploads
       - directus_extensions:/directus/extensions
     depends_on:
       - db
@@ -98,7 +98,7 @@ networks:
     external: true
 
 volumes:
-  db_data:
+  javiermix_web_javiermix_db_data:
+    external: true
   redis_data:
-  directus_uploads:
   directus_extensions:
