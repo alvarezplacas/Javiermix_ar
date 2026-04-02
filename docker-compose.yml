@@ -7,6 +7,8 @@ services:
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: javiermix_obras
+      MARIADB_USER: javiermix_usr
+      MARIADB_PASSWORD: "JavierMix_Db_2026*"
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -72,14 +74,17 @@ services:
       DB_HOST: "db"
       DB_PORT: "3306"
       DB_DATABASE: "javiermix_obras"
-      DB_USER: "javiermix_usr"
-      DB_PASSWORD: "JavierMix_Db_2026*"
+      DB_USER: "root"
+      DB_PASSWORD: "root"
       PUBLIC_URL: "https://admin.javiermix.ar"
       ADMIN_EMAIL: "admin@javiermix.ar"
       ADMIN_PASSWORD: "JavierMix2026!"
       CACHE_ENABLED: "true"
       CACHE_STORE: "redis"
       CACHE_REDIS: "redis://redis:6379"
+    volumes:
+      - directus_uploads:/directus/uploads
+      - directus_extensions:/directus/extensions
     depends_on:
       - db
     networks:
@@ -92,3 +97,5 @@ networks:
 volumes:
   db_data:
   redis_data:
+  directus_uploads:
+  directus_extensions:
