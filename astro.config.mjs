@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 
 // https://astro.build/config
 export default defineConfig({
+    site: 'https://javiermix.ar',
     srcDir: './src',
     output: 'server',
     security: {

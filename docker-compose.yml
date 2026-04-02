@@ -79,6 +79,7 @@ services:
       PUBLIC_URL: "https://admin.javiermix.ar"
       ADMIN_EMAIL: "admin@javiermix.ar"
       ADMIN_PASSWORD: "JavierMix2026!"
+      EXTENSIONS_CHECK_PROXY_HEADERS: "true"
       CACHE_ENABLED: "true"
       CACHE_STORE: "redis"
       REDIS: "redis://redis:6379"
