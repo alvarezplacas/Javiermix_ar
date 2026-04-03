@@ -61,10 +61,16 @@ const etiqueta = "Fine Art Print";
   <article class="obra-container">
     <div class="split-layout">
       
-      <!-- 🖼️ Columna Izquierda: Imagen Interactiva (ORDEN V1) -->
+      <!-- 🖼️ Columna Izquierda: Imagen Interactiva (RESTAURACION PIXEL-PERFECT V1) -->
       <section class="image-column">
         <div class="sticky-image-container">
           <div class="image-wrapper">
+            <!-- Badge de Favoritos Superior Izquierda (Captura v1) -->
+            <div class="likes-badge-float">
+                <i class="fas fa-heart"></i>
+                <span id="like-count-float">0</span>
+            </div>
+
             <img src={coverImage} alt={`Obra ${title}`} class="main-artwork" id="primary-image" />
             {roomImage && (
               <img src={roomImage} alt={`Vista en Ambiente de ${title}`} class="room-artwork" id="secondary-image" />
@@ -93,13 +99,19 @@ const etiqueta = "Fine Art Print";
         </div>
       </section>
 
-      <!-- 📜 Columna Derecha: Información y Venta (ORDEN V1) -->
+      <!-- 📜 Columna Derecha: Información y Venta (RESTAURACION PIXEL-PERFECT V1) -->
       <section class="info-column">
         <a href={`/galeria/${mainFile.folder}`} class="back-link">← VOLVER A {serieName}</a>
         
         <div class="serie-label">SERIE: {serieName}</div>
         <h1 class="obra-title">{title}</h1>
         
+        <!-- Badge Superior de Likes (Captura v1) -->
+        <div class="social-feedback-badge">
+             <i class="fas fa-eye"></i>
+             <span class="social-count" id="social-view-count">0 PERSONAS LES GUSTA ESTO</span>
+        </div>
+
         <div class="tags-container">
           {etiqueta && <span class="tag-accent">{etiqueta}</span>}
           <span class="tag-outline">CERTIFICADO DE AUTENTICIDAD</span>
@@ -108,20 +120,20 @@ const etiqueta = "Fine Art Print";
         
         <hr class="divider" />
         
-        <!-- Tabs de información -->
+        <!-- Tabs Estilo Fichero (RESTAURACION V1) -->
         <div class="tabs-header">
           <button class="tab-btn active" data-target="historia">HISTORIA</button>
           <button class="tab-btn" data-target="ficha">FICHA TÉCNICA</button>
           <button class="tab-btn" data-target="terminos">TÉRMINOS</button>
         </div>
         
-        <div class="tab-content" id="tab-historia" style="display: block;">
+        <div class="tab-content fade-in-content" id="tab-historia" style="display: block;">
           <div class="prose-content">
-            <h2 class="prose-title">La Historia detrás de la Imagen</h2>
+            <h4 class="prose-subtitle">LA HISTORIA DETRÁS DE LA IMAGEN</h4>
             {meta?.description ? (
               <p>{meta.description}</p>
             ) : (
-              <p>Esta pieza de autor es parte de una selección curada rigurosamente. Refleja nuestro compromiso con el legado fotográfico y el diseño contemporáneo, donde cada textura, sombra y captura de luz está cuidada bajo los más altos estándares Fine Art.</p>
+              <p>Esta pieza de autor es parte de una selección curada rigurosamente. Refleja nuestro compromiso con el legado fotográfico y el diseño contemporáneo a nivel internacional.</p>
             )}
             <p>La edición es estricta y controlada, asegurando el valor de obra única a lo largo del tiempo.</p>
           </div>
@@ -132,10 +144,10 @@ const etiqueta = "Fine Art Print";
             <div class="tech-section">
               <h3 class="tech-category">THE PRINT (CALIDAD MUSEO)</h3>
               <ul class="tech-list">
-                <li><i class="fas fa-scroll"></i> {meta?.paper || 'Papel Algodón 100% (Hahnemühle)'}</li>
+                <li><i class="fas fa-scroll"></i> {meta?.paper || 'Papel Algodón 100%'}</li>
                 <li><i class="fas fa-expand-arrows-alt"></i> Dimensiones: {meta?.dimensions || 'A convenir'}</li>
                 <li><i class="fas fa-certificate"></i> Certificado de Autenticidad</li>
-                <li><i class="fas fa-infinity"></i> Pigmentos Minerales (+100 Años)</li>
+                <li><i class="fas fa-infinity"></i> Calidad Fine Art</li>
               </ul>
             </div>
             
@@ -145,12 +157,12 @@ const etiqueta = "Fine Art Print";
                 <div class="shot-item">
                    <i class="fas fa-camera"></i>
                    <span class="label">CÁMARA</span>
-                   <span class="value">{meta?.camera || 'Nikon Fine Art'}</span>
+                   <span class="value">{meta?.camera || 'Fine Art'}</span>
                 </div>
                 <div class="shot-item">
                    <i class="fas fa-circle-notch"></i>
                    <span class="label">LENTE</span>
-                   <span class="value">{meta?.lens || 'Finesse Optics'}</span>
+                   <span class="value">{meta?.lens || 'Prime'}</span>
                 </div>
                 <div class="shot-item">
                    <i class="fas fa-calendar-alt"></i>
@@ -164,23 +176,14 @@ const etiqueta = "Fine Art Print";
         
         <div class="tab-content" id="tab-terminos" style="display: none;">
           <div class="legal-content">
-            <h2 class="legal-title">Términos y Condiciones de Venta | Javier Mix Fine Art</h2>
-            <p>Al adquirir una obra de la serie <strong>"{serieName}"</strong> o cualquier pieza del catálogo de <strong>javiermix.ar</strong>, el comprador acepta los siguientes términos:</p>
-            
+            <h2 class="legal-title">Términos y Condiciones de Venta</h2>
             <div class="legal-section">
               <h3>1. Naturaleza del Producto</h3>
-              <p>Cada fotografía es una impresión de alta calidad (Fine Art) realizada bajo estándares profesionales para garantizar su longevidad y fidelidad cromática. El valor expresado en el catálogo corresponde exclusivamente a la pieza impresa en el formato seleccionado (Estándar, Mediano o Grande).</p>
+              <p>Cada fotografía es una impresión de alta calidad (Fine Art) realizada bajo estándares profesionales para garantizar su longevidad y fidelidad cromática. El valor expresado corresponde exclusivamente a la pieza impresa.</p>
             </div>
-            
             <div class="legal-section">
-              <h3>2. Exclusiones Importantes</h3>
-              <p><strong>Enmarcado:</strong> El precio de venta no incluye marco, paspartú, ni ningún tipo de montaje o estructura de exhibición por el momento. La obra se entrega como una lámina impresa lista para ser enmarcada a gusto del comprador.</p>
-              <p><strong>Envío:</strong> El costo de envío no está incluido en el valor de la obra. Los gastos de logística, embalaje especial para obras de arte y transporte correrán por cuenta del comprador y serán coordinados de forma privada tras la compra.</p>
-            </div>
-            
-            <div class="legal-section">
-              <h3>3. Autenticidad y Derechos</h3>
-              <p>Todas las obras se entregan firmadas por el autor bajo el nombre artístico <strong>Javier Mix</strong>. La compra de la impresión física no transfiere derechos de reproducción comercial sobre la imagen, los cuales permanecen como propiedad intelectual del autor.</p>
+              <h3>2. Enmarcado y Envío</h3>
+              <p>La obra se entrega como una lámina impresa lista para ser enmarcada a gusto del comprador. El costo de envío se coordina de forma privada tras la compra.</p>
             </div>
           </div>
         </div>
@@ -213,17 +216,17 @@ const etiqueta = "Fine Art Print";
             <span class="canvas-badge">GRAN FORMATO · EDICIÓN LIMITADA</span>
             <h4 class="canvas-title">Canson Museum Pro Canvas · 385 g/m²</h4>
             <p class="canvas-body">
-              El formato Grande se imprime sobre un canvas <strong>100% algodón libre de ácidos</strong>, pensado para durar décadas sin perder ni un tono.
+              El formato Grande se imprime sobre un canvas <strong>100% algodón libre de ácidos</strong>, pensado para durar décadas.
             </p>
           </div>
         </div>
         
-        <!-- 🛒 Checkout Area (RESTAURACION ESTRUCTURA V1) -->
+        <!-- 🛒 Area de Pago (RESTAURACION ESTRUCTURA LIGERA V1) -->
         <div class="checkout-area">
           <div class="price-box">
              <span class="price-label">PRECIO</span>
              <div class="price-value">
-               <span class="currency">$</span>
+               <span class="currency-symbol">$</span>
                <span class="number" id="price-display">{precio}</span>
                <span class="currency-label">ARS</span>
              </div>
@@ -241,16 +244,6 @@ const etiqueta = "Fine Art Print";
                         category: serieName 
                     }} 
                 />
-             </div>
-             
-             <div class="secondary-actions">
-                <button class="btn-favorite" id="btn-like" aria-label="Añadir a favoritos" data-filename={mainFile.filename_download} data-serie={mainFile.folder} data-title={title}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                  <span id="like-count" class="like-number">0</span>
-                </button>
-                <button class="btn-collection">
-                   AGREGAR A MINI COLECCIÓN
-                </button>
              </div>
           </div>
         </div>
@@ -277,7 +270,12 @@ const etiqueta = "Fine Art Print";
         btn.classList.add('active');
         tabContents.forEach(c => {
              const content = c as HTMLElement;
-             content.style.display = content.id === `tab-${targetId}` ? 'block' : 'none';
+             if (content.id === `tab-${targetId}`) {
+                content.style.display = 'block';
+                content.classList.add('fade-in-content');
+             } else {
+                content.style.display = 'none';
+             }
         });
       });
     });
@@ -307,37 +305,27 @@ const etiqueta = "Fine Art Print";
       btn.addEventListener('click', () => {
         sizeOptions.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
         const price = btn.getAttribute('data-price');
-        const dimensions = btn.getAttribute('data-dimensions');
         const label = btn.getAttribute('data-label');
-
         if (priceDisplay) priceDisplay.textContent = price;
         if (canvasInfo) label === 'Large' ? canvasInfo.classList.add('visible') : canvasInfo.classList.remove('visible');
-
-        currentSelection.set({ price: parseInt(price), label, dimensions });
+        currentSelection.set({ price: parseInt(price), label, dimensions: btn.getAttribute('data-dimensions') });
       });
     });
-
     if (sizeOptions[0]) (sizeOptions[0] as HTMLElement).click();
   });
 </script>
 
 <style>
-/* 🏺 RESTAURACIÓN TOTAL DISEÑO V1 🏺 */
+/* 🏺 DISEÑO PIXEL-PERFECT JMX (RESTAURACION ABSOLUTA) 🏺 */
 .obra-container {
   max-width: 100%;
   margin: 0 auto;
-  padding: 0;
   color: var(--color-travertine-light);
   min-height: 100vh;
 }
 
-.split-layout {
-  display: block;
-  width: 100%;
-  position: relative;
-}
+.split-layout { display: block; width: 100%; position: relative; }
 
 .image-column {
   position: fixed;
@@ -372,6 +360,23 @@ const etiqueta = "Fine Art Print";
   justify-content: center;
 }
 
+.likes-badge-float {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(191, 21, 52, 0.4);
+    padding: 1rem 1.8rem;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    font-size: 1rem;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
 .main-artwork, .room-artwork {
   max-width: 100%;
   max-height: 100%;
@@ -384,65 +389,135 @@ const etiqueta = "Fine Art Print";
 
 .obra-title {
   font-family: var(--font-primary);
-  font-size: 3.2rem;
-  font-weight: 500;
-  margin-bottom: 2rem;
+  font-size: 3.5rem; /* Píxel-Perfect v1 */
+  font-weight: 300;
+  margin-bottom: 1.5rem;
   line-height: 1.1;
   color: var(--color-travertine-light);
+  letter-spacing: -1px;
 }
 
+.social-feedback-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(255,255,255,0.03);
+    padding: 0.8rem 1.2rem;
+    width: fit-content;
+    border-radius: 50px;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.social-count {
+    font-size: 0.55rem;
+    letter-spacing: 2px;
+    color: var(--color-text-muted);
+}
+
+/* 🏺 TABS ESTILO FICHERO (SOLAPA V1) */
 .tabs-header {
   display: flex;
   margin-bottom: 4rem;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--color-accent);
+  padding-left: 0.5rem;
 }
 
 .tab-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: var(--color-text-muted);
+  font-family: var(--font-secondary);
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 2px;
-  padding: 1rem 2rem;
+  padding: 1rem 2.5rem;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: -1px;
+  transition: all 0.4s ease;
 }
 
 .tab-btn.active {
   color: var(--color-accent);
-  border-bottom: 2px solid var(--color-accent);
+  background: var(--color-onyx-deep);
+  border: 1px solid var(--color-accent);
+  border-bottom: 2px solid var(--color-onyx-deep);
+  z-index: 2;
 }
 
-/* 🛒 CHECKOUT V1 (Horizontal) */
+/* 🏺 HISTORIA CON LETRA CAPITAL */
+.prose-subtitle {
+    font-family: var(--font-primary);
+    color: var(--color-accent);
+    font-style: italic;
+    font-size: 0.85rem;
+    letter-spacing: 3px;
+    margin-bottom: 3rem;
+    text-align: center;
+    font-weight: 400;
+}
+
+.prose-content {
+  font-size: 1.1rem;
+  line-height: 2;
+  color: var(--color-text-muted);
+}
+
+.prose-content :global(p):first-of-type::first-letter {
+  float: left;
+  font-size: 4.8rem;
+  line-height: 0.8;
+  padding-right: 1rem;
+  padding-top: 0.6rem;
+  color: var(--color-accent);
+  font-family: var(--font-primary);
+  font-weight: 600;
+}
+
+/* 🏺 FICHA TECNICA ICONOGRAFICA */
+.tech-category {
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    color: var(--color-text-muted);
+    margin: 3rem 0 1.5rem;
+}
+
+.tech-list { list-style: none; padding: 0; }
+.tech-list li { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; font-size: 0.95rem; }
+.tech-list i { color: var(--color-accent); font-size: 1rem; width: 25px; text-align: center; }
+
+.shot-data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2rem; }
+.shot-item { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.shot-item i { color: var(--color-accent); font-size: 0.9rem; opacity: 0.6; }
+.shot-item .label { font-size: 0.5rem; letter-spacing: 2px; color: rgba(255,255,255,0.3); }
+.shot-item .value { font-size: 0.75rem; color: var(--color-travertine-muted); }
+
+/* 🛒 CHECKOUT LIGERO (GRAN FORMATO) */
 .checkout-area {
   display: flex;
   align-items: center;
-  gap: 4rem;
-  margin-top: 4rem;
+  gap: 5rem;
+  margin-top: 5rem;
 }
 
-.price-box { display: flex; flex-direction: column; }
-.price-label { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-text-muted); margin-bottom: 0.5rem; font-weight: 600; }
-.price-value { display: flex; align-items: baseline; gap: 0.5rem; font-family: var(--font-secondary); }
-.price-value .number { font-size: 3.5rem; font-weight: 300; line-height: 1; color: var(--color-travertine-light); }
-.price-value .currency { font-size: 0.9rem; color: var(--color-text-muted); letter-spacing: 2px; }
+.price-label { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-text-muted); margin-bottom: 1rem; display: block; }
+.price-value { display: flex; align-items: baseline; gap: 0.8rem; }
+.price-value .currency-symbol { font-size: 1.8rem; color: var(--color-accent); font-weight: 200; }
+.price-value .number { font-size: 4.5rem; font-weight: 200; line-height: 1; color: var(--color-travertine-light); }
+.price-value .currency-label { font-size: 0.9rem; color: var(--color-text-muted); letter-spacing: 2px; }
 
-.action-buttons { flex: 1; display: flex; flex-direction: column; gap: 1rem; }
-
-/* 🏺 Estilos para el Botón de Carrito (V8 inside V1 Shell) */
 .v8-cart-wrapper :global(.btn-buy) {
-    display: block;
-    width: 100%;
-    background: var(--color-onyx-deep);
+    background: transparent;
     border: 1px solid var(--color-accent);
     color: var(--color-accent);
-    padding: 1.5rem;
-    font-size: 0.8rem;
-    letter-spacing: 3px;
+    padding: 1.8rem 4rem;
+    font-size: 0.75rem;
+    letter-spacing: 4px;
     text-transform: uppercase;
     font-weight: 600;
-    transition: all 0.4s ease;
+    transition: all 0.6s ease;
+    cursor: pointer;
 }
 
 .v8-cart-wrapper :global(.btn-buy:hover) {
@@ -450,28 +525,12 @@ const etiqueta = "Fine Art Print";
     color: #000;
 }
 
-.size-option {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255,255,255,0.1);
-  padding: 1rem;
-  color: var(--color-travertine-muted);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.size-option.active {
-  border-color: var(--color-accent);
-  background: rgba(220, 177, 74, 0.1);
-  color: var(--color-travertine-light);
-}
-
-.canvas-info { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.5s ease; }
-.canvas-info.visible { max-height: 300px; opacity: 1; margin-bottom: 3rem; }
-.canvas-info-inner { background: rgba(220, 177, 74, 0.05); border-left: 3px solid var(--color-accent); padding: 1.5rem; }
+.fade-in-content { animation: fadeIn 0.8s ease forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 1024px) {
-  .info-column { margin-left: 0; width: 100%; }
-  .image-column { position: relative; width: 100%; height: 70dvh; }
+  .info-column { margin-left: 0; width: 100%; padding: 4rem 5%; }
+  .image-column { position: relative; width: 100%; height: 60dvh; }
+  .checkout-area { flex-direction: column; gap: 2rem; align-items: flex-start; }
 }
 </style>

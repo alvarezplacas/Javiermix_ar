@@ -6,17 +6,31 @@ npm-debug.log
 dist
 .astro
 
-# Documentation & Context (Reference only)
-docs
-_manuales
-_recursos
+# Documentation & Context (Reference only locally)
+docs/
+_manuales/
+_recursos/
+_basura/
+_conexiones/
+_instrucciones/
 *.md
-!README.md
+package-lock.json
+build_log*.txt
+sync_output.txt
+categorize_log.txt
+build_debug.log
+build_error_output.txt
+catch_build.cjs
+run_build.cjs
+deploy.ps1
+*.tmp
 
 # Infrastructure & Backups
-vps_extras
-infra
-backups
+# Scripts & Infrastructure
+scripts/
+vps_extras/
+infra/
+backups/
 *.sql
 *.zip
 *.tar.gz
