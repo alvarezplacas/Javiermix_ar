@@ -16,7 +16,7 @@ export const INTERNAL_DIRECTUS_URL = import.meta.env?.INTERNAL_DIRECTUS_URL || '
 export const DIRECTUS_URL = PUBLIC_DIRECTUS_URL;
 
 // Token de Acceso (Mantener privado en el servidor)
-const DIRECTUS_TOKEN = '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
+const DIRECTUS_TOKEN = import.meta.env?.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
 
 /**
  * Utility to fetch from Directus with internal/public fallback and Token auth
@@ -35,19 +35,33 @@ export async function fetchFromDirectus(path: string, options: RequestInit = {})
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000); 
         
-        const res = await fetch(`${INTERNAL_DIRECTUS_URL}${path}`, { 
+        const internalUrl = `${INTERNAL_DIRECTUS_URL}${path}`;
+        const res = await fetch(internalUrl, { 
             ...options, 
             headers,
             signal: controller.signal 
         });
         clearTimeout(timeoutId);
-        if (res.ok) return res;
-    } catch (e: any) {}
+        if (res.ok) {
+            // console.log(`[Directus Internal Success] ${internalUrl}`);
+            return res;
+        }
+        console.warn(`[Directus Internal Fail] ${res.status} for ${internalUrl}`);
+    } catch (e: any) {
+        console.error(`[Directus Internal Error] ${INTERNAL_DIRECTUS_URL}${path} -> ${e.message}`);
+    }
 
     try {
-        return await fetch(`${PUBLIC_DIRECTUS_URL}${path}`, { ...options, headers });
+        const publicUrl = `${PUBLIC_DIRECTUS_URL}${path}`;
+        const res = await fetch(publicUrl, { ...options, headers });
+        if (res.ok) {
+            console.log(`[Directus Public Fallback Success] ${publicUrl}`);
+            return res;
+        }
+        console.warn(`[Directus Public Fallback Fail] ${res.status} for ${publicUrl}`);
+        return res;
     } catch (err: any) {
-        console.error("[Directus Error] Fallback fetch failed:", err.message);
+        console.error(`[Directus Critical Error] Public fallback failed: ${err.message}`);
         throw err;
     }
 }
@@ -216,7 +230,7 @@ export async function updateArtwork(id: string, data: any, token: string) {
 }
 
 /* ==========================================================================
-   SECCIÓN: LIKES (CON REDIS)
+   SECCIÓN: LIKES (ESTRATEGIA WRITE-BACK CON REDIS)
    ========================================================================== */
 
 export async function getArtworkLikes(artworkId: string) {
@@ -234,6 +248,7 @@ export async function getArtworkLikes(artworkId: string) {
     const data = await res.json();
     const likes = data.data?.[0]?.likes || 0;
 
+    // Cacheamos por 1 hora
     await REDIS.set(redisKey, likes.toString(), 'EX', 3600);
     return likes;
   } catch (e) {
@@ -241,6 +256,10 @@ export async function getArtworkLikes(artworkId: string) {
   }
 }
 
+/**
+ * addLike: Implementación de alto rendimiento "Write-Back".
+ * El usuario recibe la respuesta de Redis instantáneamente, mientras Directus se sincroniza asíncronamente.
+ */
 export async function addLike(artworkId: string, ip: string) {
     try {
         const fileRes = await fetchFromDirectus(`/files/${artworkId}`);
@@ -252,32 +271,45 @@ export async function addLike(artworkId: string, ip: string) {
         const redisKey = `likes:${filename}`;
         const ipKey = `track:${filename}:${ip}`;
 
+        // 🛡️ 1. Spam Prevention (Tracking IP)
         const hasVoted = await REDIS.get(ipKey);
         if (hasVoted) return { success: false, message: "Ya has votado por esta obra" };
 
-        const res = await fetchFromDirectus(`/items/artworks?filter[filename][_eq]=${filename}`);
-        const data = await res.json();
-        let artworkRecord = data.data?.[0];
-
-        let newLikes = 1;
-        if (!artworkRecord) {
-            await fetchFromDirectus(`/items/artworks`, {
-                method: 'POST',
-                body: JSON.stringify({ filename, title: file.title || "Sin título", likes: 1 })
-            });
-        } else {
-            newLikes = (artworkRecord.likes || 0) + 1;
-            await fetchFromDirectus(`/items/artworks/${artworkRecord.id}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ likes: newLikes })
-            });
-        }
-
+        // 🚀 2. Respuesta Instantánea (Redis-First)
+        const currentLikes = await REDIS.get(redisKey);
+        const newLikes = (currentLikes ? parseInt(currentLikes) : 0) + 1;
+        
+        // Actualizamos Redis e IP Tracking de inmediato
         await REDIS.set(redisKey, newLikes.toString());
-        await REDIS.set(ipKey, '1', 'EX', 86400 * 7);
+        await REDIS.set(ipKey, '1', 'EX', 86400 * 7); // Bloqueo de 1 semana
+
+        // 🛰️ 3. Sincronización Asíncrona con Directus (Sin 'await' para mejorar UX)
+        (async () => {
+            try {
+                const res = await fetchFromDirectus(`/items/artworks?filter[filename][_eq]=${filename}`);
+                const data = await res.json();
+                let artworkRecord = data.data?.[0];
+
+                if (!artworkRecord) {
+                    await fetchFromDirectus(`/items/artworks`, {
+                        method: 'POST',
+                        body: JSON.stringify({ filename, title: file.title || "Sin título", likes: newLikes })
+                    });
+                } else {
+                    await fetchFromDirectus(`/items/artworks/${artworkRecord.id}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ likes: newLikes })
+                    });
+                }
+                console.log(`[Redis-Sync] Likes sincronizados para ${filename}: ${newLikes}`);
+            } catch (err: any) {
+                console.error(`[Redis-Sync-Error] Fallo al sincronizar Directus para ${filename}:`, err.message);
+            }
+        })();
 
         return { success: true, likes: newLikes };
     } catch (e: any) {
+        console.error("[Likes Error]", e.message);
         return { success: false, message: e.message };
     }
 }
@@ -374,9 +406,42 @@ export async function uploadFile(file: File, token: string) {
     return { success: !result.errors, id: result.data?.id, ...result };
 }
 
+/* ==========================================================================
+   SECCIÓN: PEDIDOS / ORDERS (E-COMMERCE V8)
+   ========================================================================== */
+
+export async function createOrder(data: any) {
+    try {
+        const res = await fetchFromDirectus(`/items/orders`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        return result.data || null;
+    } catch (e) {
+        console.error("❌ Error creando pedido:", e);
+        return null;
+    }
+}
+
+export async function updateOrder(id: string, data: any) {
+    try {
+        const res = await fetchFromDirectus(`/items/orders/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        return result.data || null;
+    } catch (e) {
+        console.error("❌ Error actualizando pedido:", e);
+        return null;
+    }
+}
+
 export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number } = {}) {
     if (!id) return null;
     const { width = 1200, format = 'avif', quality = 80 } = options;
     const url = `${PUBLIC_DIRECTUS_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`;
     return url.replace('http://', 'https://');
 }
+

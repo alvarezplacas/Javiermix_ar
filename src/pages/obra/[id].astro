@@ -5,12 +5,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadArtworkMetadata } from '../../utils/metadata.js';
 import FramingStudio from '../../components/FramingStudio.astro';
+import AddToCartButton from '../../components/ecommerce/AddToCartButton.jsx';
 
 export const prerender = true;
 
 export async function getStaticPaths() {
 	const seriesPath = path.join(process.cwd(), 'public', 'img', 'Series');
-	let paths = [];
+	let paths: any[] = [];
 
 	if (fs.existsSync(seriesPath)) {
 		const folders = fs.readdirSync(seriesPath).filter(file => fs.statSync(path.join(seriesPath, file)).isDirectory());
@@ -269,7 +270,7 @@ const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%
           <div class="size-selector-section">
             <span class="size-selector-label">SELECCIONA TAMAÑO:</span>
             <div class="size-options" id="size-options">
-              {sizes.map((s, i) => (
+              {sizes.map((s: any, i: number) => (
                 <button
                   class={`size-option${i === 0 ? ' active' : ''}`}
                   data-price={s.price}
@@ -298,17 +299,25 @@ const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%
         <!-- Checkout Area -->
         <div class="checkout-area">
           <div class="price-box">
-             <span class="price-label">PRECIO</span>
-             <div class="price-value">
-               <span class="number" id="price-display">{precio}</span>
-               <span class="currency">U$D</span>
+             <span class="price-label">INVERSIÓN</span>
+             <div class="price-value-container">
+               <span class="currency">ARS</span>
+               <span class="number" id="price-display">{precio > 0 ? precio : '—'}</span>
              </div>
+             {precio === 0 && <p class="price-notice">Obra exclusiva · Consultar disponibilidad</p>}
           </div>
           
           <div class="action-buttons">
-             <a href={waLink} target="_blank" class="btn-buy" id="btn-buy-link">
-               ADQUIRIR OBRA
-             </a>
+             <AddToCartButton 
+                client:load 
+                item={{ 
+                    id: coverImage.split('/').pop(), 
+                    title: title, 
+                    price: precio, 
+                    image: coverImage,
+                    category: serieName 
+                }} 
+             />
              
              <div class="secondary-actions">
                 <button class="btn-favorite" id="btn-like" aria-label="Añadir a favoritos" data-filename={coverImage.split('/').pop()} data-serie={serieName} data-title={title}>
@@ -331,13 +340,15 @@ const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%
 </Layout>
 
 <script>
+  import { currentSelection } from '../../store/cartStore.js';
+
   // standard 2026: astro:page-load for View Transitions compatibility
   document.addEventListener('astro:page-load', () => {
     // Tabs Logic
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
-    function switchTab(btn) {
+    function switchTab(btn: any) {
         const targetId = btn.getAttribute('data-target');
         
         // Update Buttons
@@ -466,7 +477,7 @@ const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%
 
     const canvasInfo = document.getElementById('canvas-info');
 
-    function selectSize(btn: HTMLElement) {
+    let currentSelectSize = (btn: HTMLElement) => {
       sizeOptions.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
@@ -498,13 +509,32 @@ const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%
     }
 
     sizeOptions.forEach((btn) => {
-      btn.addEventListener('click', () => selectSize(btn as HTMLElement));
+      btn.addEventListener('click', () => currentSelectSize(btn as HTMLElement));
     });
 
     // Set first size as default if available
     if (sizeOptions.length > 0) {
-      selectSize(sizeOptions[0] as HTMLElement);
+      currentSelectSize(sizeOptions[0] as HTMLElement);
     }
+
+    // 🛒 Sync AddToCartButton with selected size
+    function updateCartButtonData(price: any, label: any, dimensions: any) {
+        currentSelection.set({ 
+            price: parseInt(price), 
+            label: label, 
+            dimensions: dimensions 
+        });
+    }
+
+    // Inyectar en la lógica de selección existente
+    const originalSelectSize = currentSelectSize;
+    currentSelectSize = function(btn: HTMLElement) {
+        originalSelectSize(btn);
+        const price = btn.getAttribute('data-price');
+        const label = btn.getAttribute('data-label');
+        const dims = btn.getAttribute('data-dimensions');
+        updateCartButtonData(price, label, dims);
+    };
 
     // Likes Logic 2026
     const btnLike = document.getElementById('btn-like');
@@ -732,16 +762,88 @@ const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%
   color: #fff;
 }
 
-/* Right Column */
-.back-link {
+/* --- Checkout Area Refined (Expert) --- */
+.checkout-area {
+  margin-top: 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.price-box {
+  border-left: 2px solid var(--color-accent);
+  padding-left: 1.5rem;
+}
+
+.price-label {
   display: block;
   font-size: 0.65rem;
-  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.price-value-container {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  color: var(--color-white);
+}
+
+.price-value-container .currency {
+  font-size: 0.8rem;
+  font-weight: 300;
+  color: var(--color-accent);
+}
+
+.price-value-container .number {
+  font-family: var(--font-primary);
+  font-size: 3rem;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.price-notice {
+  font-size: 0.7rem;
+  color: var(--color-accent);
+  margin-top: 1rem;
+  letter-spacing: 1px;
+  font-style: italic;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.secondary-actions {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.btn-favorite, .btn-collection {
+  flex: 1;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--color-text-muted);
+  padding: 1rem;
+  font-size: 0.65rem;
   letter-spacing: 2px;
-  color: var(--color-travertine-light);
-  text-decoration: none;
-  margin-bottom: 2rem;
-  transition: var(--transition-premium);
+  font-family: var(--font-secondary);
+  cursor: pointer;
+  transition: all 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.btn-favorite:hover, .btn-collection:hover {
+  background: rgba(255,255,255,0.03);
+  border-color: var(--color-white);
+  color: var(--color-white);
 }
 
 .back-link:hover {

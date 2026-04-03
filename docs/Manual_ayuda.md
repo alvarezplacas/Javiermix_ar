@@ -34,9 +34,26 @@ Todos los contenedores deben compartir una red común (ej: `web_network`) para c
 ## 🖼️ Gestión de Assets (El "Wow Factor")
 
 - **AVIF es el Rey**: Para fotografía de arte, el formato `.avif` es obligatorio.
+- **Lógica de Nombres (Hover)**: 
+    - `JMX_XXXX.avif` -> Imagen principal.
+    - `JMX_XXXX 2.avif` o `JMX_XXXX_2.avif` -> Imagen de hover.
+    - **IMPORTANTE**: El filtro de la galería debe ignorar ambos patrones (`[ _]2\.`) para evitar duplicados.
 - **Parámetros de Directus**: Usa siempre los parámetros de transformación en la URL:
     - `?width=1200&format=avif&quality=80`
 - **Fallback de Imagen**: Implementar siempre una imagen de baja resolución o un esqueleto (Skeleton) mientras el AVIF carga.
+
+---
+
+## 📸 Ficha Técnica y Metadatos (XMP)
+
+El sitio utiliza un diseño **50/50** en la página de detalle (`obra/[id].astro`):
+- **Izquierda**: Imagen principal.
+- **Derecha**: Solapas (FICHA TÉCNICA, HISTORIA, ENVÍOS).
+
+### 🛠️ Sincronización de Datos:
+1. **Origen de Verdad**: Los archivos `.xmp` que el usuario sube junto a las fotos.
+2. **Procesamiento**: El script `scripts/sync_xmp_artworks_v3.mjs` extrae los datos de los XMP (Cámara, Lente, ISO, etc.) y los inyecta en Directus.
+3. **Campos en Directus**: La colección `artworks` debe tener los campos: `camera`, `lens`, `shutter`, `iso`, `aperture`, `dimensions`, `material`, `date`. Estos nombres coinciden exactamente con lo que el frontend espera en el objeto `meta`.
 
 ---
 
@@ -73,5 +90,5 @@ Para garantizar el "Candado Verde" y evitar avisos de "No seguro" (Mixed Content
 4. **Blindaje de URLs**: La función `getAssetUrl` debe forzar el protocolo `https://` en la cadena de retorno si el servidor devuelve por error un enlace inseguro.
 
 ---
-*Ultima actualización: 2026-04-02 by Antigravity*
-*Lección aprendida: El contenido mixto (AVIF/MP4 por HTTP) rompe la confianza del usuario.*
+*Ultima actualización: 2026-04-03 by Antigravity*
+*Lección aprendida: Los nombres de archivos manuales pueden variar (espacios vs guiones); el matching debe ser insensible a símbolos para evitar "obras fantasma" o duplicados.*

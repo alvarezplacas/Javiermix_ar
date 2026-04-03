@@ -8,7 +8,7 @@ import CollectorJoin from '../components/CollectorJoin.astro';
 
 export const prerender = false;
 
-import { fetchFromDirectus, PUBLIC_DIRECTUS_URL } from '@conexion/directus';
+import { fetchFromDirectus, PUBLIC_DIRECTUS_URL, getAssetUrl } from '@conexion/directus';
 
 let homeAssets = [];
 try {
@@ -43,9 +43,10 @@ if (homeAssets.length === 0) {
     homeAssets = [{ id: 'fallback', filename_download: '01.avif', type: 'image/avif' }];
 }
 
-function getAssetUrl(id: string) {
+// Nota: getAssetUrl centralizado ya maneja HTTPS y optimización.
+function getLocalFallbackUrl(id: string) {
     if (id === 'fallback') return '/img/Series/Monumentos/01.avif'; 
-    return `${PUBLIC_DIRECTUS_URL}/assets/${id}`;
+    return getAssetUrl(id);
 }
 ---
 
@@ -64,7 +65,7 @@ function getAssetUrl(id: string) {
             {homeAssets.find(a => a.type?.startsWith('image/')) && (
                 <div 
                     class="hero-poster-master" 
-                    style={`background-image: url(${getAssetUrl(homeAssets.find(a => a.type?.startsWith('image/')).id)});`}
+                    style={`background-image: url(${getLocalFallbackUrl(homeAssets.find(a => a.type?.startsWith('image/')).id)});`}
                 ></div>
             )}
 
@@ -74,7 +75,7 @@ function getAssetUrl(id: string) {
                     const isVid = asset.type?.startsWith('video/');
                     return isVid ? (
                         <video 
-                            src={getAssetUrl(asset.id)} 
+                            src={getLocalFallbackUrl(asset.id)} 
                             class={`hero-media-item ${index === 0 ? 'active' : ''}`}
                             muted 
                             loop={false}
@@ -83,7 +84,7 @@ function getAssetUrl(id: string) {
                         ></video>
                     ) : (
                         <img 
-                            src={getAssetUrl(asset.id)} 
+                            src={getLocalFallbackUrl(asset.id)} 
                             alt={asset.title || "Obra Javier Mix"} 
                             class={`hero-media-item ${index === 0 ? 'active' : ''}`} 
                             data-type="image"

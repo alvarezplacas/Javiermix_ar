@@ -86,6 +86,14 @@ services:
       CACHE_REDIS: "redis://redis:6379"
       LOCK_STORE: "redis"
       LOCK_REDIS: "redis://redis:6379"
+      # --- 🛠️ FIX ASSETS 403 & INFRAESTRUCTURA ---
+      STORAGE_LOCATIONS: "local"
+      STORAGE_LOCAL_DRIVER: "local"
+      STORAGE_LOCAL_ROOT: "/directus/uploads"
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "https://javiermix.ar, https://admin.javiermix.ar"
+      ASSETS_CACHE_TTL: "0"
+      ASSETS_CONTENT_SECURITY_POLICY_DIRECTIVES: "default-src 'self'; img-src 'self' data: https:; media-src 'self' data: https:;"
     volumes:
       - /home/ubuntu/prod/javiermix_web/public/uploads:/directus/uploads
       - directus_extensions:/directus/extensions

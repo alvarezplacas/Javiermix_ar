@@ -11,7 +11,10 @@ const { serie } = Astro.params; // Folder ID
 const { name, items } = await getSerieDetails(serie as string);
 
 // Lógica: JMX_xxxx.ext es principal, JMX_xxxx_2.ext es variante hover
-const mainImages = items.filter(f => !f.filename_download.toLowerCase().includes('_2.'));
+const mainImages = items.filter(f => {
+	const low = f.filename_download.toLowerCase();
+	return !low.includes('_2.') && !low.includes(' 2.');
+});
 
 const artworks = await Promise.all(mainImages.map(async img => {
 	const baseName = img.filename_download.split('.')[0].toLowerCase();

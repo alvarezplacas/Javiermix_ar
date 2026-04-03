@@ -4,12 +4,13 @@ interface Props {
   imageSrc: string;
   title: string;
   showUpload?: boolean;
+  isOpen?: boolean;
 }
 
-const { imageSrc, title, showUpload = false } = Astro.props;
+const { imageSrc, title, showUpload = false, isOpen = false } = Astro.props;
 ---
 
-<div id="framing-studio" class="framing-studio-overlay">
+<div id="framing-studio" class="framing-studio-overlay" style={`display: ${isOpen ? 'block' : 'none'};`}>
   <div class="studio-container">
     <!-- Visualizer Area -->
     <div id="studio-visualizer" class="visualizer-area env-plaster">

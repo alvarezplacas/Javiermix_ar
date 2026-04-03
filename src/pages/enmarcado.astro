@@ -1,20 +1,20 @@
 ---
 // h:\Javiermix_web_v2\frontend\herramientas\enmarcado.astro
-import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
-import FramingStudio from '../../components/FramingStudio.astro';
+import Layout from '@layouts/Layout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import FramingStudio from '@components/FramingStudio.astro';
 ---
 
 <Layout
   title="Studio de Enmarcado Virtual | Javier Mix"
   description="Personaliza el enmarcado de tus obras Fine Art en tiempo real."
-  url="/herramientas/enmarcado"
+  url="/enmarcado"
 >
-  <Header currentPath="/herramientas/enmarcado" />
+  <Header currentPath="/enmarcado" />
   
   <main class="enmarcado-page">
-    <FramingStudio imageSrc="/img/placeholder.jpg" title="Tu Obra" showUpload={true} />
+    <FramingStudio imageSrc="/img/placeholder.jpg" title="Tu Obra" showUpload={true} isOpen={true} />
     
     <div class="enmarcado-footer-cta">
         <p>¿Tienes el marco ideal?</p>

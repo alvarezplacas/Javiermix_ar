@@ -3,6 +3,8 @@ import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
 import MobileNav from '../components/MobileNav.astro';
 import SEO from '../components/SEO.astro';
+import CartWidget from '../components/ecommerce/CartWidget.jsx';
+import '../styles/ecommerce.css';
 
 interface Props {
   title: string;
@@ -57,6 +59,7 @@ const {
 	</head>
 	<body>
 		<slot />
+		<CartWidget client:load />
 		<MobileNav />
 	</body>
 </html>

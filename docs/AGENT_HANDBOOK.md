@@ -14,7 +14,18 @@ El sitio es una aplicación **Astro 5 (SSR)** integrada con **Directus CMS** y u
 
 - **Series**: Se mapean directamente desde las **Folders** dentro de la carpeta raíz "Catalogo".
 - **Obras**: Se mapean desde los **Files** dentro de cada carpeta de serie.
-- **Detalle Extendido**: La colección `artworks` en Directus contiene los metadatos técnicos (cámara, lente, precios por tamaño) vinculados por el campo `filename` (que coincide con `filename_download` del archivo).
+- **Detalle Extendido (Artworks)**: Carpeta `obra/[id].astro`. Diseño **50/50**.
+    - La colección `artworks` en Directus contiene los metadatos técnicos vinculados por el campo `filename`.
+    - **Metadatos Técnicos**: `camera`, `lens`, `shutter`, `iso`, `aperture`, `dimensions`, `material`, `date`.
+    - **Sincronización**: Usa `scripts/sync_xmp_artworks_v3.mjs`. El matching es **insensible a caracteres especiales** (normaliza `JMX_123` y `JMX 123` al mismo valor).
+
+## 🖼️ Lógica de Variantes (Madre vs Hover)
+
+El fotógrafo usa un sistema de sufijos para el efecto de hover:
+- `JMX_XXXX.avif` (Principal)
+- `JMX_XXXX 2.avif` o `JMX_XXXX_2.avif` (Variante de Hover)
+
+**Regla Crítica**: Al listar la galería, SIEMPRE filtrar con `!filename.match(/[ _]2\./)` para evitar que el usuario vea la misma foto dos veces.
 
 ## 🔌 Capa de Conexión (`src/conexion/directus.ts`)
 
@@ -30,13 +41,15 @@ Toda la comunicación con Directus DEBE pasar por la función `fetchFromDirectus
 3. **Optimización**: Las imágenes se sirven a través del endpoint de assets de Directus con parámetros de optimización (`?width=...&format=avif`).
 
 ---
-*Ultima actualización: 2026-04-02 by Antigravity (Academic Persona Enabled)*
+*Ultima actualización: 2026-04-03 by Antigravity*
 
-### 📝 Directiva de Comportamiento (Orden de Reinicio)
-En el próximo inicio de sesión, el agente debe:
-1. **Persona Académica**: Actuar con un nivel técnico de posgrado, priorizando la investigación y el diseño de arquitectura sólida.
-2. **Estudio Activo**: Ante dudas, tiene permiso para realizar búsquedas web exhaustivas, estudiar repositorios de referencia y guardar el conocimiento nuevo en `Manual_ayuda.md`.
-3. **Misión Redis**: Ejecutar el `plan_Redis.md` integrando Redis en el stack de Docker y optimizando la capa de comunicación del frontend.
+## 🚀 Roadmap: Pendientes para el próximo Agente
 
-> [!NOTE]
-> **Informe de Fecha**: Fecha de actualización: 2026-03-29 por el anterior agente. Fecha actual: 2026-04-02.
+Para llevar el sitio al siguiente nivel de "Golden Master", aún falta:
+1. **Gestión de Historia**: El campo "Historia" en las solapas 50/50 debería ser un campo `WYSIWYG` en la colección `artworks` de Directus. Actualmente está estático o vacío.
+2. **Procesador AVIF Automático**: Implementar un Hook en Directus o una Action en el servidor que, al detectar una subida `.jpg` o `.png`, dispare la conversión a `.avif` de forma nativa.
+3. **Panel de Control de Sincronización**: Crear una ruta protegida (ej: `/admin/sync`) donde Javier pueda disparar el script de XMP apretando un botón, en lugar de usar la terminal.
+4. **Optimización de XMP**: El parser actual usa Regex; si los archivos XMP se vuelven muy complejos, considerar migrar a `fast-xml-parser`.
+
+> [!IMPORTANT]
+> **Consistencia de Nombres**: Los campos en Directus DEBEN coincidir con los nombres en el frontend para no romper el objeto `meta` en `[id].astro`.
