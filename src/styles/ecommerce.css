@@ -322,3 +322,54 @@
     height: 60px;
   }
 }
+
+/* 🏺 Estilos del Carrito en el Menú (Nav Button) */
+.cart-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--gold-primary);
+    font-size: 1.2rem !important;
+    cursor: pointer;
+    position: relative;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-premium);
+    margin-left: 1rem;
+}
+
+.cart-nav-btn:hover {
+    color: var(--color-white);
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 8px var(--gold-primary));
+}
+
+.cart-nav-btn .cart-count-badge {
+    position: absolute;
+    top: -2px;
+    right: -5px;
+    background: var(--gold-metallic);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 900;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+@keyframes goldPulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.cart-nav-btn.has-items i {
+    animation: goldPulse 3s infinite ease-in-out;
+}

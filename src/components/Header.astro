@@ -1,5 +1,6 @@
 ---
 // src/components/Header.astro
+import CartNavButton from './ecommerce/CartNavButton.tsx';
 const { currentPath = '/', theme = 'dark' } = Astro.props;
 ---
 
@@ -15,7 +16,7 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 			<a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
 			<a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>Colección</a>
 			<a href="/revista" class={currentPath.startsWith('/revista') ? 'active' : ''}>Revista</a>
-			<button id="cart-open-btn" class={currentPath.startsWith('/carrito') ? 'active' : ''}>Carrito</button>
+			<CartNavButton client:load />
 		</div>
 	</nav>
 </header>
@@ -100,14 +101,3 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
     }
 }
 </style>
-
-<script>
-	import { isCartOpen } from '../store/cartStore.js';
-	
-	const cartBtn = document.getElementById('cart-open-btn');
-	if (cartBtn) {
-		cartBtn.addEventListener('click', () => {
-			isCartOpen.set(true);
-		});
-	}
-</script>
