@@ -37,7 +37,20 @@ exotic-equator
 gullible-gravity
 tender-transit
 
-# Carpetas de Organización Local (No trackeadas)
+# Carpetas de Organización Local (No trackeadas en producción)
 /_basura/
 /_conexiones/
 /_instrucciones/
+/_manuales/
+/_recursos/
+/docs/
+/scripts/
+README.md
+Manual_ayuda.md
+AGENT_HANDBOOK.md
+ESTETICA_JMX.md
+package-lock.json
+build_debug.log
+build_error_output.txt
+catch_build.cjs
+run_build.cjs
