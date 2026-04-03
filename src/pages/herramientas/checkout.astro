@@ -80,7 +80,7 @@ export const prerender = false;
 </Layout>
 
 <script>
-  import { cartStore, clearCart } from '../../store/cartStore';
+  import { cartStore, clearCart } from '../../store/cartStore.ts';
 
   document.addEventListener('astro:page-load', () => {
     const listWrapper = document.getElementById('checkout-items');

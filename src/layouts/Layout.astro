@@ -3,7 +3,7 @@ import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
 import MobileNav from '../components/MobileNav.astro';
 import SEO from '../components/SEO.astro';
-import CartWidget from '../components/ecommerce/CartWidget.jsx';
+import CartWidget from '../components/ecommerce/CartWidget.tsx';
 import '../styles/ecommerce.css';
 
 interface Props {
@@ -59,7 +59,7 @@ const {
 	</head>
 	<body>
 		<slot />
-		<CartWidget client:load />
+		<CartWidget client:only="preact" />
 		<MobileNav />
 	</body>
 </html>

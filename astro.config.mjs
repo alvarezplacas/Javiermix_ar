@@ -18,17 +18,5 @@ export default defineConfig({
       mode: 'standalone'
   }),
 
-  vite: {
-      resolve: {
-          alias: {
-              '@conexion': fileURLToPath(new URL('./src/conexion', import.meta.url)),
-              '@components': fileURLToPath(new URL('./src/components', import.meta.url)),
-              '@layouts': fileURLToPath(new URL('./src/layouts', import.meta.url)),
-              '@utils': fileURLToPath(new URL('./src/utils', import.meta.url)),
-              '@styles': fileURLToPath(new URL('./src/styles', import.meta.url))
-          }
-      }
-  },
-
   integrations: [preact()]
 });

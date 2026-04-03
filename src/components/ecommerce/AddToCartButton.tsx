@@ -1,4 +1,5 @@
-import { cartItems, addItem, currentSelection } from '../../store/cartStore.js';
+import { useStore } from '@nanostores/preact';
+import { cartItems, addItem, currentSelection } from '../../store/cartStore';
 
 /**
  * 🛒 AddToCartButton (Preact)

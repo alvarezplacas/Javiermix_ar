@@ -1,7 +1,8 @@
 import { defineCollection, z } from 'astro:content';
+import { glob } from 'astro/loaders';
 
 const coleccion = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/coleccion" }),
   schema: z.object({
     title: z.string(),
     etiqueta: z.string().optional().default('Edición Limitada'),
@@ -26,13 +27,13 @@ const coleccion = defineCollection({
 });
 
 const revista = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/revista" }),
   schema: z.object({
     title: z.string(),
     subtitulo: z.string().optional(),
 
     // Metadata Obligatoria
-    pubDate: z.date(),
+    pubDate: z.coerce.date(),
     coverImage: z.string(),
     autor: z.string().default('Javier Mix'),
 

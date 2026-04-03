@@ -14,12 +14,15 @@ La raíz del proyecto está reservada exclusivamente para el código operacional
 - `docker-compose.yml`: Archivo maestro de orquestación (en la raíz).
 - `.dockerignore`: Filtro crítico para mantener imágenes ligeras en producción.
 
-### 2. Stack Tecnológico Estándar
-- **Frontend**: Astro 5 con adaptador `@astrojs/node` en modo `standalone`.
+### 2. Stack Tecnológico Estándar (VANGUARDIA)
+- **Frontend**: **Astro 6.1+** con motor **Vite 8.0**. 
+    - **Razón del Upgrade**: Resolución del error de módulos virtuales `astro:preact:opts` y mejor soporte para hidratación de componentes reactivos (carrito).
     - **Variable Crítica**: `HOST=0.0.0.0` (para que el contenedor sea visible desde fuera).
+- **Control de Estado**: **Nano Stores** (`atom`, `persistentMap`) con integración nativa `@nanostores/preact`.
+- **E-commerce**: Integración con **Mercado Pago SDK V2** (Checkout Pro).
 - **CMS**: Directus (Imagen Docker oficial).
-- **Cache**: Redis containerizado (mejora el rendimiento de las consultas de Directus un 40%).
-- **Proxy**: Nginx Proxy Manager (NPM) para gestión visual de SSL.
+- **Cache**: Redis containerizado (mejora rendimiento un 40%).
+- **Proxy**: Nginx Proxy Manager (NPM).
 
 ---
 
@@ -54,6 +57,26 @@ El sitio utiliza un diseño **50/50** en la página de detalle (`obra/[id].astro
 1. **Origen de Verdad**: Los archivos `.xmp` que el usuario sube junto a las fotos.
 2. **Procesamiento**: El script `scripts/sync_xmp_artworks_v3.mjs` extrae los datos de los XMP (Cámara, Lente, ISO, etc.) y los inyecta en Directus.
 3. **Campos en Directus**: La colección `artworks` debe tener los campos: `camera`, `lens`, `shutter`, `iso`, `aperture`, `dimensions`, `material`, `date`. Estos nombres coinciden exactamente con lo que el frontend espera en el objeto `meta`.
+
+---
+
+## 🛒 Motor V8: El Sistema de Ecommerce
+
+El sitio ahora cuenta con una arquitectura de ventas robusta:
+
+### 1. Gestión de Carrito (Sync Global)
+- **Store**: `src/store/cartStore.ts`. Utiliza `persistentMap` para que el usuario no pierda su selección al recargar.
+- **Preact Integration**: Los componentes reactivos (`AddToCartButton`, `CartWidget`) deben usar `client:only="preact"` para evitar conflictos de resolución en el servidor de Astro 6.
+- **Importante**: En bloques `<script>` de Astro, siempre importa el store con la extensión completa: `import { ... } from '../../store/cartStore.ts';`.
+
+### 2. Content Layer (Arquitectura Astro 6)
+- La configuración de contenido se movió a la raíz de `src/`: **`src/content.config.ts`**. 
+- Utiliza `loader: glob()` para mayor velocidad de construcción.
+
+### 3. Pago Seguro (Mercado Pago)
+- **ARS**: El sistema está configurado para pesos argentinos.
+- **Endpoint**: `/api/checkout.js` gestiona la creación de la preferencia de pago de forma segura (Server-side).
+- **Webhooks**: El sistema espera notificaciones en `/api/webhooks/mercadopago` para actualizar el stock en Directus.
 
 ---
 

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadArtworkMetadata } from '../../utils/metadata.js';
 import FramingStudio from '../../components/FramingStudio.astro';
-import AddToCartButton from '../../components/ecommerce/AddToCartButton.jsx';
+import AddToCartButton from '../../components/ecommerce/AddToCartButton.tsx';
 
 export const prerender = true;
 
@@ -308,10 +308,11 @@ const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%
           </div>
           
           <div class="action-buttons">
+             {/* @ts-ignore */}
              <AddToCartButton 
-                client:load 
+                client:only="preact" 
                 item={{ 
-                    id: coverImage.split('/').pop(), 
+                    id: coverImage?.split('/').pop() || 'id', 
                     title: title, 
                     price: precio, 
                     image: coverImage,
@@ -340,7 +341,7 @@ const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%
 </Layout>
 
 <script>
-  import { currentSelection } from '../../store/cartStore.js';
+  import { currentSelection } from '../../store/cartStore';
 
   // standard 2026: astro:page-load for View Transitions compatibility
   document.addEventListener('astro:page-load', () => {
@@ -526,15 +527,24 @@ const waLink = `https://wa.me/${whatsappNumber}?text=Hola,%20estoy%20interesado%
         });
     }
 
-    // Inyectar en la lógica de selección existente
-    const originalSelectSize = currentSelectSize;
-    currentSelectSize = function(btn: HTMLElement) {
-        originalSelectSize(btn);
+    // Wrap selection logic to sync with global store
+    const sizeSelectHandlers = (btn: HTMLElement) => {
+        currentSelectSize(btn);
         const price = btn.getAttribute('data-price');
         const label = btn.getAttribute('data-label');
         const dims = btn.getAttribute('data-dimensions');
         updateCartButtonData(price, label, dims);
     };
+
+    // Re-bind listeners with the wrapper
+    sizeOptions.forEach((btn) => {
+      btn.addEventListener('click', () => sizeSelectHandlers(btn as HTMLElement));
+    });
+
+    // Set first size as default if available
+    if (sizeOptions.length > 0) {
+      sizeSelectHandlers(sizeOptions[0] as HTMLElement);
+    }
 
     // Likes Logic 2026
     const btnLike = document.getElementById('btn-like');
