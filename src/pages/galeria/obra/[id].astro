@@ -1,0 +1,14 @@
+---
+// 🏺 FALLBACK ROUTE: Redirect /galeria/obra/[id] to /obra/[id]
+// Esto asegura que los antiguos enlaces y el SEO no devuelvan un 404
+// mientras se transiciona al Motor V8 unificado.
+
+import { getSerieDetails } from '../../../conexion/directus';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+
+// Redirección 301 (Permanente) al nuevo panel unificado
+return Astro.redirect(`/obra/${id}`, 301);
+---
