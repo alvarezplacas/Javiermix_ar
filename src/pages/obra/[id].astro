@@ -29,7 +29,7 @@ try {
 const title = mainFile.title || "Obra Javier Mix";
 const coverImage = getAssetUrl(mainFile.id) || '';
 
-// Discover variant hover if exists (look for filename_2)
+// Discover variant hover if exists
 let roomImage = null;
 try {
     const baseName = mainFile.filename_download.split('.')[0].toLowerCase();
@@ -39,7 +39,7 @@ try {
     if (hoverVariant) roomImage = getAssetUrl(hoverVariant.id);
 } catch (e) {}
 
-// Build sizes array from Directus metadata
+// Build sizes array
 const sizes = [];
 if (meta?.size_small && meta?.precio_small) {
     sizes.push({ label: 'Small', dimensions: meta.size_small, price: meta.precio_small });
@@ -51,7 +51,6 @@ if (meta?.size_large && meta?.precio_large) {
     sizes.push({ label: 'Large', dimensions: meta.size_large, price: meta.precio_large });
 }
 
-// Fallback price
 const precio = sizes.length > 0 ? sizes[0].price : (meta?.price || 0);
 const etiqueta = "Fine Art Print";
 ---
@@ -62,7 +61,7 @@ const etiqueta = "Fine Art Print";
   <article class="obra-container">
     <div class="split-layout">
       
-      <!-- 🖼️ Columna Izquierda: Imagen Interactiva (Fija 50%) -->
+      <!-- 🖼️ Columna Izquierda: Imagen Interactiva (ORDEN V1) -->
       <section class="image-column">
         <div class="sticky-image-container">
           <div class="image-wrapper">
@@ -94,7 +93,7 @@ const etiqueta = "Fine Art Print";
         </div>
       </section>
 
-      <!-- 📜 Columna Derecha: Información y Venta (Scrolling 50%) -->
+      <!-- 📜 Columna Derecha: Información y Venta (ORDEN V1) -->
       <section class="info-column">
         <a href={`/galeria/${mainFile.folder}`} class="back-link">← VOLVER A {serieName}</a>
         
@@ -109,7 +108,7 @@ const etiqueta = "Fine Art Print";
         
         <hr class="divider" />
         
-        <!-- Tabs de información Estilo Fichero -->
+        <!-- Tabs de información -->
         <div class="tabs-header">
           <button class="tab-btn active" data-target="historia">HISTORIA</button>
           <button class="tab-btn" data-target="ficha">FICHA TÉCNICA</button>
@@ -170,18 +169,7 @@ const etiqueta = "Fine Art Print";
             
             <div class="legal-section">
               <h3>1. Naturaleza del Producto</h3>
-              <p>Cada fotografía es una impresión de alta calidad (Fine Art) realizada bajo estándares profesionales para garantizar su longevidad y fidelidad cromática. El valor expresado en el catálogo corresponde exclusivamente a la pieza impresa en el formato seleccionado (Estándar, Mediano o Grande).</p>
-            </div>
-            
-            <div class="legal-section">
-              <h3>2. Exclusiones Importantes</h3>
-              <p><strong>Enmarcado:</strong> El precio de venta no incluye marco, paspartú, ni ningún tipo de montaje o estructura de exhibición por el momento. La obra se entrega como una lámina impresa lista para ser enmarcada a gusto del comprador.</p>
-              <p><strong>Envío:</strong> El costo de envío no está incluido en el valor de la obra. Los gastos de logística, embalaje especial para obras de arte y transporte correrán por cuenta del comprador y serán coordinados de forma privada tras la compra.</p>
-            </div>
-            
-            <div class="legal-section">
-              <h3>3. Autenticidad y Derechos</h3>
-              <p>Todas las obras se entregan firmadas por el autor bajo el nombre artístico <strong>Javier Mix</strong>. La compra de la impresión física no transfiere derechos de reproducción comercial sobre la imagen, los cuales permanecen como propiedad intelectual del autor.</p>
+              <p>Cada fotografía es una impresión de alta calidad (Fine Art) realizada bajo estándares profesionales para garantizar su longevidad y fidelidad cromática.</p>
             </div>
           </div>
         </div>
@@ -208,7 +196,7 @@ const etiqueta = "Fine Art Print";
           </div>
         )}
 
-        <!-- Canvas Material Info -->
+        <!-- Canvas Material Info (Transition V1) -->
         <div class="canvas-info" id="canvas-info" aria-live="polite">
           <div class="canvas-info-inner">
             <span class="canvas-badge">GRAN FORMATO · EDICIÓN LIMITADA</span>
@@ -219,28 +207,29 @@ const etiqueta = "Fine Art Print";
           </div>
         </div>
         
-        <!-- Checkout Area -->
+        <!-- 🛒 Checkout Area (RESTAURACION ESTRUCTURA V1) -->
         <div class="checkout-area">
           <div class="price-box">
-             <span class="price-label">INVERSIÓN</span>
-             <div class="price-value-container">
-               <span class="currency">ARS</span>
-               <span class="number" id="price-display">{precio > 0 ? precio : '—'}</span>
+             <span class="price-label">PRECIO</span>
+             <div class="price-value">
+               <span class="number" id="price-display">{precio}</span>
+               <span class="currency">U$D</span>
              </div>
-             {precio === 0 && <p class="price-notice">Obra exclusiva · Consultar disponibilidad</p>}
           </div>
           
           <div class="action-buttons">
-             <AddToCartButton 
-                client:load
-                item={{ 
-                    id: mainFile.id, 
-                    title: title, 
-                    price: precio, 
-                    image: coverImage,
-                    category: serieName 
-                }} 
-             />
+             <div class="v8-cart-wrapper">
+                <AddToCartButton 
+                    client:load
+                    item={{ 
+                        id: mainFile.id, 
+                        title: title, 
+                        price: precio, 
+                        image: coverImage,
+                        category: serieName 
+                    }} 
+                />
+             </div>
              
              <div class="secondary-actions">
                 <button class="btn-favorite" id="btn-like" aria-label="Añadir a favoritos" data-filename={mainFile.filename_download} data-serie={mainFile.folder} data-title={title}>
@@ -266,7 +255,6 @@ const etiqueta = "Fine Art Print";
   import { currentSelection } from '../../store/cartStore';
 
   document.addEventListener('astro:page-load', () => {
-    // Tabs Logic
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
@@ -282,23 +270,14 @@ const etiqueta = "Fine Art Print";
       });
     });
 
-    // Room view hover simulate
     const btnObra = document.getElementById('btn-obra');
     const imgPrim = document.getElementById('primary-image');
     const imgSec = document.getElementById('secondary-image');
-    
     if(btnObra && imgPrim && imgSec) {
-        btnObra.addEventListener('mouseenter', () => {
-             imgPrim.style.opacity = '0';
-             imgSec.style.opacity = '1';
-        });
-        btnObra.addEventListener('mouseleave', () => {
-             imgPrim.style.opacity = '1';
-             imgSec.style.opacity = '0';
-        });
+        btnObra.addEventListener('mouseenter', () => { imgPrim.style.opacity = '0'; imgSec.style.opacity = '1'; });
+        btnObra.addEventListener('mouseleave', () => { imgPrim.style.opacity = '1'; imgSec.style.opacity = '0'; });
     }
 
-    // Framing Studio Trigger
     const btnMarco = document.getElementById('btn-marco');
     const studio = document.getElementById('framing-studio');
     if (btnMarco && studio) {
@@ -308,7 +287,6 @@ const etiqueta = "Fine Art Print";
       });
     }
 
-    // Size Selector Logic & Sync
     const sizeOptions = document.querySelectorAll('.size-option');
     const priceDisplay = document.getElementById('price-display');
     const canvasInfo = document.getElementById('canvas-info');
@@ -325,33 +303,28 @@ const etiqueta = "Fine Art Print";
         if (priceDisplay) priceDisplay.textContent = price;
         if (canvasInfo) label === 'Large' ? canvasInfo.classList.add('visible') : canvasInfo.classList.remove('visible');
 
-        // 🔥 Sync with Cart Shop
-        currentSelection.set({ 
-            price: parseInt(price), 
-            label: label, 
-            dimensions: dimensions 
-        });
+        currentSelection.set({ price: parseInt(price), label, dimensions });
       });
     });
 
-    // Set first as default
     if (sizeOptions[0]) (sizeOptions[0] as HTMLElement).click();
   });
 </script>
 
 <style>
+/* 🏺 RESTAURACIÓN TOTAL DISEÑO V1 🏺 */
 .obra-container {
   max-width: 100%;
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
   color: var(--color-travertine-light);
   min-height: 100vh;
-  background: #050505;
 }
 
 .split-layout {
-  display: flex;
+  display: block;
   width: 100%;
+  position: relative;
 }
 
 .image-column {
@@ -377,98 +350,51 @@ const etiqueta = "Fine Art Print";
   min-height: 100dvh;
 }
 
-@media (max-width: 1024px) {
-  .split-layout { flex-direction: column; }
-  .image-column { position: relative; width: 100%; height: 70dvh; }
-  .info-column { margin-left: 0; width: 100%; padding: 4rem 8%; }
-}
-
 .image-wrapper {
   position: relative;
   width: 100%;
   height: calc(100dvh - 350px);
+  margin-bottom: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 2rem;
 }
 
 .main-artwork, .room-artwork {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  transition: opacity 0.8s ease;
   filter: drop-shadow(0 20px 60px rgba(0,0,0,0.6));
+  transition: opacity 0.8s ease;
 }
 
-.room-artwork {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-}
+.room-artwork { position: absolute; top: 0; left: 0; opacity: 0; }
 
-.control-btn {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--color-travertine-muted);
-  padding: 1rem 1.4rem;
-  font-family: var(--font-secondary);
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  cursor: pointer;
-  border-radius: 2px;
-  transition: all 0.4s ease;
-  flex: 1;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.control-btn:hover {
-  background: var(--gold-metallic);
-  color: #000;
-  transform: translateY(-2px);
-}
-
-.checkout-area {
-  margin-top: 4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2.5rem;
-}
-
-.price-box {
-  border-left: 2px solid var(--color-accent);
-  padding-left: 1.5rem;
-}
-
-.price-value-container .number {
+.obra-title {
   font-family: var(--font-primary);
-  font-size: 3rem;
-  color: var(--color-white);
+  font-size: 3.2rem;
+  font-weight: 500;
+  margin-bottom: 2rem;
+  line-height: 1.1;
+  color: var(--color-travertine-light);
 }
 
 .tabs-header {
   display: flex;
   margin-bottom: 4rem;
-  border-bottom: 1px solid var(--color-accent);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .tab-btn {
   background: transparent;
   border: none;
   color: var(--color-text-muted);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 2px;
-  padding: 0.8rem 2rem;
+  padding: 1rem 2rem;
   cursor: pointer;
+  border-bottom: 2px solid transparent;
 }
 
 .tab-btn.active {
@@ -476,17 +402,64 @@ const etiqueta = "Fine Art Print";
   border-bottom: 2px solid var(--color-accent);
 }
 
-.tag-accent {
-  color: var(--color-accent);
-  border: 1px solid var(--color-accent);
-  padding: 0.5rem 1rem;
+/* 🛒 CHECKOUT V1 (Horizontal) */
+.checkout-area {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  margin-top: 4rem;
 }
 
-.back-link {
-    color: var(--color-text-muted);
-    text-decoration: none;
+.price-box { display: flex; flex-direction: column; }
+.price-label { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-text-muted); margin-bottom: 0.5rem; font-weight: 600; }
+.price-value { display: flex; align-items: baseline; gap: 0.5rem; font-family: var(--font-secondary); }
+.price-value .number { font-size: 3.5rem; font-weight: 300; line-height: 1; color: var(--color-travertine-light); }
+.price-value .currency { font-size: 0.9rem; color: var(--color-text-muted); letter-spacing: 2px; }
+
+.action-buttons { flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+
+/* 🏺 Estilos para el Botón de Carrito (V8 inside V1 Shell) */
+.v8-cart-wrapper :global(.btn-buy) {
+    display: block;
+    width: 100%;
+    background: var(--color-onyx-deep);
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    padding: 1.5rem;
     font-size: 0.8rem;
-    margin-bottom: 2rem;
-    display: inline-block;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 600;
+    transition: all 0.4s ease;
+}
+
+.v8-cart-wrapper :global(.btn-buy:hover) {
+    background: var(--color-accent);
+    color: #000;
+}
+
+.size-option {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 1rem;
+  color: var(--color-travertine-muted);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.size-option.active {
+  border-color: var(--color-accent);
+  background: rgba(220, 177, 74, 0.1);
+  color: var(--color-travertine-light);
+}
+
+.canvas-info { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.5s ease; }
+.canvas-info.visible { max-height: 300px; opacity: 1; margin-bottom: 3rem; }
+.canvas-info-inner { background: rgba(220, 177, 74, 0.05); border-left: 3px solid var(--color-accent); padding: 1.5rem; }
+
+@media (max-width: 1024px) {
+  .info-column { margin-left: 0; width: 100%; }
+  .image-column { position: relative; width: 100%; height: 70dvh; }
 }
 </style>
