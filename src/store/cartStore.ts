@@ -1,44 +1,85 @@
 import { persistentMap } from '@nanostores/persistent';
+import { atom, computed } from 'nanostores';
 
 export interface CartItem {
   id: string;
-  artworkId: string;
   title: string;
-  size: string;
   price: number;
   image: string;
   quantity: number;
+  category?: string;
 }
 
 export type CartStoreType = Record<string, CartItem>;
 
-export const cartStore = persistentMap<CartStoreType>(
-  'javiermix-cart:',
+// 🛒 Store principal (Persistente)
+export const cartItems = persistentMap<CartStoreType>(
+  'javiermix-cart-v8:',
   {},
   {
     encode: JSON.stringify,
-    decode: JSON.parse,
+    decode: (val) => {
+        try {
+            return JSON.parse(val);
+        } catch (e) {
+            return {};
+        }
+    }
   }
 );
 
-export function addCartItem(item: Omit<CartItem, 'quantity' | 'id'>) {
-    const id = `${item.artworkId}-${item.size}`;
-    const cart = cartStore.get();
-    
-    if (cart[id]) {
-        cartStore.setKey(id, {
-            ...cart[id],
-            quantity: cart[id].quantity + 1
+/** @deprecated Use cartItems instead */
+export const cartStore = cartItems;
+
+// ⚡ Estado del Drawer
+export const isCartOpen = atom(false);
+
+// 📏 Selección actual (para sincronizar tamaños)
+export const currentSelection = atom({
+    price: 0,
+    label: '',
+    dimensions: ''
+});
+
+// 🛠️ Acciones
+export function addItem(item: Omit<CartItem, 'quantity'>) {
+    const cart = cartItems.get();
+    if (cart[item.id]) {
+        cartItems.setKey(item.id, {
+            ...cart[item.id],
+            quantity: cart[item.id].quantity + 1
         });
     } else {
-        cartStore.setKey(id, {
+        cartItems.setKey(item.id, {
             ...item,
-            id,
             quantity: 1
         });
+    }
+    // Abrir el carrito al añadir
+    isCartOpen.set(true);
+}
+
+export function removeItem(id: string) {
+    const cart = cartItems.get();
+    if (cart[id]) {
+        if (cart[id].quantity > 1) {
+            cartItems.setKey(id, {
+                ...cart[id],
+                quantity: cart[id].quantity - 1
+            });
+        } else {
+            const newCart = { ...cart };
+            delete newCart[id];
+            cartItems.set(newCart);
+        }
     }
 }
 
 export function clearCart() {
-    cartStore.set({});
+    cartItems.set({});
 }
+
+// 🧮 Computados
+export const getCartSubtotal = computed(cartItems, (items) => {
+    return Object.values(items).reduce((acc, item) => acc + (item.price * item.quantity), 0);
+});

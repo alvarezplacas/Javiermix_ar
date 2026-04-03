@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/preact';
-import { cartItems, isCartOpen, removeItem, clearCart, getCartSubtotal } from '../../store/cartStore';
+import { cartItems, isCartOpen, removeItem, clearCart, getCartSubtotal, addItem } from '../../store/cartStore';
 import { useEffect, useState } from 'preact/hooks';
 
 /**
@@ -11,10 +11,10 @@ import { useEffect, useState } from 'preact/hooks';
 export default function CartWidget() {
     const $cartItems = useStore(cartItems);
     const $isCartOpen = useStore(isCartOpen);
+    const $subtotal = useStore(getCartSubtotal);
     const [isProcessing, setIsProcessing] = useState(false);
 
     const itemsArray = Object.values($cartItems);
-    const subtotal = getCartSubtotal();
 
     const handleCheckout = async () => {
         setIsProcessing(true);
@@ -41,55 +41,78 @@ export default function CartWidget() {
     if (!$isCartOpen && itemsArray.length === 0) return null;
 
     return (
-        <aside className={`cart-drawer ${$isCartOpen ? 'is-open' : ''}`}>
-            <div className="cart-overlay" onClick={() => isCartOpen.set(false)}></div>
-            <div className="cart-panel">
-                <header className="cart-header">
-                    <h2>TU SELECCIÓN</h2>
-                    <button className="close-cart" onClick={() => isCartOpen.set(false)}>×</button>
-                </header>
+        <>
+            {/* 🏺 Botón Flotante Dorado (Elegant FAB) */}
+            {!$isCartOpen && itemsArray.length > 0 && (
+                <button 
+                    className="cart-toggle-floating" 
+                    onClick={() => isCartOpen.set(true)}
+                    aria-label="Ver carrito de compras"
+                >
+                    <div className="cart-icon">
+                        <i className="fas fa-shopping-bag"></i>
+                    </div>
+                    {itemsArray.length > 0 && (
+                        <span className="cart-count">
+                            {itemsArray.reduce((acc, item) => acc + item.quantity, 0)}
+                        </span>
+                    )}
+                </button>
+            )}
 
-                <div className="cart-content">
-                    {itemsArray.length === 0 ? (
-                        <div className="cart-empty">
-                            <p>Tu carrito está vacío</p>
-                            <a href="/galeria" className="btn-explore">EXPLORAR COLECCIÓN</a>
-                        </div>
-                    ) : (
-                        <ul className="cart-items-list">
-                            {itemsArray.map(item => (
-                                <li key={item.id} className="cart-item">
-                                    <div className="item-info">
-                                        <h4>{item.title}</h4>
-                                        <p className="item-price">{item.price} ARS</p>
-                                    </div>
-                                    <div className="item-qty">
-                                        <button onClick={() => removeItem(item.id)}>-</button>
-                                        <span>{item.quantity}</span>
-                                        <button onClick={() => addItem(item)} style={{opacity: 0.3, cursor: 'not-allowed'}}>+</button>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+            <aside className={`cart-drawer ${$isCartOpen ? 'is-open' : ''}`}>
+                <div className="cart-overlay" onClick={() => isCartOpen.set(false)}></div>
+                <div className="cart-panel">
+                    <header className="cart-header">
+                        <h2>TU SELECCIÓN</h2>
+                        <button className="close-cart" onClick={() => isCartOpen.set(false)}>×</button>
+                    </header>
+
+                    <div className="cart-content">
+                        {itemsArray.length === 0 ? (
+                            <div className="cart-empty">
+                                <p>Tu carrito está vacío</p>
+                                <a href="/galeria" className="btn-explore">EXPLORAR COLECCIÓN</a>
+                            </div>
+                        ) : (
+                            <ul className="cart-items-list">
+                                {itemsArray.map((item: any) => (
+                                    <li key={item.id} className="cart-item">
+                                        <div className="item-info">
+                                            <h4>{item.title}</h4>
+                                            <p className="item-price">{item.price.toLocaleString()} ARS</p>
+                                        </div>
+                                        <div className="item-qty">
+                                            <button onClick={() => removeItem(item.id)}>-</button>
+                                            <span>{item.quantity}</span>
+                                            <button 
+                                                onClick={() => addItem(item)}
+                                                className="btn-add-more"
+                                            >+</button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    {itemsArray.length > 0 && (
+                        <footer className="cart-footer">
+                            <div className="cart-summary">
+                                <span>TOTAL (ARS)</span>
+                                <span className="total-price">{$subtotal.toLocaleString()}</span>
+                            </div>
+                            <button 
+                                className="btn-checkout" 
+                                onClick={handleCheckout}
+                                disabled={isProcessing}
+                            >
+                                {isProcessing ? 'PROCESANDO...' : 'FINALIZAR COMPRA'}
+                            </button>
+                        </footer>
                     )}
                 </div>
-
-                {itemsArray.length > 0 && (
-                    <footer className="cart-footer">
-                        <div className="cart-summary">
-                            <span>TOTAL (Estimado)</span>
-                            <span className="total-price">{subtotal} ARS</span>
-                        </div>
-                        <button 
-                            className="btn-checkout" 
-                            onClick={handleCheckout}
-                            disabled={isProcessing}
-                        >
-                            {isProcessing ? 'PROCESANDO...' : 'FINALIZAR COMPRA'}
-                        </button>
-                    </footer>
-                )}
-            </div>
-        </aside>
+            </aside>
+        </>
     );
 }

@@ -1,0 +1,60 @@
+[2m19:22:25[22m [34m[@astrojs/node][39m Enabling sessions with filesystem storage
+[2m19:22:25[22m [34m[content][39m Syncing content
+[2m19:22:25[22m [34m[content][39m Synced content
+[2m19:22:25[22m [34m[types][39m Generated [2m363ms[22m
+[2m19:22:25[22m [34m[build][39m output: [34m"server"[39m
+[2m19:22:25[22m [34m[build][39m mode: [34m"server"[39m
+[2m19:22:25[22m [34m[build][39m directory: [34mD:\web_javiermix\JAVIERMIX-AR-2903\dist\[39m
+[2m19:22:25[22m [34m[build][39m adapter: [32m@astrojs/node[39m
+[2m19:22:25[22m [34m[build][39m Collecting build info...
+[2m19:22:25[22m [34m[build][39m [32mÔ£ô Completed in 383ms.[39m
+[2m19:22:25[22m [34m[build][39m Building server entrypoints...
+[2m19:22:26[22m [34m[vite][39m [32mÔ£ô built in 672ms[39m
+[2m19:22:27[22m [34m[vite][39m [32mÔ£ô built in 867ms[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "path" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/dotenv/lib/main.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "os" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/dotenv/lib/main.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "crypto" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/dotenv/lib/main.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "events" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/cluster/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "events" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/Redis.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "util" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/Pipeline.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "stream" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/ScanStream.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "net" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/connectors/SentinelConnector/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "tls" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/connectors/SentinelConnector/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "fs" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/utils/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "path" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/utils/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "url" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/utils/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "dns" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/cluster/ClusterOptions.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "events" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/cluster/ConnectionPool.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "net" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/cluster/util.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "assert" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/redis-errors/lib/old.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "util" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/redis-errors/lib/old.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "assert" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/redis-errors/lib/modern.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "crypto" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/Script.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "net" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/connectors/StandaloneConnector.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "tls" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/ioredis/built/connectors/StandaloneConnector.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "buffer" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/redis-parser/lib/parser.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[1m19:22:27[22m [WARN] [vite][39m [33m[plugin vite:resolve] Module "string_decoder" has been externalized for browser compatibility, imported by "D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/redis-parser/lib/parser.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+19:22:27 [ERROR] [vite] Ô£ù Build failed in 252ms
+src/pages/herramientas/checkout.astro?astro&type=script&index=0&lang.ts (83:11): "cartStore" is not exported by "src/store/cartStore.ts", imported by "src/pages/herramientas/checkout.astro?astro&type=script&index=0&lang.ts".
+file: D:/web_javiermix/JAVIERMIX-AR-2903/src/pages/herramientas/checkout.astro?astro&type=script&index=0&lang.ts:83:11
+  Location:
+    D:/web_javiermix/JAVIERMIX-AR-2903/src/pages/herramientas/checkout.astro?astro&type=script&index=0&lang.ts:83:11
+  Stack trace:
+    at getRollupError (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/parseAst.js:406:41)
+    at Module.error (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:17380:16)
+    at ModuleScope.findVariable (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:15403:39)
+    at FunctionBodyScope.findVariable (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at CallExpression.bind (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:2832:23)
+    at ExpressionStatement.bind (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:2832:23)
+    at ArrowFunctionExpression.bind (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:2832:23)
+    at CallExpression.bind (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:12512:15)
+    at Program.bind (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:2828:28)
+    at Graph.sortAndBindModules (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:23262:20)
+    at async file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:23851:13
+    at async rollupInternal (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/rollup/dist/es/shared/node-entry.js:23846:5)
+    at async Object.build (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/astro/node_modules/vite/dist/node/chunks/config.js:33900:19)
+    at async Object.buildApp (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/astro/node_modules/vite/dist/node/chunks/config.js:33892:6)
+    at async viteBuild (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/astro/dist/core/build/static-build.js:76:3)
+    at async AstroBuilder.run (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/astro/dist/core/build/index.js:189:7)
+    at async build (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/astro/dist/cli/build/index.js:29:3)
+    at async cli (file:///D:/web_javiermix/JAVIERMIX-AR-2903/node_modules/astro/dist/cli/index.js:234:5)
