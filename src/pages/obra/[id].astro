@@ -41,7 +41,7 @@ try {
     
     const hoverVariant = variantsData.data?.find((f: any) => {
         const name = f.filename_download.toLowerCase().replace(/[\s\-_]/g, '');
-        // Check if it starts with the clean base + 2
+        // Check if it starts with the clean base + 2 OR ends with 2
         return name.includes(cleanBase + '2') || name.startsWith(cleanBase + '2');
     });
     
@@ -419,19 +419,30 @@ const etiqueta = "Fine Art Print";
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 0; /* ELIMINADO PADDING PARA MÁXIMA ESCALA */
+  padding: 0; 
   border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.sticky-image-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .image-wrapper {
   position: relative;
-  width: 100%;
-  height: 85vh; /* AUMENTADO PARA APROVECHAR MÁS VERTICAL */
+  width: 95%; /* MÁXIMA ANCHURA HORIZONTAL */
+  aspect-ratio: 1 / 1; /* CONTENEDOR CUADRADO */
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   cursor: zoom-in;
+  background: rgba(0,0,0,0.2); /* Sutil fondo para el área de la obra */
 }
 
 /* 🚀 REGLA UNIVERSAL DE ESCALADO MÁXIMO */
@@ -448,11 +459,14 @@ const etiqueta = "Fine Art Print";
 .room-artwork { opacity: 0; z-index: 2; }
 
 .image-controls {
+    position: absolute;
+    bottom: 5vh;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     gap: 1rem;
-    margin-top: 2rem;
-    width: 100%;
-    justify-content: center;
+    z-index: 100;
+    width: fit-content;
 }
 
 .control-btn {
