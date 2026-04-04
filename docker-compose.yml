@@ -95,7 +95,7 @@ services:
       ASSETS_CACHE_TTL: "0"
       ASSETS_CONTENT_SECURITY_POLICY_DIRECTIVES: "default-src 'self'; img-src 'self' data: https:; media-src 'self' data: https:;"
     volumes:
-      - /home/ubuntu/prod/javiermix_web/public/uploads:/directus/uploads
+      - ./public/uploads:/directus/uploads
       - directus_extensions:/directus/extensions
     depends_on:
       - db
