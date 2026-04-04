@@ -13,7 +13,7 @@ import Layout from '../../layouts/Layout.astro';
       
       <h1 class="login-title">LOGIN</h1>
       
-      <form id="login-form" class="login-form">
+      <form id="login-form" class="login-form" method="POST" action="/dashboard/login">
         <div class="input-group">
           <label for="email">USUARIO</label>
           <input type="email" id="email" name="email" placeholder="email@ejemplo.com" required />
