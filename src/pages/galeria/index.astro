@@ -240,21 +240,37 @@ const allArtworks = allArtworksRaw.map(file => ({
 .artwork-result-card {
     text-decoration: none;
     display: block;
-    background: var(--color-onyx-charcoal);
     transition: var(--transition-premium);
-    overflow: hidden;
     position: relative;
-    border: 1px solid rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.05); /* Sutil línea inferior */
+    padding-bottom: 1rem;
 }
 
-.artwork-result-card:hover { transform: translateY(-8px); border-color: var(--color-accent); }
+.artwork-result-card:hover { transform: translateY(-5px); }
 
-.artwork-thumb { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; transition: transform 0.8s; }
-.artwork-result-card:hover .artwork-thumb { transform: scale(1.1); }
+.artwork-thumb-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: var(--color-onyx-charcoal);
+    margin-bottom: 1rem;
+}
 
-.artwork-result-info { padding: 1.5rem; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); position: absolute; bottom: 0; width: 100%; }
-.artwork-result-title { font-family: var(--font-primary); font-size: 1.4rem; color: var(--color-white); margin-bottom: 0.3rem; line-height: 1; }
-.artwork-result-serie { font-size: 0.55rem; color: var(--color-accent); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
+.artwork-thumb { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    transition: transform 0.8s; 
+}
+.artwork-result-card:hover .artwork-thumb { transform: scale(1.05); }
+
+.artwork-result-info { 
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.artwork-result-title { font-family: var(--font-primary); font-size: 1.6rem; color: var(--color-white); margin: 0; line-height: 1.2; }
+.artwork-result-serie { font-size: 0.6rem; color: var(--color-accent); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: 0.8; }
 
 @media (max-width: 768px) {
     .series-snap-container {
@@ -308,7 +324,9 @@ const allArtworks = allArtworksRaw.map(file => ({
         noResults!.style.display = 'none';
         resultsGrid!.innerHTML = filtered.map((a: any) => `
             <a href="/obra/${a.id}" class="artwork-result-card">
-                <img src="${a.thumb}" alt="${a.title}" class="artwork-thumb" loading="lazy" />
+                <div class="artwork-thumb-container">
+                    <img src="${a.thumb}" alt="${a.title}" class="artwork-thumb" loading="lazy" />
+                </div>
                 <div class="artwork-result-info">
                    <h3 class="artwork-result-title">${a.title}</h3>
                    <span class="artwork-result-serie">${a.serie}</span>
