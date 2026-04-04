@@ -18,27 +18,35 @@ export const POST = async ({ request }) => {
         }
 
         // 🛡️ PROTOCOLO DE BLINDAJE: Validación Server-Side contra Directus
-        const ids = items.map(item => item.id);
-        const res = await fetchFromDirectus(`/items/artworks?filter[id][_in]=${ids.join(',')}`);
-        const dbItems = (await res.json()).data;
-
+        const validatedItems = [];
         let totalReal = 0;
-        const validatedItems = items.map(item => {
-            const dbItem = dbItems.find(db => db.id == item.id);
-            if (!dbItem) throw new Error(`Producto no encontrado: ${item.id}`);
-            
-            const price = dbItem.price || 0;
-            totalReal += price * item.quantity;
 
-            return {
+        for (const item of items) {
+            // Extraer ID real si es un variant (formato: id-label)
+            const realId = item.id.includes('-') ? item.id.split('-')[0] : item.id;
+            const sizeLabel = item.id.includes('-') ? item.id.split('-')[1].toLowerCase() : 'standard';
+
+            const res = await fetchFromDirectus(`/items/artworks/${realId}`);
+            const dbItem = (await res.json()).data;
+
+            if (!dbItem) throw new Error(`Producto no encontrado: ${realId}`);
+
+            // Determinar precio según el tamaño seleccionado
+            let price = dbItem.price || 0;
+            if (sizeLabel === 'small' && dbItem.precio_small) price = dbItem.precio_small;
+            if (sizeLabel === 'medium' && dbItem.precio_medium) price = dbItem.precio_medium;
+            if (sizeLabel === 'large' && dbItem.precio_large) price = dbItem.precio_large;
+
+            totalReal += price * item.quantity;
+            validatedItems.push({
                 id: item.id,
-                title: dbItem.title || 'Obra Javier Mix',
+                title: `${dbItem.title || 'Obra Javier Mix'} (${sizeLabel.toUpperCase()})`,
                 price: price,
                 quantity: item.quantity
-            };
-        });
+            });
+        }
 
-        // 📝 Registro de la Orden como 'Perteneciente/Pending'
+        // 📝 Registro de la Orden como 'Pending'
         const order = await createOrder({
             total: totalReal,
             items: validatedItems,
@@ -58,6 +66,7 @@ export const POST = async ({ request }) => {
             init_point: preference.init_point,
             order_id: order.id
         }), { status: 200 });
+
 
     } catch (error) {
         console.error('❌ Error en Checkout V8:', error.message);

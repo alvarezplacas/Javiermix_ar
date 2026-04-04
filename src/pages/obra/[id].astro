@@ -6,7 +6,7 @@ import { getArtworkDetails, fetchFromDirectus, getAssetUrl } from '../../conexio
 import FramingStudio from '../../components/FramingStudio.astro';
 import AddToCartButton from '../../components/ecommerce/AddToCartButton.tsx';
 
-// 🚀 Motor V8: SSR (No more 404s)
+// 🚀 Motor V8: SSR (Astro 6 optimized)
 export const prerender = false;
 
 const { id } = Astro.params;
@@ -35,7 +35,10 @@ try {
     const baseName = mainFile.filename_download.split('.')[0].toLowerCase();
     const variantsRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${mainFile.folder}&filter[filename_download][_contains]=_2.`);
     const variantsData = await variantsRes.json();
-    const hoverVariant = variantsData.data?.find((f: any) => f.filename_download.toLowerCase().startsWith(`${baseName}_2.`));
+    const hoverVariant = variantsData.data?.find((f: any) => {
+        const name = f.filename_download.toLowerCase();
+        return name.startsWith(`${baseName}_2.`) || name.includes(`_2.`);
+    });
     if (hoverVariant) roomImage = getAssetUrl(hoverVariant.id);
 } catch (e) {}
 
@@ -64,11 +67,11 @@ const etiqueta = "Fine Art Print";
       <!-- 🖼️ Columna Izquierda: Imagen Interactiva (RESTAURACION PIXEL-PERFECT V1) -->
       <section class="image-column">
         <div class="sticky-image-container">
-          <div class="image-wrapper">
+          <div class="image-wrapper" id="artwork-wrapper">
             <!-- Badge de Favoritos Superior Izquierda (Captura v1) -->
             <div class="likes-badge-float">
                 <i class="fas fa-heart"></i>
-                <span id="like-count-float">0</span>
+                <span id="like-count-float">{meta?.likes || 0}</span>
             </div>
 
             <img src={coverImage} alt={`Obra ${title}`} class="main-artwork" id="primary-image" />
@@ -79,7 +82,7 @@ const etiqueta = "Fine Art Print";
           
           <div class="image-controls">
             {roomImage ? (
-               <button class="control-btn active" id="btn-obra">VER EN SALA</button>
+               <button class="control-btn" id="btn-obra">VER EN SALA</button>
             ) : (
                <button class="control-btn" style="opacity: 0.3; cursor: not-allowed;" disabled>SIN VISTA EN SALA</button>
             )}
@@ -101,9 +104,9 @@ const etiqueta = "Fine Art Print";
 
       <!-- 📜 Columna Derecha: Información y Venta (RESTAURACION PIXEL-PERFECT V1) -->
       <section class="info-column">
-        <a href={`/galeria/${mainFile.folder}`} class="back-link">← VOLVER A {serieName}</a>
+        <a href="/galeria" class="back-link">← VOLVER AL CATÁLOGO</a>
         
-        <div class="serie-label">SERIE: {serieName}</div>
+        <div class="serie-label-top">SERIE: {serieName}</div>
         <h1 class="obra-title">{title}</h1>
         
         <!-- Badge Superior de Likes (Captura v1) -->
@@ -113,7 +116,7 @@ const etiqueta = "Fine Art Print";
         </div>
 
         <div class="tags-container">
-          {etiqueta && <span class="tag-accent">{etiqueta}</span>}
+          <span class="tag-accent">{etiqueta}</span>
           <span class="tag-outline">CERTIFICADO DE AUTENTICIDAD</span>
           <span class="tag-outline">CALIDAD MUSEO</span>
         </div>
@@ -127,15 +130,14 @@ const etiqueta = "Fine Art Print";
           <button class="tab-btn" data-target="terminos">TÉRMINOS</button>
         </div>
         
-        <div class="tab-content fade-in-content" id="tab-historia" style="display: block;">
+        <div class="tab-content" id="tab-historia" style="display: block;">
           <div class="prose-content">
             <h4 class="prose-subtitle">LA HISTORIA DETRÁS DE LA IMAGEN</h4>
             {meta?.description ? (
               <p>{meta.description}</p>
             ) : (
-              <p>Esta pieza de autor es parte de una selección curada rigurosamente. Refleja nuestro compromiso con el legado fotográfico y el diseño contemporáneo a nivel internacional.</p>
+              <p>Esta pieza de autor es parte de una selección curada rigurosamente. Refleja nuestro compromiso con el legado fotográfico y el diseño contemporáneo a nivel internacional. La edición es estricta y controlada, asegurando el valor de obra única a lo largo del tiempo.</p>
             )}
-            <p>La edición es estricta y controlada, asegurando el valor de obra única a lo largo del tiempo.</p>
           </div>
         </div>
 
@@ -144,7 +146,7 @@ const etiqueta = "Fine Art Print";
             <div class="tech-section">
               <h3 class="tech-category">THE PRINT (CALIDAD MUSEO)</h3>
               <ul class="tech-list">
-                <li><i class="fas fa-scroll"></i> {meta?.paper || 'Papel Algodón 100%'}</li>
+                <li><i class="fas fa-scroll"></i> {meta?.paper || 'Papel Algodón 100% (Hahnemühle)'}</li>
                 <li><i class="fas fa-expand-arrows-alt"></i> Dimensiones: {meta?.dimensions || 'A convenir'}</li>
                 <li><i class="fas fa-certificate"></i> Certificado de Autenticidad</li>
                 <li><i class="fas fa-infinity"></i> Calidad Fine Art</li>
@@ -167,7 +169,7 @@ const etiqueta = "Fine Art Print";
                 <div class="shot-item">
                    <i class="fas fa-calendar-alt"></i>
                    <span class="label">FECHA</span>
-                   <span class="value">{meta?.date || '2024'}</span>
+                   <span class="value">{meta?.date || '2026'}</span>
                 </div>
               </div>
             </div>
@@ -176,14 +178,14 @@ const etiqueta = "Fine Art Print";
         
         <div class="tab-content" id="tab-terminos" style="display: none;">
           <div class="legal-content">
-            <h2 class="legal-title">Términos y Condiciones de Venta</h2>
+            <h2 class="legal-title">Términos y Condiciones</h2>
             <div class="legal-section">
               <h3>1. Naturaleza del Producto</h3>
-              <p>Cada fotografía es una impresión de alta calidad (Fine Art) realizada bajo estándares profesionales para garantizar su longevidad y fidelidad cromática. El valor expresado corresponde exclusivamente a la pieza impresa.</p>
+              <p>Cada fotografía es una impresión de alta calidad (Fine Art) realizada bajo estándares profesionales. El valor corresponde exclusivamente a la pieza impresa.</p>
             </div>
             <div class="legal-section">
               <h3>2. Enmarcado y Envío</h3>
-              <p>La obra se entrega como una lámina impresa lista para ser enmarcada a gusto del comprador. El costo de envío se coordina de forma privada tras la compra.</p>
+              <p>La obra se entrega como una lámina impresa. El envío se coordina tras la compra.</p>
             </div>
           </div>
         </div>
@@ -210,24 +212,24 @@ const etiqueta = "Fine Art Print";
           </div>
         )}
 
-        <!-- Canvas Material Info (Transition V1) -->
-        <div class="canvas-info" id="canvas-info" aria-live="polite">
+        <!-- Canvas Material Info -->
+        <div class="canvas-info" id="canvas-info">
           <div class="canvas-info-inner">
             <span class="canvas-badge">GRAN FORMATO · EDICIÓN LIMITADA</span>
             <h4 class="canvas-title">Canson Museum Pro Canvas · 385 g/m²</h4>
             <p class="canvas-body">
-              El formato Grande se imprime sobre un canvas <strong>100% algodón libre de ácidos</strong>, pensado para durar décadas.
+              El formato Grande se imprime sobre un canvas <strong>100% algodón libre de ácidos</strong>.
             </p>
           </div>
         </div>
         
-        <!-- 🛒 Area de Pago (RESTAURACION ESTRUCTURA LIGERA V1) -->
+        <!-- 🛒 Area de Pago (Fuerza ARS) -->
         <div class="checkout-area">
           <div class="price-box">
              <span class="price-label">PRECIO</span>
              <div class="price-value">
                <span class="currency-symbol">$</span>
-               <span class="number" id="price-display">{precio}</span>
+               <span class="number" id="price-display">{precio.toLocaleString()}</span>
                <span class="currency-label">ARS</span>
              </div>
           </div>
@@ -260,6 +262,7 @@ const etiqueta = "Fine Art Print";
   import { currentSelection } from '../../store/cartStore';
 
   document.addEventListener('astro:page-load', () => {
+    // --- TABS LOGIC ---
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
@@ -280,23 +283,60 @@ const etiqueta = "Fine Art Print";
       });
     });
 
+    // --- ZOOM & PAN LOGIC (PREMIUM V1) ---
+    const wrapper = document.getElementById('artwork-wrapper');
+    const primaryImg = document.getElementById('primary-image') as HTMLImageElement;
+
+    function handleMove(e: any) {
+      if (!wrapper || !primaryImg) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const { left, top, width, height } = wrapper.getBoundingClientRect();
+      const x = (clientX - left) / width;
+      const y = (clientY - top) / height;
+      const moveX = (x - 0.5) * -80;
+      const moveY = (y - 0.5) * -80;
+      primaryImg.style.transform = `scale(1.6) translate(${moveX}px, ${moveY}px)`;
+    }
+
+    function handleReset() {
+      if (!primaryImg) return;
+      primaryImg.style.transform = `scale(1) translate(0, 0)`;
+    }
+
+    if (wrapper) {
+      wrapper.addEventListener('mousemove', handleMove);
+      wrapper.addEventListener('mouseleave', handleReset);
+      
+      // Touch support
+      wrapper.addEventListener('touchmove', (e: any) => {
+        handleMove(e);
+        if (e.cancelable) e.preventDefault();
+      }, { passive: false });
+      wrapper.addEventListener('touchend', handleReset);
+    }
+
+    // --- ORIENTATION DETECTION ---
+    function updateOrientation() {
+      if (!primaryImg || !wrapper) return;
+      const isPortrait = primaryImg.naturalHeight > primaryImg.naturalWidth;
+      wrapper.classList.toggle('is-portrait', isPortrait);
+      wrapper.classList.toggle('is-landscape', !isPortrait);
+    }
+    if (primaryImg) {
+      if (primaryImg.complete) updateOrientation();
+      else primaryImg.addEventListener('load', updateOrientation);
+    }
+
+    // --- ROOM VIEW HOVER ---
     const btnObra = document.getElementById('btn-obra');
-    const imgPrim = document.getElementById('primary-image');
     const imgSec = document.getElementById('secondary-image');
-    if(btnObra && imgPrim && imgSec) {
-        btnObra.addEventListener('mouseenter', () => { imgPrim.style.opacity = '0'; imgSec.style.opacity = '1'; });
-        btnObra.addEventListener('mouseleave', () => { imgPrim.style.opacity = '1'; imgSec.style.opacity = '0'; });
+    if(btnObra && primaryImg && imgSec) {
+        btnObra.addEventListener('mouseenter', () => { primaryImg.style.opacity = '0'; (imgSec as HTMLElement).style.opacity = '1'; });
+        btnObra.addEventListener('mouseleave', () => { primaryImg.style.opacity = '1'; (imgSec as HTMLElement).style.opacity = '0'; });
     }
 
-    const btnMarco = document.getElementById('btn-marco');
-    const studio = document.getElementById('framing-studio');
-    if (btnMarco && studio) {
-      btnMarco.addEventListener('click', () => {
-        studio.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-      });
-    }
-
+    // --- SIZE SELECTOR ---
     const sizeOptions = document.querySelectorAll('.size-option');
     const priceDisplay = document.getElementById('price-display');
     const canvasInfo = document.getElementById('canvas-info');
@@ -307,94 +347,170 @@ const etiqueta = "Fine Art Print";
         btn.classList.add('active');
         const price = btn.getAttribute('data-price');
         const label = btn.getAttribute('data-label');
-        if (priceDisplay) priceDisplay.textContent = price;
+        if (priceDisplay) priceDisplay.textContent = parseInt(price).toLocaleString();
         if (canvasInfo) label === 'Large' ? canvasInfo.classList.add('visible') : canvasInfo.classList.remove('visible');
         currentSelection.set({ price: parseInt(price), label, dimensions: btn.getAttribute('data-dimensions') });
       });
     });
-    if (sizeOptions[0]) (sizeOptions[0] as HTMLElement).click();
   });
 </script>
 
 <style>
-/* 🏺 DISEÑO PIXEL-PERFECT JMX (RESTAURACION ABSOLUTA) 🏺 */
+/* 🏺 RESTAURACIÓN PREMIUM JMX - ASTRO 6 🏺 */
+:root {
+  --color-accent: #dcb14a;
+  --color-onyx-deep: #050505;
+  --color-onyx-charcoal: #0d0d0d;
+  --color-travertine-light: #d9cfcc;
+  --color-travertine-muted: #a69c94;
+  --color-white: #ffffff;
+  --color-text-muted: #595351;
+  --font-primary: 'Cormorant Garamond', serif;
+  --font-secondary: 'Montserrat', sans-serif;
+}
+
 .obra-container {
   max-width: 100%;
   margin: 0 auto;
   color: var(--color-travertine-light);
   min-height: 100vh;
+  background: var(--color-onyx-deep);
 }
 
-.split-layout { display: block; width: 100%; position: relative; }
+.split-layout { display: flex; width: 100%; position: relative; }
 
+/* 🖼️ Columna Izquierda Fija */
 .image-column {
-  position: fixed;
-  left: 0;
-  top: 0;
   width: 50vw;
-  height: 100dvh;
-  background: #0d0d0d;
-  padding: 0 5%;
+  height: 100vh;
+  background: var(--color-onyx-charcoal);
+  position: sticky;
+  top: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border-right: 1px solid rgba(255,255,255,0.03);
-  z-index: 5;
-}
-
-.info-column {
-  margin-left: 50vw;
-  width: 50vw;
-  padding: 160px 8% 10rem;
-  background: #050505; 
-  min-height: 100dvh;
+  align-items: center;
+  padding: 0 5%;
+  border-right: 1px solid rgba(255,255,255,0.05);
 }
 
 .image-wrapper {
   position: relative;
   width: 100%;
-  height: calc(100dvh - 350px);
-  margin-bottom: 2rem;
+  height: 60vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  cursor: zoom-in;
 }
 
-.likes-badge-float {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: rgba(191, 21, 52, 0.4);
-    padding: 1rem 1.8rem;
-    border-radius: 50px;
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    backdrop-filter: blur(10px);
-    z-index: 10;
-    font-size: 1rem;
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.1);
-}
+.image-wrapper.is-portrait .main-artwork, 
+.image-wrapper.is-portrait .room-artwork { height: 90%; width: auto; }
+.image-wrapper.is-landscape .main-artwork,
+.image-wrapper.is-landscape .room-artwork { width: 90%; height: auto; }
 
 .main-artwork, .room-artwork {
+  position: absolute;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 20px 60px rgba(0,0,0,0.6));
-  transition: opacity 0.8s ease;
+  filter: drop-shadow(0 20px 60px rgba(0,0,0,0.8));
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.6s ease;
+  will-change: transform, opacity;
 }
 
-.room-artwork { position: absolute; top: 0; left: 0; opacity: 0; }
+.room-artwork { opacity: 0; z-index: 2; }
+
+.likes-badge-float {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    background: rgba(191, 21, 52, 0.4);
+    padding: 0.8rem 1.4rem;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.image-controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 3rem;
+    width: 100%;
+    justify-content: center;
+}
+
+.control-btn {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--color-travertine-muted);
+    padding: 0.8rem 1.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.4s;
+}
+
+.control-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: rgba(220, 177, 74, 0.05);
+}
+
+.share-controls {
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    letter-spacing: 2px;
+}
+
+.social-icons { display: flex; gap: 1rem; }
+.social-icons i { cursor: pointer; transition: color 0.3s; }
+.social-icons i:hover { color: var(--color-white); }
+
+/* 📜 Columna Derecha Scroll */
+.info-column {
+  width: 50vw;
+  padding: 180px 8% 10rem;
+  background: var(--color-onyx-deep); 
+}
+
+.back-link {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--color-accent);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 3rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.serie-label-top {
+  font-size: 0.6rem;
+  letter-spacing: 4px;
+  color: var(--color-travertine-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
 
 .obra-title {
   font-family: var(--font-primary);
-  font-size: 3.5rem; /* Píxel-Perfect v1 */
+  font-size: 4rem;
+  color: var(--color-white);
+  margin-bottom: 2rem;
+  line-height: 1;
   font-weight: 300;
-  margin-bottom: 1.5rem;
-  line-height: 1.1;
-  color: var(--color-travertine-light);
-  letter-spacing: -1px;
 }
 
 .social-feedback-badge {
@@ -402,135 +518,109 @@ const etiqueta = "Fine Art Print";
     align-items: center;
     gap: 0.8rem;
     background: rgba(255,255,255,0.03);
-    padding: 0.8rem 1.2rem;
+    padding: 0.6rem 1rem;
     width: fit-content;
-    border-radius: 50px;
-    margin-bottom: 2rem;
-    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 4px;
+    margin-bottom: 3rem;
 }
 
-.social-count {
-    font-size: 0.55rem;
-    letter-spacing: 2px;
-    color: var(--color-text-muted);
-}
+.social-count { font-size: 0.55rem; letter-spacing: 2px; color: var(--color-text-muted); }
 
-/* 🏺 TABS ESTILO FICHERO (SOLAPA V1) */
-.tabs-header {
-  display: flex;
-  margin-bottom: 4rem;
-  border-bottom: 1px solid var(--color-accent);
-  padding-left: 0.5rem;
-}
+.tags-container { display: flex; gap: 1rem; margin-bottom: 4rem; }
+.tag-accent { font-size: 0.6rem; letter-spacing: 2px; border: 1px solid var(--color-accent); color: var(--color-accent); padding: 0.5rem 1rem; }
+.tag-outline { font-size: 0.6rem; letter-spacing: 2px; border: 1px solid rgba(255,255,255,0.1); color: var(--color-text-muted); padding: 0.5rem 1rem; }
 
+.divider { border: none; height: 1px; background: rgba(255,255,255,0.05); margin: 4rem 0; }
+
+/* TABS FICHERO */
+.tabs-header { display: flex; border-bottom: 1px solid var(--color-accent); margin-bottom: 4rem; }
 .tab-btn {
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
+  padding: 1rem 2rem;
   color: var(--color-text-muted);
-  font-family: var(--font-secondary);
   font-size: 0.65rem;
-  text-transform: uppercase;
   letter-spacing: 2px;
-  padding: 1rem 2.5rem;
   cursor: pointer;
+  transition: all 0.4s;
   border-radius: 8px 8px 0 0;
-  margin-bottom: -1px;
-  transition: all 0.4s ease;
 }
+.tab-btn.active { background: var(--color-accent); color: #000; font-weight: 700; }
 
-.tab-btn.active {
-  color: var(--color-accent);
-  background: var(--color-onyx-deep);
-  border: 1px solid var(--color-accent);
-  border-bottom: 2px solid var(--color-onyx-deep);
-  z-index: 2;
-}
-
-/* 🏺 HISTORIA CON LETRA CAPITAL */
-.prose-subtitle {
-    font-family: var(--font-primary);
-    color: var(--color-accent);
-    font-style: italic;
-    font-size: 0.85rem;
-    letter-spacing: 3px;
-    margin-bottom: 3rem;
-    text-align: center;
-    font-weight: 400;
-}
-
-.prose-content {
-  font-size: 1.1rem;
-  line-height: 2;
-  color: var(--color-text-muted);
-}
-
+.prose-subtitle { font-family: var(--font-primary); color: var(--color-accent); font-style: italic; margin-bottom: 2rem; letter-spacing: 4px; }
+.prose-content { font-size: 1.1rem; line-height: 2; color: var(--color-travertine-muted); }
 .prose-content :global(p):first-of-type::first-letter {
-  float: left;
-  font-size: 4.8rem;
-  line-height: 0.8;
-  padding-right: 1rem;
-  padding-top: 0.6rem;
-  color: var(--color-accent);
-  font-family: var(--font-primary);
-  font-weight: 600;
-}
-
-/* 🏺 FICHA TECNICA ICONOGRAFICA */
-.tech-category {
-    font-size: 0.65rem;
-    letter-spacing: 3px;
-    color: var(--color-text-muted);
-    margin: 3rem 0 1.5rem;
-}
-
-.tech-list { list-style: none; padding: 0; }
-.tech-list li { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; font-size: 0.95rem; }
-.tech-list i { color: var(--color-accent); font-size: 1rem; width: 25px; text-align: center; }
-
-.shot-data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2rem; }
-.shot-item { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-.shot-item i { color: var(--color-accent); font-size: 0.9rem; opacity: 0.6; }
-.shot-item .label { font-size: 0.5rem; letter-spacing: 2px; color: rgba(255,255,255,0.3); }
-.shot-item .value { font-size: 0.75rem; color: var(--color-travertine-muted); }
-
-/* 🛒 CHECKOUT LIGERO (GRAN FORMATO) */
-.checkout-area {
-  display: flex;
-  align-items: center;
-  gap: 5rem;
-  margin-top: 5rem;
-}
-
-.price-label { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-text-muted); margin-bottom: 1rem; display: block; }
-.price-value { display: flex; align-items: baseline; gap: 0.8rem; }
-.price-value .currency-symbol { font-size: 1.8rem; color: var(--color-accent); font-weight: 200; }
-.price-value .number { font-size: 4.5rem; font-weight: 200; line-height: 1; color: var(--color-travertine-light); }
-.price-value .currency-label { font-size: 0.9rem; color: var(--color-text-muted); letter-spacing: 2px; }
-
-.v8-cart-wrapper :global(.btn-buy) {
-    background: transparent;
-    border: 1px solid var(--color-accent);
+    float: left;
+    font-size: 5rem;
+    line-height: 0.7;
+    padding: 0.5rem 1rem 0 0;
     color: var(--color-accent);
-    padding: 1.8rem 4rem;
-    font-size: 0.75rem;
-    letter-spacing: 4px;
-    text-transform: uppercase;
+    font-family: var(--font-primary);
     font-weight: 600;
-    transition: all 0.6s ease;
-    cursor: pointer;
 }
 
-.v8-cart-wrapper :global(.btn-buy:hover) {
-    background: var(--color-accent);
-    color: #000;
-}
+.tech-grid { display: flex; flex-direction: column; gap: 3rem; }
+.tech-category { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-text-muted); margin-bottom: 1.5rem; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
+.tech-list { list-style: none; padding: 0; }
+.tech-list li { margin-bottom: 1.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 1.5rem; }
+.tech-list i { color: var(--color-accent); font-size: 1.1rem; width: 25px; text-align: center; }
 
-.fade-in-content { animation: fadeIn 0.8s ease forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.shot-data-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
+.shot-item { background: rgba(255,255,255,0.02); padding: 1.5rem; text-align: center; border: 1px solid rgba(255,255,255,0.03); }
+.shot-item i { display: block; margin-bottom: 0.8rem; opacity: 0.4; font-size: 1.2rem; }
+.shot-item .label { font-size: 0.5rem; letter-spacing: 2px; color: var(--color-text-muted); display: block; margin-bottom: 0.3rem; }
+.shot-item .value { font-size: 0.75rem; color: var(--color-travertine-light); font-weight: 600; }
+
+/* CHECKOUT */
+.checkout-area { margin-top: 5rem; display: flex; flex-direction: column; gap: 3rem; }
+.price-value { display: flex; align-items: baseline; gap: 0.5rem; }
+.price-value .number { font-size: 5rem; font-weight: 200; color: var(--color-white); line-height: 1; }
+.price-value .currency-symbol { color: var(--color-accent); font-size: 2rem; }
+.price-value .currency-label { color: var(--color-text-muted); font-size: 1rem; letter-spacing: 2px; }
+
+.size-selector-section { margin-bottom: 4rem; }
+.size-selector-label { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-text-muted); margin-bottom: 1.5rem; display: block; }
+.size-options { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.size-option { 
+    flex: 1; 
+    min-width: 120px; 
+    background: rgba(255,255,255,0.03); 
+    border: 1px solid rgba(255,255,255,0.05); 
+    padding: 1.5rem; 
+    cursor: pointer; 
+    transition: all 0.4s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+.size-option:hover { border-color: rgba(220, 177, 74, 0.4); }
+.size-option.active { border-color: var(--color-accent); background: rgba(220, 177, 74, 0.08); }
+.size-dimensions { font-size: 1rem; font-weight: 600; color: var(--color-travertine-light); }
+.size-label-text { font-size: 0.6rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+.canvas-info { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.6s; }
+.canvas-info.visible { max-height: 200px; opacity: 1; margin-top: 2rem; }
+.canvas-info-inner { background: rgba(220, 177, 74, 0.05); border-left: 2px solid var(--color-accent); padding: 1.5rem; }
+
+.v8-cart-wrapper :global(.add-to-cart-btn) {
+    background: var(--color-accent) !important;
+    color: #000 !important;
+    padding: 2rem !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 5px !important;
+    border-radius: 0 !important;
+    font-weight: 900 !important;
+    width: 100% !important;
+}
 
 @media (max-width: 1024px) {
-  .info-column { margin-left: 0; width: 100%; padding: 4rem 5%; }
-  .image-column { position: relative; width: 100%; height: 60dvh; }
-  .checkout-area { flex-direction: column; gap: 2rem; align-items: flex-start; }
+  .split-layout { flex-direction: column; }
+  .image-column, .info-column { width: 100%; height: auto; position: relative; }
+  .image-column { height: 60vh; padding: 4rem 5%; }
+  .info-column { padding: 4rem 8%; }
 }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in-content { animation: fadeIn 0.8s forwards; }
 </style>
