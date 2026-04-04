@@ -172,6 +172,39 @@ const { imageSrc, title, showUpload = false, isOpen = false } = Astro.props;
       });
     });
 
+    // 2.1 Swatches: Mat Color (RESTAURACION)
+    document.querySelectorAll('#mat-swatches .mat-swatch').forEach(sw => {
+      sw.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const color = target.dataset.matColor;
+        document.querySelectorAll('#mat-swatches .mat-swatch').forEach(s => s.classList.remove('active'));
+        target.classList.add('active');
+        
+        // Remove old mat classes and apply new one
+        frameBox!.classList.remove('mat-white', 'mat-black', 'mat-red', 'mat-green');
+        frameBox!.classList.add('mat-' + color);
+      });
+    });
+
+    // 2.2 Buttons: Light Temperature (RESTAURACION)
+    const tempMap: Record<string, string> = {
+        '6000k': 'rgba(200, 220, 255, 0.6)', // Daylight/Cold
+        '3000k': 'rgba(255, 230, 180, 0.6)', // Warm/Studio
+        '1000k': 'rgba(255, 120, 40, 0.5)'   // Candle/Night
+    };
+
+    document.querySelectorAll('#light-temps .temp-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const temp = target.dataset.temp || '3000k';
+        document.querySelectorAll('#light-temps .temp-btn').forEach(b => b.classList.remove('active'));
+        target.classList.add('active');
+        
+        // Update ambient color variable
+        document.body.style.setProperty('--ambient-color', tempMap[temp]);
+      });
+    });
+
     // 3. Sliders: Mat & Frame Width
     matRange?.addEventListener('input', (e) => {
       const val = (e.target as HTMLInputElement).value;
