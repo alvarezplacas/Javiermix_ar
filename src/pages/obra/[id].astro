@@ -29,18 +29,26 @@ try {
 const title = mainFile.title || "Obra Javier Mix";
 const coverImage = getAssetUrl(mainFile.id) || '';
 
-// Discover variant hover if exists
+// Discover variant hover if exists (_2) - Robust handling
 let roomImage = null;
 try {
-    const baseName = mainFile.filename_download.split('.')[0].toLowerCase();
-    const variantsRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${mainFile.folder}&filter[filename_download][_contains]=_2.`);
+    const rawBase = mainFile.filename_download.split('.')[0].toLowerCase();
+    // Normalize base name: remove spaces, dashes, underscores
+    const cleanBase = rawBase.replace(/[\s\-_]/g, '');
+    
+    const variantsRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${mainFile.folder}&filter[filename_download][_contains]=_2`);
     const variantsData = await variantsRes.json();
+    
     const hoverVariant = variantsData.data?.find((f: any) => {
-        const name = f.filename_download.toLowerCase();
-        return name.startsWith(`${baseName}_2.`) || name.includes(`_2.`);
+        const name = f.filename_download.toLowerCase().replace(/[\s\-_]/g, '');
+        // Check if it starts with the clean base + 2
+        return name.includes(cleanBase + '2') || name.startsWith(cleanBase + '2');
     });
+    
     if (hoverVariant) roomImage = getAssetUrl(hoverVariant.id);
-} catch (e) {}
+} catch (e) {
+    console.error("❌ Error buscando variante _2:", e);
+}
 
 // Build sizes array
 const sizes = [];
@@ -128,8 +136,8 @@ const etiqueta = "Fine Art Print";
         <div class="tab-content" id="tab-historia" style="display: block;">
           <div class="prose-content">
             <h4 class="prose-subtitle">LA HISTORIA DETRÁS DE LA IMAGEN</h4>
-            {meta?.description ? (
-              <p>{meta.description}</p>
+            {mainFile.description || meta?.description ? (
+              <p>{mainFile.description || meta.description}</p>
             ) : (
               <p>Esta pieza de autor es parte de una selección curada rigurosamente. Refleja nuestro compromiso con el legado fotográfico y el diseño contemporáneo a nivel internacional. La edición es estricta y controlada, asegurando el valor de obra única a lo largo del tiempo.</p>
             )}
@@ -411,14 +419,14 @@ const etiqueta = "Fine Art Print";
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 0 5%;
+  padding: 0; /* ELIMINADO PADDING PARA MÁXIMA ESCALA */
   border-right: 1px solid rgba(255,255,255,0.05);
 }
 
 .image-wrapper {
   position: relative;
   width: 100%;
-  height: 75vh;
+  height: 85vh; /* AUMENTADO PARA APROVECHAR MÁS VERTICAL */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -426,15 +434,11 @@ const etiqueta = "Fine Art Print";
   cursor: zoom-in;
 }
 
-.image-wrapper.is-portrait .main-artwork, 
-.image-wrapper.is-portrait .room-artwork { height: 95%; width: auto; }
-.image-wrapper.is-landscape .main-artwork,
-.image-wrapper.is-landscape .room-artwork { width: 95%; height: auto; }
-
+/* 🚀 REGLA UNIVERSAL DE ESCALADO MÁXIMO */
 .main-artwork, .room-artwork {
   position: absolute;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 20px 60px rgba(0,0,0,0.8));
   transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.6s ease;
