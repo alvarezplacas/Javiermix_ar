@@ -17,12 +17,12 @@ services:
   # Sitio Web Principal (Astro)
   web_javiermix:
     build:
-      context: ..
+      context: ../../
       dockerfile: Dockerfile.prod
     container_name: javiermix_web
     restart: always
     env_file:
-      - ../.env
+      - ../../.env
     networks:
       - javiermix_network
 
