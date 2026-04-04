@@ -199,7 +199,20 @@ export async function getArtworkDetails(id: string) {
         const mainFile = fileData.data;
         if (!mainFile) return null;
 
-        const res = await fetchFromDirectus(`/items/artworks?filter[filename][_eq]=${mainFile.filename_download}`);
+        const filename = mainFile.filename_download;
+        const baseName = filename.split('.')[0];
+        
+        // 🛡️ [CONECTAR] Búsqueda Robusta: Insensible a símbolos (Espacios vs Guiones)
+        // Probamos coincidencia exacta y luego patrones normalizados
+        const normalizedPatterns = [
+            filename,
+            filename.replaceAll(' ', '-'),
+            filename.replaceAll('-', ' '),
+            filename.replaceAll('_', '-'),
+            baseName // Fallback al nombre sin extensión
+        ];
+
+        const res = await fetchFromDirectus(`/items/artworks?filter[filename][_in]=${normalizedPatterns.join(',')}`);
         const data = await res.json();
         const meta = data.data?.[0] || null;
 
