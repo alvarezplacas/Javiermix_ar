@@ -1,6 +1,39 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\dashboard\login.astro
 import Layout from '../../layouts/Layout.astro';
+
+// 🚀 [SSR BYPASS] Soporte robusto vía Servidor (Sin depender de JS)
+const urlPass = Astro.url.searchParams.get('password');
+const urlEmail = Astro.url.searchParams.get('email'); // Opcional, pero lo capturamos si viene
+
+if (urlPass === '2025' || urlPass === '2026' || urlPass === '2027') {
+  Astro.cookies.set('jhm_admin_token', 'LEGACY_BYPASS', { 
+    path: '/', 
+    maxAge: 60 * 60 * 24 * 7, 
+    sameSite: 'lax',
+    secure: true
+  });
+  return Astro.redirect('/dashboard');
+}
+
+// Manejo de envío manual (POST) para los mismos PINs
+if (Astro.request.method === 'POST') {
+  try {
+    const data = await Astro.request.formData();
+    const pass = data.get('password')?.toString();
+    if (pass === '2025' || pass === '2026' || pass === '2027') {
+      Astro.cookies.set('jhm_admin_token', 'LEGACY_BYPASS', { 
+        path: '/', 
+        maxAge: 60 * 60 * 24 * 7, 
+        sameSite: 'lax',
+        secure: true
+      });
+      return Astro.redirect('/dashboard');
+    }
+  } catch (e) {
+    // Error silencioso, el script de abajo intentará el login normal
+  }
+}
 ---
 
 <Layout title="Acceso Administrativo | Javier Mix">
@@ -11,6 +44,7 @@ import Layout from '../../layouts/Layout.astro';
         <span class="brand-subtitle">FINE ART • BÓVEDA</span>
       </div>
       
+      <h1 class="login-title">ACCESO A LA BÓVEDA</h1>
       <form id="login-form" class="login-form" method="POST" action="/dashboard/login">
         <div class="input-group" id="group-email" style="display: none;">
           <label for="email">SOLO PARA DESARROLLO</label>
