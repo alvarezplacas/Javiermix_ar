@@ -3,15 +3,27 @@
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getSeries } from '../../conexion/directus';
+import { getSeries, getCatalogoFiles } from '../../conexion/directus';
 import { getOptimizedImageURL } from '../../utils/media';
 
 export const prerender = false;
 
+// 🏺 Series for default view
 const seriesFromAPI = await getSeries();
 const seriesList = seriesFromAPI.map(s => ({
     ...s,
     coverUrl: getOptimizedImageURL(s.coverId, { width: 800, format: 'avif' })
+}));
+
+// 🔍 [NEW] Load all artworks metadata for GLOBAL search
+const allArtworksRaw = await getCatalogoFiles();
+const allArtworks = allArtworksRaw.map(file => ({
+    id: file.id,
+    title: file.title || file.filename_download.split('.')[0],
+    description: file.description || '',
+    tags: file.tags || [],
+    serie: file.serie_name || 'Sin Serie',
+    thumb: getOptimizedImageURL(file.id, { width: 600, format: 'avif', quality: 70 })
 }));
 ---
 
@@ -42,7 +54,7 @@ const seriesList = seriesFromAPI.map(s => ({
 					<div class="empty-state">No se encontraron colecciones</div>
 				) : (
 					seriesList.map((serie) => (
-						<a href={`/galeria/${serie.id}`} class="series-card">
+						<a href={`/galeria/${serie.id}`} class="series-card fade-in-content">
 							<div class="series-card-bg" style={`background-image: url('${serie.coverUrl}');`}></div>
 							<div class="series-card-content">
 								<h2 class="series-title">{serie.name}</h2>
@@ -54,6 +66,23 @@ const seriesList = seriesFromAPI.map(s => ({
 				)}
 			</section>
 		</div>
+
+        <!-- 🕵️ GLOBAL SEARCH RESULTS VIEW -->
+        <div id="view-results" class="gallery-view" style="display: none; padding: 0 2rem; max-width: 1600px; margin: 0 auto;">
+          <div class="results-info" style="margin-bottom: 3rem; color: var(--color-travertine-mid); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">
+             Resultados para: <span id="search-term-display" style="color: var(--color-accent); font-weight: 700;"></span>
+          </div>
+          <div id="results-grid" class="artworks-results-grid">
+             <!-- Renderizado Dinámico -->
+          </div>
+          <div id="no-results" style="display: none; text-align: center; padding: 8rem 0; color: var(--color-travertine-mid);">
+             <i class="fas fa-search" style="font-size: 3rem; opacity: 0.1; margin-bottom: 2rem; display: block;"></i>
+             <p style="letter-spacing: 4px; font-size: 1.1rem; font-style: italic;">No encontramos obras con esos términos.</p>
+          </div>
+        </div>
+
+        <!-- 📦 Inyección de Datos para el Motor de Búsqueda -->
+        <script id="artworks-data" type="application/json" is:inline set:html={JSON.stringify(allArtworks)} />
 	</main>
 
 	<Footer />
@@ -201,42 +230,92 @@ const seriesList = seriesFromAPI.map(s => ({
     transform: translateX(0);
 }
 
+.artworks-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    animation: fadeIn 0.6s forwards;
+}
+
+.artwork-result-card {
+    text-decoration: none;
+    display: block;
+    background: var(--color-onyx-charcoal);
+    transition: var(--transition-premium);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.03);
+}
+
+.artwork-result-card:hover { transform: translateY(-8px); border-color: var(--color-accent); }
+
+.artwork-thumb { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; transition: transform 0.8s; }
+.artwork-result-card:hover .artwork-thumb { transform: scale(1.1); }
+
+.artwork-result-info { padding: 1.5rem; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); position: absolute; bottom: 0; width: 100%; }
+.artwork-result-title { font-family: var(--font-primary); font-size: 1.4rem; color: var(--color-white); margin-bottom: 0.3rem; line-height: 1; }
+.artwork-result-serie { font-size: 0.55rem; color: var(--color-accent); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
+
 @media (max-width: 768px) {
     .series-snap-container {
         display: block;
-        height: 75vh;
-        overflow-y: scroll;
-        scroll-snap-type: y mandatory;
-        scrollbar-width: none;
+        height: auto;
     }
-    .series-card {
-        height: 75vh;
-        scroll-snap-align: start;
-        margin-bottom: 1rem !important;
-        border-radius: 12px;
-    }
-    .series-cta {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    .series-card-content {
-        transform: translateY(0);
-    }
+    .series-card { height: 60vh; margin-bottom: 2rem !important; }
+    .artworks-results-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
 }
 </style>
 
 <script>
   document.addEventListener('astro:page-load', () => {
     const searchInput = document.getElementById('gallery-search-input') as HTMLInputElement;
-    const cards = document.querySelectorAll('.series-card');
+    const viewSeries = document.getElementById('view-series');
+    const viewResults = document.getElementById('view-results');
+    const resultsGrid = document.getElementById('results-grid');
+    const noResults = document.getElementById('no-results');
+    const termDisplay = document.getElementById('search-term-display');
+    
+    // Parse index data
+    const dataEl = document.getElementById('artworks-data');
+    const artworks = dataEl ? JSON.parse(dataEl.innerHTML) : [];
     
     searchInput?.addEventListener('input', (e) => {
-      const term = (e.target as HTMLInputElement).value.toLowerCase();
-      cards.forEach(card => {
-        const title = card.querySelector('.series-title')?.textContent?.toLowerCase() || '';
-        const isMatch = title.includes(term);
-        (card as HTMLElement).style.display = isMatch ? 'block' : 'none';
+      const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
+      
+      if (term === '') {
+        viewSeries!.style.display = 'block';
+        viewResults!.style.display = 'none';
+        return;
+      }
+
+      // GLOBAL SEARCH LOGIC (Title, Desc, Tags)
+      const filtered = artworks.filter((a: any) => {
+        const inTitle = a.title.toLowerCase().includes(term);
+        const inDesc = a.description.toLowerCase().includes(term);
+        const inTags = a.tags.some((t: string) => t.toLowerCase().includes(term));
+        return inTitle || inDesc || inTags;
       });
+
+      // Show Results
+      viewSeries!.style.display = 'none';
+      viewResults!.style.display = 'block';
+      termDisplay!.textContent = `"${term}"`;
+      
+      if (filtered.length === 0) {
+        resultsGrid!.innerHTML = '';
+        noResults!.style.display = 'block';
+      } else {
+        noResults!.style.display = 'none';
+        resultsGrid!.innerHTML = filtered.map((a: any) => `
+            <a href="/obra/${a.id}" class="artwork-result-card">
+                <img src="${a.thumb}" alt="${a.title}" class="artwork-thumb" loading="lazy" />
+                <div class="artwork-result-info">
+                   <h3 class="artwork-result-title">${a.title}</h3>
+                   <span class="artwork-result-serie">${a.serie}</span>
+                </div>
+            </a>
+        `).join('');
+      }
     });
   });
 </script>
