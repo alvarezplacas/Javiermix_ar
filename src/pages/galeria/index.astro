@@ -242,8 +242,14 @@ const allArtworks = allArtworksRaw.map(file => ({
     display: block;
     transition: var(--transition-premium);
     position: relative;
-    border-bottom: 1px solid rgba(255,255,255,0.05); /* Sutil línea inferior */
-    padding-bottom: 1rem;
+    overflow: hidden;
+    opacity: 0;
+    animation: tetris-entry 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes tetris-entry {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .artwork-result-card:hover { transform: translateY(-5px); }
@@ -253,24 +259,55 @@ const allArtworks = allArtworksRaw.map(file => ({
     aspect-ratio: 1 / 1;
     overflow: hidden;
     background: var(--color-onyx-charcoal);
-    margin-bottom: 1rem;
 }
 
 .artwork-thumb { 
     width: 100%; 
     height: 100%; 
     object-fit: cover; 
-    transition: transform 0.8s; 
+    transition: transform 1.2s cubic-bezier(0.165, 0.84, 0.44, 1); 
 }
-.artwork-result-card:hover .artwork-thumb { transform: scale(1.05); }
+.artwork-result-card:hover .artwork-thumb { transform: scale(1.1); }
 
 .artwork-result-info { 
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1.5rem 1.2rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+    backdrop-filter: blur(4px);
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
+    transform: translateY(10px);
+    opacity: 0;
+    transition: all 0.4s ease;
 }
-.artwork-result-title { font-family: var(--font-primary); font-size: 1.6rem; color: var(--color-white); margin: 0; line-height: 1.2; }
-.artwork-result-serie { font-size: 0.6rem; color: var(--color-accent); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; opacity: 0.8; }
+
+.artwork-result-card:hover .artwork-result-info {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.artwork-result-title { 
+    font-family: var(--font-secondary); 
+    font-size: 0.75rem; 
+    color: var(--color-white); 
+    margin: 0; 
+    line-height: 1.2; 
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 600;
+}
+.artwork-result-serie { 
+    font-size: 0.5rem; 
+    color: var(--color-accent); 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    font-weight: 700; 
+    opacity: 0.9; 
+}
 
 @media (max-width: 768px) {
     .series-snap-container {
@@ -322,8 +359,8 @@ const allArtworks = allArtworksRaw.map(file => ({
         noResults!.style.display = 'block';
       } else {
         noResults!.style.display = 'none';
-        resultsGrid!.innerHTML = filtered.map((a: any) => `
-            <a href="/obra/${a.id}" class="artwork-result-card">
+        resultsGrid!.innerHTML = filtered.map((a: any, i: number) => `
+            <a href="/obra/${a.id}" class="artwork-result-card" style="animation-delay: ${i * 0.05}s">
                 <div class="artwork-thumb-container">
                     <img src="${a.thumb}" alt="${a.title}" class="artwork-thumb" loading="lazy" />
                 </div>
