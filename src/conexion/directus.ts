@@ -27,7 +27,8 @@ export async function fetchFromDirectus(path: string, options: RequestInit = {})
         ...options.headers
     };
 
-    if (!headers['Authorization']) {
+    // 🛡️ [BYPASS] Si el token es de bypass, usamos el token estático de Directus
+    if (!headers['Authorization'] || headers['Authorization'] === 'Bearer LEGACY_BYPASS') {
         headers['Authorization'] = `Bearer ${DIRECTUS_TOKEN}`;
     }
 

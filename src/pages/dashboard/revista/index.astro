@@ -83,16 +83,14 @@ try {
         if (confirm('¿Seguro que deseas eliminar esta nota?')) {
           try {
             const token = document.cookie.split('; ').find(row => row.startsWith('jhm_admin_token='))?.split('=')[1];
-            // @ts-ignore (usamos URL directa temporalmente para asegurar que funciona)
-            const res = await fetch(`https://admin.javiermix.ar/items/magazine/${id}`, {
-              method: 'DELETE',
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
+            // Llamar a la API local que maneja el bypass del token
+            const res = await fetch(`/api/revista/delete?id=${id}`);
 
             if (res.ok) {
               window.location.reload();
             } else {
-              alert('Error al eliminar nota');
+              const data = await res.json();
+              alert(`Error al eliminar nota: ${data.message || 'Error desconocido'}`);
             }
           } catch (err) {
             console.error(err);

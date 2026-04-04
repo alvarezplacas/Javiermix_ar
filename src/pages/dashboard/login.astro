@@ -11,23 +11,27 @@ import Layout from '../../layouts/Layout.astro';
         <span class="brand-subtitle">FINE ART • BÓVEDA</span>
       </div>
       
-      <h1 class="login-title">LOGIN</h1>
+      <h1 class="login-title">ACCESO A LA BÓVEDA</h1>
       
       <form id="login-form" class="login-form" method="POST" action="/dashboard/login">
-        <div class="input-group">
-          <label for="email">USUARIO</label>
-          <input type="email" id="email" name="email" placeholder="email@ejemplo.com" required />
+        <div class="input-group" id="group-email" style="display: none;">
+          <label for="email">SOLO PARA DESARROLLO</label>
+          <input type="email" id="email" name="email" value="admin@javiermix.ar" />
         </div>
         
         <div class="input-group">
-          <label for="password">CONTRASEÑA</label>
-          <input type="password" id="password" name="password" placeholder="••••••••" required />
+          <label for="password">PIN DE SEGURIDAD</label>
+          <input type="password" id="password" name="password" placeholder="INGRESE PIN" required autocomplete="current-password" autofocus />
         </div>
         
         <button type="submit" id="submit-btn" class="submit-btn">
-          <span class="btn-text">ACCEDER AL PANEL</span>
+          <span class="btn-text">ABRIR BÓVEDA</span>
           <div class="btn-loader"></div>
         </button>
+
+        <div class="login-options">
+           <button type="button" id="toggle-email" class="btn-toggle">USAR EMAIL/CONTRASEÑA</button>
+        </div>
       </form>
       
       <div id="login-feedback" class="feedback-message"></div>
@@ -157,6 +161,25 @@ import Layout from '../../layouts/Layout.astro';
     color: #ef4444; /* Rojo para error */
   }
 
+  .login-options {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+
+  .btn-toggle {
+    background: transparent;
+    border: none;
+    color: var(--gold);
+    font-size: 0.6rem;
+    letter-spacing: 0.1rem;
+    cursor: pointer;
+    opacity: 0.4;
+    transition: opacity 0.3s;
+    text-transform: uppercase;
+  }
+
+  .btn-toggle:hover { opacity: 1; }
+
   .loading .btn-text { opacity: 0; }
   .loading .btn-loader {
     position: absolute;
@@ -184,6 +207,18 @@ import Layout from '../../layouts/Layout.astro';
     const emailInput = document.getElementById('email') as HTMLInputElement;
     const passInput = document.getElementById('password') as HTMLInputElement;
 
+    const groupEmail = document.getElementById('group-email');
+    const toggleEmail = document.getElementById('toggle-email');
+
+    toggleEmail?.addEventListener('click', () => {
+       if (groupEmail) {
+         const isHidden = groupEmail.style.display === 'none';
+         groupEmail.style.display = isHidden ? 'block' : 'none';
+         toggleEmail.innerText = isHidden ? 'USAR SOLO PIN' : 'USAR EMAIL/CONTRASEÑA';
+         if (isHidden) emailInput?.focus();
+       }
+    });
+
     // 🚀 [AUTO-LOGIN] Soporte para entrar vía URL (Facilidad para Javier)
     const urlParams = new URLSearchParams(window.location.search);
     const urlEmail = urlParams.get('email');
@@ -198,7 +233,7 @@ import Layout from '../../layouts/Layout.astro';
         window.history.replaceState({}, document.title, cleanUrl);
 
         // Si es el PIN maestro, entramos de inmediato
-        if (urlPass === '2025' || urlPass === '2026') {
+        if (urlPass === '2025' || urlPass === '2026' || urlPass === '2027') {
              triggerLogin();
         }
     }
@@ -217,7 +252,7 @@ import Layout from '../../layouts/Layout.astro';
 
       try {
         // Bypass temporal para el usuario administrador (vía PIN)
-        if (password === '2025' || password === '2026') {
+        if (password === '2025' || password === '2026' || password === '2027') {
            const expires = new Date();
            expires.setTime(expires.getTime() + (7 * 24 * 60 * 60 * 1000));
            document.cookie = `jhm_admin_token=LEGACY_BYPASS; path=/; expires=${expires.toUTCString()}; SameSite=Strict;`;

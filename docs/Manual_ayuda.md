@@ -115,3 +115,26 @@ Para garantizar el "Candado Verde" y evitar avisos de "No seguro" (Mixed Content
 ---
 *Ultima actualización: 2026-04-03 by Antigravity*
 *Lección aprendida: Los nombres de archivos manuales pueden variar (espacios vs guiones); el matching debe ser insensible a símbolos para evitar "obras fantasma" o duplicados.*
+
+---
+
+## 🚀 Resumen de Avances y Aprendizajes (V8.5 - 04/04/2026)
+
+Hoy hemos elevado la experiencia de usuario y la seguridad operativa del ecosistema JavierMix.
+
+### 1. Motor de Búsqueda Global (V8)
+- **Concepto**: Búsqueda en tiempo real que indexa toda la colección de Directus sin recargas de página.
+- **Estética "Tetris"**: Sistema de animación escalonada (`staggered entry`) donde las obras "aterrizan" rítmicamente en la cuadrícula al buscar.
+- **Glass Overlay**: Los títulos se integran ahora dentro de las fotos con un efecto de desenfoque (*glassmorphism*), manteniendo la pureza visual de la galería.
+
+### 2. Blindaje de la Bóveda (Acceso Admin)
+- **Corrección de Fugas**: Se detectó que el formulario de login enviaba los datos por `GET` por defecto. Se bloqueó con **`method="POST"`** para asegurar que el PIN nunca aparezca en la barra de direcciones.
+- **Auto-Login via URL**: Se habilitó una función de conveniencia que rellena y procesa el PIN **2025** si se pasa por parámetro, limpiando la URL inmediatamente después por privacidad.
+
+### 3. Aprendizajes del Servidor (Internal Insights)
+- **Astro SSR & Forms**: Nunca asumas el método por defecto. En entornos SSR complejos como este, el blindaje explícito (`method="POST" + e.preventDefault()`) es crítico para evitar colisiones entre el navegador y el script de hidratación.
+- **ClientRouter Persistence**: Para que los buscadores y animaciones funcionen entre navegaciones, la escucha de eventos debe estar atada exclusivamente a `astro:page-load`.
+- **Media Management**: La revista (`revista/index.astro`) requiere un manejo dual de assets (internal vs public) debido a la configuración de red del VPS, lo cual ya está estandarizado en `conexion/directus.ts`.
+
+---
+*Documentado por Antigravity tras el backup exitoso en H:/*

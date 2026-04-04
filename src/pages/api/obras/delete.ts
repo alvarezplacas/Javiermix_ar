@@ -1,5 +1,5 @@
-// h:\Javiermix_web_v2\frontend\pages\api\obras\delete.ts
 import type { APIRoute } from 'astro';
+import { fetchFromDirectus } from '../../../conexion/directus';
 
 export const GET: APIRoute = async ({ request, cookies, redirect }) => {
   const url = new URL(request.url);
@@ -10,10 +10,8 @@ export const GET: APIRoute = async ({ request, cookies, redirect }) => {
     return redirect('/dashboard/obras?error=missing_id_or_token');
   }
 
-  const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-
   try {
-    const res = await fetch(`${DIRECTUS_URL}/items/artworks/${id}`, {
+    const res = await fetchFromDirectus(`/items/artworks/${id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
