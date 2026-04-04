@@ -68,11 +68,6 @@ const etiqueta = "Fine Art Print";
       <section class="image-column">
         <div class="sticky-image-container">
           <div class="image-wrapper" id="artwork-wrapper">
-            <!-- Badge de Favoritos Superior Izquierda (Captura v1) -->
-            <div class="likes-badge-float">
-                <i class="fas fa-heart"></i>
-                <span id="like-count-float">{meta?.likes || 0}</span>
-            </div>
 
             <img src={coverImage} alt={`Obra ${title}`} class="main-artwork" id="primary-image" />
             {roomImage && (
@@ -447,22 +442,6 @@ const etiqueta = "Fine Art Print";
 }
 
 .room-artwork { opacity: 0; z-index: 2; }
-
-.likes-badge-float {
-    position: absolute;
-    top: 30px;
-    left: 30px;
-    background: rgba(191, 21, 52, 0.4);
-    padding: 0.8rem 1.4rem;
-    border-radius: 50px;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    backdrop-filter: blur(10px);
-    z-index: 10;
-    font-size: 0.9rem;
-    border: 1px solid rgba(255,255,255,0.1);
-}
 
 .image-controls {
     display: flex;
