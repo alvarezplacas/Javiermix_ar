@@ -287,6 +287,28 @@ const etiqueta = "Fine Art Print";
       });
     });
 
+    // --- FRAMING & 3D STUDIO TRIGGERS (RESTAURACION V1) ---
+    const btnMarco = document.getElementById('btn-marco');
+    const btn3D = document.getElementById('btn-3d');
+    const studio = document.getElementById('framing-studio');
+
+    if (btnMarco && studio) {
+      btnMarco.addEventListener('click', () => {
+        studio.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+      });
+    }
+
+    if (btn3D && studio) {
+      btn3D.addEventListener('click', () => {
+        studio.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        if ((window as any).activate3DInStudio) {
+          (window as any).activate3DInStudio();
+        }
+      });
+    }
+
     // --- ZOOM & PAN LOGIC (PREMIUM V1) ---
     const wrapper = document.getElementById('artwork-wrapper');
     const primaryImg = document.getElementById('primary-image') as HTMLImageElement;

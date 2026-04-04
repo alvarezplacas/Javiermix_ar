@@ -271,6 +271,13 @@ const { imageSrc, title, showUpload = false, isOpen = false } = Astro.props;
       studio!.style.display = 'none';
       document.body.style.overflow = 'auto'; 
     });
+
+    // 🚀 External Hook: Activate 3D automatically
+    (window as any).activate3DInStudio = () => {
+        if (!is3DActive) {
+            toggle3DBtn?.click();
+        }
+    };
   });
 </script>
 
