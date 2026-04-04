@@ -67,12 +67,12 @@ const allArtworks = allArtworksRaw.map(file => ({
 			</section>
 		</div>
 
-        <!-- 🕵️ GLOBAL SEARCH RESULTS VIEW -->
-        <div id="view-results" class="gallery-view" style="display: none; padding: 0 2rem; max-width: 1600px; margin: 0 auto;">
+        <!-- 🕵️ GLOBAL SEARCH RESULTS VIEW (V8) -->
+        <div id="view-results" class="gallery-view" style="display: none; padding: 0 2rem; max-width: 1600px; margin: 0 auto; position: relative; z-index: 10;">
           <div class="results-info" style="margin-bottom: 3rem; color: var(--color-travertine-mid); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">
              Resultados para: <span id="search-term-display" style="color: var(--color-accent); font-weight: 700;"></span>
           </div>
-          <div id="results-grid" class="artworks-results-grid">
+          <div id="results-grid" class="v8-artworks-grid">
              <!-- Renderizado Dinámico -->
           </div>
           <div id="no-results" style="display: none; text-align: center; padding: 8rem 0; color: var(--color-travertine-mid);">
@@ -191,131 +191,82 @@ const allArtworks = allArtworksRaw.map(file => ({
     transform: translateY(0);
 }
 
-.series-title {
-    font-family: var(--font-primary);
-    font-size: 2.8rem;
-    margin: 0 0 0.5rem 0;
-    color: var(--color-white);
-    font-weight: 600;
-    line-height: 1;
-}
-
-.series-count {
-    font-family: var(--font-secondary);
-    font-size: 0.8rem;
-    color: var(--color-accent);
-    margin-bottom: 1.5rem;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    font-weight: 600;
-}
-
-.series-cta {
-    font-family: var(--font-secondary);
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--color-white);
-    opacity: 0; 
-    transform: translateX(-10px);
-    transition: var(--transition-premium);
-    display: inline-block;
-    border-bottom: 1px solid var(--color-accent);
-    padding-bottom: 4px;
-}
-
-.series-card:hover .series-cta {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.artworks-results-grid {
+.v8-artworks-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
-    animation: fadeIn 0.6s forwards;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding-bottom: 5rem;
 }
 
-.artwork-result-card {
-    text-decoration: none;
-    display: block;
-    transition: var(--transition-premium);
-    position: relative;
-    overflow: hidden;
+.v8-artwork-card {
+    text-decoration: none !important;
+    display: block !important;
+    position: relative !important;
+    overflow: hidden !important;
     opacity: 0;
-    animation: tetris-entry 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: v8-tetris-entry 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    background: var(--color-onyx-charcoal);
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
-@keyframes tetris-entry {
-    from { opacity: 0; transform: translateY(30px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes v8-tetris-entry {
+    from { opacity: 0; transform: translateY(-40px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.artwork-result-card:hover { transform: translateY(-5px); }
+.v8-artwork-card:hover { border-color: var(--color-accent); }
 
-.artwork-thumb-container {
+.v8-artwork-img-container {
     width: 100%;
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    background: var(--color-onyx-charcoal);
 }
 
-.artwork-thumb { 
+.v8-artwork-img { 
     width: 100%; 
     height: 100%; 
     object-fit: cover; 
     transition: transform 1.2s cubic-bezier(0.165, 0.84, 0.44, 1); 
 }
-.artwork-result-card:hover .artwork-thumb { transform: scale(1.1); }
+.v8-artwork-card:hover .v8-artwork-img { transform: scale(1.1); }
 
-.artwork-result-info { 
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 1.5rem 1.2rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
-    backdrop-filter: blur(4px);
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    transform: translateY(10px);
-    opacity: 0;
-    transition: all 0.4s ease;
+.v8-overlay-info { 
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    padding: 1.2rem !important;
+    background: linear-gradient(to top, rgba(0,0,0,0.95), transparent) !important;
+    backdrop-filter: blur(8px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.1rem;
+    z-index: 5 !important;
 }
 
-.artwork-result-card:hover .artwork-result-info {
-    transform: translateY(0);
-    opacity: 1;
+.v8-title { 
+    font-family: var(--font-secondary) !important;
+    font-size: 0.65rem !important; 
+    color: var(--color-white) !important; 
+    margin: 0 !important; 
+    line-height: 1.2 !important; 
+    text-transform: uppercase !important;
+    letter-spacing: 2.5px !important;
+    font-weight: 700 !important;
 }
 
-.artwork-result-title { 
-    font-family: var(--font-secondary); 
-    font-size: 0.75rem; 
-    color: var(--color-white); 
-    margin: 0; 
-    line-height: 1.2; 
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: 600;
-}
-.artwork-result-serie { 
-    font-size: 0.5rem; 
-    color: var(--color-accent); 
-    text-transform: uppercase; 
-    letter-spacing: 1px; 
-    font-weight: 700; 
-    opacity: 0.9; 
+.v8-serie { 
+    font-size: 0.45rem !important; 
+    color: var(--color-accent) !important; 
+    text-transform: uppercase !important; 
+    letter-spacing: 1.5px !important; 
+    font-weight: 800 !important; 
+    opacity: 0.8; 
 }
 
 @media (max-width: 768px) {
-    .series-snap-container {
-        display: block;
-        height: auto;
-    }
-    .series-card { height: 60vh; margin-bottom: 2rem !important; }
-    .artworks-results-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+    .v8-artworks-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.5rem; }
+    .v8-title { font-size: 0.55rem !important; letter-spacing: 1px !important; }
 }
 </style>
 
@@ -360,13 +311,13 @@ const allArtworks = allArtworksRaw.map(file => ({
       } else {
         noResults!.style.display = 'none';
         resultsGrid!.innerHTML = filtered.map((a: any, i: number) => `
-            <a href="/obra/${a.id}" class="artwork-result-card" style="animation-delay: ${i * 0.05}s">
-                <div class="artwork-thumb-container">
-                    <img src="${a.thumb}" alt="${a.title}" class="artwork-thumb" loading="lazy" />
+            <a href="/obra/${a.id}" class="v8-artwork-card" style="animation-delay: ${i * 0.05}s">
+                <div class="v8-artwork-img-container">
+                    <img src="${a.thumb}" alt="${a.title}" class="v8-artwork-img" loading="lazy" />
                 </div>
-                <div class="artwork-result-info">
-                   <h3 class="artwork-result-title">${a.title}</h3>
-                   <span class="artwork-result-serie">${a.serie}</span>
+                <div class="v8-overlay-info">
+                   <h3 class="v8-title">${a.title}</h3>
+                   <span class="v8-serie">${a.serie}</span>
                 </div>
             </a>
         `).join('');
