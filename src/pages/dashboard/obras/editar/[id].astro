@@ -1,0 +1,384 @@
+---
+// h:\Javiermix_web_v2\frontend\pages\dashboard\obras\editar\[id].astro
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { getArtworkById } from '@conexion/directus';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const artwork = await getArtworkById(id!);
+
+if (!artwork) {
+  return Astro.redirect('/dashboard/obras');
+}
+
+// Verificación de Sesión (SSR)
+const adminToken = Astro.cookies.get('jhm_admin_token')?.value;
+if (!adminToken) {
+  return Astro.redirect('/dashboard/login');
+}
+
+const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
+---
+
+<AdminLayout title={`Editar Obra: ${artwork.title}`}>
+  <div class="editor-header">
+    <a href="/dashboard/obras" class="btn-back">
+      <i class="fas fa-arrow-left"></i> VOLVER AL CATÁLOGO
+    </a>
+    <h1 class="page-title">EDITAR OBRA</h1>
+  </div>
+
+  <div class="editor-container">
+    <form id="artwork-form" class="article-form">
+      <div class="form-main">
+        <div class="form-group">
+          <label for="title">TÍTULO DE LA OBRA</label>
+          <input type="text" id="title" name="title" value={artwork.title} required />
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="serie_id">SERIE / COLECCIÓN</label>
+            <input type="text" id="serie_id" name="serie_id" value={artwork.serie_id} placeholder="Ej: Paisajes Eternos" />
+          </div>
+          <div class="form-group">
+            <label for="date">FECHA DE CREACIÓN</label>
+            <input type="date" id="date" name="date" value={artwork.date?.split('T')[0]} />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">LA HISTORIA DETRÁS DE LA IMAGEN (Sector Ventas)</label>
+          <textarea id="description" name="description" rows="5" placeholder="Escribe aquí la narrativa o inspiración de esta obra...">{artwork.description}</textarea>
+        </div>
+
+        <div class="section-divider"><span>ESPECIFICACIONES TÉCNICAS</span></div>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label for="camera">CÁMARA</label>
+            <input type="text" id="camera" name="camera" value={artwork.camera} />
+          </div>
+          <div class="form-group">
+            <label for="lens">LENTE</label>
+            <input type="text" id="lens" name="lens" value={artwork.lens} />
+          </div>
+          <div class="form-group">
+            <label for="paper">PAPEL / SOPORTE</label>
+            <input type="text" id="paper" name="paper" value={artwork.paper} />
+          </div>
+        </div>
+
+        <div class="section-divider"><span>DIMENSIONES Y PRECIOS</span></div>
+
+        <div class="pricing-grid">
+          <div class="price-col">
+            <label>OPCIÓN 1 (P): Medida y Precio</label>
+            <input type="text" name="size_small" placeholder="Ej: 30x45 o 23.6x17.7" value={artwork.size_small || "30x45"} />
+            <input type="number" name="precio_small" value={artwork.precio_small} step="0.01" placeholder="Precio $" />
+          </div>
+          <div class="price-col">
+            <label>OPCIÓN 2 (M): Medida y Precio</label>
+            <input type="text" name="size_medium" placeholder="Ej: 40x60 o 39.4x29.5" value={artwork.size_medium || "40x60"} />
+            <input type="number" name="precio_medium" value={artwork.precio_medium} step="0.01" placeholder="Precio $" />
+          </div>
+          <div class="price-col">
+            <label>OPCIÓN 3 (G): Medida y Precio</label>
+            <input type="text" name="size_large" placeholder="Ej: 60x90 o 55.1x41.3" value={artwork.size_large || "60x90"} />
+            <input type="number" name="precio_large" value={artwork.precio_large} step="0.01" placeholder="Precio $" />
+          </div>
+        </div>
+      </div>
+
+      <aside class="form-sidebar">
+        <div class="sidebar-card">
+          <h4>Estado y Visibilidad</h4>
+          <div class="form-group">
+            <label for="status">Estado</label>
+            <select name="status" id="status">
+              <option value="published" selected={artwork.status === 'published'}>Publicado</option>
+              <option value="draft" selected={artwork.status === 'draft'}>Borrador</option>
+              <option value="archived" selected={artwork.status === 'archived'}>Archivado</option>
+            </select>
+          </div>
+          <div class="checkbox-list">
+            <div class="form-group checkbox-group">
+              <input type="checkbox" name="is_featured" id="is_featured" checked={artwork.is_featured} />
+              <label for="is_featured" class="inline-label">DESTACADO EN HOME</label>
+            </div>
+            <div class="form-group checkbox-group">
+              <input type="checkbox" name="is_limited_edition" id="is_limited_edition" checked={artwork.is_limited_edition} />
+              <label for="is_limited_edition" class="inline-label">EDICIÓN LIMITADA</label>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary" id="btn-save">
+            <i class="fas fa-save"></i> GUARDAR CAMBIOS
+          </button>
+        </div>
+
+        <div class="sidebar-card">
+          <h4>Inventario</h4>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="stock">STOCK</label>
+              <input type="number" id="stock" name="stock" value={artwork.stock} />
+            </div>
+            <div class="form-group">
+              <label for="edition_total">TOTAL ED.</label>
+              <input type="number" id="edition_total" name="edition_total" value={artwork.edition_total} />
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <h4>Imagen de la Obra</h4>
+          <div class="image-upload-box" id="image-preview">
+             {artwork.filename ? (
+               <img src={artwork.filename.toLowerCase().endsWith('.avif') 
+                 ? `${DIRECTUS_URL}/assets/${artwork.filename}` 
+                 : `${DIRECTUS_URL}/assets/${artwork.filename}?width=300`} />
+             ) : (
+               <>
+                 <i class="fas fa-cloud-upload-alt"></i>
+                 <span>Cambiar Imagen</span>
+               </>
+             )}
+          </div>
+          <input type="file" id="image-upload" accept="image/*" style="display: none;" />
+          <input type="hidden" name="filename" id="filename-id" value={artwork.filename} />
+        </div>
+      </aside>
+    </form>
+    <div id="feedback" class="feedback-msg"></div>
+  </div>
+</AdminLayout>
+
+<style>
+  .editor-header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .page-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--c-accent);
+  }
+
+  .btn-back {
+    color: var(--c-muted);
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .article-form {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 3rem;
+  }
+
+  .sidebar-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--c-border);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 4px;
+  }
+
+  .form-group { margin-bottom: 1.5rem; }
+  .form-group label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: var(--c-muted);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  input[type="text"], input[type="number"], input[type="date"], select, textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 1rem;
+    color: var(--c-text);
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
+
+  .section-divider {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin: 3rem 0 2rem;
+    position: relative;
+  }
+
+  .section-divider span {
+    position: absolute;
+    top: -10px;
+    left: 0;
+    background: #000;
+    padding-right: 1rem;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: var(--c-accent);
+    font-weight: 800;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .price-col {
+    background: rgba(255,255,255,0.02);
+    padding: 1rem;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .checkbox-group { display: flex; align-items: center; gap: 1rem; margin: 0.5rem 0; }
+  .checkbox-group input { width: 16px; height: 16px; accent-color: var(--c-accent); }
+  .inline-label { margin: 0 !important; font-size: 0.6rem !important; }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--c-accent);
+    color: #000;
+    border: none;
+    padding: 1rem;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+
+  .image-upload-box {
+    aspect-ratio: 1;
+    border: 2px dashed rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .image-upload-box img { width: 100%; height: 100%; object-fit: cover; }
+
+  .feedback-msg {
+    margin-top: 2rem;
+    text-align: center;
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  import { updateArtwork, uploadFile } from '@conexion/directus-client';
+
+  document.addEventListener('astro:page-load', () => {
+    const form = document.getElementById('artwork-form') as HTMLFormElement;
+    const feedback = document.getElementById('feedback');
+    const btnSave = document.getElementById('btn-save') as HTMLButtonElement;
+    const imgUpload = document.getElementById('image-upload') as HTMLInputElement;
+    const imgPreview = document.getElementById('image-preview');
+    const filenameId = document.getElementById('filename-id') as HTMLInputElement;
+
+    const artworkId = window.location.pathname.split('/').pop();
+
+    imgPreview?.addEventListener('click', () => imgUpload?.click());
+
+    imgUpload?.addEventListener('change', async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const token = document.cookie.split('; ').find(row => row.startsWith('jhm_admin_token='))?.split('=')[1] || '';
+      
+      if (imgPreview) imgPreview.innerHTML = '<span>SUBIENDO...</span>';
+      
+      const result = await uploadFile(file, token);
+      if (result.success) {
+        filenameId.value = result.id;
+        if (imgPreview) {
+          const isAvif = file.name.toLowerCase().endsWith('.avif');
+          const src = isAvif 
+            ? `https://admin.javiermix.ar/assets/${result.id}`
+            : `https://admin.javiermix.ar/assets/${result.id}?width=300`;
+          imgPreview.innerHTML = `<img src="${src}" />`;
+        }
+      } else {
+        alert("Error al subir imagen");
+      }
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!btnSave || !artworkId) return;
+
+      btnSave.disabled = true;
+      btnSave.innerText = 'GUARDANDO...';
+
+      const formData = new FormData(form);
+      const data = {
+        title: formData.get('title'),
+        serie_id: formData.get('serie_id'),
+        description: formData.get('description'),
+        date: formData.get('date'),
+        camera: formData.get('camera'),
+        lens: formData.get('lens'),
+        paper: formData.get('paper'),
+        size_small: formData.get('size_small'),
+        precio_small: parseFloat(formData.get('precio_small') as string) || 0,
+        size_medium: formData.get('size_medium'),
+        precio_medium: parseFloat(formData.get('precio_medium') as string) || 0,
+        size_large: formData.get('size_large'),
+        precio_large: parseFloat(formData.get('precio_large') as string) || 0,
+        status: formData.get('status'),
+        is_featured: formData.get('is_featured') === 'on',
+        is_limited_edition: formData.get('is_limited_edition') === 'on',
+        stock: parseInt(formData.get('stock') as string) || 0,
+        edition_total: parseInt(formData.get('edition_total') as string) || 0,
+        filename: formData.get('filename')
+      };
+
+      try {
+        const token = document.cookie.split('; ').find(row => row.startsWith('jhm_admin_token='))?.split('=')[1] || '';
+        if (!token) throw new Error("Sesión expirada. Por favor reingresa.");
+
+        const result = await updateArtwork(artworkId, data, token);
+        
+        if (result.success) {
+          if (feedback) {
+            feedback.style.color = '#10b981';
+            feedback.innerHTML = '<i class="fas fa-check-circle"></i> ¡CAMBIOS GUARDADOS CON ÉXITO!';
+          }
+          setTimeout(() => window.location.href = '/dashboard/obras', 1500);
+        } else {
+          const errorMsg = result.errors?.[0]?.message || "Error desconocido al actualizar";
+          throw new Error(errorMsg);
+        }
+      } catch (err: any) {
+        console.error("Update error:", err);
+        if (feedback) {
+          feedback.style.color = '#ef4444';
+          feedback.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ERROR: ${err.message}`;
+        }
+        btnSave.disabled = false;
+        btnSave.innerHTML = '<i class="fas fa-save"></i> REINTENTAR GUARDAR';
+      }
+    });
+  });
+</script>

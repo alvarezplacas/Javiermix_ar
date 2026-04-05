@@ -1,0 +1,164 @@
+---
+// h:\Javiermix_web_v2\frontend\magazine\[slug].astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+// Use PUBLIC_DIRECTUS_URL for client-side and INTERNAL for server-side
+const PUBLIC_DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
+const INTERNAL_DIRECTUS_URL = import.meta.env.INTERNAL_DIRECTUS_URL || PUBLIC_DIRECTUS_URL;
+
+export const prerender = false;
+const { slug } = Astro.params;
+
+// Fetch article from Directus API
+let articulo = null;
+try {
+  const response = await fetch(`${INTERNAL_DIRECTUS_URL}/items/magazine?filter[slug][_eq]=${slug}&limit=1`);
+  const data = await response.json();
+  articulo = data.data?.[0];
+} catch (e) {
+  console.error("Error fetching article via API:", e);
+}
+
+if (!articulo) return Astro.redirect('/revista');
+
+function resolveMediaURL(url: string | null): string {
+  if (!url) return '/img/placeholder.jpg';
+  if (url.startsWith('http') || url.startsWith('/')) return url;
+  if (url.length === 36 && url.includes('-')) return `${PUBLIC_DIRECTUS_URL}/assets/${url}`;
+  return `/uploads/revista/${url}`;
+}
+
+let mediaItems = [];
+try {
+  if (articulo.media_json) {
+    mediaItems = typeof articulo.media_json === 'string' ? JSON.parse(articulo.media_json) : articulo.media_json;
+  }
+} catch (e) {}
+
+// 1. Búsqueda dinámica por carpeta raíz "Revista" via API
+let dynamicMedia = [];
+try {
+    const parentRes = await fetch(`${INTERNAL_DIRECTUS_URL}/folders?filter[name][_eq]=Revista&limit=1`);
+    const parentData = await parentRes.json();
+    const parentFolder = parentData.data?.[0];
+
+    if (parentFolder) {
+        const parentId = parentFolder.id;
+        
+        // Buscar subcarpeta dentro de Revista
+        const subRes = await fetch(`${INTERNAL_DIRECTUS_URL}/folders?filter[parent][_eq]=${parentId}&filter[name][_in]=${articulo.title},${articulo.slug}`);
+        const subData = await subRes.json();
+        const subFolder = subData.data?.[0];
+        
+        if (subFolder) {
+            const folderId = subFolder.id;
+            const filesRes = await fetch(`${INTERNAL_DIRECTUS_URL}/files?filter[folder][_eq]=${folderId}&sort=filename_download`);
+            const filesData = await filesRes.json();
+            const folderFiles = filesData.data || [];
+                
+            dynamicMedia = folderFiles.map(f => ({
+                type: f.type?.startsWith('video/') ? 'video' : 'image',
+                src: `${PUBLIC_DIRECTUS_URL}/assets/${f.id}`,
+                caption: f.title || ''
+            }));
+        }
+    }
+} catch (e) {
+    console.error("Error fetching dynamic magazine media via API:", e);
+}
+
+const media = dynamicMedia.length > 0 ? dynamicMedia : [
+  articulo.video_url ? { type: 'video', src: resolveMediaURL(articulo.video_url), caption: '' } : null,
+  articulo.featured_image ? { type: 'image', src: resolveMediaURL(articulo.featured_image), caption: '' } : null,
+  ...mediaItems.map(m => ({ ...m, src: resolveMediaURL(m.src) }))
+].filter(Boolean);
+
+if (media.length === 0) media.push({ type: 'image', src: '/img/placeholder.jpg', caption: 'Imagen no disponible' });
+
+const formattedDate = articulo.created_at ? new Date(articulo.created_at).toLocaleDateString('es-ES', {
+  day: 'numeric', month: 'long', year: 'numeric'
+}) : '';
+
+const wordCount = articulo.content_html ? articulo.content_html.replace(/<[^>]*>/g, '').split(/\s+/).length : 0;
+const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+---
+
+<Layout title={articulo.title} description={articulo.title}>
+  <Header currentPath="/revista" />
+
+  <article class="magazine-article">
+    <div class="split-layout">
+      <section class="narrative-column">
+        <header class="article-header">
+          <span class="eyebrow">REVISTA ONLINE</span>
+          <h1 class="headline">{articulo.title}</h1>
+          <div class="meta-row">
+            <div class="author-info">Por <strong>Javier Mix</strong></div>
+            <div class="stats-info">
+              <span class="date">{formattedDate}</span>
+              <span class="read-time">{readingTime} MIN LECTURA</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="prose-content" set:html={articulo.content_html}></div>
+        
+        <div class="article-footer-nav">
+          <a href="/revista" class="back-link">← VOLVER A REVISTA</a>
+        </div>
+      </section>
+
+      <aside class="visual-column">
+        <div class="media-stage">
+          {media.map((m, index) => (
+            <div class={`media-layer ${index === 0 ? 'active' : ''}`}>
+              {m.type === 'video' ? (
+                <video src={m.src} class="media-video" muted autoplay loop playsinline></video>
+              ) : (
+                <img src={m.src} alt={articulo.title} class="media-img" loading="lazy" />
+              )}
+            </div>
+          ))}
+        </div>
+      </aside>
+    </div>
+  </article>
+
+  <Footer />
+</Layout>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const layers = document.querySelectorAll('.media-layer');
+    if (layers.length <= 1) return;
+
+    let current = 0;
+    setInterval(() => {
+      layers[current].classList.remove('active');
+      current = (current + 1) % layers.length;
+      layers[current].classList.add('active');
+    }, 5000);
+  });
+</script>
+
+<style>
+.magazine-article { width: 100%; background-color: #050505; }
+.split-layout { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+.narrative-column { padding: 12rem 8% 10rem; }
+.visual-column { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+.media-stage { width: 100%; height: 100%; position: relative; }
+.media-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease-in-out; }
+.media-layer.active { opacity: 1; z-index: 5; }
+.media-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.75); }
+.media-video { width: 100%; height: 100%; object-fit: cover; }
+.headline { font-size: clamp(2.2rem, 5vw, 3.8rem); font-style: italic; color: #fff; font-family: var(--font-primary); margin-bottom: 2rem; }
+.prose-content { font-family: var(--font-secondary); font-size: 1.1rem; line-height: 1.9; color: rgba(255,255,255,0.7); }
+.prose-content :global(p) { margin-bottom: 2rem; }
+.back-link { color: var(--color-accent); font-size: 0.8rem; letter-spacing: 2px; }
+@media (max-width: 1024px) {
+  .split-layout { grid-template-columns: 1fr; }
+  .visual-column { height: 50vh; }
+}
+</style>

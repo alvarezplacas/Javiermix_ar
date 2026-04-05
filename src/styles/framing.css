@@ -1,0 +1,486 @@
+/* Framing Studio - Premium Styles */
+
+:root {
+    --frame-width: 20px;
+    --mat-size: 40px;
+    --mat-color: #f8f8f2;
+    /* Off-white cotton mat */
+    --frame-color: #000;
+    --shadow-depth: 15px;
+    --glass-opacity: 0;
+    /* 3D and Zoom variables */
+    --rotate-x: 0deg;
+    --rotate-y: 0deg;
+    --zoom-scale: 1;
+    --reflection-pos: 50% 50%;
+    --ambient-pos: -10% -10%;
+    /* Corner top-left */
+    --ambient-color: transparent;
+    /* Off by default */
+}
+
+/* Environment Backgrounds */
+.env-linen {
+    background: #e0dcd3;
+    background-image: url('https://www.transparenttextures.com/patterns/linen.png');
+}
+
+.env-concrete {
+    background: #bababa;
+    background-image: url('https://www.transparenttextures.com/patterns/concrete-wall.png');
+}
+
+.env-plaster {
+    background: #f2ede4;
+    background-image: url('https://www.transparenttextures.com/patterns/broken-noise.png');
+}
+
+.env-brick {
+    background-color: #8b4513;
+    /* Rustic Brick Color */
+    background-image: url('https://www.transparenttextures.com/patterns/brick-wall.png');
+    background-size: 400px auto;
+    /* Scaled up for realism */
+}
+
+.env-dark {
+    background-color: #1a1a1a;
+    background-image: none;
+}
+
+.framing-studio-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 2000;
+    display: none;
+    background: #000;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+}
+
+.studio-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+.visualizer-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 50px;
+    transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+    /* For the volumetric overlay */
+    /* 3D Scene setup */
+    perspective: 1500px;
+}
+
+/* Capa de Luz Volumétrica (Delante del cuadro) */
+.visualizer-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+    /* Arriba de todo */
+    background: radial-gradient(circle at var(--ambient-pos),
+            var(--ambient-color) 0%,
+            transparent 80%);
+    mix-blend-mode: screen;
+    opacity: 0.6;
+    transition: background 0.5s ease;
+}
+
+/* Ensure texture from .env classes is preserved under the light layers */
+.visualizer-area.env-linen {
+    background-color: #e0dcd3;
+    background-image:
+        radial-gradient(circle at var(--ambient-pos), var(--ambient-color) 0%, transparent 90%),
+        url('https://www.transparenttextures.com/patterns/linen.png');
+    background-repeat: no-repeat, repeat;
+}
+
+.visualizer-area.env-concrete {
+    background-color: #bababa;
+    background-image:
+        radial-gradient(circle at var(--ambient-pos), var(--ambient-color) 0%, transparent 90%),
+        url('https://www.transparenttextures.com/patterns/concrete-wall.png');
+    background-repeat: no-repeat, repeat;
+}
+
+.visualizer-area.env-plaster {
+    background-color: #f2ede4;
+    background-image:
+        radial-gradient(circle at var(--ambient-pos), var(--ambient-color) 0%, transparent 90%),
+        url('https://www.transparenttextures.com/patterns/broken-noise.png');
+    background-repeat: no-repeat, repeat;
+}
+
+.visualizer-area.env-brick {
+    background-color: #7a3a23;
+    background-image:
+        radial-gradient(circle at var(--ambient-pos), var(--ambient-color) 0%, transparent 90%),
+        url('https://www.transparenttextures.com/patterns/brick-wall.png');
+    background-size: contain, 600px auto;
+    /* Ladrillo más grande */
+    background-repeat: no-repeat, repeat;
+}
+
+.visualizer-area.env-dark {
+    background-color: #111111;
+    background-image: radial-gradient(circle at var(--ambient-pos), var(--ambient-color) 0%, transparent 90%);
+    background-repeat: no-repeat;
+}
+
+/* The Frame Construction */
+.frame-wrapper {
+    position: relative;
+    padding: var(--mat-size);
+    background-color: var(--mat-color);
+    box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.1),
+        0 var(--shadow-depth) 40px rgba(0, 0, 0, 0.4);
+    transition: box-shadow 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: var(--frame-width) solid var(--frame-color);
+    transform-style: preserve-3d;
+    /* Enable zoom even in 2D */
+    transform: scale(var(--zoom-scale));
+    will-change: transform;
+}
+
+/* 3D Mode Extrusion and Zoom */
+.frame-wrapper.mode-3d {
+    transform: scale(var(--zoom-scale)) rotateX(var(--rotate-x)) rotateY(var(--rotate-y));
+    will-change: transform;
+    /* Real 3D Extrusion Effect using multiple shadows */
+    box-shadow:
+        0 30px 60px rgba(0, 0, 0, 0.6),
+        -1px 1px 0px rgba(255, 255, 255, 0.05),
+        -2px 2px 0px rgba(0, 0, 0, 0.2),
+        -5px 5px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* Realistic Frame Finishes */
+.frame-black {
+    border-color: #111;
+    border-image: none;
+    box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.1), 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.frame-gold {
+    border-color: #d4af37;
+    border-image: linear-gradient(45deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c) 1;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3), 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+.frame-brown {
+    border-color: #3d2b1f;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+}
+
+.frame-white {
+    border-color: #ffffff;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05), 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.frame-green {
+    border-color: #1a3c31;
+}
+
+/* The Artwork Image */
+.framed-image {
+    max-width: 80vw;
+    max-height: 70vh;
+    display: block;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Glass Overlay */
+.glass-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 10;
+    opacity: var(--glass-opacity);
+    transition: opacity 0.3s ease;
+}
+
+.glass-standard {
+    --glass-opacity: 0.25;
+    background: radial-gradient(circle at var(--reflection-pos), rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 60%);
+    mix-blend-mode: screen;
+}
+
+.glass-museum {
+    backdrop-filter: contrast(1.05) brightness(1.02);
+    --glass-opacity: 0.15;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+}
+
+/* Controls Panel */
+.controls-panel {
+    width: 350px;
+    background: #111;
+    border-left: 1px solid #222;
+    padding: 40px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    overflow-y: auto;
+}
+
+.studio-header {
+    margin-bottom: 10px;
+}
+
+.studio-header h2 {
+    font-size: 1.2rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: var(--color-accent);
+}
+
+.control-group h3 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+/* Custom Swatches */
+.swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.swatch {
+    aspect-ratio: 1;
+    cursor: pointer;
+    border: 1px solid #333;
+    transition: transform 0.2s ease;
+}
+
+.swatch:hover {
+    transform: scale(1.1);
+}
+
+.swatch.active {
+    border-color: var(--color-accent);
+}
+
+/* Range Sliders */
+input[type=range] {
+    width: 100%;
+    accent-color: var(--color-accent);
+    background: #222;
+    height: 4px;
+    cursor: pointer;
+}
+
+/* Action Buttons */
+.studio-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.primary-action {
+    background: var(--color-accent);
+    color: #000;
+    border: none;
+    padding: 15px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+}
+
+.secondary-action {
+    background: transparent;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 12px;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+
+/* 3D Icon Toggle Style */
+.toggle-3d-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #222;
+    border: 1px solid #333;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.toggle-3d-btn.active {
+    background: var(--color-accent);
+    color: #000;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+/* Light Temp Buttons */
+.temp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.temp-btn {
+    background: #222;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 8px;
+    font-size: 0.6rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.temp-btn.active {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+/* Mobile Split Layout (50/50) */
+@media (max-width: 768px) {
+    .studio-container {
+        flex-direction: column;
+    }
+
+    .visualizer-area {
+        height: 45vh;
+        width: 100%;
+        flex: none;
+        padding: 20px;
+    }
+
+    .controls-panel {
+        height: 55vh;
+        width: 100%;
+        flex: none;
+        padding: 20px 25px 80px;
+        border-left: none;
+        border-top: 1px solid #222;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .framed-image {
+        max-width: 85vw;
+        max-height: 35vh;
+    }
+}
+
+/* ============================================
+   MAT (PASPARTÚ) COLOR SYSTEM — Paper Texture
+   ============================================ */
+
+/* SVG noise filter simula la fibra del papel de museo */
+.mat-white {
+    background-color: #f5f2ed !important;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0, 0, 0, 0.015) 2px, rgba(0, 0, 0, 0.015) 4px);
+}
+
+.mat-black {
+    background-color: #161616 !important;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='screen'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E"),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 255, 255, 0.018) 2px, rgba(255, 255, 255, 0.018) 4px);
+}
+
+.mat-red {
+    background-color: #6b1020 !important;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 255, 255, 0.02) 2px, rgba(255, 255, 255, 0.02) 4px);
+}
+
+.mat-green {
+    background-color: #1e3a2f !important;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E"),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 255, 255, 0.02) 2px, rgba(255, 255, 255, 0.02) 4px);
+}
+
+/* ============================================
+   MAT SWATCH UI — Panel de Control
+   ============================================ */
+.mat-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.mat-swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    transition: transform 0.25s ease;
+}
+
+.mat-swatch:hover {
+    transform: translateY(-2px);
+}
+
+.mat-swatch-inner {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background-color: var(--mc);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.mat-swatch.active .mat-swatch-inner {
+    border-color: #dcb14a;
+    box-shadow: 0 0 0 1px #dcb14a, 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.mat-label {
+    font-size: 0.55rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #666;
+    transition: color 0.25s ease;
+}
+
+.mat-swatch.active .mat-label {
+    color: #dcb14a;
+}

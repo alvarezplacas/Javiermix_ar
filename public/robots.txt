@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Secciones principales
+Allow: /galeria
+Allow: /revista
+Allow: /enmarcado
+
+# Excluir rutas de sistema y assets internos
+Disallow: /_astro/
+Disallow: /node_modules/
+
+# Sitemap
+Sitemap: https://www.javiermix.com/sitemap.xml

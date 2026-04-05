@@ -1,0 +1,183 @@
+---
+/**
+ * SEO.astro — Sistema SEO dinámico de Javier Mix
+ */
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article' | 'profile';
+  url?: string;
+  pubDate?: string;
+  author?: string;
+  keywords?: string[];
+  noindex?: boolean;
+  schema?: object;
+}
+
+const SITE_URL = 'https://www.javiermix.com';
+const SITE_NAME = 'Javier Mix';
+const DEFAULT_OG = '/img/og/javiermix-og.jpg';
+
+const {
+  title,
+  description = 'Fotografía Fine Art de autor. Colecciones exclusivas de obras sobre aluminio, impresión de alta calidad y estudio de enmarcado. Para coleccionistas y decoradores de interiores, Buenos Aires.',
+  image = DEFAULT_OG,
+  type = 'website',
+  url = '/',
+  pubDate,
+  author = 'Javier Mix',
+  keywords = [],
+  noindex = false,
+  schema,
+} = Astro.props;
+
+const canonicalURL = new URL(url, SITE_URL).toString();
+const ogImage      = image.startsWith('http') ? image : new URL(image, SITE_URL).toString();
+const fullTitle    = title.includes('Javier Mix') ? title : `${title} | ${SITE_NAME}`;
+
+const baseKeywords = [
+  'fotografía fine art',
+  'fotografía de autor',
+  'fotógrafo Buenos Aires',
+  'obras sobre aluminio',
+  'impresión fine art',
+  'colecciones fotográficas',
+  'decoración con fotografía',
+  'arte para coleccionistas',
+  'fotografía para interiorismo',
+  'Javier Mix',
+];
+
+const allKeywords = [...new Set([...baseKeywords, ...keywords])].join(', ');
+
+let autoSchema: object;
+
+if (schema) {
+  autoSchema = schema;
+} else if (type === 'article') {
+  autoSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": title,
+    "description": description,
+    "image": ogImage,
+    "url": canonicalURL,
+    "datePublished": pubDate,
+    "author": {
+      "@type": "Person",
+      "name": author,
+      "url": SITE_URL
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": SITE_NAME,
+      "url": SITE_URL,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${SITE_URL}/logo/JavierMix2.png`
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": canonicalURL
+    }
+  };
+} else {
+  autoSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": fullTitle,
+    "description": description,
+    "url": canonicalURL,
+    "image": ogImage,
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": SITE_NAME,
+      "url": SITE_URL,
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": `${SITE_URL}/galeria?q={search_term_string}`
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "Javier Mix",
+      "url": SITE_URL,
+      "sameAs": [
+        "https://www.instagram.com/javiermix",
+        "https://www.behance.net/javiermix"
+      ]
+    }
+  };
+}
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<meta name="keywords" content={allKeywords} />
+<meta name="author" content={author} />
+<meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'} />
+<link rel="canonical" href={canonicalURL} />
+
+<meta property="og:type" content={type} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalURL} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={title} />
+<meta property="og:site_name" content={SITE_NAME} />
+<meta property="og:locale" content="es_AR" />
+{type === 'article' && pubDate && <meta property="article:published_time" content={pubDate} />}
+{type === 'article' && <meta property="article:author" content={`${SITE_URL}/sobre-javier`} />}
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+<meta name="twitter:site" content="@javiermix" />
+<meta name="twitter:creator" content="@javiermix" />
+
+<meta name="geo.region" content="AR-C" />
+<meta name="geo.placename" content="Buenos Aires" />
+<meta name="language" content="Spanish" />
+<meta name="content-language" content="es" />
+
+<meta name="theme-color" content="#050505" />
+<meta name="msapplication-TileColor" content="#050505" />
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+<script type="application/ld+json" set:html={JSON.stringify(autoSchema)} />
+
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Javier Mix",
+  "url": SITE_URL,
+  "jobTitle": "Fotógrafo Fine Art",
+  "description": "Fotógrafo de autor especializado en obra Fine Art sobre aluminio. Buenos Aires, Argentina.",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Buenos Aires",
+    "addressCountry": "AR"
+  },
+  "sameAs": [
+    "https://www.instagram.com/javiermix",
+    "https://www.behance.net/javiermix"
+  ],
+  "image": `${SITE_URL}/logo/JavierMix2.png`
+})} />
+
+<script defer src="https://stats.javiermix.ar/script.js" data-website-id="a1742dd9-6be3-42d3-89f5-7f7b99a0809d"></script>

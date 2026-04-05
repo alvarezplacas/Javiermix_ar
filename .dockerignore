@@ -1,0 +1,57 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# Build output
+dist
+.astro
+
+# Documentation & Context (Reference only locally)
+docs/
+_manuales/
+_recursos/
+_basura/
+_conexiones/
+_instrucciones/
+*.md
+package-lock.json
+build_log*.txt
+sync_output.txt
+categorize_log.txt
+build_debug.log
+build_error_output.txt
+catch_build.cjs
+run_build.cjs
+deploy.ps1
+*.tmp
+
+# Infrastructure & Backups
+# Scripts & Infrastructure
+scripts/
+vps_extras/
+infra/
+backups/
+*.sql
+*.zip
+*.tar.gz
+
+# Environment & Credentials
+.env
+.env.*
+!.env.example
+.git
+.github
+.gitignore
+.prettierrc
+.editorconfig
+
+# Transient build files
+build_debug.log
+build_error_output.txt
+catch_build.cjs
+run_build.cjs
+
+# Scripts
+scripts/googleSync.mjs
+scripts/intelligentParser.mjs
+scripts/setup_directus.mjs

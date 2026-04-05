@@ -1,0 +1,103 @@
+---
+// src/components/Header.astro
+import CartNavButton from './ecommerce/CartNavButton.tsx';
+const { currentPath = '/', theme = 'dark' } = Astro.props;
+---
+
+<header class={`site-header theme-${theme}`}>
+	<nav class="nav-container" aria-label="Navegación principal">
+		{currentPath === '/' ? (
+			<a href="/" class="nav-logo" aria-label="Ir al Inicio">
+				<span class="brand-name">JHM</span>
+			</a>
+		) : <div class="nav-spacer"></div>}
+		
+		<div class="nav-links">
+			<a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
+			<a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>Colección</a>
+			<a href="/revista" class={currentPath.startsWith('/revista') ? 'active' : ''}>Revista</a>
+			<CartNavButton client:load />
+		</div>
+	</nav>
+</header>
+
+<style>
+.site-header {
+	position: absolute; /* Para que flote sobre el contenido sin fondo sólido */
+	top: 0;
+	z-index: 1000;
+	background: transparent; /* Fondo eliminado */
+	border-bottom: none;
+	padding: 2rem 0;
+	width: 100%;
+	transition: var(--transition-premium);
+}
+
+.nav-container {
+	max-width: var(--container-max);
+	margin: 0 auto;
+	padding: 0 5%;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+    gap: 15vw;
+}
+
+.brand-name {
+	font-family: var(--font-primary);
+	font-size: 1.8rem; /* Un poco más pequeño para evitar pises */
+	font-weight: 300;
+	font-style: italic;
+	color: var(--color-white);
+	letter-spacing: 6px;
+	transition: var(--transition-premium);
+	display: block;
+	text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+
+.nav-links {
+	display: flex;
+	gap: 2.5rem;
+	font-family: var(--font-secondary);
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 2px;
+    font-weight: 600;
+}
+
+.nav-links a {
+	color: var(--color-text-muted);
+	text-decoration: none;
+	transition: var(--transition-premium);
+	position: relative;
+	padding: 0.5rem 0;
+}
+
+.nav-links a:hover, 
+.nav-links a.active {
+	color: var(--color-white);
+}
+
+.nav-links a::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 0;
+	height: 1px;
+	background-color: var(--color-accent);
+	transition: var(--transition-premium);
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+	width: 100%;
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+    }
+}
+</style>

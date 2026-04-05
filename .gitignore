@@ -1,0 +1,56 @@
+# build output
+dist/
+dist.zip
+*.zip
+
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+build_log*.txt
+sync_output.txt
+categorize_log.txt
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# credentials
+credentials.json
+
+# Otras carpetas temporales/auto generadas
+exotic-equator
+gullible-gravity
+tender-transit
+
+# Carpetas de Organización Local (No trackeadas en producción)
+/_basura/
+/_conexiones/
+/_instrucciones/
+/_manuales/
+/_recursos/
+/docs/
+/scripts/
+README.md
+Manual_ayuda.md
+AGENT_HANDBOOK.md
+ESTETICA_JMX.md
+package-lock.json
+build_debug.log
+build_error_output.txt
+catch_build.cjs
+run_build.cjs

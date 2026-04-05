@@ -1,0 +1,327 @@
+---
+// h:\Javiermix_web_v2\frontend\/galeria/\index.astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { getSeries, getCatalogoFiles } from '../../conexion/directus';
+import { getOptimizedImageURL } from '../../utils/media';
+
+export const prerender = false;
+
+// 🏺 Series for default view
+const seriesFromAPI = await getSeries();
+const seriesList = seriesFromAPI.map(s => ({
+    ...s,
+    coverUrl: getOptimizedImageURL(s.coverId, { width: 800, format: 'avif' })
+}));
+
+// 🔍 [NEW] Load all artworks metadata for GLOBAL search
+const allArtworksRaw = await getCatalogoFiles();
+const allArtworks = allArtworksRaw.map(file => ({
+    id: file.id,
+    title: file.title || file.filename_download.split('.')[0],
+    description: file.description || '',
+    tags: file.tags || [],
+    serie: file.serie_name || 'Sin Serie',
+    thumb: getOptimizedImageURL(file.id, { width: 600, format: 'avif', quality: 70 })
+}));
+---
+
+<Layout
+  title="Galería Fine Art | Javier Mix"
+  description="Explore las series fotográficas de Javier Mix."
+  url="/galeria"
+  image={seriesList[0]?.coverUrl}
+>
+    
+    <Header currentPath="/galeria" />
+
+	<main class="gallery-container" style="padding-top: 5rem;">
+		<header class="gallery-header">
+			<h1 class="gallery-title">Fine Art Portfolio</h1>
+			<p class="gallery-subtitle">Selección Exclusiva de Obras Disponibles</p>
+		</header>
+
+		<div class="gallery-search-container" id="gallery-search-overlay">
+			<div class="search-input-wrapper" style="position: relative;">
+				<input type="text" id="gallery-search-input" placeholder="Buscar por color, tema o título..." aria-label="Buscar obras">
+			</div>
+		</div>
+
+		<div id="view-series" class="gallery-view active">
+			<section class="series-snap-container" style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
+				{seriesList.length === 0 ? (
+					<div class="empty-state">No se encontraron colecciones</div>
+				) : (
+					seriesList.map((serie) => (
+						<a href={`/galeria/${serie.id}`} class="series-card fade-in-content">
+							<div class="series-card-bg" style={`background-image: url('${serie.coverUrl}');`}></div>
+							<div class="series-card-content">
+								<h2 class="series-title">{serie.name}</h2>
+								<p class="series-count">{serie.count} Obras</p>
+								<span class="series-cta">Explorar Serie &rarr;</span>
+							</div>
+						</a>
+					))
+				)}
+			</section>
+		</div>
+
+        <!-- 🕵️ GLOBAL SEARCH RESULTS VIEW (V8) -->
+        <div id="view-results" class="gallery-view" style="display: none; padding: 0 2rem; max-width: 1600px; margin: 0 auto; position: relative; z-index: 10;">
+          <div class="results-info" style="margin-bottom: 3rem; color: var(--color-travertine-mid); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">
+             Resultados para: <span id="search-term-display" style="color: var(--color-accent); font-weight: 700;"></span>
+          </div>
+          <div id="results-grid" class="v8-artworks-grid">
+             <!-- Renderizado Dinámico -->
+          </div>
+          <div id="no-results" style="display: none; text-align: center; padding: 8rem 0; color: var(--color-travertine-mid);">
+             <i class="fas fa-search" style="font-size: 3rem; opacity: 0.1; margin-bottom: 2rem; display: block;"></i>
+             <p style="letter-spacing: 4px; font-size: 1.1rem; font-style: italic;">No encontramos obras con esos términos.</p>
+          </div>
+        </div>
+
+        <!-- 📦 Inyección de Datos para el Motor de Búsqueda -->
+        <script id="artworks-data" type="application/json" is:inline set:html={JSON.stringify(allArtworks)} />
+	</main>
+
+	<Footer />
+</Layout>
+
+<style>
+.gallery-container {
+    background-color: var(--color-onyx-deep);
+    min-height: 100vh;
+}
+
+.gallery-header {
+    text-align: center;
+    padding: 6rem 1rem 4rem;
+}
+
+.gallery-title {
+    font-size: var(--text-h1);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+    font-family: var(--font-primary);
+    color: var(--color-white);
+    font-weight: 600;
+}
+
+.gallery-subtitle {
+    color: var(--color-text-muted);
+    font-family: var(--font-secondary);
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+}
+
+.gallery-search-container {
+    text-align: center;
+    margin: 2rem auto;
+    width: 100%;
+    max-width: 800px;
+    position: relative;
+    padding: 0 1rem;
+}
+
+#gallery-search-input {
+    width: 100%;
+    padding: 1.25rem 2rem;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--color-white);
+    font-family: var(--font-secondary);
+    font-size: 1rem;
+    backdrop-filter: blur(12px);
+    transition: var(--transition-premium);
+}
+
+#gallery-search-input:focus {
+    background: var(--color-onyx-charcoal);
+    border-color: var(--color-accent);
+    outline: none;
+}
+
+.series-snap-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+    gap: 3rem;
+    padding-bottom: 6rem;
+}
+
+.series-card {
+    position: relative;
+    display: block;
+    height: 500px;
+    overflow: hidden;
+    text-decoration: none;
+    transition: var(--transition-premium);
+    background-color: var(--color-onyx-charcoal);
+}
+
+.series-card-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.series-card:hover .series-card-bg {
+    transform: scale(1.1);
+}
+
+.series-card-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 3rem;
+    background: linear-gradient(to top, var(--color-onyx-deep) 0%, transparent 100%);
+    color: var(--color-white);
+    transform: translateY(10px);
+    transition: var(--transition-premium);
+}
+
+.series-card:hover .series-card-content {
+    transform: translateY(0);
+}
+
+.v8-artworks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding-bottom: 5rem;
+}
+
+.v8-artwork-card {
+    text-decoration: none !important;
+    display: block !important;
+    position: relative !important;
+    overflow: hidden !important;
+    opacity: 0;
+    animation: v8-tetris-entry 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    background: var(--color-onyx-charcoal);
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+@keyframes v8-tetris-entry {
+    from { opacity: 0; transform: translateY(-40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.v8-artwork-card:hover { border-color: var(--color-accent); }
+
+.v8-artwork-img-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+}
+
+.v8-artwork-img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    transition: transform 1.2s cubic-bezier(0.165, 0.84, 0.44, 1); 
+}
+.v8-artwork-card:hover .v8-artwork-img { transform: scale(1.1); }
+
+.v8-overlay-info { 
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    padding: 1.2rem !important;
+    background: linear-gradient(to top, rgba(0,0,0,0.95), transparent) !important;
+    backdrop-filter: blur(8px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.1rem;
+    z-index: 5 !important;
+}
+
+.v8-title { 
+    font-family: var(--font-secondary) !important;
+    font-size: 0.65rem !important; 
+    color: var(--color-white) !important; 
+    margin: 0 !important; 
+    line-height: 1.2 !important; 
+    text-transform: uppercase !important;
+    letter-spacing: 2.5px !important;
+    font-weight: 700 !important;
+}
+
+.v8-serie { 
+    font-size: 0.45rem !important; 
+    color: var(--color-accent) !important; 
+    text-transform: uppercase !important; 
+    letter-spacing: 1.5px !important; 
+    font-weight: 800 !important; 
+    opacity: 0.8; 
+}
+
+@media (max-width: 768px) {
+    .v8-artworks-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.5rem; }
+    .v8-title { font-size: 0.55rem !important; letter-spacing: 1px !important; }
+}
+</style>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const searchInput = document.getElementById('gallery-search-input') as HTMLInputElement;
+    const viewSeries = document.getElementById('view-series');
+    const viewResults = document.getElementById('view-results');
+    const resultsGrid = document.getElementById('results-grid');
+    const noResults = document.getElementById('no-results');
+    const termDisplay = document.getElementById('search-term-display');
+    
+    // Parse index data
+    const dataEl = document.getElementById('artworks-data');
+    const artworks = dataEl ? JSON.parse(dataEl.innerHTML) : [];
+    
+    searchInput?.addEventListener('input', (e) => {
+      const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
+      
+      if (term === '') {
+        viewSeries!.style.display = 'block';
+        viewResults!.style.display = 'none';
+        return;
+      }
+
+      // GLOBAL SEARCH LOGIC (Title, Desc, Tags)
+      const filtered = artworks.filter((a: any) => {
+        const inTitle = a.title.toLowerCase().includes(term);
+        const inDesc = a.description.toLowerCase().includes(term);
+        const inTags = a.tags.some((t: string) => t.toLowerCase().includes(term));
+        return inTitle || inDesc || inTags;
+      });
+
+      // Show Results
+      viewSeries!.style.display = 'none';
+      viewResults!.style.display = 'block';
+      termDisplay!.textContent = `"${term}"`;
+      
+      if (filtered.length === 0) {
+        resultsGrid!.innerHTML = '';
+        noResults!.style.display = 'block';
+      } else {
+        noResults!.style.display = 'none';
+        resultsGrid!.innerHTML = filtered.map((a: any, i: number) => `
+            <a href="/obra/${a.id}" class="v8-artwork-card" style="animation-delay: ${i * 0.05}s">
+                <div class="v8-artwork-img-container">
+                    <img src="${a.thumb}" alt="${a.title}" class="v8-artwork-img" loading="lazy" />
+                </div>
+                <div class="v8-overlay-info">
+                   <h3 class="v8-title">${a.title}</h3>
+                   <span class="v8-serie">${a.serie}</span>
+                </div>
+            </a>
+        `).join('');
+      }
+    });
+  });
+</script>

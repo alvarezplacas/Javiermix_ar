@@ -1,0 +1,168 @@
+---
+// h:\Javiermix_web_v2\frontend\herramientas\checkout.astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+export const prerender = false;
+---
+
+<Layout title="Checkout | JHM Fine Art">
+  <Header currentPath="" />
+
+  <main class="checkout-main">
+    <div class="checkout-grid">
+      
+      <section class="checkout-form-section">
+        <h1 class="checkout-title">Datos de Adquisición</h1>
+        <p class="checkout-subtitle">Complete sus datos para procesar la orden y coordinar el envío seguro.</p>
+        
+        <form id="checkout-form" class="checkout-form">
+          <div class="form-group row">
+            <input type="text" name="firstName" placeholder="NOMBRE" required />
+            <input type="text" name="lastName" placeholder="APELLIDOS" required />
+          </div>
+          
+          <div class="form-group row">
+            <input type="email" name="email" placeholder="CORREO ELECTRÓNICO" required />
+            <input type="tel" name="phone" placeholder="TELÉFONO" required />
+          </div>
+          
+          <div class="form-group">
+            <input type="text" name="address" placeholder="DIRECCIÓN DE ENTREGA" required />
+          </div>
+          
+          <div class="form-group row">
+            <input type="text" name="city" placeholder="CIUDAD" required />
+            <input type="text" name="country" placeholder="PAÍS" required />
+          </div>
+          
+          <div class="form-group">
+            <textarea name="notes" placeholder="NOTAS ADICIONALES"></textarea>
+          </div>
+
+          <div id="checkout-feedback" class="feedback-msg"></div>
+          
+          <button type="submit" id="btn-submit-order" class="btn-submit">CONFIRMAR COMPRA</button>
+        </form>
+
+        <div id="transfer-instructions" class="transfer-instructions" style="display: none;">
+            <h2 class="checkout-title">Orden Recibida</h2>
+            <p class="order-number">NÚMERO DE ORDEN: <strong id="dynamic-order-code">#XXX</strong></p>
+            <div class="bank-box">
+                <h3>TRANSFERENCIA BANCARIA</h3>
+                <p>Monto: <strong id="dynamic-total-price">U$D 0</strong></p>
+                <div class="bank-details">
+                    <p>CBU/Alias: <strong>cobromix</strong> (Mercado Pago)</p>
+                    <p>Titular: <strong>Javier Hernan Alvarez</strong></p>
+                </div>
+            </div>
+            <a href="/galeria" class="btn-submit" style="margin-top:2rem;">Volver a la Galería</a>
+        </div>
+      </section>
+
+      <section class="checkout-summary-section">
+        <div class="summary-box">
+          <h2 class="summary-title">Resumen</h2>
+          <div id="checkout-items"></div>
+          <hr/>
+          <div class="total-row">
+            <span>TOTAL:</span>
+            <span id="checkout-total">U$D 0</span>
+          </div>
+        </div>
+      </section>
+      
+    </div>
+  </main>
+  
+  <Footer />
+</Layout>
+
+<script>
+  import { cartStore, clearCart } from '../../store/cartStore.ts';
+
+  document.addEventListener('astro:page-load', () => {
+    const listWrapper = document.getElementById('checkout-items');
+    const totalEl = document.getElementById('checkout-total');
+    const form = document.getElementById('checkout-form');
+    const btn = document.getElementById('btn-submit-order') as HTMLButtonElement;
+    const feedback = document.getElementById('checkout-feedback');
+
+    if (!listWrapper) return;
+
+    cartStore.subscribe(cart => {
+      const items = Object.values(cart);
+      listWrapper.innerHTML = items.map(i => `
+        <div class="summary-item">
+          <p>${i.title} (${i.size}) x${i.quantity} - U$D ${i.price * i.quantity}</p>
+        </div>
+      `).join('');
+
+      const total = items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+      if (totalEl) totalEl.innerText = `U$D ${total}`;
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      btn.innerText = 'PROCESANDO...';
+      
+      const fd = new FormData(form as HTMLFormElement);
+      const payload = {
+          firstName: fd.get('firstName'),
+          lastName: fd.get('lastName'),
+          email: fd.get('email'),
+          phone: fd.get('phone'),
+          address: fd.get('address'),
+          city: fd.get('city'),
+          country: fd.get('country'),
+          notes: fd.get('notes'),
+          cartItems: Object.values(cartStore.get()),
+          total: Object.values(cartStore.get()).reduce((s,i) => s + (i.price*i.quantity), 0)
+      };
+
+      try {
+          const res = await fetch('/api/public/submit-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (result.success) {
+              clearCart();
+              (form as HTMLElement).style.display = 'none';
+              const ticket = document.getElementById('transfer-instructions');
+              if(ticket) {
+                  ticket.style.display = 'block';
+                  const code = document.getElementById('dynamic-order-code');
+                  if(code) code.innerText = result.order_number;
+              }
+          } else {
+              if(feedback) feedback.innerText = result.error;
+              btn.disabled = false;
+              btn.innerText = 'CONFIRMAR COMPRA';
+          }
+      } catch (err) {
+          if(feedback) feedback.innerText = 'Error de conexión';
+          btn.disabled = false;
+          btn.innerText = 'CONFIRMAR COMPRA';
+      }
+    });
+  });
+</script>
+
+<style>
+.checkout-main { padding: 8rem 5%; background: var(--color-onyx-deep); min-height: 100vh; }
+.checkout-grid { display: grid; grid-template-columns: 1fr 350px; gap: 4rem; }
+.checkout-title { font-family: var(--font-primary); color: #fff; font-size: 2.5rem; margin-bottom: 2rem; }
+.checkout-form { display: flex; flex-direction: column; gap: 1.5rem; }
+.form-group.row { display: flex; gap: 1.5rem; }
+.form-group.row input { flex: 1; }
+input, textarea { background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 1rem 0; outline: none; }
+input:focus { border-color: var(--color-accent); }
+.btn-submit { background: var(--color-accent); color: #000; border: none; padding: 1.2rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; text-decoration: none; text-align: center; }
+.summary-box { background: rgba(255,255,255,0.02); padding: 2rem; border: 1px solid rgba(255,255,255,0.05); }
+.total-row { font-size: 1.4rem; font-weight: 700; color: var(--color-accent); margin-top: 1rem; display: flex; justify-content: space-between; }
+.bank-box { background: rgba(0,0,0,0.3); padding: 2rem; border: 1px solid var(--color-accent); margin-top: 2rem; }
+</style>

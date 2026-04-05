@@ -1,0 +1,522 @@
+---
+// h:\Javiermix_web_v2\frontend\pages\dashboard\revista\nueva.astro
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+
+export const prerender = false;
+---
+
+<AdminLayout title="Redactar Nueva Nota">
+  <!-- Mammoth.js for Word to HTML conversion -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+  <div class="editor-header">
+    <a href="/dashboard/revista" class="btn-back">
+      <i class="fas fa-arrow-left"></i> VOLVER AL LISTADO
+    </a>
+    <div class="header-actions">
+       <label for="word-upload" class="btn-secondary">
+         <i class="fas fa-file-word"></i> IMPORTAR WORD (.docx)
+       </label>
+       <input type="file" id="word-upload" accept=".docx" style="display: none;" />
+    </div>
+  </div>
+
+  <div class="editor-container">
+    <form id="article-form" class="article-form">
+      <div class="form-main">
+        <div class="form-group">
+          <label for="title">TÍTULO DE LA NOTA</label>
+          <input type="text" id="title" name="title" placeholder="Ej: El lenguaje de la luz en el metal" required />
+        </div>
+
+        <div class="form-group">
+          <label for="slug">SLUG (URL)</label>
+          <input type="text" id="slug" name="slug" placeholder="el-lenguaje-de-la-luz" required />
+        </div>
+
+        <div class="form-group">
+          <label>CONTENIDO DEL ARTÍCULO</label>
+          <div id="quill-editor" class="quill-wrapper"></div>
+          <input type="hidden" name="content_html" id="content-html-input" />
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="video_url">VIDEO URL (YOUTUBE/VIMEO)</label>
+            <input type="text" id="video_url" name="video_url" placeholder="https://..." />
+          </div>
+          <div class="form-group">
+            <label for="tags">ETIQUETAS (SEPARADAS POR COMA)</label>
+            <input type="text" id="tags" name="tags" placeholder="arte, metal, exposicion" />
+          </div>
+        </div>
+      </div>
+
+      <aside class="form-sidebar">
+        <div class="sidebar-card">
+          <h4>Publicación</h4>
+          <div class="form-group">
+            <label for="status">Estado</label>
+            <select name="status" id="status">
+              <option value="draft">Borrador</option>
+              <option value="published">Publicado</option>
+            </select>
+          </div>
+          <div class="form-group checkbox-group">
+            <input type="checkbox" name="is_premium" id="is_premium" />
+            <label for="is_premium" class="inline-label">CONTENIDO PREMIUM</label>
+          </div>
+          <button type="submit" class="btn-primary" id="btn-save">
+            <i class="fas fa-save"></i> GUARDAR NOTA
+          </button>
+        </div>
+
+        <div class="sidebar-card">
+          <h4>Configuración SEO</h4>
+          <div class="form-group">
+            <label for="seo_title">SEO TITLE</label>
+            <input type="text" id="seo_title" name="seo_title" placeholder="Título para buscadores" />
+          </div>
+          <div class="form-group">
+            <label for="seo_description">SEO DESCRIPTION</label>
+            <textarea id="seo_description" name="seo_description" rows="3" placeholder="Resumen para Google..."></textarea>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <h4>Galería Multimedia (Imágenes/MP4)</h4>
+          <p class="field-info">Selecciona varios archivos para las transiciones del lado derecho.</p>
+          <div class="media-upload-container">
+            <div class="media-grid" id="media-preview-grid">
+              <!-- Previews will appear here -->
+            </div>
+            <label for="multi-media-upload" class="image-upload-box">
+              <i class="fas fa-plus"></i>
+              <span>AÑADIR MEDIA</span>
+            </label>
+            <input type="file" id="multi-media-upload" accept="image/*,video/mp4" multiple style="display: none;" />
+          </div>
+          <input type="hidden" name="media_json" id="media-json-input" />
+        </div>
+      </aside>
+    </form>
+    <div id="feedback" class="feedback-msg"></div>
+  </div>
+</AdminLayout>
+
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet" />
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js" is:inline></script>
+
+<script is:inline>
+  // Función global para inicializar Quill (evita problemas de scope en Astro)
+  function initQuillEditor() {
+    const container = document.querySelector('#quill-editor');
+    if (!container || container.querySelector('.ql-editor')) return;
+
+    if (typeof Quill === 'undefined') {
+      console.error('Quill library not found');
+      return;
+    }
+
+    window.quillInstance = new Quill('#quill-editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          [{ 'header': [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['link', 'blockquote', 'code-block'],
+          ['clean']
+        ]
+      }
+    });
+    console.log('Quill initialized successfully');
+  }
+
+  // Ejecutar en carga inicial y en cada transición de Astro
+  document.addEventListener('DOMContentLoaded', initQuillEditor);
+  document.addEventListener('astro:page-load', initQuillEditor);
+</script>
+
+<style is:global>
+  .ql-toolbar {
+    background: #1a1a1a !important;
+    border-color: rgba(255,255,255,0.05) !important;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+  }
+  .ql-container {
+    background: rgba(255,255,255,0.02) !important;
+    border-color: rgba(255,255,255,0.05) !important;
+    color: #fff !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1rem !important;
+    min-height: 400px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
+  .ql-stroke { stroke: #aaa !important; }
+  .ql-fill { fill: #aaa !important; }
+  .ql-picker { color: #aaa !important; }
+</style>
+
+<style>
+  .editor-header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .btn-secondary {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--c-text);
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+  }
+
+  .btn-secondary:hover {
+    background: var(--c-accent);
+    color: #000;
+    border-color: var(--c-accent);
+  }
+
+  .btn-back {
+    color: var(--c-muted);
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    transition: color 0.3s;
+  }
+
+  .btn-back:hover {
+    color: var(--c-accent);
+  }
+
+  .article-form {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 3rem;
+  }
+
+  .form-group {
+    margin-bottom: 2rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--c-accent);
+    margin-bottom: 0.8rem;
+    font-weight: 700;
+  }
+
+  input[type="text"], select, textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 1rem;
+    color: var(--c-text);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: border-color 0.3s;
+    font-family: inherit;
+  }
+
+  .form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .checkbox-group input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--c-accent);
+  }
+
+  .inline-label {
+    margin-bottom: 0 !important;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--c-accent);
+  }
+
+  .sidebar-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--c-border);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 4px;
+  }
+
+  .sidebar-card h4 {
+    margin: 0 0 1.5rem;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: var(--c-muted);
+    text-transform: uppercase;
+  }
+
+  .btn-primary {
+    width: 100%;
+    margin-top: 1rem;
+    background: var(--c-accent);
+    color: #000;
+    border: none;
+    padding: 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .media-upload-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .media-item {
+    position: relative;
+    aspect-ratio: 1;
+    background: #000;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .media-item img, .media-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .media-item .remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(239, 68, 68, 0.8);
+    color: #fff;
+    border: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+
+  .field-info {
+    font-size: 0.6rem;
+    color: var(--c-muted);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+  }
+
+  .feedback-msg {
+    margin-top: 2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+  }
+</style>
+
+<script>
+  import { createArticle, uploadFile } from '@conexion/directus-client';
+
+  document.addEventListener('astro:page-load', () => {
+    const form = document.getElementById('article-form') as HTMLFormElement;
+    const feedback = document.getElementById('feedback');
+    const btnSave = document.getElementById('btn-save') as HTMLButtonElement;
+    
+    // El editor se inicializa en el script inline de arriba para mayor robustez
+
+    // Generar slug automático
+    const titleInput = document.getElementById('title') as HTMLInputElement;
+    const slugInput = document.getElementById('slug') as HTMLInputElement;
+
+    titleInput?.addEventListener('input', () => {
+      slugInput.value = titleInput.value
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9 ]/g, '')
+        .replace(/\s+/g, '-');
+    });
+
+    // --- Gestión Multimedia ---
+    const mediaUpload = document.getElementById('multi-media-upload') as HTMLInputElement;
+    const mediaGrid = document.getElementById('media-preview-grid');
+    const mediaJsonInput = document.getElementById('media-json-input') as HTMLInputElement;
+    let uploadedMedia: string[] = []; // Array de IDs de Directus
+
+    mediaUpload?.addEventListener('change', async (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (!files || files.length === 0) return;
+
+      const token = document.cookie.split('; ').find(row => row.startsWith('jhm_admin_token='))?.split('=')[1] || '';
+
+      for (const file of files) {
+        // Crear preview local inmediatamente
+        const item = document.createElement('div');
+        item.className = 'media-item';
+        item.innerHTML = `
+          <div class="loading-overlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; font-size:10px;">SUBIENDO...</div>
+          <button class="remove-btn">×</button>
+        `;
+        
+        if (file.type.startsWith('image/')) {
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(file);
+          item.prepend(img);
+        } else if (file.type === 'video/mp4') {
+          const video = document.createElement('video');
+          video.src = URL.createObjectURL(file);
+          video.muted = true;
+          item.prepend(video);
+        }
+        
+        mediaGrid?.appendChild(item);
+
+        // Subir a Directus
+        // @ts-ignore (uploadFile estará en el bundle)
+        const result = await uploadFile(file, token);
+        
+        if (result.success) {
+          uploadedMedia.push(result.id);
+          mediaJsonInput.value = JSON.stringify(uploadedMedia);
+          item.querySelector('.loading-overlay')?.remove();
+          
+          item.querySelector('.remove-btn')?.addEventListener('click', () => {
+            uploadedMedia = uploadedMedia.filter(id => id !== result.id);
+            mediaJsonInput.value = JSON.stringify(uploadedMedia);
+            item.remove();
+          });
+        } else {
+          item.remove();
+          alert(`Error subiendo ${file.name}: ${result.message}`);
+        }
+      }
+    });
+
+    // --- Importar Word (.docx) ---
+    const wordUpload = document.getElementById('word-upload') as HTMLInputElement;
+    wordUpload?.addEventListener('change', (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const arrayBuffer = event.target?.result as ArrayBuffer;
+        if (!arrayBuffer) return;
+
+        try {
+          // @ts-ignore
+          const result = await mammoth.convertToHtml({ arrayBuffer });
+          const html = result.value; // El HTML generado
+          
+          // Insertar en Quill (puedes decidir si reemplazar o añadir)
+          // @ts-ignore
+          if (window.quillInstance) (window as any).quillInstance.root.innerHTML = html;
+          
+          if (feedback) {
+            feedback.innerText = 'Documento importado con éxito.';
+            feedback.style.color = '#10b981';
+          }
+        } catch (error) {
+          console.error('Error convirtiendo Word:', error);
+          if (feedback) {
+            feedback.innerText = 'Error al importar el Word.';
+            feedback.style.color = '#ef4444';
+          }
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!btnSave) return;
+      btnSave.disabled = true;
+      btnSave.innerText = 'GUARDANDO...';
+
+      const formData = new FormData(form);
+      // @ts-ignore
+      const currentContent = window.quillInstance ? (window as any).quillInstance.root.innerHTML : '';
+      
+      const articleData = {
+        title: formData.get('title'),
+        slug: formData.get('slug'),
+        content_html: currentContent,
+        status: formData.get('status'),
+        is_premium: formData.get('is_premium') === 'on',
+        video_url: formData.get('video_url'),
+        tags: formData.get('tags'),
+        seo_title: formData.get('seo_title'),
+        seo_description: formData.get('seo_description'),
+        media_json: uploadedMedia, // Enviar array de IDs
+        featured_image: uploadedMedia[0] || null // El primero como principal
+      };
+
+      try {
+        const token = document.cookie.split('; ').find(row => row.startsWith('jhm_admin_token='))?.split('=')[1] || '';
+        const result = await createArticle(articleData, token);
+        if (result.success) {
+          if (feedback) {
+            feedback.style.color = '#10b981';
+            feedback.innerText = '¡ARTÍCULO PUBLICADO CON ÉXITO! REDIRIGIENDO...';
+          }
+          setTimeout(() => window.location.href = '/dashboard/revista', 1500);
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (error: any) {
+        if (feedback) {
+          feedback.style.color = '#ef4444';
+          feedback.innerText = `ERROR: ${error.message}`;
+        }
+        btnSave.disabled = false;
+        btnSave.innerText = 'REINTENTAR GUARDAR';
+      }
+    });
+  });
+</script>
