@@ -1,0 +1,38 @@
+---
+// src/pages/@[id].astro
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { getSeries, getCatalogoFiles, fetchFromDirectus } from '../conexion/directus';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const slug = id?.toLowerCase();
+
+// 🚀 [RESOLVE] Buscar Serie o Obra por el Alias
+let resolvedType: 'serie' | 'obra' | '404' = '404';
+let resolvedData: any = null;
+
+// 1. Intentar buscar Series (Carpetas en el Catálogo)
+const series = await getSeries();
+const matchedSerie = series.find(s => s.name.toLowerCase().replaceAll(' ', '-') === slug || s.id === id);
+
+if (matchedSerie) {
+    return Astro.redirect(`/galeria/${matchedSerie.id}`);
+}
+
+// 2. Intentar buscar Obras (Archivos en el Catálogo)
+const allArtworks = await getCatalogoFiles();
+const matchedObra = allArtworks.find(a => 
+    (a.title && a.title.toLowerCase().replaceAll(' ', '-') === slug) || 
+    a.id === id
+);
+
+if (matchedObra) {
+    return Astro.redirect(`/obra/${matchedObra.id}`);
+}
+
+// 3. Si no hay match, mostramos 404 Estilizado o Redirigimos a la Galería
+return Astro.redirect(`/galeria?error=not-found&q=${id}`);
+---

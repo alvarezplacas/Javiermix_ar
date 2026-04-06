@@ -75,6 +75,21 @@ services:
     networks:
       - javiermix_network
 
+  # Umami Analytics (Estadísticas Golden Master 2.0)
+  stats:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    container_name: javiermix-stats
+    restart: always
+    environment:
+      DATABASE_URL: postgres://postgres:JavierMix2026!@db:5432/javiermix_pg
+      APP_SECRET: "3L3X1T0LL3G0!#@a"
+      # Habilitar login por defecto si es necesario (admin/umami)
+    depends_on:
+      - db
+    networks:
+      - javiermix_network
+
+
 networks:
   javiermix_network:
     external: true

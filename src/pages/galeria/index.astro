@@ -284,7 +284,8 @@ const allArtworks = allArtworksRaw.map(file => ({
     const artworks = dataEl ? JSON.parse(dataEl.innerHTML) : [];
     
     searchInput?.addEventListener('input', (e) => {
-      const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
+      const originalValue = (e.target as HTMLInputElement).value;
+      const term = originalValue.toLowerCase().trim();
       
       if (term === '') {
         viewSeries!.style.display = 'block';
@@ -292,18 +293,29 @@ const allArtworks = allArtworksRaw.map(file => ({
         return;
       }
 
+      // 🎯 [SHORTCUT] Si empieza con @, es una búsqueda maestra
+      const isMaestra = term.startsWith('@');
+      const cleanTerm = isMaestra ? term.substring(1) : term;
+
       // GLOBAL SEARCH LOGIC (Title, Desc, Tags)
       const filtered = artworks.filter((a: any) => {
-        const inTitle = a.title.toLowerCase().includes(term);
-        const inDesc = a.description.toLowerCase().includes(term);
-        const inTags = a.tags.some((t: string) => t.toLowerCase().includes(term));
+        const inTitle = a.title.toLowerCase().includes(cleanTerm);
+        const inDesc = a.description.toLowerCase().includes(cleanTerm);
+        const inTags = a.tags.some((t: string) => t.toLowerCase().includes(cleanTerm));
+        
+        if (isMaestra) {
+            // Coincidencia exacta simplificada (slug)
+            return a.title.toLowerCase().replaceAll(' ', '-') === cleanTerm || 
+                   a.serie.toLowerCase().replaceAll(' ', '-') === cleanTerm;
+        }
+
         return inTitle || inDesc || inTags;
       });
 
       // Show Results
       viewSeries!.style.display = 'none';
       viewResults!.style.display = 'block';
-      termDisplay!.textContent = `"${term}"`;
+      termDisplay!.textContent = isMaestra ? `Maestra: ${originalValue}` : `"${term}"`;
       
       if (filtered.length === 0) {
         resultsGrid!.innerHTML = '';
