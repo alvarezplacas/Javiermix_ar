@@ -7,9 +7,9 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "JavierMix2026!"
-      POSTGRES_DB: javiermix_pg
+      POSTGRES_DB: javiermix_db
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - /opt/javiermix/personal_files/postgres_data:/var/lib/postgresql/data
     networks:
       - javiermix_network
 
@@ -31,7 +31,7 @@ services:
     container_name: javiermix_redis
     restart: always
     volumes:
-      - redis_data:/data
+      - /opt/javiermix/personal_files/redis_data:/data
     networks:
       - javiermix_network
 
@@ -46,7 +46,7 @@ services:
       DB_CLIENT: "pg"
       DB_HOST: "db"
       DB_PORT: "5432"
-      DB_DATABASE: "javiermix_pg"
+      DB_DATABASE: "javiermix_db"
       DB_USER: "postgres"
       DB_PASSWORD: "JavierMix2026!"
       PUBLIC_URL: "https://admin.javiermix.ar"
@@ -59,8 +59,8 @@ services:
       CACHE_REDIS: "redis://javiermix_redis:6379"
       LOCK_STORE: "redis"
       LOCK_REDIS: "redis://javiermix_redis:6379"
-      STORAGE_LOCATIONS: "s3"
-      # Configuración de S3 (MinIO)
+      STORAGE_LOCATIONS: "s3,local"
+      # Configuración de S3 (MinIO) - Fallback a local si se prefiere
       STORAGE_S3_DRIVER: "s3"
       STORAGE_S3_KEY: "javiermix_key"
       STORAGE_S3_SECRET: "javiermix_secret"
@@ -70,6 +70,9 @@ services:
       STORAGE_S3_S3_FORCE_PATH_STYLE: "true"
       CORS_ENABLED: "true"
       CORS_ORIGIN: "https://javiermix.ar, https://admin.javiermix.ar"
+    volumes:
+      - /opt/javiermix/personal_files/directus/uploads:/directus/uploads
+      - /opt/javiermix/personal_files/directus/extensions:/directus/extensions
     depends_on:
       - db
     networks:
@@ -81,19 +84,14 @@ services:
     container_name: javiermix-stats
     restart: always
     environment:
-      DATABASE_URL: postgres://postgres:JavierMix2026!@db:5432/javiermix_pg
+      DATABASE_URL: postgres://postgres:JavierMix2026!@db:5432/javiermix_db
       APP_SECRET: "3L3X1T0LL3G0!#@a"
-      # Habilitar login por defecto si es necesario (admin/umami)
     depends_on:
       - db
     networks:
       - javiermix_network
 
-
 networks:
   javiermix_network:
     external: true
 
-volumes:
-  pg_data:
-  redis_data:
