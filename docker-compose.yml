@@ -51,7 +51,7 @@ services:
       DB_PASSWORD: "JavierMix2026!"
       PUBLIC_URL: "https://admin.javiermix.ar"
       ADMIN_EMAIL: "admin@javiermix.ar"
-      ADMIN_PASSWORD: "JavierMix2026!"
+      ADMIN_PASSWORD: "Tecno/121212"
       EXTENSIONS_CHECK_PROXY_HEADERS: "true"
       CACHE_ENABLED: "true"
       CACHE_STORE: "redis"

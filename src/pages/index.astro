@@ -100,8 +100,8 @@ function getLocalFallbackUrl(id: string) {
                         <span class="btn-label">VER COLECCIÓN</span>
                         <span class="btn-hover-bg"></span>
                     </a>
-                    <a href="/enmarcado" class="glass-cta-btn secondary">
-                        <span class="btn-label">STUDIO ENMARCADO</span>
+                    <a href="https://javiermix.ar/revista" class="glass-cta-btn secondary">
+                        <span class="btn-label">REVISTA ONLINE</span>
                         <span class="btn-hover-bg"></span>
                     </a>
                 </div>
@@ -347,6 +347,23 @@ function getLocalFallbackUrl(id: string) {
 .glass-cta-btn.secondary {
     background: rgba(255, 255, 255, 0.03);
     border-color: rgba(255, 255, 255, 0.05);
+}
+
+.glass-cta-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+}
+
+.glass-cta-btn.secondary:hover .btn-label {
+    color: var(--color-white);
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.glass-cta-btn.secondary:hover .btn-hover-bg {
+    opacity: 0;
 }
 
 .split-content {
