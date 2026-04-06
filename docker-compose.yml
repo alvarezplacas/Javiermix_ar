@@ -17,7 +17,7 @@ services:
   web_javiermix:
     build:
       context: .
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile
     container_name: javiermix_web
     restart: always
     env_file:
