@@ -2,12 +2,12 @@
 // src/pages/obra/[id].astro
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
-import { getArtworkDetails, fetchFromDirectus, getAssetUrl } from '../../conexion/directus';
-import FramingStudio from '../../components/FramingStudio.astro';
-import AddToCartButton from '../../components/ecommerce/AddToCartButton.tsx';
+import { getArtworkDetails, getAssetUrl } from '../../conexion/directus';
+import { createDirectus, rest, staticToken, readItem, readItems } from '@directus/sdk';
 
-// 🚀 Motor V8: SSR (Astro 6 optimized)
-export const prerender = false;
+const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
+const DIRECTUS_TOKEN = import.meta.env.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
+const client = createDirectus(DIRECTUS_URL).with(rest()).with(staticToken(DIRECTUS_TOKEN));
 
 const { id } = Astro.params;
 const details = await getArtworkDetails(id as string);
@@ -18,30 +18,31 @@ if (!details || !details.mainFile) {
 
 const { mainFile, meta } = details;
 
-// Get Serie Name from folder
+// 1. Obtener Nombre de la Serie (Carpeta) vía SDK
 let serieName = "Colección Privada";
 try {
-    const folderRes = await fetchFromDirectus(`/folders/${mainFile.folder}`);
-    const folderData = await folderRes.json();
-    serieName = folderData.data?.name || "Serie";
+    const folder: any = await client.request(readItem('directus_folders' as any, mainFile.folder));
+    serieName = folder?.name || "Serie";
 } catch (e) {}
 
 const title = mainFile.title || "Obra Javier Mix";
 const coverImage = getAssetUrl(mainFile.id) || '';
 
-// Discover variant hover if exists (_2) - Robust handling
+// 2. Descubrir variante de ambiente (_2) vía SDK
 let roomImage = null;
 try {
     const rawBase = mainFile.filename_download.split('.')[0].toLowerCase();
-    // Normalize base name: remove spaces, dashes, underscores
     const cleanBase = rawBase.replace(/[\s\-_]/g, '');
     
-    const variantsRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${mainFile.folder}&filter[filename_download][_contains]=_2`);
-    const variantsData = await variantsRes.json();
+    const variants = await client.request(readItems('directus_files' as any, {
+        filter: { 
+            folder: { _eq: mainFile.folder },
+            filename_download: { _contains: '_2' }
+        }
+    }));
     
-    const hoverVariant = variantsData.data?.find((f: any) => {
+    const hoverVariant = (variants as any[])?.find((f: any) => {
         const name = f.filename_download.toLowerCase().replace(/[\s\-_]/g, '');
-        // Check if it starts with the clean base + 2 OR ends with 2
         return name.includes(cleanBase + '2') || name.startsWith(cleanBase + '2');
     });
     

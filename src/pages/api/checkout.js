@@ -1,5 +1,9 @@
 import { createPreference } from '../../services/mercadopago';
-import { fetchFromDirectus, createOrder } from '../../conexion/directus';
+import { createOrder } from '../../conexion/directus';
+import { createDirectus, rest, staticToken, readItem } from '@directus/sdk';
+
+const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
+const DIRECTUS_TOKEN = import.meta.env.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
 
 /**
  * 🛒 API Checkout (Motor V8)
@@ -18,6 +22,7 @@ export const POST = async ({ request }) => {
         }
 
         // 🛡️ PROTOCOLO DE BLINDAJE: Validación Server-Side contra Directus
+        const client = createDirectus(DIRECTUS_URL).with(rest()).with(staticToken(DIRECTUS_TOKEN));
         const validatedItems = [];
         let totalReal = 0;
 
@@ -26,8 +31,7 @@ export const POST = async ({ request }) => {
             const realId = item.id.includes('-') ? item.id.split('-')[0] : item.id;
             const sizeLabel = item.id.includes('-') ? item.id.split('-')[1].toLowerCase() : 'standard';
 
-            const res = await fetchFromDirectus(`/items/artworks/${realId}`);
-            const dbItem = (await res.json()).data;
+            const dbItem = await client.request(readItem('artworks', realId));
 
             if (!dbItem) throw new Error(`Producto no encontrado: ${realId}`);
 

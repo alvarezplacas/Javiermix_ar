@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
-import { fetchFromDirectus } from '../../../conexion/directus';
+import { createDirectus, rest, staticToken, deleteItem } from '@directus/sdk';
+
+const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
 
 export const GET: APIRoute = async ({ request, cookies }) => {
   const url = new URL(request.url);
@@ -14,26 +16,14 @@ export const GET: APIRoute = async ({ request, cookies }) => {
   }
 
   try {
-    const res = await fetchFromDirectus(`/items/magazine/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (res.ok) {
-      return new Response(JSON.stringify({ success: true }), { status: 200 });
-    } else {
-      const data = await res.json();
-      return new Response(JSON.stringify({ 
-        success: false, 
-        message: data.errors?.[0]?.message || 'Error en Directus' 
-      }), { status: res.status });
-    }
+    const client = createDirectus(DIRECTUS_URL).with(rest()).with(staticToken(token));
+    await client.request(deleteItem('magazine', parseInt(id) as any));
+    
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (error: any) {
     return new Response(JSON.stringify({ 
       success: false, 
-      message: error.message 
+      message: error.message || 'Error en Directus' 
     }), { status: 500 });
   }
 };

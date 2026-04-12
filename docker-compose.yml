@@ -1,5 +1,5 @@
 services:
-  # Base de Datos Principal (PostgreSQL 16)
+  # Base de Datos Principal (PostgreSQL 15)
   db:
     image: postgres:16-alpine
     container_name: javiermix_db
@@ -25,8 +25,8 @@ services:
     networks:
       - javiermix_network
 
-  # Caching Layer (Redis 7)
-  redis:
+  # Caching Layer (Redis 7) - 'cache' para Directus
+  cache:
     image: redis:7-alpine
     container_name: javiermix_redis
     restart: always
@@ -37,7 +37,7 @@ services:
 
   # Directus (Gestión de Contenido)
   directus:
-    image: directus/directus:latest
+    image: directus/directus:11.17.2
     container_name: javiermix_directus
     restart: always
     environment:
@@ -53,14 +53,23 @@ services:
       ADMIN_EMAIL: "admin@javiermix.ar"
       ADMIN_PASSWORD: "Tecno/121212"
       EXTENSIONS_CHECK_PROXY_HEADERS: "true"
+      
+      # ⚡ Optimización de Medios (AVIF & Video)
+      FILES_MIME_TYPE_ALLOW_LIST: "image/avif,image/webp,video/mp4,video/quicktime,image/jpeg,image/png,image/svg+xml"
+      FILES_SIZE_LIMIT: "100mb"
+      IMAGE_TRANSFORMER: "sharp"
+      # AVIF/WebP Quality Tuning
+      WEBP_QUALITY: "80"
+      AVIF_QUALITY: "75"
+
       CACHE_ENABLED: "true"
       CACHE_STORE: "redis"
-      REDIS: "redis://javiermix_redis:6379"
-      CACHE_REDIS: "redis://javiermix_redis:6379"
+      REDIS: "redis://cache:6379"
+      CACHE_REDIS: "redis://cache:6379"
       LOCK_STORE: "redis"
-      LOCK_REDIS: "redis://javiermix_redis:6379"
+      LOCK_REDIS: "redis://cache:6379"
       STORAGE_LOCATIONS: "s3,local"
-      # Configuración de S3 (MinIO) - Fallback a local si se prefiere
+      # Configuración de S3 (MinIO)
       STORAGE_S3_DRIVER: "s3"
       STORAGE_S3_KEY: "javiermix_key"
       STORAGE_S3_SECRET: "javiermix_secret"
@@ -81,7 +90,7 @@ services:
   # Umami Analytics (Estadísticas Golden Master 2.0)
   stats:
     image: ghcr.io/umami-software/umami:postgresql-latest
-    container_name: javiermix-stats
+    container_name: javiermix_stats
     restart: always
     environment:
       DATABASE_URL: postgres://postgres:JavierMix2026!@db:5432/javiermix_db
