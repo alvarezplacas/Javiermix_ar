@@ -35,7 +35,7 @@ export class DirectusManager {
     public static async getClient() {
         // [Server-Side] Bypass SSL Interno para Caddy Loopback
         if (typeof process !== 'undefined' && typeof window === 'undefined') {
-            process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+            try { process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; } catch(e) {}
         }
 
         if (!this.client) {
@@ -43,18 +43,32 @@ export class DirectusManager {
             const envInternal = typeof process !== 'undefined' ? process.env.INTERNAL_DIRECTUS_URL : null;
             const baseUrl = (isServer && !this.isLocalFallback) ? (envInternal || INTERNAL_URL) : PUBLIC_URL;
 
-            this.client = createDirectus<Schema>(baseUrl)
-                .with(rest())
-                .with(staticToken(STATIC_TOKEN));
+            // Intentar con Token si existe, si no, crear cliente público
+            const baseClient = createDirectus<Schema>(baseUrl).with(rest());
+            
+            if (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') {
+                this.client = baseClient.with(staticToken(STATIC_TOKEN));
+            } else {
+                this.client = baseClient;
+            }
 
-            // [SSR] Verificación de red interna optimizada
+            // [SSR] Verificación de red interna y Auth
             if (isServer && !this.isLocalFallback) {
                 try {
+                    // Validar conectividad básica
                     const res = await fetch(`${baseUrl}/server/health`);
-                    if (!res.ok) throw new Error(`Status ${res.status}`);
-                    console.log(`[DirectusManager] ✅ Conectado vía Red Interna: ${baseUrl}`);
+                    if (!res.ok) throw new Error(`Network Status ${res.status}`);
+
+                    // [Audit] Validar si el Token es aceptado o si pasamos a modo público
+                    try {
+                        await this.client.request(readFolders({ limit: 1 }));
+                        console.log(`[DirectusManager] ✅ Conectado con Auth: ${baseUrl}`);
+                    } catch (authErr: any) {
+                        console.warn(`[DirectusManager] ⚠️ Token inválido. Conmutando a Modo Público...`);
+                        this.client = baseClient; // Degradación graciosa a público
+                    }
                 } catch (e: any) {
-                    console.warn(`[DirectusManager] ⚠️ Red Interna (${baseUrl}) inaccesible. Conmutando a ${PUBLIC_URL}...`);
+                    console.warn(`[DirectusManager] ⚠️ Red Interna (${baseUrl}) inalcanzable. Conmutando a ${PUBLIC_URL}...`);
                     this.isLocalFallback = true;
                     this.client = null; 
                     return this.getClient();
@@ -99,13 +113,37 @@ export const fetchFromDirectus = (path: string, options?: RequestInit) => Direct
    SECCIÓN: FUNCIONES MIGRADAS AL SDK
    ========================================================================== */
 
+export async function getHomeFiles() {
+    try {
+        const client = await DirectusManager.getClient();
+        const folders = await client.request(readFolders({
+            filter: { name: { _in: ['Home', 'home', 'HOME'] } }
+        }));
+        
+        const rootId = folders[0]?.id;
+        if (!rootId) return [];
+        
+        return await client.request(readItems('directus_files' as any, {
+            filter: { folder: { _eq: rootId } },
+            limit: -1
+        }));
+    } catch (e) {
+        return [];
+    }
+}
+
 export async function getSeries() {
     try {
         const client = await DirectusManager.getClient();
         const folders = await client.request(readFolders({
-            filter: { name: { _eq: 'Catalogo' } }
+            filter: { name: { _in: ['Catalogo', 'catalogo', 'CATALOGO', 'Coleccion', 'coleccion', 'COLECCION'] } }
         }));
-        const rootId = folders[0]?.id;
+        
+        // Priorizar variantes de 'Coleccion' o 'Catalogo'
+        const rootId = folders.find((f: any) => 
+            ['Coleccion', 'coleccion', 'COLECCION', 'Catalogo', 'catalogo', 'CATALOGO'].includes(f.name)
+        )?.id || folders[0]?.id;
+        
         if (!rootId) return [];
 
         const subfolders = await client.request(readFolders({

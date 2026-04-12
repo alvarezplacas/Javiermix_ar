@@ -162,48 +162,78 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
   <Footer />
 
   <script>
-    // Bucle Infinito Hero (Mixto)
-    const mediaItems = document.querySelectorAll('.hero-media-item');
-    let currentIndex = 0;
-    let loopTimeout;
-
-    function showNext() {
-        if (mediaItems.length <= 1) return;
+    document.addEventListener('astro:page-load', () => {
+        // Bucle Infinito Hero (Mixto)
+        const mediaItems = document.querySelectorAll('.hero-media-item');
+        console.log(`[Hero-Debug] Assets detectados: ${mediaItems.length}`);
         
-        const currentItem = mediaItems[currentIndex];
-        const nextIndex = (currentIndex + 1) % mediaItems.length;
-        const nextItem = mediaItems[nextIndex];
-
-        // Pausar video si el actual lo es
-        if (currentItem.dataset.type === 'video') {
-            (currentItem as HTMLVideoElement).pause();
+        if (mediaItems.length <= 1) {
+            console.warn("[Hero-Debug] No hay suficientes assets para transiciones.");
+            return;
         }
 
-        currentItem.classList.remove('active');
-        nextItem.classList.add('active');
-        currentIndex = nextIndex;
+        let currentIndex = 0;
+        let loopTimeout: any;
 
-        // Reproducir si el siguiente es video
-        if (nextItem.dataset.type === 'video') {
-            const vid = nextItem as HTMLVideoElement;
-            vid.currentTime = 0;
-            vid.play();
+        function showNext() {
+            clearTimeout(loopTimeout);
             
-            // Si el video es largo, esperar a que termine (con un cap de 10s para fluidez)
-            const duration = Math.min(vid.duration || 8, 10) * 1000;
-            loopTimeout = setTimeout(showNext, duration);
-        } else {
-            // Si es imagen, esperar 6s
-            loopTimeout = setTimeout(showNext, 6000);
-        }
-    }
+            const currentItem = mediaItems[currentIndex] as HTMLElement;
+            const nextIndex = (currentIndex + 1) % mediaItems.length;
+            const nextItem = mediaItems[nextIndex] as HTMLElement;
 
-    // Iniciar bucle tras el poster inicial (2s poster + 1.8s fade)
-    setTimeout(() => {
-        const first = mediaItems[0];
-        if (first && first.dataset.type === 'video') (first as HTMLVideoElement).play();
-        loopTimeout = setTimeout(showNext, 6000);
-    }, 4500);
+            console.log(`[Hero-Debug] Transición: ${currentIndex} -> ${nextIndex}`);
+
+            // Transición de clases
+            currentItem.classList.remove('active');
+            nextItem.classList.add('active');
+
+            // Pausar y resetear video si el actual lo era
+            if (currentItem.dataset.type === 'video') {
+                const vid = currentItem as HTMLVideoElement;
+                vid.pause();
+                vid.currentTime = 0;
+            }
+
+            currentIndex = nextIndex;
+
+            // Iniciar reproducción y configurar siguiente paso
+            if (nextItem.dataset.type === 'video') {
+                const vid = nextItem as HTMLVideoElement;
+                vid.play().catch(e => {
+                    console.error("[Hero-Debug] Error al reproducir video:", e.message);
+                    loopTimeout = setTimeout(showNext, 4000);
+                });
+
+                // El video manda
+                vid.onended = () => {
+                    console.log("[Hero-Debug] Video terminado, pasando al siguiente...");
+                    showNext();
+                };
+                
+                // Backup timeout (por seguridad)
+                const duration = (vid.duration || 10) * 1000;
+                loopTimeout = setTimeout(showNext, Math.max(duration + 500, 15000));
+            } else {
+                // Imagen: 6 segundos
+                loopTimeout = setTimeout(showNext, 6000);
+            }
+        }
+
+        // Iniciar loop tras intro
+        setTimeout(() => {
+            const first = mediaItems[0] as HTMLElement;
+            if (first && first.dataset.type === 'video') {
+                const vid = first as HTMLVideoElement;
+                vid.play().catch(e => console.warn("[Hero-Debug] Autoplay bloqueado:", e.message));
+                vid.onended = () => showNext();
+                loopTimeout = setTimeout(showNext, (vid.duration || 10) * 1000);
+            } else {
+                loopTimeout = setTimeout(showNext, 6000);
+            }
+            console.log("[Hero-Debug] Loop iniciado.");
+        }, 4500);
+    });
   </script>
 </Layout>
 
