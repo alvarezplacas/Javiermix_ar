@@ -116,17 +116,35 @@ export const fetchFromDirectus = (path: string, options?: RequestInit) => Direct
 export async function getHomeFiles() {
     try {
         const client = await DirectusManager.getClient();
+        
+        // 1. Intentar por carpeta "Home" (Case-Insensitive)
         const folders = await client.request(readFolders({
             filter: { name: { _in: ['Home', 'home', 'HOME'] } }
         }));
         
-        const rootId = folders[0]?.id;
-        if (!rootId) return [];
+        let files = [];
+        if (folders[0]?.id) {
+            files = await client.request(readItems('directus_files' as any, {
+                filter: { folder: { _eq: folders[0].id } },
+                limit: -1
+            }));
+        }
+
+        // 2. Fallback: Si no hay archivos en "Home", traer los 8 más recientes (imágenes/vídeos)
+        if (files.length === 0) {
+            files = await client.request(readItems('directus_files' as any, {
+                limit: 8,
+                sort: ['-created_on'],
+                filter: { 
+                    _or: [
+                        { type: { _contains: 'image' } },
+                        { type: { _contains: 'video' } }
+                    ]
+                }
+            }));
+        }
         
-        return await client.request(readItems('directus_files' as any, {
-            filter: { folder: { _eq: rootId } },
-            limit: -1
-        }));
+        return files;
     } catch (e) {
         return [];
     }
@@ -135,37 +153,37 @@ export async function getHomeFiles() {
 export async function getSeries() {
     try {
         const client = await DirectusManager.getClient();
-        const folders = await client.request(readFolders({
-            filter: { name: { _in: ['Catalogo', 'catalogo', 'CATALOGO', 'Coleccion', 'coleccion', 'COLECCION'] } }
-        }));
         
-        // Priorizar variantes de 'Coleccion' o 'Catalogo'
-        const rootId = folders.find((f: any) => 
-            ['Coleccion', 'coleccion', 'COLECCION', 'Catalogo', 'catalogo', 'CATALOGO'].includes(f.name)
-        )?.id || folders[0]?.id;
+        // 1. Obtener TODAS las carpetas (Evitamos problemas de jerarquía Parent/Child)
+        const allFolders = await client.request(readFolders());
         
-        if (!rootId) return [];
+        // 2. Filtrar carpetas que no sean "Home" o carpetas de sistema, y que tengan imágenes
+        const series = await Promise.all(allFolders.map(async (f: any) => {
+            if (['Home', 'home', 'HOME'].includes(f.name)) return null;
 
-        const subfolders = await client.request(readFolders({
-            filter: { parent: { _eq: rootId } }
-        }));
-
-        return await Promise.all(subfolders.map(async (f: any) => {
+            // Ver si tiene al menos 1 imagen
             const files = await client.request(readItems('directus_files' as any, {
                 filter: { folder: { _eq: f.id }, type: { _contains: 'image' } },
                 limit: 1
             }));
-            const allFiles = await client.request(readItems('directus_files' as any, {
+
+            if (files.length === 0) return null;
+
+            // Contar total imágenes
+            const countFiles = await client.request(readItems('directus_files' as any, {
                 filter: { folder: { _eq: f.id }, type: { _contains: 'image' } },
                 fields: ['id']
             }));
+
             return {
                 id: f.id,
                 name: f.name,
-                coverId: files?.[0]?.id || null,
-                count: allFiles.length
+                coverId: files[0]?.id || null,
+                count: countFiles.length
             };
         }));
+
+        return series.filter(s => s !== null);
     } catch (e) {
         return [];
     }

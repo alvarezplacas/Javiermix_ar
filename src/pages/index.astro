@@ -8,42 +8,14 @@ import CollectorJoin from '../components/CollectorJoin.astro';
 
 export const prerender = false;
 
-import { getSeries, getAssetUrl, DirectusManager } from '@conexion/directus';
-import { readFolders, readItems } from '@directus/sdk';
+import { getHomeFiles, getAssetUrl, DirectusManager } from '@conexion/directus';
 
 let homeAssets = [];
 try {
-    const client = await DirectusManager.getClient();
-    
-    // 1. Buscar carpeta "home" usando el SDK
-    const folders = await client.request(readFolders({
-        filter: { name: { _icontains: 'home' } }
-    }));
-    const folder = folders.find(f => f.name.toLowerCase() === 'home');
-
-    if (folder) {
-        console.log(`[SSR] 🏠 Carpeta Home encontrada: ID ${folder.id}`);
-        // 2. Obtener archivos de la carpeta
-        const files = await client.request(readItems('directus_files' as any, {
-            filter: { folder: { _eq: folder.id } },
-            sort: ['filename_download']
-        }));
-        homeAssets = files || [];
-        console.log(`[SSR] 📂 Assets cargados: ${homeAssets.length}`);
-    } else {
-        console.warn(`[SSR] ⚠️ Carpeta 'Home' no encontrada en Directus.`);
-    }
-
-    // 3. Fallback: Si no hay assets, intentar archivos recientes
-    if (homeAssets.length === 0) {
-        const fallbackFiles = await client.request(readItems('directus_files' as any, {
-            limit: 5,
-            sort: ['-created_on']
-        }));
-        homeAssets = fallbackFiles || [];
-    }
-} catch (error) {
-    console.error(`[SSR-Home-Error] ❌ Fracaso en Fetch de Directus (${new Date().toISOString()}):`, error.message || error);
+    homeAssets = await getHomeFiles();
+    console.log(`[SSR] 📂 Assets cargados para Home: ${homeAssets.length}`);
+} catch (error: any) {
+    console.error(`[SSR-Home-Error] ❌ Fracaso en Fetch de Directus:`, error.message);
 }
 
 // Global Fallback if everything fails
