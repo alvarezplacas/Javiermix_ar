@@ -48,11 +48,14 @@ try {
             const filesData = await filesRes.json();
             const folderFiles = filesData.data || [];
                 
-            dynamicMedia = folderFiles.map(f => ({
-                type: f.type?.startsWith('video/') ? 'video' : 'image',
-                src: getAssetUrl(f.id, { width: 1600 }),
-                caption: f.title || ''
-            }));
+            dynamicMedia = folderFiles.map(f => {
+                const isVideo = f.type?.startsWith('video/');
+                return {
+                    type: isVideo ? 'video' : 'image',
+                    src: getAssetUrl(f.id, isVideo ? { raw: true } : { width: 1600 }),
+                    caption: f.title || ''
+                };
+            });
         }
     }
 } catch (e) {

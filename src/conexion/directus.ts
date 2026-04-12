@@ -35,25 +35,22 @@ class DirectusManager {
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
-            const baseUrl = (isServer && !this.isLocalFallback) ? INTERNAL_URL : PUBLIC_URL;
+            // 🚀 Estandarización de nombre de servicio para Red Docker (directus)
+            const baseUrl = (isServer && !this.isLocalFallback) ? 'http://directus:8055' : PUBLIC_URL;
 
             this.client = createDirectus<Schema>(baseUrl)
                 .with(rest())
                 .with(staticToken(STATIC_TOKEN));
 
-            // [SSR] Verificación de red interna (Docker)
+            // [SSR] Verificación de salud de red interna
             if (isServer && !this.isLocalFallback) {
                 try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 1000);
-                    const res = await fetch(`${INTERNAL_URL}/health`, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    
+                    const res = await fetch('http://directus:8055/health');
                     if (!res.ok) throw new Error('Unhealthy');
                 } catch (e) {
-                    console.warn('⚠️ Directus: Red Interna inaccesible. Conmutando a Public HTTPS (Local/VPS Fallback)...');
+                    console.warn(`⚠️ Directus: Red Interna inaccesible (http://directus:8055). Conmutando a ${PUBLIC_URL}...`);
                     this.isLocalFallback = true;
-                    this.client = null; // Reset para reinicializar con PUBLIC_URL
+                    this.client = null;
                     return this.getClient();
                 }
             }

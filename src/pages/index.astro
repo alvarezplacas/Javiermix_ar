@@ -49,9 +49,9 @@ if (homeAssets.length === 0) {
 }
 
 // Nota: getAssetUrl centralizado ya maneja HTTPS y optimización.
-function getLocalFallbackUrl(id: string) {
+function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     if (id === 'fallback') return '/media/home/00.avif'; 
-    return getAssetUrl(id);
+    return getAssetUrl(id, isVideo ? { raw: true } : {});
 }
 ---
 
@@ -70,7 +70,7 @@ function getLocalFallbackUrl(id: string) {
             {homeAssets.find(a => a.type?.startsWith('image/')) && (
                 <div 
                     class="hero-poster-master" 
-                    style={`background-image: url(${getLocalFallbackUrl(homeAssets.find(a => a.type?.startsWith('image/')).id)});`}
+                    style={`background-image: url(${getLocalFallbackUrl(homeAssets.find(a => a.type?.startsWith('image/')).id, false)});`}
                 ></div>
             )}
 
@@ -80,7 +80,7 @@ function getLocalFallbackUrl(id: string) {
                     const isVid = asset.type?.startsWith('video/');
                     return isVid ? (
                         <video 
-                            src={getLocalFallbackUrl(asset.id)} 
+                            src={getLocalFallbackUrl(asset.id, true)} 
                             class={`hero-media-item ${index === 0 ? 'active' : ''}`}
                             muted 
                             loop={false}
@@ -89,7 +89,7 @@ function getLocalFallbackUrl(id: string) {
                         ></video>
                     ) : (
                         <img 
-                            src={getLocalFallbackUrl(asset.id)} 
+                            src={getLocalFallbackUrl(asset.id, false)} 
                             alt={asset.title || "Obra Javier Mix"} 
                             class={`hero-media-item ${index === 0 ? 'active' : ''}`} 
                             data-type="image"
