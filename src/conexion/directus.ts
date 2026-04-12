@@ -16,6 +16,11 @@ import {
 import { REDIS } from './redis';
 import type { Schema, Order } from '../types/directus';
 
+// 🚨 [Audit] Desactivar estrictez SSL para comunicación entre contenedores (Caddy Loopback)
+if (typeof process !== 'undefined') {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 // 🌐 Configuración de URLs (Blindaje HTTPS)
 const PUBLIC_URL = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
 const INTERNAL_URL = import.meta.env?.INTERNAL_DIRECTUS_URL || 'http://directus:8055'; 
@@ -24,7 +29,7 @@ const STATIC_TOKEN = import.meta.env?.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dO
 /**
  * 🛰️ Cliente Directus (Singleton con Fallback Inteligente)
  */
-class DirectusManager {
+export class DirectusManager {
     private static client: any = null;
     private static isLocalFallback = false;
 
@@ -35,7 +40,8 @@ class DirectusManager {
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
-            const baseUrl = (isServer && !this.isLocalFallback) ? INTERNAL_URL : PUBLIC_URL;
+            const envInternal = process.env.INTERNAL_DIRECTUS_URL;
+            const baseUrl = (isServer && !this.isLocalFallback) ? (envInternal || INTERNAL_URL) : PUBLIC_URL;
 
             this.client = createDirectus<Schema>(baseUrl)
                 .with(rest())

@@ -1,0 +1,106 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { DirectusManager, getAssetUrl } from '../conexion/directus';
+import { readFolders, readItems } from '@directus/sdk';
+
+export const prerender = false;
+
+let results: any = {
+    internalUrl: '',
+    publicUrl: 'https://admin.javiermix.ar',
+    connectivity: {
+        internal: 'PENDING',
+        public: 'PENDING'
+    },
+    auth: 'PENDING',
+    folders: [],
+    errors: []
+};
+
+try {
+    results.internalUrl = DirectusManager.getBaseUrl();
+    const client = await DirectusManager.getClient();
+
+    // 1. Test Conectividad Directa
+    try {
+        const res = await fetch(`${results.internalUrl}/server/health`);
+        results.connectivity.internal = res.ok ? '✅ OK' : `❌ FAIL (${res.status})`;
+    } catch (e: any) {
+        results.connectivity.internal = `❌ ERROR: ${e.message}`;
+        results.errors.push(`Internal Connectivity: ${e.message}`);
+    }
+
+    try {
+        const res = await fetch(`${results.publicUrl}/server/health`);
+        results.connectivity.public = res.ok ? '✅ OK' : `❌ FAIL (${res.status})`;
+    } catch (e: any) {
+        results.connectivity.public = `❌ ERROR: ${e.message}`;
+    }
+
+    // 2. Test Auth & Folders
+    try {
+        const folders = await client.request(readFolders());
+        results.auth = '✅ VALID TOKEN';
+        results.folders = folders.map((f: any) => ({
+            id: f.id,
+            name: f.name,
+            parent: f.parent
+        }));
+    } catch (e: any) {
+        results.auth = `❌ INVALID / NO PERMS: ${e.message}`;
+        results.errors.push(`Auth Error: ${e.message}`);
+    }
+
+} catch (globalError: any) {
+    results.errors.push(`Global SSR Error: ${globalError.message}`);
+}
+---
+
+<Layout title="VPS Debug Audit">
+    <main style="padding: 4rem; background: #0a0a0a; color: #fff; font-family: monospace; line-height: 1.6;">
+        <h1 style="color: #C5A059; border-bottom: 1px solid #333; padding-bottom: 1rem;">🛰️ VPS AUDIT DIAGNOSTIC</h1>
+        
+        <section style="margin-top: 2rem;">
+            <h2 style="font-size: 1.2rem; color: #888;">NETWORK STATUS</h2>
+            <ul style="list-style: none; padding: 0;">
+                <li><strong>Base URL (Actual):</strong> {results.internalUrl}</li>
+                <li><strong>Internal (Docker):</strong> {results.connectivity.internal}</li>
+                <li><strong>Public (HTTPS):</strong> {results.connectivity.public}</li>
+            </ul>
+        </section>
+
+        <section style="margin-top: 2rem;">
+            <h2 style="font-size: 1.2rem; color: #888;">AUTHENTICATION</h2>
+            <p><strong>Status:</strong> {results.auth}</p>
+        </section>
+
+        <section style="margin-top: 2rem;">
+            <h2 style="font-size: 1.2rem; color: #888;">FOLDERS DISCOVERED ({results.folders.length})</h2>
+            <div style="background: #111; padding: 1rem; border: 1px solid #222; max-height: 300px; overflow: auto;">
+                {results.folders.length > 0 ? (
+                    results.folders.map((f: any) => (
+                        <div style="margin-bottom: 0.5rem; border-bottom: 1px solid #222; padding-bottom: 0.5rem;">
+                            <span style="color: #C5A059;">[{f.id}]</span> <strong>{f.name}</strong>
+                            <br/><small style="color: #666;">Parent: {f.parent || 'ROOT'}</small>
+                        </div>
+                    ))
+                ) : (
+                    <p style="color: #f44;">No se encontraron carpetas o el token no tiene permisos.</p>
+                )}
+            </div>
+        </section>
+
+        {results.errors.length > 0 && (
+            <section style="margin-top: 2rem; border: 1px solid #f44; padding: 1rem; background: rgba(255,0,0,0.1);">
+                <h2 style="font-size: 1.2rem; color: #f44;">CRITICAL ERRORS</h2>
+                {results.errors.map((err: string) => (
+                    <p style="margin: 0.5rem 0;">⚠️ {err}</p>
+                ))}
+            </section>
+        )}
+
+        <footer style="margin-top: 4rem; color: #444; font-size: 0.8rem;">
+            AUDIT TIMESTAMP: {new Date().toISOString()} | ENV: PRODUCTION_VPS
+        </footer>
+    </main>
+</Layout>
