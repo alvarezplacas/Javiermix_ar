@@ -18,7 +18,7 @@ import type { Schema, Order } from '../types/directus';
 
 // 🌐 Configuración de URLs (Blindaje HTTPS)
 const PUBLIC_URL = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-const INTERNAL_URL = 'http://directus:8055'; 
+const INTERNAL_URL = import.meta.env?.INTERNAL_DIRECTUS_URL || 'http://directus:8055'; 
 const STATIC_TOKEN = import.meta.env?.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
 
 /**
@@ -35,22 +35,23 @@ class DirectusManager {
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
-            // 🚀 Estandarización de nombre de servicio para Red Docker (directus)
-            const baseUrl = (isServer && !this.isLocalFallback) ? 'http://directus:8055' : PUBLIC_URL;
+            const baseUrl = (isServer && !this.isLocalFallback) ? INTERNAL_URL : PUBLIC_URL;
 
             this.client = createDirectus<Schema>(baseUrl)
                 .with(rest())
                 .with(staticToken(STATIC_TOKEN));
 
-            // [SSR] Verificación de salud de red interna
+            // [SSR] Verificación de red interna optimizada
             if (isServer && !this.isLocalFallback) {
                 try {
-                    const res = await fetch('http://directus:8055/health');
-                    if (!res.ok) throw new Error('Unhealthy');
-                } catch (e) {
-                    console.warn(`⚠️ Directus: Red Interna inaccesible (http://directus:8055). Conmutando a ${PUBLIC_URL}...`);
+                    // Verificación simple de respuesta HEAD/GET para asegurar ruteo Docker
+                    const res = await fetch(`${baseUrl}/server/health`);
+                    if (!res.ok) throw new Error(`Status ${res.status}`);
+                    console.log(`[DirectusManager] ✅ Conectado vía Red Interna: ${baseUrl}`);
+                } catch (e: any) {
+                    console.warn(`[DirectusManager] ⚠️ Red Interna (${baseUrl}) inaccesible: ${e.message}. Conmutando a ${PUBLIC_URL}...`);
                     this.isLocalFallback = true;
-                    this.client = null;
+                    this.client = null; 
                     return this.getClient();
                 }
             }

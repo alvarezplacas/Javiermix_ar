@@ -22,12 +22,16 @@ try {
     const folder = folders.find(f => f.name.toLowerCase() === 'home');
 
     if (folder) {
+        console.log(`[SSR] 🏠 Carpeta Home encontrada: ID ${folder.id}`);
         // 2. Obtener archivos de la carpeta
         const files = await client.request(readItems('directus_files' as any, {
             filter: { folder: { _eq: folder.id } },
             sort: ['filename_download']
         }));
         homeAssets = files || [];
+        console.log(`[SSR] 📂 Assets cargados: ${homeAssets.length}`);
+    } else {
+        console.warn(`[SSR] ⚠️ Carpeta 'Home' no encontrada en Directus.`);
     }
 
     // 3. Fallback: Si no hay assets, intentar archivos recientes
