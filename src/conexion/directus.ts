@@ -16,11 +16,6 @@ import {
 import { REDIS } from './redis';
 import type { Schema, Order } from '../types/directus';
 
-// 🚨 [Audit] Desactivar estrictez SSL para comunicación entre contenedores (Caddy Loopback)
-if (typeof process !== 'undefined') {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
-
 // 🌐 Configuración de URLs (Blindaje HTTPS)
 const PUBLIC_URL = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
 const INTERNAL_URL = import.meta.env?.INTERNAL_DIRECTUS_URL || 'http://directus:8055'; 
@@ -38,9 +33,14 @@ export class DirectusManager {
     }
 
     public static async getClient() {
+        // [Server-Side] Bypass SSL Interno para Caddy Loopback
+        if (typeof process !== 'undefined' && typeof window === 'undefined') {
+            process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+        }
+
         if (!this.client) {
             const isServer = typeof window === 'undefined';
-            const envInternal = process.env.INTERNAL_DIRECTUS_URL;
+            const envInternal = typeof process !== 'undefined' ? process.env.INTERNAL_DIRECTUS_URL : null;
             const baseUrl = (isServer && !this.isLocalFallback) ? (envInternal || INTERNAL_URL) : PUBLIC_URL;
 
             this.client = createDirectus<Schema>(baseUrl)
@@ -50,12 +50,11 @@ export class DirectusManager {
             // [SSR] Verificación de red interna optimizada
             if (isServer && !this.isLocalFallback) {
                 try {
-                    // Verificación simple de respuesta HEAD/GET para asegurar ruteo Docker
                     const res = await fetch(`${baseUrl}/server/health`);
                     if (!res.ok) throw new Error(`Status ${res.status}`);
                     console.log(`[DirectusManager] ✅ Conectado vía Red Interna: ${baseUrl}`);
                 } catch (e: any) {
-                    console.warn(`[DirectusManager] ⚠️ Red Interna (${baseUrl}) inaccesible: ${e.message}. Conmutando a ${PUBLIC_URL}...`);
+                    console.warn(`[DirectusManager] ⚠️ Red Interna (${baseUrl}) inaccesible. Conmutando a ${PUBLIC_URL}...`);
                     this.isLocalFallback = true;
                     this.client = null; 
                     return this.getClient();
@@ -134,14 +133,44 @@ export async function getSeries() {
     }
 }
 
-export async function getArtworks() {
+export async function getSerieDetails(folderId: string) {
     try {
         const client = await DirectusManager.getClient();
-        return await client.request(readItems('artworks'));
+        const folder: any = await client.request(readItem('directus_folders' as any, folderId));
+        const items: any = await client.request(readItems('directus_files' as any, {
+            filter: { folder: { _eq: folderId } },
+            limit: -1
+        }));
+        return { name: folder.name, items: items || [] };
     } catch (e) {
-        return [];
+        return { name: 'Colección', items: [] };
     }
 }
+
+export async function getArtworkLikes(fileId: string) {
+    try {
+        const client = await DirectusManager.getClient();
+        const file: any = await client.request(readItem('directus_files' as any, fileId));
+        if (!file) return 0;
+        
+        const filename = file.filename_download;
+        const redisKey = `likes:${filename}`;
+        
+        // Intentar Redis primero
+        const likes = await REDIS.get(redisKey);
+        if (likes !== null) return parseInt(likes);
+        
+        // Fallback a la colección
+        const records = await client.request(readItems('artworks', {
+            filter: { filename: { _eq: filename } },
+            limit: 1
+        }));
+        return records[0]?.likes || 0;
+    } catch (e) {
+        return 0;
+    }
+}
+
 
 export async function getArtworkDetails(fileId: string) {
     try {
