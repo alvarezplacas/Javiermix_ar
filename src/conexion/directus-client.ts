@@ -92,3 +92,35 @@ export async function updateArtwork(id: string, data: any, token: string) {
     const result = await res.json();
     return { success: !result.errors, ...result };
 }
+
+/**
+ * Create article (Magazine)
+ */
+export async function createArticle(data: any, token: string) {
+    const res = await fetch(`${PUBLIC_URL}/items/magazine`, {
+        method: 'POST',
+        headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    return { success: !result.errors, ...result };
+}
+
+/**
+ * Update article (Magazine)
+ */
+export async function updateArticle(id: string, data: any, token: string) {
+    const res = await fetch(`${PUBLIC_URL}/items/magazine/${id}`, {
+        method: 'PATCH',
+        headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    return { success: !result.errors, ...result };
+}

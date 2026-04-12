@@ -28,6 +28,10 @@ class DirectusManager {
     private static client: any = null;
     private static isLocalFallback = false;
 
+    public static getBaseUrl() {
+        return (typeof window === 'undefined' && !this.isLocalFallback) ? INTERNAL_URL : PUBLIC_URL;
+    }
+
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
@@ -230,14 +234,49 @@ export async function addLike(artworkId: string, ip: string) {
     }
 }
 
-export async function getArticles() {
+export async function getArticles(token?: string) {
     try {
         const client = await DirectusManager.getClient();
-        return await client.request(readItems('magazine', {
+        
+        // Si hay token, creamos un cliente temporal con ese token para ver borradores
+        const authClient = token ? 
+            createDirectus<Schema>(DirectusManager.getBaseUrl())
+                .with(rest())
+                .with(staticToken(token)) : client;
+
+        return await authClient.request(readItems('magazine', {
             sort: ['-created_at'],
             fields: ['*', { user_created: ['*'] }]
         }));
     } catch (e) {
+        return [];
+    }
+}
+
+export async function getArtworks() {
+    try {
+        const client = await DirectusManager.getClient();
+        return await client.request(readItems('artworks', {
+            limit: -1
+        }));
+    } catch (e) {
+        return [];
+    }
+}
+
+export async function getCertificates(token?: string) {
+    try {
+        const baseUrl = DirectusManager.getBaseUrl();
+        const client = createDirectus<Schema>(baseUrl)
+            .with(rest())
+            .with(staticToken(token || STATIC_TOKEN));
+
+        return await client.request(readItems('certificates', {
+            fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }],
+            limit: -1
+        }));
+    } catch (e) {
+        console.error('[getCertificates Error]:', e);
         return [];
     }
 }

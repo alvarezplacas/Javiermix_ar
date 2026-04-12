@@ -2,15 +2,12 @@
 // src/pages/obra/[id].astro
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
-import { getArtworkDetails, getAssetUrl } from '../../conexion/directus';
-import { createDirectus, rest, staticToken, readItem, readItems } from '@directus/sdk';
-
-const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-const DIRECTUS_TOKEN = import.meta.env.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
-const client = createDirectus(DIRECTUS_URL).with(rest()).with(staticToken(DIRECTUS_TOKEN));
+import { getArtworkDetails, getAssetUrl, DirectusManager } from '../../conexion/directus';
+import { readItem, readItems } from '@directus/sdk';
 
 const { id } = Astro.params;
 const details = await getArtworkDetails(id as string);
+const client = await DirectusManager.getClient();
 
 if (!details || !details.mainFile) {
     return Astro.redirect('/404');
