@@ -8,17 +8,13 @@ import CollectorJoin from '../components/CollectorJoin.astro';
 
 export const prerender = false;
 
-import { getSeries, getAssetUrl } from '@conexion/directus';
-import { createDirectus, rest, staticToken, readFolders, readItems } from '@directus/sdk';
-
-const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-const DIRECTUS_TOKEN = import.meta.env.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
-
-// Configuración recomendada del cliente para SSR
-const client = createDirectus(DIRECTUS_URL).with(rest()).with(staticToken(DIRECTUS_TOKEN));
+import { getSeries, getAssetUrl, DirectusManager } from '@conexion/directus';
+import { readFolders, readItems } from '@directus/sdk';
 
 let homeAssets = [];
 try {
+    const client = await DirectusManager.getClient();
+    
     // 1. Buscar carpeta "home" usando el SDK
     const folders = await client.request(readFolders({
         filter: { name: { _icontains: 'home' } }
