@@ -251,6 +251,45 @@ export async function createOrder(data: Partial<Order>) {
     }
 }
 
+/* ==========================================================================
+   SECCIÓN: FUNCIONES DASHBOARD (SSR / PRIVILEGIADAS)
+   ========================================================================== */
+
+export async function getCertificateByUuid(uuid: string, _token?: string) {
+    try {
+        const client = await DirectusManager.getClient();
+        const results = await client.request(readItems('certificates', {
+            filter: { id: { _eq: uuid } },
+            fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }],
+            limit: 1
+        }));
+        return results[0] || null;
+    } catch (e) {
+        console.error(`[getCertificateByUuid Error]:`, e);
+        return null;
+    }
+}
+
+export async function getArtworkById(id: string) {
+    try {
+        const client = await DirectusManager.getClient();
+        return await client.request(readItem('artworks', id));
+    } catch (e) {
+        return null;
+    }
+}
+
+export async function getArticleDetails(id: string, _token?: string) {
+    try {
+        const client = await DirectusManager.getClient();
+        return await client.request(readItem('magazine', id, {
+            fields: ['*', { user_created: ['*'] }]
+        }));
+    } catch (e) {
+        return null;
+    }
+}
+
 export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number } = {}) {
     if (!id) return null;
     const { width = 1200, format = 'avif', quality = 80 } = options;
