@@ -279,12 +279,24 @@ export async function getArtworkById(id: string) {
     }
 }
 
-export async function getArticleDetails(id: string, _token?: string) {
+export async function getArticleDetails(idOrSlug: string, _token?: string) {
     try {
         const client = await DirectusManager.getClient();
-        return await client.request(readItem('magazine', id, {
-            fields: ['*', { user_created: ['*'] }]
-        }));
+        
+        // 1. Intentar por ID (PK)
+        try {
+            return await client.request(readItem('magazine', idOrSlug, {
+                fields: ['*', { user_created: ['*'] }]
+            }));
+        } catch (e) {
+            // 2. Si falla (o no es un id válido), intentar por Slug
+            const results = await client.request(readItems('magazine', {
+                filter: { slug: { _eq: idOrSlug } },
+                fields: ['*', { user_created: ['*'] }],
+                limit: 1
+            }));
+            return results[0] || null;
+        }
     } catch (e) {
         return null;
     }

@@ -3,43 +3,28 @@
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-const PUBLIC_DIRECTUS_URL = process.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-const INTERNAL_DIRECTUS_URL = process.env.INTERNAL_DIRECTUS_URL || PUBLIC_DIRECTUS_URL;
+import { getArticles, getAssetUrl } from '../../conexion/directus';
 
-// Fetch articles from Directus API
-let dbArticles = [];
-try {
-  const response = await fetch(`${INTERNAL_DIRECTUS_URL}/items/magazine?sort=-created_at`);
-  const data = await response.json();
-  dbArticles = data.data || [];
-} catch (e) {
-  console.error("Error fetching magazine articles via API:", e);
-}
+// Fetch articles from Directus SDK
+const dbArticles = await getArticles();
 
-function resolveMediaURL(url: string | null): string {
-  if (!url) return '/img/placeholder.jpg';
+function resolveMediaURL(id: string | null): string {
+  if (!id) return '/img/placeholder.jpg';
   
-  // Si hay múltiples nombres separados por coma, tomar el primero
-  const cleanUrl = url.includes(',') ? url.split(',')[0].trim() : url;
+  // Si ya es una URL completa, devolverla
+  if (id.startsWith('http') || id.startsWith('/')) return id;
   
-  if (cleanUrl.startsWith('http') || cleanUrl.startsWith('/')) return cleanUrl;
-  
-  // Directus UUID support
-  if (cleanUrl.length === 36 && cleanUrl.includes('-')) {
-    return `${PUBLIC_DIRECTUS_URL}/assets/${cleanUrl}`;
-  }
-  
-  // Legacy Filezilla upload fallback
-  return `/uploads/revista/${cleanUrl}`;
+  // Usar el resolver centralizado del SDK
+  return getAssetUrl(id, { width: 800 }) || '/img/placeholder.jpg';
 }
 
 const articles = dbArticles.map(art => {
-  const wordCount = art.content_html.replace(/<[^>]*>/g, '').split(/\s+/).length;
+  const wordCount = (art.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
 
   return {
     title: art.title,
-    excerpt: art.content_html.replace(/<[^>]*>/g, '').substring(0, 180) + '...',
+    excerpt: (art.content_html || '').replace(/<[^>]*>/g, '').substring(0, 180) + '...',
     image: resolveMediaURL(art.featured_image),
     readTime: `${readTime} min`,
     link: `/revista/${art.slug}`,

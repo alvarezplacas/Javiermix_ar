@@ -4,30 +4,20 @@ import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 
-// Use PUBLIC_DIRECTUS_URL for client-side and INTERNAL for server-side
-const PUBLIC_DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-const INTERNAL_DIRECTUS_URL = import.meta.env.INTERNAL_DIRECTUS_URL || PUBLIC_DIRECTUS_URL;
+import { getArticleDetails, getAssetUrl, fetchFromDirectus } from '../../conexion/directus';
 
 export const prerender = false;
 const { slug } = Astro.params;
 
-// Fetch article from Directus API
-let articulo = null;
-try {
-  const response = await fetch(`${INTERNAL_DIRECTUS_URL}/items/magazine?filter[slug][_eq]=${slug}&limit=1`);
-  const data = await response.json();
-  articulo = data.data?.[0];
-} catch (e) {
-  console.error("Error fetching article via API:", e);
-}
+// Fetch article from Directus SDK
+const articulo = await getArticleDetails(slug!);
 
 if (!articulo) return Astro.redirect('/revista');
 
-function resolveMediaURL(url: string | null): string {
-  if (!url) return '/img/placeholder.jpg';
-  if (url.startsWith('http') || url.startsWith('/')) return url;
-  if (url.length === 36 && url.includes('-')) return `${PUBLIC_DIRECTUS_URL}/assets/${url}`;
-  return `/uploads/revista/${url}`;
+function resolveMediaURL(id: string | null): string {
+  if (!id) return '/img/placeholder.jpg';
+  if (id.startsWith('http') || id.startsWith('/')) return id;
+  return getAssetUrl(id, { width: 1400 }) || '/img/placeholder.jpg';
 }
 
 let mediaItems = [];
@@ -37,10 +27,10 @@ try {
   }
 } catch (e) {}
 
-// 1. Búsqueda dinámica por carpeta raíz "Revista" via API
+// 1. Búsqueda dinámica por carpeta raíz "Revista" via API Shim
 let dynamicMedia = [];
 try {
-    const parentRes = await fetch(`${INTERNAL_DIRECTUS_URL}/folders?filter[name][_eq]=Revista&limit=1`);
+    const parentRes = await fetchFromDirectus(`/folders?filter[name][_eq]=Revista&limit=1`);
     const parentData = await parentRes.json();
     const parentFolder = parentData.data?.[0];
 
@@ -48,19 +38,19 @@ try {
         const parentId = parentFolder.id;
         
         // Buscar subcarpeta dentro de Revista
-        const subRes = await fetch(`${INTERNAL_DIRECTUS_URL}/folders?filter[parent][_eq]=${parentId}&filter[name][_in]=${articulo.title},${articulo.slug}`);
+        const subRes = await fetchFromDirectus(`/folders?filter[parent][_eq]=${parentId}&filter[name][_in]=${articulo.title},${articulo.slug}`);
         const subData = await subRes.json();
         const subFolder = subData.data?.[0];
         
         if (subFolder) {
             const folderId = subFolder.id;
-            const filesRes = await fetch(`${INTERNAL_DIRECTUS_URL}/files?filter[folder][_eq]=${folderId}&sort=filename_download`);
+            const filesRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${folderId}&sort=filename_download`);
             const filesData = await filesRes.json();
             const folderFiles = filesData.data || [];
                 
             dynamicMedia = folderFiles.map(f => ({
                 type: f.type?.startsWith('video/') ? 'video' : 'image',
-                src: `${PUBLIC_DIRECTUS_URL}/assets/${f.id}`,
+                src: getAssetUrl(f.id, { width: 1600 }),
                 caption: f.title || ''
             }));
         }
@@ -81,7 +71,7 @@ const formattedDate = articulo.created_at ? new Date(articulo.created_at).toLoca
   day: 'numeric', month: 'long', year: 'numeric'
 }) : '';
 
-const wordCount = articulo.content_html ? articulo.content_html.replace(/<[^>]*>/g, '').split(/\s+/).length : 0;
+const wordCount = (articulo.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
 const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 ---
 
