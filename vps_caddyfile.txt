@@ -1,0 +1,31 @@
+{
+    email javier@javiermix.ar
+}
+
+# =================================================================
+# JAVIER MIX
+# =================================================================
+javiermix.ar, www.javiermix.ar {
+    uri path_regexp //+ /
+    reverse_proxy javiermix_web:4321
+}
+
+admin.javiermix.ar {
+    reverse_proxy javiermix_directus:8055
+}
+
+stats.javiermix.ar {
+    reverse_proxy javiermix_stats:3000
+}
+
+# =================================================================
+# ALVAREZ PLACAS
+# =================================================================
+alvarezplacas.com.ar, www.alvarezplacas.com.ar {
+    uri path_regexp //+ /
+    reverse_proxy 172.17.0.1:4321
+}
+
+admin.alvarezplacas.com.ar {
+    reverse_proxy 172.17.0.1:8057
+}

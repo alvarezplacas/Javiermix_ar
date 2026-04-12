@@ -39,17 +39,18 @@ try {
         homeAssets = fallbackFiles || [];
     }
 } catch (error) {
-    console.error("[Home Error] SDK Fetch failed:", error);
+    console.error(`[SSR-Home-Error] ❌ Fracaso en Fetch de Directus (${new Date().toISOString()}):`, error.message || error);
 }
 
 // Global Fallback if everything fails
 if (homeAssets.length === 0) {
-    homeAssets = [{ id: 'fallback', filename_download: '01.avif', type: 'image/avif' }];
+    console.warn("[SSR-Home-Warning] Usando fallback local por falta de assets en Directus.");
+    homeAssets = [{ id: 'fallback', filename_download: '00.avif', type: 'image/avif' }];
 }
 
 // Nota: getAssetUrl centralizado ya maneja HTTPS y optimización.
 function getLocalFallbackUrl(id: string) {
-    if (id === 'fallback') return '/img/Series/Monumentos/01.avif'; 
+    if (id === 'fallback') return '/media/home/00.avif'; 
     return getAssetUrl(id);
 }
 ---

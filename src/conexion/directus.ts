@@ -18,7 +18,7 @@ import type { Schema, Order } from '../types/directus';
 
 // 🌐 Configuración de URLs (Blindaje HTTPS)
 const PUBLIC_URL = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-const INTERNAL_URL = 'http://javiermix_directus:8055'; 
+const INTERNAL_URL = 'http://directus:8055'; 
 const STATIC_TOKEN = import.meta.env?.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
 
 /**
