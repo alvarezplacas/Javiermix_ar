@@ -33,17 +33,17 @@ export class DirectusManager {
     }
 
     public static async getClient() {
-        // [Server-Side] Bypass SSL Interno para Caddy Loopback
+        // [Server-Side] Siempre forzar bypass de SSL para URLs externas pero confiables en SSR
         if (typeof process !== 'undefined' && typeof window === 'undefined') {
             try { process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; } catch(e) {}
         }
 
         if (!this.client) {
             const isServer = typeof window === 'undefined';
-            const envInternal = typeof process !== 'undefined' ? process.env.INTERNAL_DIRECTUS_URL : null;
-            const baseUrl = (isServer && !this.isLocalFallback) ? (envInternal || INTERNAL_URL) : PUBLIC_URL;
+            // 🚨 FORZAR URL PÚBLICA: Se ha detectado que la red interna Docker (:8055) 
+            // no devuelve los mismos permisos que la pública. Usaremos PUBLIC_URL para todo.
+            const baseUrl = PUBLIC_URL;
 
-            // Intentar con Token si existe, si no, crear cliente público
             const baseClient = createDirectus<Schema>(baseUrl).with(rest());
             
             if (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') {
@@ -52,27 +52,8 @@ export class DirectusManager {
                 this.client = baseClient;
             }
 
-            // [SSR] Verificación de red interna y Auth
-            if (isServer && !this.isLocalFallback) {
-                try {
-                    // Validar conectividad básica
-                    const res = await fetch(`${baseUrl}/server/health`);
-                    if (!res.ok) throw new Error(`Network Status ${res.status}`);
-
-                    // [Audit] Validar si el Token es aceptado o si pasamos a modo público
-                    try {
-                        await this.client.request(readFolders({ limit: 1 }));
-                        console.log(`[DirectusManager] ✅ Conectado con Auth: ${baseUrl}`);
-                    } catch (authErr: any) {
-                        console.warn(`[DirectusManager] ⚠️ Token inválido. Conmutando a Modo Público...`);
-                        this.client = baseClient; // Degradación graciosa a público
-                    }
-                } catch (e: any) {
-                    console.warn(`[DirectusManager] ⚠️ Red Interna (${baseUrl}) inalcanzable. Conmutando a ${PUBLIC_URL}...`);
-                    this.isLocalFallback = true;
-                    this.client = null; 
-                    return this.getClient();
-                }
+            if (isServer) {
+                console.log(`[DirectusManager] 🛰️ Client SSR usando URL PÚBLICA: ${baseUrl}`);
             }
         }
         return this.client;
@@ -117,25 +98,26 @@ export async function getHomeFiles() {
     try {
         const client = await DirectusManager.getClient();
         
-        // 1. Intentar por carpeta "Home" (Case-Insensitive)
-        const folders = await client.request(readFolders({
-            filter: { name: { _in: ['Home', 'home', 'HOME'] } }
-        }));
+        // 1. Obtener todas las carpetas (Buscamos "Home" en JS para evitar fallos de filtrado API)
+        const allFolders = await client.request(readFolders());
+        const homeFolder = allFolders.find((f: any) => 
+            ['Home', 'home', 'HOME'].includes(f.name)
+        );
         
         let files = [];
-        if (folders[0]?.id) {
+        if (homeFolder) {
             files = await client.request(readItems('directus_files' as any, {
-                filter: { folder: { _eq: folders[0].id } },
+                filter: { folder: { _eq: homeFolder.id } },
                 limit: -1
             }));
         }
 
-        // 2. Fallback: Si no hay archivos en "Home", traer los 8 más recientes (imágenes/vídeos)
+        // 2. Fallback: Si no hay archivos en Home, traer los 8 más recientes globales
         if (files.length === 0) {
             files = await client.request(readItems('directus_files' as any, {
                 limit: 8,
                 sort: ['-created_on'],
-                filter: { 
+                filter: {
                     _or: [
                         { type: { _contains: 'image' } },
                         { type: { _contains: 'video' } }
