@@ -1,7 +1,7 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\dashboard\login.astro
 export const prerender = false;
-import Layout from '../../layouts/Layout.astro';
+import Layout from '@layouts/Layout.astro';
 
 console.log('--- LOGIN SSR RUNNING ---');
 const urlPass = Astro.url.searchParams.get('password');
@@ -232,7 +232,7 @@ if (Astro.request.method === 'POST') {
 </style>
 
 <script>
-  import { loginAdmin } from '@conexion/directus-client';
+  import { loginAdmin } from '@conexion/directus';
 
   document.addEventListener('astro:page-load', () => {
     const form = document.getElementById('login-form') as HTMLFormElement;

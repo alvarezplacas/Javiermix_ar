@@ -1,8 +1,8 @@
 ---
 // src/pages/obra/[id].astro
-import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import { getArtworkDetails, getAssetUrl, DirectusManager } from '../../conexion/directus';
+import Layout from '@layouts/Layout.astro';
+import Header from '@components/Header.astro';
+import { getArtworkDetails, getAssetUrl, DirectusManager } from '@conexion/directus';
 import { readItem, readItems } from '@directus/sdk';
 
 const { id } = Astro.params;
@@ -267,7 +267,7 @@ const etiqueta = "Fine Art Print";
 </Layout>
 
 <script>
-  import { currentSelection } from '../../store/cartStore';
+  import { currentSelection } from '@store/cartStore';
 
   document.addEventListener('astro:page-load', () => {
     // --- TABS LOGIC ---

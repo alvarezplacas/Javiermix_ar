@@ -1,4 +1,4 @@
-import { db, artworks, collectors, certificates } from '../../../conexion/db';
+import { db, artworks, collectors, certificates } from '@conexion/db';
 import { randomUUID } from 'node:crypto';
 
 export const prerender = false;

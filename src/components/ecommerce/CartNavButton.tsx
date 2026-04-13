@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/preact';
-import { cartItems, isCartOpen } from '../../store/cartStore';
+import { cartItems, isCartOpen } from '@store/cartStore';
 
 /**
  * 🛒 CartNavButton (Preact)

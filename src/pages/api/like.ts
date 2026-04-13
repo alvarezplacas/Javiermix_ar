@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { addLike } from '../../conexion/directus';
+import { addLike } from '@conexion/directus';
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
     try {

@@ -1,4 +1,4 @@
-import { updateOrder } from '../../conexion/directus';
+import { updateOrder } from '@conexion/directus';
 
 /**
  * 🛰️ Webhook Mercado Pago (Motor V8)

@@ -287,7 +287,7 @@ const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javie
 </style>
 
 <script>
-  import { updateArtwork, uploadFile } from '@conexion/directus-client';
+  import { updateArtwork, uploadFile } from '@conexion/directus';
 
   document.addEventListener('astro:page-load', () => {
     const form = document.getElementById('artwork-form') as HTMLFormElement;

@@ -1,8 +1,8 @@
 ---
 // h:\Javiermix_web_v2\frontend\herramientas\checkout.astro
-import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
+import Layout from '@layouts/Layout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
 
 export const prerender = false;
 ---
@@ -80,7 +80,7 @@ export const prerender = false;
 </Layout>
 
 <script>
-  import { cartStore, clearCart } from '../../store/cartStore.ts';
+  import { cartStore, clearCart } from '@store/cartStore.ts';
 
   document.addEventListener('astro:page-load', () => {
     const listWrapper = document.getElementById('checkout-items');

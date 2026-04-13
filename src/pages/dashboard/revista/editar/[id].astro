@@ -1,7 +1,7 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\dashboard\revista\editar\[id].astro
-import AdminLayout from '../../../../layouts/AdminLayout.astro';
-import { getArticleDetails } from '../../../../conexion/directus';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { getArticleDetails } from '@conexion/directus';
 
 export const prerender = false;
 
@@ -222,7 +222,7 @@ if (article) {
 </style>
 
 <script>
-  import { updateArticle, uploadFile } from '@conexion/directus-client';
+  import { updateArticle, uploadFile } from '@conexion/directus';
 
   document.addEventListener('astro:page-load', () => {
     const form = document.getElementById('article-form') as HTMLFormElement;

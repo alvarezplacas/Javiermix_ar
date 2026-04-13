@@ -1,10 +1,10 @@
 ---
 // h:\Javiermix_web_v2\frontend\/galeria/\index.astro
-import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
-import { getSeries, getCatalogoFiles } from '../../conexion/directus';
-import { getOptimizedImageURL } from '../../utils/media';
+import Layout from '@layouts/Layout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { getSeries, getCatalogoFiles, DirectusManager } from '@conexion/directus';
+import { getOptimizedImageURL } from '@utils/media';
 
 export const prerender = false;
 
@@ -48,7 +48,7 @@ const allArtworks = allArtworksRaw.map(file => ({
 			</div>
 		</div>
 
-		<div id="view-series" class="gallery-view active">
+		<div id="view-series" class="gallery-view active" data-api={DirectusManager.getBaseUrl()}>
 			<section class="series-snap-container" style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
 				{seriesList.length === 0 ? (
 					<div class="empty-state">No se encontraron colecciones</div>
@@ -271,7 +271,7 @@ const allArtworks = allArtworksRaw.map(file => ({
 </style>
 
 <script>
-  import { getOptimizedImageURL } from '../../utils/media';
+  import { getOptimizedImageURL } from '@utils/media';
 
   document.addEventListener('astro:page-load', () => {
     const searchInput = document.getElementById('gallery-search-input') as HTMLInputElement;
@@ -286,7 +286,7 @@ const allArtworks = allArtworksRaw.map(file => ({
     const isEmpty = seriesContainer?.querySelector('.empty-state');
     if (isEmpty) {
         console.log('[Gallery-Client] 🚑 Activando hidratación de emergencia...');
-        const PUBLIC_URL = 'https://admin.javiermix.ar';
+        const PUBLIC_URL = viewSeries?.dataset.api || 'https://admin.javiermix.ar';
         
         fetch(`${PUBLIC_URL}/folders`)
             .then(res => res.json())

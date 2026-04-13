@@ -1,6 +1,6 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\dashboard\revista\nueva.astro
-import AdminLayout from '../../../layouts/AdminLayout.astro';
+import AdminLayout from '@layouts/AdminLayout.astro';
 
 export const prerender = false;
 ---
@@ -360,7 +360,7 @@ export const prerender = false;
 </style>
 
 <script>
-  import { createArticle, uploadFile } from '@conexion/directus-client';
+  import { createArticle, uploadFile } from '@conexion/directus';
 
   document.addEventListener('astro:page-load', () => {
     const form = document.getElementById('article-form') as HTMLFormElement;

@@ -1,5 +1,5 @@
-import { createPreference } from '../../services/mercadopago';
-import { createOrder } from '../../conexion/directus';
+import { createPreference } from '@services/mercadopago';
+import { createOrder } from '@conexion/directus';
 import { createDirectus, rest, staticToken, readItem } from '@directus/sdk';
 
 const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';

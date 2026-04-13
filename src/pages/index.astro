@@ -1,10 +1,10 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\index.astro
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import MagazineSection from '../components/MagazineSection.astro';
-import CollectorJoin from '../components/CollectorJoin.astro';
+import Layout from '@layouts/Layout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import MagazineSection from '@components/MagazineSection.astro';
+import CollectorJoin from '@components/CollectorJoin.astro';
 
 export const prerender = false;
 
@@ -51,7 +51,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
             )}
 
             {/* 2. Capa de Contenido Mixto (Bucle Infinito) */}
-            <div class="hero-main-stack" id="hero-assets-loop">
+            <div class="hero-main-stack" id="hero-assets-loop" data-api={DirectusManager.getBaseUrl()}>
                 {homeAssets.filter(a => a.type?.startsWith('video/') || a.type?.startsWith('image/')).map((asset, index) => {
                     const isVid = asset.type?.startsWith('video/');
                     return isVid ? (
@@ -186,7 +186,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
         // 🚑 EMERGENCIA: Si no hay assets, hidratar desde el cliente
         if (initialItems.length <= 1) {
             console.log('[Hero-Client] 🚑 Hidratando Hero desde el navegador...');
-            const PUBLIC_URL = 'https://admin.javiermix.ar';
+            const PUBLIC_URL = container?.dataset.api || 'https://admin.javiermix.ar';
             
             fetch(`${PUBLIC_URL}/folders`)
                 .then(res => res.json())
@@ -207,6 +207,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
                                 video.src = url;
                                 video.className = `hero-media-item ${idx === 0 ? 'active' : ''}`;
                                 video.muted = true;
+                                video.autoplay = idx === 0;
                                 video.playsInline = true;
                                 video.dataset.type = 'video';
                                 container.appendChild(video);

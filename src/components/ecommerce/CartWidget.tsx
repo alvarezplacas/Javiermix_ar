@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/preact';
-import { cartItems, isCartOpen, removeItem, clearCart, getCartSubtotal, addItem } from '../../store/cartStore';
+import { cartItems, isCartOpen, removeItem, clearCart, getCartSubtotal, addItem } from '@store/cartStore';
 import { useEffect, useState } from 'preact/hooks';
 
 /**

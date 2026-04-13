@@ -1,5 +1,5 @@
 ---
-import placasData from '../data/placas.json';
+import placasData from '@data/placas.json';
 
 // Extraer marcas únicas para los botones de filtro (ignorando "Sin Marca" si existe y ordenando)
 const marcasRaw = [...new Set(placasData.map((placa) => placa.marca))].filter(m => m !== "Sin Marca");

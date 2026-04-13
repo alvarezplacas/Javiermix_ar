@@ -1,7 +1,7 @@
 ---
 // h:\Javiermix_web_v2\frontend\pages\dashboard\obras\index.astro
-import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { getArtworks, getCatalogoFiles } from '../../../conexion/directus';
+import AdminLayout from '@layouts/AdminLayout.astro';
+import { getArtworks, getCatalogoFiles } from '@conexion/directus';
 
 // Verificación de Sesión (SSR)
 const adminToken = Astro.cookies.get('jhm_admin_token')?.value;

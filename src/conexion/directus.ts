@@ -14,7 +14,7 @@ import {
     readFolders
 } from '@directus/sdk';
 import { REDIS } from './redis';
-import type { Schema, Order } from '../types/directus';
+import type { Schema, Order } from '@types/directus';
 
 // 🌐 Configuración de URLs (Blindaje HTTPS)
 const PUBLIC_URL = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
@@ -29,19 +29,23 @@ export class DirectusManager {
     private static isLocalFallback = false;
 
     public static getBaseUrl() {
-        return (typeof window === 'undefined' && !this.isLocalFallback) ? INTERNAL_URL : PUBLIC_URL;
+        // En el cliente siempre usamos la pública
+        if (typeof window !== 'undefined') return PUBLIC_URL;
+        
+        // En el servidor, preferimos usar la pública para evitar problemas de DNS interno en el VPS 
+        // a menos que estemos seguros de que el contenedor 'directus' responde.
+        // Dado el estado actual de inestabilidad, la pública es más segura.
+        return PUBLIC_URL; 
     }
 
     public static async getClient() {
-        // [Server-Side] Siempre forzar bypass de SSL para URLs externas pero confiables en SSR
-        if (typeof process !== 'undefined' && typeof window === 'undefined') {
-            try { process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; } catch(e) {}
-        }
-
         if (!this.client) {
-            // 🚨 FORZAR URL PÚBLICA: La red interna Docker (:8055) 
-            // no está respondiendo igual. Usaremos la URL de internet para todo.
-            const baseUrl = PUBLIC_URL; 
+            const baseUrl = this.getBaseUrl();
+            
+            // Bypass SSL solo en desarrollo local si es necesario
+            if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
+                try { process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; } catch(e) {}
+            }
 
             const baseClient = createDirectus<Schema>(baseUrl).with(rest());
             
@@ -52,7 +56,7 @@ export class DirectusManager {
             }
 
             if (typeof window === 'undefined') {
-                console.log(`[DirectusManager] 🛰️ Conectando vía URL PÚBLICA: ${baseUrl}`);
+                console.log(`[DirectusManager] 🛰️ Conectado a: ${baseUrl}`);
             }
         }
         return this.client;
@@ -392,13 +396,11 @@ export async function getArticleDetails(idOrSlug: string, _token?: string) {
     try {
         const client = await DirectusManager.getClient();
         
-        // 1. Intentar por ID (PK)
         try {
             return await client.request(readItem('magazine', idOrSlug, {
                 fields: ['*', { user_created: ['*'] }]
             }));
         } catch (e) {
-            // 2. Si falla (o no es un id válido), intentar por Slug
             const results = await client.request(readItems('magazine', {
                 filter: { slug: { _eq: idOrSlug } },
                 fields: ['*', { user_created: ['*'] }],
@@ -411,8 +413,84 @@ export async function getArticleDetails(idOrSlug: string, _token?: string) {
     }
 }
 
-export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number } = {}) {
+export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number, raw?: boolean } = {}) {
     if (!id) return null;
+    if (options.raw) return `${PUBLIC_URL}/assets/${id}`;
     const { width = 1200, format = 'avif', quality = 80 } = options;
     return `${PUBLIC_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`;
+}
+
+/* ==========================================================================
+   SECCIÓN: FUNCIONES DE MUTACIÓN (ADMIN / CLIENT-SIDE)
+   ========================================================================== */
+
+export async function loginAdmin(email: string, password: string) {
+    try {
+        const res = await fetch(`${PUBLIC_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.data?.access_token) return { success: true, accessToken: data.data.access_token };
+        return { success: false, message: 'CREDENCIALES INVÁLIDAS' };
+    } catch (e: any) {
+        return { success: false, message: e.message };
+    }
+}
+
+export async function uploadFile(file: File, token: string) {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${PUBLIC_URL}/files`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        const result = await res.json();
+        return { success: !result.errors, id: result.data?.id, ...result };
+    } catch (e) {
+        return { success: false, message: 'Error uploading' };
+    }
+}
+
+export async function createArtwork(data: any, token: string) {
+    const res = await fetch(`${PUBLIC_URL}/items/artworks`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    return { success: !result.errors, ...result };
+}
+
+export async function updateArtwork(id: string, data: any, token: string) {
+    const res = await fetch(`${PUBLIC_URL}/items/artworks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    return { success: !result.errors, ...result };
+}
+
+export async function createArticle(data: any, token: string) {
+    const res = await fetch(`${PUBLIC_URL}/items/magazine`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    return { success: !result.errors, ...result };
+}
+
+export async function updateArticle(id: string, data: any, token: string) {
+    const res = await fetch(`${PUBLIC_URL}/items/magazine/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    return { success: !result.errors, ...result };
 }

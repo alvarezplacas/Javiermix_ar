@@ -1,10 +1,10 @@
 ---
 // h:\Javiermix_web_v2\frontend\magazine\[slug].astro
-import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
+import Layout from '@layouts/Layout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
 
-import { getArticleDetails, getAssetUrl, fetchFromDirectus } from '../../conexion/directus';
+import { getArticleDetails, getAssetUrl, fetchFromDirectus } from '@conexion/directus';
 
 export const prerender = false;
 const { slug } = Astro.params;

@@ -1,4 +1,4 @@
-import { db, collectors, orders } from '../../../conexion/db';
+import { db, collectors, orders } from '@conexion/db';
 import { eq } from 'drizzle-orm';
 
 export const prerender = false;
