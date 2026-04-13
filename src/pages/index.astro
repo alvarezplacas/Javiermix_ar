@@ -134,77 +134,96 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
   <Footer />
 
   <script>
+    /**
+     * MOTOR DE HIDRATACIÓN HÍBRIDA (V4)
+     * Si el servidor no trajo assets, los buscamos desde el navegador.
+     */
     document.addEventListener('astro:page-load', () => {
-        // Bucle Infinito Hero (Mixto)
-        const mediaItems = document.querySelectorAll('.hero-media-item');
-        console.log(`[Hero-Debug] Assets detectados: ${mediaItems.length}`);
+        const container = document.getElementById('hero-assets-loop');
+        const initialItems = container?.querySelectorAll('.hero-media-item') || [];
         
-        if (mediaItems.length <= 1) {
-            console.warn("[Hero-Debug] No hay suficientes assets para transiciones.");
-            return;
-        }
-
         let currentIndex = 0;
         let loopTimeout: any;
 
-        function showNext() {
-            clearTimeout(loopTimeout);
-            
-            const currentItem = mediaItems[currentIndex] as HTMLElement;
-            const nextIndex = (currentIndex + 1) % mediaItems.length;
-            const nextItem = mediaItems[nextIndex] as HTMLElement;
+        async function initSlider() {
+            const items = document.querySelectorAll('.hero-media-item');
+            if (items.length <= 1) return;
 
-            console.log(`[Hero-Debug] Transición: ${currentIndex} -> ${nextIndex}`);
+            function showNext() {
+                clearTimeout(loopTimeout);
+                const mediaItems = document.querySelectorAll('.hero-media-item');
+                const currentItem = mediaItems[currentIndex] as HTMLElement;
+                const nextIndex = (currentIndex + 1) % mediaItems.length;
+                const nextItem = mediaItems[nextIndex] as HTMLElement;
 
-            // Transición de clases
-            currentItem.classList.remove('active');
-            nextItem.classList.add('active');
+                if (!currentItem || !nextItem) return;
 
-            // Pausar y resetear video si el actual lo era
-            if (currentItem.dataset.type === 'video') {
-                const vid = currentItem as HTMLVideoElement;
-                vid.pause();
-                vid.currentTime = 0;
+                currentItem.classList.remove('active');
+                nextItem.classList.add('active');
+
+                if (currentItem.dataset.type === 'video') {
+                    const vid = currentItem as HTMLVideoElement;
+                    vid.pause();
+                    vid.currentTime = 0;
+                }
+
+                currentIndex = nextIndex;
+
+                if (nextItem.dataset.type === 'video') {
+                    const vid = nextItem as HTMLVideoElement;
+                    vid.play().catch(() => loopTimeout = setTimeout(showNext, 4000));
+                    vid.onended = () => showNext();
+                    loopTimeout = setTimeout(showNext, (vid.duration || 15) * 1000);
+                } else {
+                    loopTimeout = setTimeout(showNext, 6000);
+                }
             }
 
-            currentIndex = nextIndex;
-
-            // Iniciar reproducción y configurar siguiente paso
-            if (nextItem.dataset.type === 'video') {
-                const vid = nextItem as HTMLVideoElement;
-                vid.play().catch(e => {
-                    console.error("[Hero-Debug] Error al reproducir video:", e.message);
-                    loopTimeout = setTimeout(showNext, 4000);
-                });
-
-                // El video manda
-                vid.onended = () => {
-                    console.log("[Hero-Debug] Video terminado, pasando al siguiente...");
-                    showNext();
-                };
-                
-                // Backup timeout (por seguridad)
-                const duration = (vid.duration || 10) * 1000;
-                loopTimeout = setTimeout(showNext, Math.max(duration + 500, 15000));
-            } else {
-                // Imagen: 6 segundos
-                loopTimeout = setTimeout(showNext, 6000);
-            }
+            // Inicio diferido para permitir que la intro termine
+            setTimeout(showNext, 6000);
         }
 
-        // Iniciar loop tras intro
-        setTimeout(() => {
-            const first = mediaItems[0] as HTMLElement;
-            if (first && first.dataset.type === 'video') {
-                const vid = first as HTMLVideoElement;
-                vid.play().catch(e => console.warn("[Hero-Debug] Autoplay bloqueado:", e.message));
-                vid.onended = () => showNext();
-                loopTimeout = setTimeout(showNext, (vid.duration || 10) * 1000);
-            } else {
-                loopTimeout = setTimeout(showNext, 6000);
-            }
-            console.log("[Hero-Debug] Loop iniciado.");
-        }, 4500);
+        // 🚑 EMERGENCIA: Si no hay assets, hidratar desde el cliente
+        if (initialItems.length <= 1) {
+            console.log('[Hero-Client] 🚑 Hidratando Hero desde el navegador...');
+            const PUBLIC_URL = 'https://admin.javiermix.ar';
+            
+            fetch(`${PUBLIC_URL}/folders`)
+                .then(res => res.json())
+                .then(async (json) => {
+                    const homeFolder = json.data?.find((f: any) => ['Home', 'home', 'HOME'].includes(f.name));
+                    const filesRes = await fetch(`${PUBLIC_URL}/items/directus_files?filter[folder][_eq]=${homeFolder?.id || ''}&limit=-1`);
+                    const filesJson = await filesRes.json();
+                    const assets = filesJson.data || [];
+
+                    if (assets.length > 1 && container) {
+                        container.innerHTML = '';
+                        assets.forEach((asset: any, idx: number) => {
+                            const isVid = asset.type?.includes('video');
+                            const url = `${PUBLIC_URL}/assets/${asset.id}${isVid ? '' : '?width=1920&quality=80&format=avif'}`;
+                            
+                            if (isVid) {
+                                const video = document.createElement('video');
+                                video.src = url;
+                                video.className = `hero-media-item ${idx === 0 ? 'active' : ''}`;
+                                video.muted = true;
+                                video.playsInline = true;
+                                video.dataset.type = 'video';
+                                container.appendChild(video);
+                            } else {
+                                const img = document.createElement('img');
+                                img.src = url;
+                                img.className = `hero-media-item ${idx === 0 ? 'active' : ''}`;
+                                img.dataset.type = 'image';
+                                container.appendChild(img);
+                            }
+                        });
+                        initSlider();
+                    }
+                });
+        } else {
+            initSlider();
+        }
     });
   </script>
 </Layout>

@@ -271,6 +271,8 @@ const allArtworks = allArtworksRaw.map(file => ({
 </style>
 
 <script>
+  import { getOptimizedImageURL } from '../../utils/media';
+
   document.addEventListener('astro:page-load', () => {
     const searchInput = document.getElementById('gallery-search-input') as HTMLInputElement;
     const viewSeries = document.getElementById('view-series');
@@ -278,7 +280,51 @@ const allArtworks = allArtworksRaw.map(file => ({
     const resultsGrid = document.getElementById('results-grid');
     const noResults = document.getElementById('no-results');
     const termDisplay = document.getElementById('search-term-display');
+    const seriesContainer = document.querySelector('.series-snap-container');
     
+    // 🔍 HYBRID HYDRATION: Si el servidor no trajo series, las buscamos desde el cliente
+    const isEmpty = seriesContainer?.querySelector('.empty-state');
+    if (isEmpty) {
+        console.log('[Gallery-Client] 🚑 Activando hidratación de emergencia...');
+        const PUBLIC_URL = 'https://admin.javiermix.ar';
+        
+        fetch(`${PUBLIC_URL}/folders`)
+            .then(res => res.json())
+            .then(async (json) => {
+                const folders = json.data || [];
+                // Filtrar carpetas que no sean Home y ocultas
+                const validFolders = folders.filter((f: any) => 
+                    !['Home', 'home', 'HOME'].includes(f.name) && !f.name.startsWith('_')
+                );
+
+                if (validFolders.length > 0) {
+                    seriesContainer!.innerHTML = ''; // Limpiar mensaje de vacio
+
+                    for (const folder of validFolders) {
+                        // Buscar la primera imagen de la carpeta para la portada
+                        const fileRes = await fetch(`${PUBLIC_URL}/items/directus_files?filter[folder][_eq]=${folder.id}&filter[type][_contains]=image&limit=1`);
+                        const fileJson = await fileRes.json();
+                        const coverId = fileJson.data?.[0]?.id;
+                        const coverUrl = coverId ? getOptimizedImageURL(coverId, { width: 800, format: 'avif' }) : '/media/fallback-serie.jpg';
+
+                        const card = document.createElement('a');
+                        card.href = `/galeria/${folder.id}`;
+                        card.className = 'series-card fade-in-content';
+                        card.innerHTML = `
+                            <div class="series-card-bg" style="background-image: url('${coverUrl}');"></div>
+                            <div class="series-card-content">
+                                <h2 class="series-title">${folder.name}</h2>
+                                <p class="series-count">Explorar Colección</p>
+                                <span class="series-cta">Contenido en vivo &rarr;</span>
+                            </div>
+                        `;
+                        seriesContainer?.appendChild(card);
+                    }
+                }
+            })
+            .catch(err => console.error('[Gallery-Client] Error fatal de hidratación:', err));
+    }
+
     // Parse index data
     const dataEl = document.getElementById('artworks-data');
     const artworks = dataEl ? JSON.parse(dataEl.innerHTML) : [];

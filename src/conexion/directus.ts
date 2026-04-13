@@ -39,10 +39,9 @@ export class DirectusManager {
         }
 
         if (!this.client) {
-            const isServer = typeof window === 'undefined';
-            // 🚨 FORZAR URL PÚBLICA: Se ha detectado que la red interna Docker (:8055) 
-            // no devuelve los mismos permisos que la pública. Usaremos PUBLIC_URL para todo.
-            const baseUrl = PUBLIC_URL;
+            // 🚨 FORZAR URL PÚBLICA: La red interna Docker (:8055) 
+            // no está respondiendo igual. Usaremos la URL de internet para todo.
+            const baseUrl = PUBLIC_URL; 
 
             const baseClient = createDirectus<Schema>(baseUrl).with(rest());
             
@@ -52,8 +51,8 @@ export class DirectusManager {
                 this.client = baseClient;
             }
 
-            if (isServer) {
-                console.log(`[DirectusManager] 🛰️ Client SSR usando URL PÚBLICA: ${baseUrl}`);
+            if (typeof window === 'undefined') {
+                console.log(`[DirectusManager] 🛰️ Conectando vía URL PÚBLICA: ${baseUrl}`);
             }
         }
         return this.client;
