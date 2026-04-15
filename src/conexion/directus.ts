@@ -29,12 +29,7 @@ export class DirectusManager {
     private static isLocalFallback = false;
 
     public static getBaseUrl() {
-        // En el cliente siempre usamos la pública
-        if (typeof window !== 'undefined') return PUBLIC_URL;
-        
-        // En el servidor, preferimos usar la pública para evitar problemas de DNS interno en el VPS 
-        // a menos que estemos seguros de que el contenedor 'directus' responde.
-        // Dado el estado actual de inestabilidad, la pública es más segura.
+        // Log de depuración silencioso en servidor
         return PUBLIC_URL; 
     }
 
@@ -47,26 +42,32 @@ export class DirectusManager {
                 try { process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; } catch(e) {}
             }
 
-            const baseClient = createDirectus<Schema>(baseUrl).with(rest());
-            
-            if (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') {
-                this.client = baseClient.with(staticToken(STATIC_TOKEN));
-            } else {
-                this.client = baseClient;
-            }
+            try {
+                const baseClient = createDirectus<Schema>(baseUrl).with(rest());
+                
+                if (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') {
+                    this.client = baseClient.with(staticToken(STATIC_TOKEN));
+                } else {
+                    this.client = baseClient;
+                }
 
-            if (typeof window === 'undefined') {
-                console.log(`[DirectusManager] 🛰️ Conectado a: ${baseUrl}`);
+                if (typeof window === 'undefined') {
+                    console.log(`[DirectusManager] 🚀 Cliente SDK iniciado: ${baseUrl}`);
+                }
+            } catch (error: any) {
+                console.error(`[DirectusManager] ❌ Error inicializando cliente:`, error.message);
+                throw error;
             }
         }
         return this.client;
     }
 
     /**
-     * 🛡️ Shim Layer: Capa de compatibilidad para evitar roturas de código antiguo
+     * 🛡️ Shim Layer: Capa de compatibilidad mejorada con Fallback Real
      */
     public static async fetchShim(path: string, options: RequestInit = {}) {
-        const baseUrl = this.isLocalFallback || typeof window !== 'undefined' ? PUBLIC_URL : INTERNAL_URL;
+        const useInternal = !this.isLocalFallback && typeof window === 'undefined';
+        const baseUrl = useInternal ? INTERNAL_URL : PUBLIC_URL;
         const url = `${baseUrl}${path}`;
         
         const headers: any = {
@@ -76,15 +77,19 @@ export class DirectusManager {
         };
 
         try {
-            return await fetch(url, { ...options, headers });
+            const response = await fetch(url, { ...options, headers });
+            if (!response.ok && useInternal) {
+                 throw new Error(`Internal connection returned ${response.status}`);
+            }
+            return response;
         } catch (e: any) {
-            console.error(`[Fetch-Shim Error] ${url}:`, e.message);
-            // Si falla la interna, forzar fallback y reintentar una vez
-            if (baseUrl === INTERNAL_URL) {
+            if (useInternal) {
+                console.warn(`[Directus-Fallback] ⚠️ No se pudo alcanzar la red interna (${INTERNAL_URL}). Cambiando a Pública.`);
                 this.isLocalFallback = true;
-                this.client = null;
+                this.client = null; // Reiniciar cliente para que use la pública si es necesario
                 return this.fetchShim(path, options);
             }
+            console.error(`[Directus-Fetch Error] ❌ Fallo total en ${url}:`, e.message);
             throw e;
         }
     }
@@ -109,14 +114,19 @@ export async function getHomeFiles() {
         
         let files = [];
         if (homeFolder) {
+            console.log(`[getHomeFiles] 📁 Carpeta 'Home' encontrada (ID: ${homeFolder.id})`);
             files = await client.request(readItems('directus_files' as any, {
                 filter: { folder: { _eq: homeFolder.id } },
                 limit: -1
             }));
+            console.log(`[getHomeFiles] 📄 Archivos recuperados en Home: ${files.length}`);
+        } else {
+            console.warn(`[getHomeFiles] ⚠️ No se encontró la carpeta 'Home' en Directus. Verificando raíz...`);
         }
 
         // 2. Fallback: Si no hay archivos en Home, traer los 8 más recientes globales
         if (files.length === 0) {
+            console.warn(`[getHomeFiles] 🚑 Ejecutando Fallback: Recuperando 8 archivos recientes globales.`);
             files = await client.request(readItems('directus_files' as any, {
                 limit: 8,
                 sort: ['-created_on'],
@@ -130,7 +140,8 @@ export async function getHomeFiles() {
         }
         
         return files;
-    } catch (e) {
+    } catch (e: any) {
+        console.error(`[getHomeFiles] ❌ Error catastrófico:`, e.message);
         return [];
     }
 }
