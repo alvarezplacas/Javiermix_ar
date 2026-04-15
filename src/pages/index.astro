@@ -286,13 +286,20 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     background-color: var(--color-onyx-deep);
 }
 
-.hero-visual-container, .hero-main-stack {
+.hero-visual-container {
     width: 100%;
     height: 100%;
     position: relative;
     overflow: hidden;
-    mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 92%, rgba(0,0,0,0) 100%);
-    -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 92%, rgba(0,0,0,0) 100%);
+}
+
+.hero-main-stack {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
 .hero-poster-master {
@@ -304,8 +311,8 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     background-size: cover;
     background-position: center;
     z-index: 10;
-    animation: fadeHeroPoster 1.8s ease-out forwards;
-    animation-delay: 2s;
+    animation: fadeHeroPoster 1.2s ease-out forwards;
+    animation-delay: 0.5s;
     pointer-events: none;
 }
 
