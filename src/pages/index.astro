@@ -61,6 +61,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
                             muted 
                             loop={false}
                             playsinline
+                            autoplay={index === 0}
                             data-type="video"
                         ></video>
                     ) : (
@@ -147,14 +148,37 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
 
         console.log(`[Home-Híbrido] 🔍 Iniciando con ${initialItems.length} assets.`);
 
-        async function initSlider() {
+        function playItem(item: HTMLElement, onEnd: () => void) {
+            if (item.dataset.type === 'video') {
+                const vid = item as HTMLVideoElement;
+                vid.play().then(() => {
+                    console.log(`[Home-Slider] ▶️ Video reproduciéndose`);
+                }).catch((err) => {
+                    console.warn(`[Home-Slider] ⚠️ Autoplay bloqueado, saltando en 5s:`, err.message);
+                    loopTimeout = setTimeout(onEnd, 5000);
+                });
+                vid.onended = onEnd;
+                // Safety net: max 30s por video
+                loopTimeout = setTimeout(onEnd, (vid.duration > 0 ? vid.duration : 20) * 1000 + 500);
+            } else {
+                // Para imágenes: 5 segundos
+                loopTimeout = setTimeout(onEnd, 5000);
+            }
+        }
+
+        function initSlider() {
             const items = document.querySelectorAll('.hero-media-item');
             if (items.length <= 1) {
-                console.warn('[Home-Slider] ⚠️ Insuficientes assets para rotar.');
+                console.warn('[Home-Slider] ⚠️ Solo 1 asset, no hay rotación.');
+                // Si el único o primer item es video, reproducirlo igual
+                const single = items[0] as HTMLElement;
+                if (single?.dataset.type === 'video') {
+                    (single as HTMLVideoElement).play().catch(() => {});
+                }
                 return;
             }
 
-            console.log('[Home-Slider] 🚀 Iniciando motor de transición.');
+            console.log(`[Home-Slider] 🚀 Motor iniciado con ${items.length} assets.`);
 
             function showNext() {
                 clearTimeout(loopTimeout);
@@ -165,40 +189,25 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
 
                 if (!currentItem || !nextItem) return;
 
-                console.log(`[Home-Slider] 🔄 Transición: ${currentIndex} -> ${nextIndex}`);
+                console.log(`[Home-Slider] 🔄 Transición: ${currentIndex} → ${nextIndex}`);
 
+                // Detener y ocultar item actual
                 currentItem.classList.remove('active');
-                nextItem.classList.add('active');
-
-                // Resetear video anterior si existía
                 if (currentItem.dataset.type === 'video') {
                     const vid = currentItem as HTMLVideoElement;
                     vid.pause();
                     vid.currentTime = 0;
                 }
 
+                // Mostrar y reproducir siguiente
                 currentIndex = nextIndex;
-
-                // Manejo de carga de video o imagen
-                if (nextItem.dataset.type === 'video') {
-                    const vid = nextItem as HTMLVideoElement;
-                    vid.play().then(() => {
-                        console.log(`[Home-Slider] ▶️ Reproduciendo video index ${nextIndex}`);
-                    }).catch((err) => {
-                        console.error(`[Home-Slider] ❌ Error Auto-play video:`, err.message);
-                        loopTimeout = setTimeout(showNext, 4000); // Saltar si falla
-                    });
-                    
-                    vid.onended = () => showNext();
-                    // Seguridad: si el video se queda colgado o no reporta fin
-                    loopTimeout = setTimeout(showNext, (vid.duration || 15) * 1000 + 1000);
-                } else {
-                    loopTimeout = setTimeout(showNext, 5000); // 5s para fotos
-                }
+                nextItem.classList.add('active');
+                playItem(nextItem, showNext);
             }
 
-            // Inicio reducido tras la intro
-            setTimeout(showNext, 4000);
+            // 🔑 FIX CLAVE: reproducir el primer item INMEDIATAMENTE
+            const firstItem = items[currentIndex] as HTMLElement;
+            playItem(firstItem, showNext);
         }
 
         // 🚑 EMERGENCIA: Si no hay assets o falló el servidor, hidratar desde el cliente
