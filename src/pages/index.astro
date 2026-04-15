@@ -149,19 +149,33 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
         console.log(`[Home-Híbrido] 🔍 Iniciando con ${initialItems.length} assets.`);
 
         function playItem(item: HTMLElement, onEnd: () => void) {
+            clearTimeout(loopTimeout);
             if (item.dataset.type === 'video') {
                 const vid = item as HTMLVideoElement;
-                vid.play().then(() => {
-                    console.log(`[Home-Slider] ▶️ Video reproduciéndose`);
-                }).catch((err) => {
-                    console.warn(`[Home-Slider] ⚠️ Autoplay bloqueado, saltando en 5s:`, err.message);
+                vid.currentTime = 0;
+                vid.onended = onEnd;
+
+                // Esperar metadata para saber la duración real del video
+                const setupTimeout = () => {
+                    const dur = vid.duration;
+                    const ms = (isFinite(dur) && dur > 0 ? dur : 20) * 1000 + 500;
+                    console.log(`[Home-Slider] ⏱️ Duración del video: ${dur?.toFixed(1)}s → timeout: ${ms}ms`);
+                    loopTimeout = setTimeout(onEnd, ms);
+                };
+
+                if (vid.readyState >= 1) {
+                    setupTimeout();
+                } else {
+                    vid.addEventListener('loadedmetadata', setupTimeout, { once: true });
+                    loopTimeout = setTimeout(onEnd, 25000); // Max seguridad
+                }
+
+                vid.play().catch((err) => {
+                    console.warn('[Home-Slider] ⚠️ Autoplay bloqueado:', err.message);
+                    clearTimeout(loopTimeout);
                     loopTimeout = setTimeout(onEnd, 5000);
                 });
-                vid.onended = onEnd;
-                // Safety net: max 30s por video
-                loopTimeout = setTimeout(onEnd, (vid.duration > 0 ? vid.duration : 20) * 1000 + 500);
             } else {
-                // Para imágenes: 5 segundos
                 loopTimeout = setTimeout(onEnd, 5000);
             }
         }
@@ -287,14 +301,18 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
 }
 
 .hero-visual-container {
-    position: absolute;
-    inset: 0; /* top:0; right:0; bottom:0; left:0 */
+    width: 100%;
+    height: 100%;
+    position: relative;
     overflow: hidden;
 }
 
 .hero-main-stack {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     overflow: hidden;
 }
 
