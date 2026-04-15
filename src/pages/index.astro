@@ -302,7 +302,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
 
 .hero-visual-container {
     width: 100%;
-    height: 100%;
+    height: 100dvh;  /* DIRECTO: no dependemos de herencia de min-height */
     position: relative;
     overflow: hidden;
 }
@@ -325,8 +325,8 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     background-size: cover;
     background-position: center;
     z-index: 10;
-    animation: fadeHeroPoster 1.2s ease-out forwards;
-    animation-delay: 0.5s;
+    animation: fadeHeroPoster 0.8s ease-out forwards;
+    animation-delay: 0s;
     pointer-events: none;
 }
 
