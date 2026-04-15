@@ -287,18 +287,14 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
 }
 
 .hero-visual-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
+    position: absolute;
+    inset: 0; /* top:0; right:0; bottom:0; left:0 */
     overflow: hidden;
 }
 
 .hero-main-stack {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     overflow: hidden;
 }
 
@@ -323,15 +319,16 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
 
 .hero-media-item {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
     z-index: 2;
     transition: opacity 1.5s ease-in-out;
     opacity: 0;
     pointer-events: none;
+    display: block;
 }
 
 .hero-media-item.active {
