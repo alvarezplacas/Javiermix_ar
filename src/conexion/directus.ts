@@ -117,6 +117,7 @@ export async function getHomeFiles() {
             console.log(`[getHomeFiles] 📁 Carpeta 'Home' encontrada (ID: ${homeFolder.id})`);
             files = await client.request(readItems('directus_files' as any, {
                 filter: { folder: { _eq: homeFolder.id } },
+                sort: ['filename_download'],
                 limit: -1
             }));
             console.log(`[getHomeFiles] 📄 Archivos recuperados en Home: ${files.length}`);

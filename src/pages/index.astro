@@ -155,28 +155,38 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
                 vid.currentTime = 0;
                 vid.onended = onEnd;
 
-                // Esperar metadata para saber la duración real del video
+                // 💓 HEARTBEAT SAFETY: Si el video se traba o onended falla
+                const safetyTimeout = setTimeout(() => {
+                    console.log("[Home-Slider] 💓 Heartbeat triggered (safety)");
+                    onEnd();
+                }, 35000); // Max 35s por video
+
                 const setupTimeout = () => {
                     const dur = vid.duration;
                     const ms = (isFinite(dur) && dur > 0 ? dur : 20) * 1000 + 500;
                     console.log(`[Home-Slider] ⏱️ Duración del video: ${dur?.toFixed(1)}s → timeout: ${ms}ms`);
-                    loopTimeout = setTimeout(onEnd, ms);
+                    clearTimeout(loopTimeout);
+                    loopTimeout = setTimeout(() => {
+                        clearTimeout(safetyTimeout);
+                        onEnd();
+                    }, ms);
                 };
 
                 if (vid.readyState >= 1) {
                     setupTimeout();
                 } else {
                     vid.addEventListener('loadedmetadata', setupTimeout, { once: true });
-                    loopTimeout = setTimeout(onEnd, 25000); // Max seguridad
                 }
 
                 vid.play().catch((err) => {
-                    console.warn('[Home-Slider] ⚠️ Autoplay bloqueado:', err.message);
+                    console.warn('[Home-Slider] ⚠️ Autoplay bloqueado o fallo:', err.message);
                     clearTimeout(loopTimeout);
+                    clearTimeout(safetyTimeout);
                     loopTimeout = setTimeout(onEnd, 5000);
                 });
             } else {
-                loopTimeout = setTimeout(onEnd, 5000);
+                // Para imágenes, 6 segundos (dar tiempo a descarga de videos en background)
+                loopTimeout = setTimeout(onEnd, 6000);
             }
         }
 
@@ -239,8 +249,8 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
                     }
 
                     console.log(`[Home-Híbrido] 📂 Conectando a carpeta: ${homeFolder.id}`);
-                    // IMPORTANTE: Cambiamos /items/directus_files por /files para mayor compatibilidad
-                    const filesRes = await fetch(`${PUBLIC_URL}/files?filter[folder][_eq]=${homeFolder.id}&limit=-1`);
+                    // IMPORTANTE: Ordenamos por nombre para que 00 sea la foto inicial
+                    const filesRes = await fetch(`${PUBLIC_URL}/files?filter[folder][_eq]=${homeFolder.id}&sort=filename_download&limit=-1`);
                     const filesJson = await filesRes.json();
                     const assets = filesJson.data || [];
 
@@ -287,6 +297,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     min-height: 100dvh;
     width: 100vw;
     margin-top: 0;
+    overflow: hidden;
 }
 
 /* Left: Immersive Image */
@@ -299,7 +310,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     overflow: hidden;
     background-color: var(--color-onyx-deep);
     margin: 0;
-    padding: 0;
+    padding: 0 !important;
     box-sizing: border-box;
 }
 
@@ -308,6 +319,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     height: 100dvh;
     position: relative;
     overflow: hidden;
+    padding: 0 !important;
 }
 
 .hero-main-stack {
@@ -326,7 +338,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     width: 100%;
     height: 100%;
     background-size: cover;
-    background-position: center;
+    background-position: top;
     z-index: 10;
     animation: fadeHeroPoster 0.8s ease-out forwards;
     animation-delay: 0s;
@@ -344,7 +356,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
+    object-position: top;
     z-index: 2;
     transition: opacity 1.5s ease-in-out;
     opacity: 0;
@@ -356,6 +368,13 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     opacity: 1;
     pointer-events: auto;
 }
+
+/* 🚀 FIX: Asegurar visibilidad 100% sin marcos heredados */
+.wooden-frame, 
+.hero-frame-overlay {
+    display: none !important;
+}
+
 
 .video-container {
     position: relative;
