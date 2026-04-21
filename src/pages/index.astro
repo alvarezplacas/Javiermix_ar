@@ -145,6 +145,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
         
         let currentIndex = 0;
         let loopTimeout: any;
+        let isPreparing = false;
 
         console.log(`[Home-Híbrido] 🔍 Iniciando con ${initialItems.length} assets.`);
 
@@ -205,27 +206,33 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
             console.log(`[Home-Slider] 🚀 Motor iniciado con ${items.length} assets.`);
 
             function showNext() {
+                if (isPreparing) return;
+                isPreparing = true;
+
                 clearTimeout(loopTimeout);
                 const mediaItems = document.querySelectorAll('.hero-media-item');
                 const nextIndex = (currentIndex + 1) % mediaItems.length;
                 const nextItem = mediaItems[nextIndex] as HTMLElement;
 
-                console.log(`[Home-Slider] 🔄 Preparando transición: ${currentIndex} → ${nextIndex}`);
+                console.log(`[Home-Slider] 🔄 Revelando siguiente: ${currentIndex} → ${nextIndex}`);
 
-                // 1. Empezar a reproducir el siguiente ANTES de ocultar el actual
+                // 1. Preparar el siguiente (si es video, que empiece ya)
                 if (nextItem.dataset.type === 'video') {
                     const vid = nextItem as HTMLVideoElement;
+                    vid.muted = true;
                     vid.play().catch(() => {});
                 }
 
-                // 2. Transición suave (La clase .active maneja z-index y opacity con transition: 2s)
+                // 2. Swapping de clases (El CSS maneja el fade de 2.5s)
                 const currentItem = mediaItems[currentIndex] as HTMLElement;
+                
+                // IMPORTANTE: El que sale pierde active y baja de capa después del fade
                 currentItem.classList.remove('active');
                 
                 currentIndex = nextIndex;
                 nextItem.classList.add('active');
 
-                // 3. Programar el siguiente
+                isPreparing = false;
                 playItem(nextItem, showNext);
             }
 
@@ -308,11 +315,13 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     top: 0;
     height: 100dvh;
     overflow: hidden;
-    background-color: var(--color-onyx-deep);
+    background-color: #000; /* Fondo negro puro */
     margin: 0;
     padding: 0 !important;
     box-sizing: border-box;
-    /* 🚀 FIX: Asegurar que nada escape de este contenedor */
+    /* 🚀 FIX: Quitar bordes o sombras que ensucian el corte */
+    box-shadow: none !important;
+    border: none !important;
 }
 
 .hero-visual-container {
@@ -359,13 +368,14 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     object-fit: cover;
     object-position: top;
     z-index: 10;
-    transition: opacity 2s ease-in-out;
+    transition: opacity 2.5s ease-in-out; /* Transición más larga y elegante */
     opacity: 0;
     pointer-events: none;
     display: block;
-    /* 🚀 FIX: Sin resplandores ni sombras */
+    /* 🚀 FIX: Limpieza absoluta de efectos neon/glow */
     box-shadow: none !important;
     filter: none !important;
+    outline: none !important;
 }
 
 .hero-media-item.active {
