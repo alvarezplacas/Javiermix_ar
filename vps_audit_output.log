@@ -1,0 +1,37 @@
+{
+  "docker_ps": {
+    "code": -1,
+    "output": "",
+    "error": "Timeout"
+  },
+  "ls_root": {
+    "code": -1,
+    "output": "",
+    "error": "Timeout"
+  },
+  "docker_images": {
+    "code": -1,
+    "output": "",
+    "error": "Timeout"
+  },
+  "free": {
+    "code": -1,
+    "output": "",
+    "error": "Timeout"
+  },
+  "df": {
+    "code": -1,
+    "output": "",
+    "error": "Timeout"
+  },
+  "ports": {
+    "code": -1,
+    "output": "",
+    "error": "Timeout"
+  },
+  "ip": {
+    "code": -1,
+    "output": "",
+    "error": "Timeout"
+  }
+}
