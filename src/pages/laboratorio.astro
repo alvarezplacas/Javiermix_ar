@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getLaboratorioFiles } from '../conexion/directus';
+import { getLaboratorioFiles, getAssetUrl } from '../conexion/directus';
 
 const files = await getLaboratorioFiles();
 ---
@@ -20,7 +20,7 @@ const files = await getLaboratorioFiles();
       {files.map((file, index) => (
         <div class="gallery-item" style={`--index: ${index}`}>
           <img 
-            src={`${import.meta.env.PUBLIC_DIRECTUS_URL}/assets/${file.id}?format=avif&quality=80`} 
+            src={getAssetUrl(file.id, { format: 'avif', quality: 80 })} 
             alt={file.title || 'Muestra fotográfica'} 
             loading="lazy"
           />
