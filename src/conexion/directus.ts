@@ -27,13 +27,7 @@ const STATIC_TOKEN = import.meta.env?.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dO
  */
 export class DirectusManager {
     private static client: any = null;
-    private static isLocalFallback = false;
-
-    // 🚀 RESTAURADA: Función necesaria para el renderizado
-    public static getBaseUrl() {
-        return PUBLIC_URL; 
-    }
-
+    public static getBaseUrl() { return PUBLIC_URL; }
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
@@ -52,28 +46,10 @@ export class DirectusManager {
         }
         return this.client;
     }
-
-    public static async fetchShim(path: string, options: RequestInit = {}) {
-        const useInternal = !this.isLocalFallback && typeof window === 'undefined';
-        const baseUrl = useInternal ? INTERNAL_URL : PUBLIC_URL;
-        const url = `${baseUrl}${path}`;
-        const headers: any = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${STATIC_TOKEN}`, ...options.headers };
-        try {
-            const response = await fetch(url, { ...options, headers });
-            return response;
-        } catch (e: any) {
-            if (useInternal) {
-                this.isLocalFallback = true;
-                this.client = null;
-                return this.fetchShim(path, options);
-            }
-            throw e;
-        }
-    }
 }
 
 /* ==========================================================================
-   SECCIÓN: FUNCIONES DE DATOS
+   SECCIÓN: FUNCIONES DE DATOS (IDs CORREGIDOS)
    ========================================================================== */
 
 export async function getHomeFiles() {
@@ -87,7 +63,8 @@ export async function getHomeFiles() {
 export async function getLaboratorioFiles() {
     try {
         const client = await DirectusManager.getClient();
-        const LAB_FOLDER_ID = 'd69266c5-90b3-467f-af9c-de4c7af02f46';
+        // 🎯 ID CORREGIDO: de4c7fa02f46 (antes estaba al revés)
+        const LAB_FOLDER_ID = 'd69266c5-90b3-467f-af9c-de4c7fa02f46';
         return await client.request(readFiles({ filter: { folder: { _eq: LAB_FOLDER_ID } }, sort: ['filename_download'], limit: -1 }));
     } catch (e) { return []; }
 }
@@ -148,11 +125,5 @@ export async function getCertificateByUuid(uuid: string) { try { const client = 
 export async function getArtworkById(id: string) { try { const client = await DirectusManager.getClient(); return await client.request(readItem('artworks', id)); } catch (e) { return null; } }
 export async function getArtworks() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('artworks' as any, { limit: -1 })); } catch (e) { return []; } }
 export async function getCertificates() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('certificates' as any, { fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: -1 })); } catch (e) { return []; } }
-export async function loginAdmin(email: string, password: string) { try { const res = await fetch(`${PUBLIC_URL}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) }); const data = await res.json(); return { success: !!data.data?.access_token, accessToken: data.data?.access_token }; } catch (e) { return { success: false }; } }
-export async function uploadFile(file: File, token: string) { try { const formData = new FormData(); formData.append('file', file); const res = await fetch(`${PUBLIC_URL}/files`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData }); const result = await res.json(); return { success: !result.errors, id: result.data?.id }; } catch (e) { return { success: false }; } }
-export async function createArtwork(data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/artworks`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
-export async function updateArtwork(id: string, data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/artworks/${id}`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
-export async function createArticle(data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/magazine`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
-export async function updateArticle(id: string, data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/magazine/${id}`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
 export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number, raw?: boolean } = {}) { if (!id) return null; if (options.raw) return `${PUBLIC_URL}/assets/${id}`; const { width = 1200, format = 'avif', quality = 80 } = options; return `${PUBLIC_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`; }
 export const fetchFromDirectus = (path: string, options?: RequestInit) => DirectusManager.fetchShim(path, options);
