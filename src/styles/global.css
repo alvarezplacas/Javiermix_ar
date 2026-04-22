@@ -9,6 +9,8 @@
 	:root {
 		/* --- 1. CORE BRAND PALETTE (OKLCH for 2026 clarity) --- */
 		/* Gold: High chroma, perceptual lightness */
+		--ok-gold: #c5a059;
+		--ok-burgundy: #4a0404;
 		--ok-gold: oklch(0.78 0.16 88); 
 		--ok-burgundy: oklch(0.45 0.18 25);
 		
@@ -28,6 +30,11 @@
 
 		/* Semantic Colors */
 		--color-bg: var(--color-onyx-deep);
+		--bg-primary: var(--color-onyx-deep);
+		--text-primary: var(--color-travertine-light);
+		--text-secondary: var(--color-travertine-mid);
+		--accent-gold: var(--ok-gold);
+		--accent-burgundy: var(--ok-burgundy);
 		--color-text: var(--color-travertine-light);
 		--color-text-muted: var(--color-travertine-mid);
 		--color-accent: var(--ok-gold);

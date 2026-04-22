@@ -18,7 +18,7 @@ import type { Schema, Order } from '@types/directus';
 
 // 🌐 Configuración de URLs (Blindaje HTTPS)
 const PUBLIC_URL = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-const INTERNAL_URL = import.meta.env?.INTERNAL_DIRECTUS_URL || 'http://directus:8055'; 
+const INTERNAL_URL = import.meta.env?.INTERNAL_DIRECTUS_URL || 'http://javiermix-directus:8055'; 
 const STATIC_TOKEN = import.meta.env?.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
 
 /**
@@ -35,11 +35,12 @@ export class DirectusManager {
 
     public static async getClient() {
         if (!this.client) {
-            const baseUrl = this.getBaseUrl();
+            // 🚀 En el servidor, preferimos la URL interna para evitar problemas de loopback
+            const isServer = typeof window === 'undefined';
+            const baseUrl = isServer ? INTERNAL_URL : PUBLIC_URL;
             
-            // Bypass SSL solo en desarrollo local si es necesario
-            if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
-                try { process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; } catch(e) {}
+            if (isServer) {
+                console.log(`[DirectusManager] 🌐 Modo Servidor: Usando ruta interna ${baseUrl}`);
             }
 
             try {
