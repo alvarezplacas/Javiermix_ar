@@ -29,6 +29,11 @@ export class DirectusManager {
     private static client: any = null;
     private static isLocalFallback = false;
 
+    // 🚀 RESTAURADA: Función necesaria para el renderizado
+    public static getBaseUrl() {
+        return PUBLIC_URL; 
+    }
+
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
