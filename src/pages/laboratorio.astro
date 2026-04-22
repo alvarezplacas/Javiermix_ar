@@ -2,31 +2,76 @@
 import Layout from '../layouts/Layout.astro';
 import { getLaboratorioFiles, getAssetUrl } from '../conexion/directus';
 
-const files = await getLaboratorioFiles();
+const rawFiles = await getLaboratorioFiles();
+
+// 🧠 Lógica de Agrupación Inteligente para el Laboratorio
+const groups = [];
+const processed = new Set();
+
+rawFiles.forEach(file => {
+    const filename = file.filename_download || "";
+    // Si el archivo termina en " 2.ext" o "2.ext", es una variante de ambiente
+    if (filename.match(/[\s_]2\.[^.]+$/i) || processed.has(file.id)) return;
+
+    // Buscamos si existe su pareja " 2"
+    const baseName = filename.substring(0, filename.lastIndexOf('.'));
+    const variant = rawFiles.find(f => {
+        const fName = f.filename_download || "";
+        return fName.includes(baseName) && (fName.match(/[\s_]2\.[^.]+$/i));
+    });
+
+    groups.push({
+        main: file,
+        room: variant || null
+    });
+    
+    processed.add(file.id);
+    if (variant) processed.add(variant.id);
+});
 ---
 
 <Layout title="Laboratorio de Diseño 2026 | JavierMix">
   <main class="lab-container">
     <header class="lab-header">
       <div class="badge">ESTÁNDAR 2026</div>
-      <h1>Laboratorio de Muestras Fotográficas</h1>
+      <h1>Gabinete de Experimentación</h1>
       <p class="description">
-        Experimentación con <span>Scroll-Driven Animations</span> y color <span>OKLCH</span>. 
-        Las imágenes cobran vida según tu interacción.
+        Sincronía entre <span>materia y ambiente</span>. 
+        Pasa el ratón para situar la obra en su contexto.
       </p>
     </header>
 
-    <section class="gallery">
-      {files.map((file, index) => (
-        <div class="gallery-item" style={`--index: ${index}`}>
-          <img 
-            src={getAssetUrl(file.id, { format: 'avif', quality: 80 })} 
-            alt={file.title || 'Muestra fotográfica'} 
-            loading="lazy"
-          />
-          <div class="item-info">
-            <span class="meta">JMX-{file.id.substring(0,4).toUpperCase()}</span>
-            <h3>{file.title || 'Sin Título'}</h3>
+    <section class="lab-grid">
+      {groups.map((group, index) => (
+        <div class="lab-card" style={`--index: ${index}`}>
+          <div class="image-box">
+            {/* Obra Principal */}
+            <img 
+              src={getAssetUrl(group.main.id, { width: 1000, quality: 85 })} 
+              alt={group.main.title || 'Obra Javier Mix'} 
+              class="img-main"
+              loading="lazy"
+            />
+            
+            {/* Vista en Sala (Hover) */}
+            {group.room && (
+              <img 
+                src={getAssetUrl(group.room.id, { width: 1000, quality: 85 })} 
+                alt="Vista en Sala" 
+                class="img-room"
+                loading="lazy"
+              />
+            )}
+
+            <div class="hover-overlay">
+                <span class="view-tag">{group.room ? 'VISTA EN AMBIENTE' : 'OBRA ÚNICA'}</span>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span class="serial">JMX-LAB-{group.main.id.substring(0,4).toUpperCase()}</span>
+            <h3>{group.main.title || 'Estudio Fotográfico'}</h3>
+            <div class="tech-specs">Fine Art · Canson Museum Pro</div>
           </div>
         </div>
       ))}
@@ -35,125 +80,163 @@ const files = await getLaboratorioFiles();
 </Layout>
 
 <style>
-  @layer components {
-    .lab-container {
-      padding: 8rem 2rem;
-      max-width: 1400px;
-      margin: 0 auto;
-      background: var(--bg-primary);
-    }
+  :root {
+    --lab-gold: #dcb14a;
+    --lab-bg: #050505;
+    --lab-card-bg: #0d0d0d;
+    --transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 
-    .lab-header {
-      text-align: center;
-      margin-bottom: 6rem;
-      view-timeline-name: --header;
-    }
+  .lab-container {
+    padding: 10rem 4vw;
+    background: var(--lab-bg);
+    min-height: 100vh;
+    color: white;
+  }
 
-    .badge {
-      display: inline-block;
-      padding: 0.5rem 1rem;
-      background: var(--accent-gold);
-      color: var(--bg-primary);
-      font-size: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 0.2rem;
-      margin-bottom: 2rem;
-      border-radius: 2px;
-    }
+  .lab-header {
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto 8rem;
+  }
 
-    h1 {
-      font-family: var(--font-display);
-      font-size: clamp(2.5rem, 8vw, 5rem);
-      color: var(--text-primary);
-      margin-bottom: 1.5rem;
-      line-height: 1.1;
-    }
+  .badge {
+    display: inline-block;
+    padding: 0.6rem 1.4rem;
+    background: var(--lab-gold);
+    color: black;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.3rem;
+    margin-bottom: 2.5rem;
+    text-transform: uppercase;
+  }
 
-    .description {
-      color: var(--text-secondary);
-      font-size: 1.2rem;
-      max-width: 600px;
-      margin: 0 auto;
-    }
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 10vw, 6rem);
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 2rem;
+  }
 
-    .description span {
-      color: var(--accent-gold);
-      font-weight: 600;
-    }
+  .description {
+    font-size: 1.2rem;
+    color: #888;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
 
-    /* Galería con Animaciones 2026 */
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-      gap: 4rem;
-    }
+  .description span { color: var(--lab-gold); font-weight: 600; }
 
-    .gallery-item {
-      position: relative;
-      overflow: hidden;
-      aspect-ratio: 4/5;
-      background: #111;
-      
-      /* Scroll-Driven Animation (Chrome 115+) */
-      view-timeline-name: --item-reveal;
-      view-timeline-axis: block;
-      
-      animation: reveal linear both;
-      animation-timeline: --item-reveal;
-      animation-range: entry 10% cover 30%;
-    }
+  /* Grid Centrado y Premium */
+  .lab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 6rem;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
 
-    @keyframes reveal {
-      from {
-        opacity: 0;
-        transform: translateY(100px) scale(0.9) rotateX(10deg);
-        filter: grayscale(1);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1) rotateX(0);
-        filter: grayscale(0);
-      }
-    }
+  .lab-card {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: revealCard 1s forwards;
+    animation-delay: calc(var(--index) * 0.15s);
+  }
 
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.8s cubic-bezier(0.2, 0, 0.2, 1);
-    }
+  @keyframes revealCard {
+    to { opacity: 1; transform: translateY(0); }
+  }
 
-    .gallery-item:hover img {
-      transform: scale(1.1);
-    }
+  .image-box {
+    position: relative;
+    aspect-ratio: 4/5;
+    background: #111;
+    overflow: hidden;
+    cursor: crosshair;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+  }
 
-    .item-info {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 2rem;
-      background: linear-gradient(transparent, rgba(0,0,0,0.8));
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
+  .image-box img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* 🚀 FIX: No recorta las fotos */
+    transition: var(--transition);
+    padding: 2rem; /* Espacio para que respire la obra */
+  }
 
-    .gallery-item:hover .item-info {
-      opacity: 1;
-    }
+  .img-room {
+    opacity: 0;
+    transform: scale(1.05);
+    z-index: 2;
+  }
 
-    .meta {
-      color: var(--accent-gold);
-      font-size: 0.7rem;
-      font-weight: 700;
-      display: block;
-      margin-bottom: 0.5rem;
-    }
+  /* Efecto Hover */
+  .image-box:hover .img-main {
+    opacity: 0.2;
+    transform: scale(0.95);
+    filter: blur(10px);
+  }
 
-    h3 {
-      color: white;
-      font-size: 1.5rem;
-      font-weight: 400;
-    }
+  .image-box:hover .img-room {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .hover-overlay {
+    position: absolute;
+    bottom: 2rem;
+    left: 2rem;
+    z-index: 10;
+    opacity: 0;
+    transition: var(--transition);
+  }
+
+  .image-box:hover .hover-overlay { opacity: 1; }
+
+  .view-tag {
+    background: var(--lab-gold);
+    color: black;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 0.5rem 1rem;
+    letter-spacing: 2px;
+  }
+
+  /* Footer de la Card */
+  .card-footer {
+    margin-top: 2.5rem;
+    text-align: left;
+  }
+
+  .serial {
+    font-size: 0.6rem;
+    color: var(--lab-gold);
+    letter-spacing: 3px;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+  }
+
+  .tech-specs {
+    font-size: 0.8rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .lab-grid { grid-template-columns: 1fr; }
+    .image-box { aspect-ratio: 1; }
   }
 </style>
