@@ -28,15 +28,12 @@ export class DirectusManager {
     private static client: any = null;
     private static isLocalFallback = false;
 
-    public static getBaseUrl() {
-        return PUBLIC_URL; 
-    }
+    public static getBaseUrl() { return PUBLIC_URL; }
 
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
             const baseUrl = isServer ? INTERNAL_URL : PUBLIC_URL;
-            
             try {
                 const baseClient = createDirectus<Schema>(baseUrl).with(rest());
                 if (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') {
@@ -57,7 +54,6 @@ export class DirectusManager {
         const baseUrl = useInternal ? INTERNAL_URL : PUBLIC_URL;
         const url = `${baseUrl}${path}`;
         const headers: any = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${STATIC_TOKEN}`, ...options.headers };
-
         try {
             const response = await fetch(url, { ...options, headers });
             return response;
@@ -115,48 +111,35 @@ export async function getSerieDetails(folderId: string) {
     } catch (e) { return { name: 'Colección', items: [] }; }
 }
 
-export async function createOrder(data: any) {
+export async function addLike(artworkId: string, ip: string) {
     try {
         const client = await DirectusManager.getClient();
-        return await client.request(createItem('orders', data));
-    } catch (e) { return null; }
+        const file: any = await client.request(readItem('directus_files' as any, artworkId));
+        if (!file) return { success: false };
+        const filename = file.filename_download;
+        const redisKey = `likes:${filename}`;
+        const currentLikes = await REDIS.get(redisKey);
+        const newLikes = (currentLikes ? parseInt(currentLikes) : 0) + 1;
+        await REDIS.set(redisKey, newLikes.toString());
+        return { success: true, likes: newLikes };
+    } catch (e) { return { success: false }; }
 }
 
-export async function updateOrder(id: string, data: any) {
-    try {
-        const client = await DirectusManager.getClient();
-        return await client.request(updateItem('orders', id, data));
-    } catch (e) { return null; }
-}
-
-export async function getArticles() {
-    try {
-        const client = await DirectusManager.getClient();
-        return await client.request(readItems('magazine', { sort: ['-created_at'], fields: ['*', { user_created: ['*'] }] }));
-    } catch (e) { return []; }
-}
-
-export async function getArticleDetails(idOrSlug: string) {
-    try {
-        const client = await DirectusManager.getClient();
-        const results = await client.request(readItems('magazine', { filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, fields: ['*', { user_created: ['*'] }], limit: 1 }));
-        return results[0] || null;
-    } catch (e) { return null; }
-}
-
-export async function getArtworkDetails(fileId: string) {
+export async function getArtworkLikes(fileId: string) {
     try {
         const client = await DirectusManager.getClient();
         const file: any = await client.request(readItem('directus_files' as any, fileId));
-        return { mainFile: file, meta: null };
-    } catch (e) { return null; }
+        const likes = await REDIS.get(`likes:${file.filename_download}`);
+        return likes ? parseInt(likes) : 0;
+    } catch (e) { return 0; }
 }
 
-export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number, raw?: boolean } = {}) {
-    if (!id) return null;
-    if (options.raw) return `${PUBLIC_URL}/assets/${id}`;
-    const { width = 1200, format = 'avif', quality = 80 } = options;
-    return `${PUBLIC_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`;
-}
-
+export async function createOrder(data: any) { try { const client = await DirectusManager.getClient(); return await client.request(createItem('orders', data)); } catch (e) { return null; } }
+export async function updateOrder(id: string, data: any) { try { const client = await DirectusManager.getClient(); return await client.request(updateItem('orders', id, data)); } catch (e) { return null; } }
+export async function getArticles() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('magazine', { sort: ['-created_at'], fields: ['*', { user_created: ['*'] }] })); } catch (e) { return []; } }
+export async function getArticleDetails(idOrSlug: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('magazine', { filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, fields: ['*', { user_created: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
+export async function getArtworkDetails(fileId: string) { try { const client = await DirectusManager.getClient(); const file: any = await client.request(readItem('directus_files' as any, fileId)); return { mainFile: file, meta: null }; } catch (e) { return null; } }
+export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number, raw?: boolean } = {}) { if (!id) return null; if (options.raw) return `${PUBLIC_URL}/assets/${id}`; const { width = 1200, format = 'avif', quality = 80 } = options; return `${PUBLIC_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`; }
 export const fetchFromDirectus = (path: string, options?: RequestInit) => DirectusManager.fetchShim(path, options);
+export async function getArtworks() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('artworks' as any, { limit: -1 })); } catch (e) { return []; } }
+export async function getCertificates(token?: string) { try { const client = await DirectusManager.getClient(); return await client.request(readItems('certificates' as any, { fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: -1 })); } catch (e) { return []; } }
