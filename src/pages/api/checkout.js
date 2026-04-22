@@ -1,6 +1,6 @@
 import { createPreference } from '@services/mercadopago';
 import { createOrder } from '@conexion/directus';
-import { createDirectus, rest, staticToken, readItem } from '@directus/sdk';
+import { createDirectus, rest, staticToken, readItems } from '@directus/sdk';
 
 const DIRECTUS_URL = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
 const DIRECTUS_TOKEN = import.meta.env.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
@@ -31,7 +31,8 @@ export const POST = async ({ request }) => {
             const realId = item.id.includes('-') ? item.id.split('-')[0] : item.id;
             const sizeLabel = item.id.includes('-') ? item.id.split('-')[1].toLowerCase() : 'standard';
 
-            const dbItem = await client.request(readItem('artworks', realId));
+            const dbItems = await client.request(readItems('artworks', { filter: { id: { _eq: realId } }, limit: 1 }));
+            const dbItem = dbItems[0];
 
             if (!dbItem) throw new Error(`Producto no encontrado: ${realId}`);
 

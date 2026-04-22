@@ -131,8 +131,26 @@ export async function updateOrder(id: string, data: any) { try { const client = 
 export async function getArticles() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('magazine', { sort: ['-created_at'], fields: ['*', { user_created: ['*'] }] })); } catch (e) { return []; } }
 export async function getArticleDetails(idOrSlug: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('magazine', { filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, fields: ['*', { user_created: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
 
-export async function getArtworkDetails(fileId: string) { try { const client = await DirectusManager.getClient(); const file: any = await client.request(readItem('directus_files' as any, fileId)); return { mainFile: file, meta: null }; } catch (e) { return null; } }
-export async function getArtworkById(id: string) { try { const client = await DirectusManager.getClient(); return await client.request(readItem('artworks', id)); } catch (e) { return null; } }
+export async function getArtworkDetails(fileId: string) { 
+    try { 
+        const client = await DirectusManager.getClient(); 
+        // Usar readFiles con filtro en lugar de readItem para evitar restricciones de v11
+        const files = await client.request(readFiles({ filter: { id: { _eq: fileId } }, limit: 1 }));
+        const file = files[0];
+        if (!file) return null;
+        return { mainFile: file, meta: null }; 
+    } catch (e) { 
+        console.error('[getArtworkDetails] Error:', e);
+        return null; 
+    } 
+}
+export async function getArtworkById(id: string) { 
+    try { 
+        const client = await DirectusManager.getClient(); 
+        const items = await client.request(readItems('artworks', { filter: { id: { _eq: id } }, limit: 1 }));
+        return items[0] || null;
+    } catch (e) { return null; } 
+}
 export async function getArtworks() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('artworks' as any, { limit: -1 })); } catch (e) { return []; } }
 export async function getCertificates() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('certificates' as any, { fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: -1 })); } catch (e) { return []; } }
 export async function getCertificateByUuid(uuid: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('certificates', { filter: { id: { _eq: uuid } }, fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }

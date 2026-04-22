@@ -4,12 +4,13 @@
  */
 import { REDIS } from './redis';
 import { DirectusManager } from './directus';
-import { readItem } from '@directus/sdk';
+import { readFiles } from '@directus/sdk';
 
 export async function addLike(artworkId: string, ip: string) {
     try {
         const client = await DirectusManager.getClient();
-        const file: any = await client.request(readItem('directus_files' as any, artworkId));
+        const files = await client.request(readFiles({ filter: { id: { _eq: artworkId } }, limit: 1 }));
+        const file = files[0];
         if (!file) return { success: false };
         
         const filename = file.filename_download;
@@ -28,7 +29,9 @@ export async function addLike(artworkId: string, ip: string) {
 export async function getArtworkLikes(fileId: string) {
     try {
         const client = await DirectusManager.getClient();
-        const file: any = await client.request(readItem('directus_files' as any, fileId));
+        const files = await client.request(readFiles({ filter: { id: { _eq: fileId } }, limit: 1 }));
+        const file = files[0];
+        if (!file) return 0;
         const likes = await REDIS.get(`likes:${file.filename_download}`);
         return likes ? parseInt(likes) : 0;
     } catch (e) {

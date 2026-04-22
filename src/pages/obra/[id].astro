@@ -2,8 +2,10 @@
 // src/pages/obra/[id].astro
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
+import FramingStudio from '@components/FramingStudio.astro';
+import AddToCartButton from '@components/ecommerce/AddToCartButton';
 import { getArtworkDetails, getAssetUrl, DirectusManager } from '@conexion/directus';
-import { readItem, readItems } from '@directus/sdk';
+import { readFolders, readItems } from '@directus/sdk';
 
 const { id } = Astro.params;
 const details = await getArtworkDetails(id as string);
@@ -18,9 +20,12 @@ const { mainFile, meta } = details;
 // 1. Obtener Nombre de la Serie (Carpeta) vía SDK
 let serieName = "Colección Privada";
 try {
-    const folder: any = await client.request(readItem('directus_folders' as any, mainFile.folder));
+    const folders = await client.request(readFolders({ filter: { id: { _eq: mainFile.folder } }, limit: 1 }));
+    const folder = folders[0];
     serieName = folder?.name || "Serie";
-} catch (e) {}
+} catch (e) {
+    console.error('[ObraDetail] Error obteniendo serie:', e);
+}
 
 const title = mainFile.title || "Obra Javier Mix";
 const coverImage = getAssetUrl(mainFile.id) || '';
