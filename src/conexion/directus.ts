@@ -14,8 +14,6 @@ import {
     createItem, 
     updateItem
 } from '@directus/sdk';
-import { REDIS } from './redis';
-import type { Schema, Order } from '@types/directus';
 
 // 🌐 Configuración de URLs
 const PUBLIC_URL = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
@@ -33,7 +31,7 @@ export class DirectusManager {
             const isServer = typeof window === 'undefined';
             const baseUrl = isServer ? INTERNAL_URL : PUBLIC_URL;
             try {
-                const baseClient = createDirectus<Schema>(baseUrl).with(rest());
+                const baseClient = createDirectus(baseUrl).with(rest());
                 if (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') {
                     this.client = baseClient.with(staticToken(STATIC_TOKEN));
                 } else {
@@ -49,7 +47,7 @@ export class DirectusManager {
 }
 
 /* ==========================================================================
-   SECCIÓN: FUNCIONES DE DATOS (IDs CORREGIDOS)
+   SECCIÓN: FUNCIONES DE DATOS
    ========================================================================== */
 
 export async function getHomeFiles() {
@@ -63,7 +61,6 @@ export async function getHomeFiles() {
 export async function getLaboratorioFiles() {
     try {
         const client = await DirectusManager.getClient();
-        // 🎯 ID CORREGIDO: de4c7fa02f46 (antes estaba al revés)
         const LAB_FOLDER_ID = 'd69266c5-90b3-467f-af9c-de4c7fa02f46';
         return await client.request(readFiles({ filter: { folder: { _eq: LAB_FOLDER_ID } }, sort: ['filename_download'], limit: -1 }));
     } catch (e) { return []; }
@@ -92,38 +89,57 @@ export async function getSerieDetails(folderId: string) {
     } catch (e) { return { name: 'Colección', items: [] }; }
 }
 
-export async function addLike(artworkId: string, ip: string) {
-    try {
-        const client = await DirectusManager.getClient();
-        const file: any = await client.request(readItem('directus_files' as any, artworkId));
-        if (!file) return { success: false };
-        const filename = file.filename_download;
-        const redisKey = `likes:${filename}`;
-        const currentLikes = await REDIS.get(redisKey);
-        const newLikes = (currentLikes ? parseInt(currentLikes) : 0) + 1;
-        await REDIS.set(redisKey, newLikes.toString());
-        return { success: true, likes: newLikes };
-    } catch (e) { return { success: false }; }
-}
-
-export async function getArtworkLikes(fileId: string) {
-    try {
-        const client = await DirectusManager.getClient();
-        const file: any = await client.request(readItem('directus_files' as any, fileId));
-        const likes = await REDIS.get(`likes:${file.filename_download}`);
-        return likes ? parseInt(likes) : 0;
-    } catch (e) { return 0; }
-}
-
+// 🛒 Pedidos y Carrito
 export async function createOrder(data: any) { try { const client = await DirectusManager.getClient(); return await client.request(createItem('orders', data)); } catch (e) { return null; } }
 export async function updateOrder(id: string, data: any) { try { const client = await DirectusManager.getClient(); return await client.request(updateItem('orders', id, data)); } catch (e) { return null; } }
+
+// 📰 Magazine
 export async function getArticles() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('magazine', { sort: ['-created_at'], fields: ['*', { user_created: ['*'] }] })); } catch (e) { return []; } }
 export async function getArticleDetails(idOrSlug: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('magazine', { filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, fields: ['*', { user_created: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
+
+// 🎨 Obras y Certificados
 export async function getArtworkDetails(fileId: string) { try { const client = await DirectusManager.getClient(); const file: any = await client.request(readItem('directus_files' as any, fileId)); return { mainFile: file, meta: null }; } catch (e) { return null; } }
-export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _eq: 'Catalogo' } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }
-export async function getCertificateByUuid(uuid: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('certificates', { filter: { id: { _eq: uuid } }, fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
 export async function getArtworkById(id: string) { try { const client = await DirectusManager.getClient(); return await client.request(readItem('artworks', id)); } catch (e) { return null; } }
 export async function getArtworks() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('artworks' as any, { limit: -1 })); } catch (e) { return []; } }
 export async function getCertificates() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('certificates' as any, { fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: -1 })); } catch (e) { return []; } }
-export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number, raw?: boolean } = {}) { if (!id) return null; if (options.raw) return `${PUBLIC_URL}/assets/${id}`; const { width = 1200, format = 'avif', quality = 80 } = options; return `${PUBLIC_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`; }
-export const fetchFromDirectus = (path: string, options?: RequestInit) => DirectusManager.fetchShim(path, options);
+export async function getCertificateByUuid(uuid: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('certificates', { filter: { id: { _eq: uuid } }, fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
+
+// 📂 Catálogo
+export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _eq: 'Catalogo' } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }
+
+// 🔐 Admin & Auth (Puras para el navegador)
+export async function loginAdmin(email: string, password: string) {
+    const res = await fetch(`${PUBLIC_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    return { success: !!data.data?.access_token, accessToken: data.data?.access_token };
+}
+
+export async function uploadFile(file: File, token: string) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${PUBLIC_URL}/files`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+    });
+    const result = await res.json();
+    return { success: !result.errors, id: result.data?.id };
+}
+
+// ✏️ Mutaciones
+export async function createArtwork(data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/artworks`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
+export async function updateArtwork(id: string, data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/artworks/${id}`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
+export async function createArticle(data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/magazine`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
+export async function updateArticle(id: string, data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/magazine/${id}`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
+
+// 🖼️ Assets
+export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number, raw?: boolean } = {}) {
+    if (!id) return null;
+    if (options.raw) return `${PUBLIC_URL}/assets/${id}`;
+    const { width = 1200, format = 'avif', quality = 80 } = options;
+    return `${PUBLIC_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`;
+}
