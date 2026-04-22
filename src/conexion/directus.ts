@@ -25,7 +25,10 @@ const STATIC_TOKEN = import.meta.env?.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dO
  */
 export class DirectusManager {
     private static client: any = null;
+    private static isLocalFallback = false;
+
     public static getBaseUrl() { return PUBLIC_URL; }
+
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
@@ -44,10 +47,33 @@ export class DirectusManager {
         }
         return this.client;
     }
+
+    // 🚀 RESTAURADA: Función necesaria para peticiones manuales
+    public static async fetchShim(path: string, options: RequestInit = {}) {
+        const useInternal = !this.isLocalFallback && typeof window === 'undefined';
+        const baseUrl = useInternal ? INTERNAL_URL : PUBLIC_URL;
+        const url = `${baseUrl}${path}`;
+        const headers: any = { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${STATIC_TOKEN}`, 
+            ...options.headers 
+        };
+        try {
+            const response = await fetch(url, { ...options, headers });
+            return response;
+        } catch (e: any) {
+            if (useInternal) {
+                this.isLocalFallback = true;
+                this.client = null;
+                return this.fetchShim(path, options);
+            }
+            throw e;
+        }
+    }
 }
 
 /* ==========================================================================
-   SECCIÓN: FUNCIONES DE DATOS
+   SECCIÓN: FUNCIONES DE DATOS (TODAS RESTAURADAS)
    ========================================================================== */
 
 export async function getHomeFiles() {
@@ -89,25 +115,20 @@ export async function getSerieDetails(folderId: string) {
     } catch (e) { return { name: 'Colección', items: [] }; }
 }
 
-// 🛒 Pedidos y Carrito
 export async function createOrder(data: any) { try { const client = await DirectusManager.getClient(); return await client.request(createItem('orders', data)); } catch (e) { return null; } }
 export async function updateOrder(id: string, data: any) { try { const client = await DirectusManager.getClient(); return await client.request(updateItem('orders', id, data)); } catch (e) { return null; } }
 
-// 📰 Magazine
 export async function getArticles() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('magazine', { sort: ['-created_at'], fields: ['*', { user_created: ['*'] }] })); } catch (e) { return []; } }
 export async function getArticleDetails(idOrSlug: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('magazine', { filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, fields: ['*', { user_created: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
 
-// 🎨 Obras y Certificados
 export async function getArtworkDetails(fileId: string) { try { const client = await DirectusManager.getClient(); const file: any = await client.request(readItem('directus_files' as any, fileId)); return { mainFile: file, meta: null }; } catch (e) { return null; } }
 export async function getArtworkById(id: string) { try { const client = await DirectusManager.getClient(); return await client.request(readItem('artworks', id)); } catch (e) { return null; } }
 export async function getArtworks() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('artworks' as any, { limit: -1 })); } catch (e) { return []; } }
 export async function getCertificates() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('certificates' as any, { fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: -1 })); } catch (e) { return []; } }
 export async function getCertificateByUuid(uuid: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('certificates', { filter: { id: { _eq: uuid } }, fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
 
-// 📂 Catálogo
 export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _eq: 'Catalogo' } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }
 
-// 🔐 Admin & Auth (Puras para el navegador)
 export async function loginAdmin(email: string, password: string) {
     const res = await fetch(`${PUBLIC_URL}/auth/login`, {
         method: 'POST',
@@ -130,16 +151,17 @@ export async function uploadFile(file: File, token: string) {
     return { success: !result.errors, id: result.data?.id };
 }
 
-// ✏️ Mutaciones
 export async function createArtwork(data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/artworks`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
 export async function updateArtwork(id: string, data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/artworks/${id}`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
 export async function createArticle(data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/magazine`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
 export async function updateArticle(id: string, data: any, token: string) { const res = await fetch(`${PUBLIC_URL}/items/magazine/${id}`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return await res.json(); }
 
-// 🖼️ Assets
 export function getAssetUrl(id: string, options: { width?: number, format?: string, quality?: number, raw?: boolean } = {}) {
     if (!id) return null;
     if (options.raw) return `${PUBLIC_URL}/assets/${id}`;
     const { width = 1200, format = 'avif', quality = 80 } = options;
     return `${PUBLIC_URL}/assets/${id}?width=${width}&format=${format}&quality=${quality}`;
 }
+
+// 🚀 RESTAURADA: Función que pedía la Revista
+export const fetchFromDirectus = (path: string, options?: RequestInit) => DirectusManager.fetchShim(path, options);
