@@ -2,7 +2,8 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getSerieDetails, getArtworkLikes } from '@conexion/directus';
+import { getSerieDetails } from '@conexion/directus';
+import { getArtworkLikes } from '@conexion/likes';
 import { getOptimizedImageURL } from '@utils/media';
 
 export const prerender = false;
