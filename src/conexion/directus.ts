@@ -113,10 +113,16 @@ export async function getSeries() {
 export async function getSerieDetails(folderId: string) {
     try {
         const client = await DirectusManager.getClient();
-        const folder: any = await client.request(readItem('directus_folders' as any, folderId));
+        // Usar readFolders en lugar de readItem para evitar restricciones de colecciones del sistema en v11
+        const folders = await client.request(readFolders({ filter: { id: { _eq: folderId } } as any, limit: 1 }));
+        const folder = folders[0];
+        if (!folder) return { name: 'Colección', items: [] };
         const items: any = await client.request(readFiles({ filter: { folder: { _eq: folderId } }, limit: -1 }));
         return { name: folder.name, items: items || [] };
-    } catch (e) { return { name: 'Colección', items: [] }; }
+    } catch (e) { 
+        console.error('[getSerieDetails] Error:', e);
+        return { name: 'Colección', items: [] }; 
+    }
 }
 
 export async function createOrder(data: any) { try { const client = await DirectusManager.getClient(); return await client.request(createItem('orders', data)); } catch (e) { return null; } }
