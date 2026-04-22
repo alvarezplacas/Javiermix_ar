@@ -95,9 +95,13 @@ export async function getLaboratorioFiles() {
 export async function getSeries() {
     try {
         const client = await DirectusManager.getClient();
-        const allFolders = await client.request(readFolders());
-        const series = await Promise.all(allFolders.map(async (f: any) => {
-            if (['Home', 'home', 'Laboratorio', 'Catalogo'].includes(f.name)) return null;
+        // Primero encontrar la carpeta raíz "Catalogo"
+        const catalogoFolders = await client.request(readFolders({ filter: { name: { _eq: 'Catalogo' } }, limit: 1 }));
+        const catalogoId = catalogoFolders[0]?.id;
+        if (!catalogoId) return [];
+        // Obtener TODAS las subcarpetas de Catalogo (limit: -1 evita el límite por defecto)
+        const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: catalogoId } }, limit: -1 }));
+        const series = await Promise.all(seriesFolders.map(async (f: any) => {
             const files = await client.request(readFiles({ filter: { folder: { _eq: f.id } }, limit: 1 }));
             if (files.length === 0) return null;
             return { id: f.id, name: f.name, coverId: files[0]?.id || null };
