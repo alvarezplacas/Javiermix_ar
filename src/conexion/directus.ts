@@ -147,6 +147,26 @@ export async function getHomeFiles() {
     }
 }
 
+export async function getLaboratorioFiles() {
+    try {
+        const client = await DirectusManager.getClient();
+        const allFolders = await client.request(readFolders());
+        const labFolder = allFolders.find((f: any) => 
+            ['Laboratorio', 'laboratorio', 'LABORATORIO'].includes(f.name)
+        );
+        
+        if (!labFolder) return [];
+
+        return await client.request(readItems('directus_files' as any, {
+            filter: { folder: { _eq: labFolder.id } },
+            sort: ['filename_download'],
+            limit: -1
+        }));
+    } catch (e) {
+        return [];
+    }
+}
+
 export async function getSeries() {
     try {
         const client = await DirectusManager.getClient();

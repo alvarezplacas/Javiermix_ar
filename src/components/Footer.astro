@@ -50,8 +50,7 @@ const currentYear = new Date().getFullYear();
         <ul>
           <li><a href="/carrito">Carrito de Ventas</a></li>
           <li><a href="/enmarcado">Prueba tu Obra en tu Espacio</a></li>
-          <li><a href="#">Impresión Fine Art</a></li>
-          <li><a href="#">Consultoría de Arte</a></li>
+          <li><a href="/laboratorio" class="link-lab">Laboratorio de Diseño 2026</a></li>
           <li><a href="#">Ediciones Limitadas</a></li>
         </ul>
       </nav>
@@ -233,6 +232,23 @@ const currentYear = new Date().getFullYear();
 
   .link-all:hover {
     padding-left: 10px !important;
+  }
+
+  .link-lab {
+    color: var(--ok-gold) !important;
+    font-weight: 600;
+    position: relative;
+  }
+
+  .link-lab::after {
+    content: 'NEW';
+    font-size: 0.5rem;
+    background: var(--ok-burgundy);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 2px;
+    margin-left: 8px;
+    vertical-align: middle;
   }
 
   .contact-item {

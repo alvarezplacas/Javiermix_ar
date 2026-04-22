@@ -3,62 +3,53 @@
    Centralized CSS for Typography, Colors, and Reusable Layout Utility Classes
    ========================================================================= */
 
-:root {
-	/* --- 1. CORE BRAND PALETTE (HSL for precision) --- */
-	--h-gold: 44;
-	--s-gold: 69%;
-	--l-gold: 58%;
-	/* #DCB14A */
-	--h-burgundy: 349;
-	--s-burgundy: 70%;
-	--l-burgundy: 45%;
-	/* #BF1534 refined to a softer tone */
+@layer base, components, utilities;
 
-	/* Neutral Tones (Onyx & Travertine) */
-	--color-onyx-deep: hsl(0, 0%, 2%);
-	/* #050505 */
-	--color-onyx-soft: hsl(0, 0%, 7%);
-	/* #111111 */
-	--color-onyx-charcoal: hsl(0, 0%, 5%);
-	/* #0D0D0D */
+@layer base {
+	:root {
+		/* --- 1. CORE BRAND PALETTE (OKLCH for 2026 clarity) --- */
+		/* Gold: High chroma, perceptual lightness */
+		--ok-gold: oklch(0.78 0.16 88); 
+		--ok-burgundy: oklch(0.45 0.18 25);
+		
+		/* Neutral Tones (Onyx & Travertine) */
+		--color-onyx-deep: oklch(0.12 0 0);    /* #050505 approx */
+		--color-onyx-soft: oklch(0.18 0 0);    /* #111111 approx */
+		--color-onyx-charcoal: oklch(0.15 0 0);
+		
+		--color-travertine-light: oklch(0.88 0.01 20);
+		--color-travertine-mid: oklch(0.65 0.02 30);
+		--color-travertine-dark: oklch(0.35 0.01 20);
 
-	--color-travertine-light: hsl(12, 13%, 83%);
-	/* #D9CFCC */
-	--color-travertine-mid: hsl(28, 9%, 62%);
-	/* #A69C94 */
-	--color-travertine-dark: hsl(12, 5%, 34%);
-	/* #595351 */
+		/* Legacy Aliases for compatibility */
+		--color-gold: var(--ok-gold);
+		--color-burgundy: var(--ok-burgundy);
+		--color-white: #ffffff;
 
-	/* Brand Aliases */
-	--color-gold: hsl(var(--h-gold), var(--s-gold), var(--l-gold));
-	--color-burgundy: hsl(var(--h-burgundy), var(--s-burgundy), var(--l-burgundy));
-	--color-white: hsl(0, 0%, 100%);
+		/* Semantic Colors */
+		--color-bg: var(--color-onyx-deep);
+		--color-text: var(--color-travertine-light);
+		--color-text-muted: var(--color-travertine-mid);
+		--color-accent: var(--ok-gold);
 
-	/* Semantic Colors */
-	--color-bg: var(--color-onyx-deep);
-	--color-text: var(--color-travertine-light);
-	--color-text-muted: var(--color-travertine-mid);
-	--color-accent: var(--color-gold);
+		/* --- 2. FLUID TYPOGRAPHY SYSTEM --- */
+		--font-primary: 'Cormorant Garamond', serif;
+		--font-secondary: 'Montserrat', sans-serif;
 
-	/* --- 2. FLUID TYPOGRAPHY SYSTEM (2026 Ready) --- */
-	--font-primary: 'Cormorant Garamond', serif;
-	--font-secondary: 'Montserrat', sans-serif;
+		/* Fluid steps */
+		--text-base: clamp(1rem, 0.9rem + 0.4vw, 1.25rem);
+		--text-h1: clamp(2.5rem, 5vw, 5.5rem);
+		--text-h2: clamp(2rem, 4vw, 3.5rem);
+		--text-h3: clamp(1.5rem, 3vw, 2.5rem);
 
-	/* Fluid steps: min 16px -> max 20px */
-	--text-base: clamp(1rem, 0.9rem + 0.4vw, 1.25rem);
+		/* --- 3. SPACING & SHADOWS --- */
+		--space-unit: clamp(1rem, 2vw, 2.5rem);
+		--container-max: 1600px;
+		--glass-bg: oklch(0.15 0 0 / 0.85);
+		--glass-border: oklch(1 0 0 / 0.05);
 
-	/* Heading Scale */
-	--text-h1: clamp(2.5rem, 5vw, 5.5rem);
-	--text-h2: clamp(2rem, 4vw, 3.5rem);
-	--text-h3: clamp(1.5rem, 3vw, 2.5rem);
-
-	/* --- 3. SPACING & SHADOWS --- */
-	--space-unit: clamp(1rem, 2vw, 2.5rem);
-	--container-max: 1600px;
-	--glass-bg: rgba(13, 13, 13, 0.85);
-	--glass-border: rgba(255, 255, 255, 0.05);
-
-	--transition-premium: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+		--transition-premium: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+	}
 }
 
 /* --- 2. CSS RESET & GLOBAL BASICS --- */

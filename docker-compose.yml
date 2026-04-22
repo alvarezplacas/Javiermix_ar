@@ -39,7 +39,7 @@ services:
   # Directus (Gestión de Contenido)
   directus:
     image: directus/directus:11.17.2
-    container_name: javiermix_directus
+    container_name: javiermix-directus
     restart: always
     environment:
       KEY: "9876543210abcdef9876543210abcdef"
@@ -47,9 +47,9 @@ services:
       DB_CLIENT: "pg"
       DB_HOST: "db"
       DB_PORT: "5432"
-      DB_DATABASE: "javiermix_db"
-      DB_USER: "postgres"
-      DB_PASSWORD: "JavierMix2026!"
+      DB_DATABASE: "${DB_DATABASE}"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
       PUBLIC_URL: "https://admin.javiermix.ar"
       ADMIN_EMAIL: "admin@javiermix.ar"
       ADMIN_PASSWORD: "Tecno/121212"
@@ -69,15 +69,15 @@ services:
       CACHE_REDIS: "redis://cache:6379"
       LOCK_STORE: "redis"
       LOCK_REDIS: "redis://cache:6379"
-      STORAGE_LOCATIONS: "local"
-      # Configuración de S3 (Comentar si hay errores de CONNECTION REFUSED)
-      # STORAGE_S3_DRIVER: "s3"
-      # STORAGE_S3_KEY: "javiermix_key"
-      # STORAGE_S3_SECRET: "javiermix_secret"
-      # STORAGE_S3_BUCKET: "assets"
-      # STORAGE_S3_REGION: "us-east-1"
-      # STORAGE_S3_ENDPOINT: "https://s3.javiermix.ar"
-      # STORAGE_S3_S3_FORCE_PATH_STYLE: "true"
+      STORAGE_LOCATIONS: "s3"
+      # Configuración de S3 (MinIO Activo)
+      STORAGE_S3_DRIVER: "s3"
+      STORAGE_S3_KEY: "${STORAGE_S3_KEY}"
+      STORAGE_S3_SECRET: "${STORAGE_S3_SECRET}"
+      STORAGE_S3_BUCKET: "${STORAGE_S3_BUCKET}"
+      STORAGE_S3_REGION: "${STORAGE_S3_REGION}"
+      STORAGE_S3_ENDPOINT: "${STORAGE_S3_ENDPOINT}"
+      STORAGE_S3_S3_FORCE_PATH_STYLE: "${STORAGE_S3_S3_FORCE_PATH_STYLE}"
       CORS_ENABLED: "true"
       CORS_ORIGIN: "https://javiermix.ar, https://admin.javiermix.ar"
     volumes:

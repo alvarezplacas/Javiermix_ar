@@ -1,0 +1,159 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getLaboratorioFiles } from '../conexion/directus';
+
+const files = await getLaboratorioFiles();
+---
+
+<Layout title="Laboratorio de Diseño 2026 | JavierMix">
+  <main class="lab-container">
+    <header class="lab-header">
+      <div class="badge">ESTÁNDAR 2026</div>
+      <h1>Laboratorio de Muestras Fotográficas</h1>
+      <p class="description">
+        Experimentación con <span>Scroll-Driven Animations</span> y color <span>OKLCH</span>. 
+        Las imágenes cobran vida según tu interacción.
+      </p>
+    </header>
+
+    <section class="gallery">
+      {files.map((file, index) => (
+        <div class="gallery-item" style={`--index: ${index}`}>
+          <img 
+            src={`${import.meta.env.PUBLIC_DIRECTUS_URL}/assets/${file.id}?format=avif&quality=80`} 
+            alt={file.title || 'Muestra fotográfica'} 
+            loading="lazy"
+          />
+          <div class="item-info">
+            <span class="meta">JMX-{file.id.substring(0,4).toUpperCase()}</span>
+            <h3>{file.title || 'Sin Título'}</h3>
+          </div>
+        </div>
+      ))}
+    </section>
+  </main>
+</Layout>
+
+<style>
+  @layer components {
+    .lab-container {
+      padding: 8rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      background: var(--bg-primary);
+    }
+
+    .lab-header {
+      text-align: center;
+      margin-bottom: 6rem;
+      view-timeline-name: --header;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--accent-gold);
+      color: var(--bg-primary);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.2rem;
+      margin-bottom: 2rem;
+      border-radius: 2px;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      line-height: 1.1;
+    }
+
+    .description {
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .description span {
+      color: var(--accent-gold);
+      font-weight: 600;
+    }
+
+    /* Galería con Animaciones 2026 */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 4rem;
+    }
+
+    .gallery-item {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 4/5;
+      background: #111;
+      
+      /* Scroll-Driven Animation (Chrome 115+) */
+      view-timeline-name: --item-reveal;
+      view-timeline-axis: block;
+      
+      animation: reveal linear both;
+      animation-timeline: --item-reveal;
+      animation-range: entry 10% cover 30%;
+    }
+
+    @keyframes reveal {
+      from {
+        opacity: 0;
+        transform: translateY(100px) scale(0.9) rotateX(10deg);
+        filter: grayscale(1);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotateX(0);
+        filter: grayscale(0);
+      }
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.8s cubic-bezier(0.2, 0, 0.2, 1);
+    }
+
+    .gallery-item:hover img {
+      transform: scale(1.1);
+    }
+
+    .item-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 2rem;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .gallery-item:hover .item-info {
+      opacity: 1;
+    }
+
+    .meta {
+      color: var(--accent-gold);
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    h3 {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 400;
+    }
+  }
+</style>

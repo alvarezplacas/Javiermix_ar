@@ -75,4 +75,27 @@ const {
 		margin: 0;
 		padding: 0;
 	}
+
+	/* 🚀 FIX NUCLEAR: Eliminación de Resplandor Azul y ajuste de Hero */
+	.split-visual, .hero-main-stack, .hero-media-item {
+		box-shadow: none !important;
+		filter: none !important;
+		background-color: #000 !important;
+	}
+
+	.split-screen {
+		display: flex !important;
+		width: 100% !important;
+		overflow-x: hidden !important;
+	}
+
+	.split-visual {
+		flex: 0 0 50vw !important;
+		width: 50vw !important;
+	}
+
+	.split-content {
+		flex: 0 0 50vw !important;
+		width: 50vw !important;
+	}
 </style>
