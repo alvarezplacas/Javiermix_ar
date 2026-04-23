@@ -81,20 +81,23 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 <Layout title={articulo.title} description={articulo.title}>
   <Header currentPath="/revista" />
 
-  <article class="magazine-article">
-    <div class="split-layout">
-      <section class="narrative-column">
-        <header class="article-header">
-          <span class="eyebrow">REVISTA ONLINE</span>
-          <h1 class="headline">{articulo.title}</h1>
-          <div class="meta-row">
-            <div class="author-info">Por <strong>Javier Mix</strong></div>
-            <div class="stats-info">
-              <span class="date">{formattedDate}</span>
-              <span class="read-time">{readingTime} MIN LECTURA</span>
-            </div>
-          </div>
-        </header>
+    <article class={`magazine-article ${articulo.is_premium ? 'premium-edition' : ''}`}>
+        <div class="split-layout">
+            <section class="narrative-column">
+                <header class="article-header">
+                    <div class="eyebrow-row">
+                        <span class="eyebrow">REVISTA ONLINE</span>
+                        {articulo.is_premium && <span class="premium-badge">EDICIÓN EXCLUSIVA</span>}
+                    </div>
+                    <h1 class="headline">{articulo.title}</h1>
+                    <div class="meta-row">
+                        <div class="author-info">Por <strong>{articulo.author || 'Javier Mix'}</strong></div>
+                        <div class="stats-info">
+                            <span class="date">{formattedDate}</span>
+                            <span class="read-time">{readingTime} MIN LECTURA</span>
+                        </div>
+                    </div>
+                </header>
 
         <div class="prose-content" set:html={articulo.content_html}></div>
         
@@ -146,6 +149,9 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 .media-layer.active { opacity: 1; z-index: 5; }
 .media-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.75); }
 .media-video { width: 100%; height: 100%; object-fit: cover; }
+.eyebrow-row { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; }
+.eyebrow { font-size: 0.7rem; letter-spacing: 4px; color: var(--color-accent); font-weight: 700; }
+.premium-badge { font-size: 0.6rem; letter-spacing: 2px; color: #000; background: var(--color-accent); padding: 0.2rem 0.8rem; border-radius: 2px; font-weight: 800; }
 .headline { font-size: clamp(2.2rem, 5vw, 3.8rem); font-style: italic; color: #fff; font-family: var(--font-primary); margin-bottom: 2rem; }
 .prose-content { font-family: var(--font-secondary); font-size: 1.1rem; line-height: 1.9; color: rgba(255,255,255,0.7); }
 .prose-content :global(p) { margin-bottom: 2rem; }
