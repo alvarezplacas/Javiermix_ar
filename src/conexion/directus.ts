@@ -128,8 +128,8 @@ export async function getSerieDetails(folderId: string) {
 export async function createOrder(data: any) { try { const client = await DirectusManager.getClient(); return await client.request(createItem('orders', data)); } catch (e) { return null; } }
 export async function updateOrder(id: string, data: any) { try { const client = await DirectusManager.getClient(); return await client.request(updateItem('orders', id, data)); } catch (e) { return null; } }
 
-export async function getArticles() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('magazine', { sort: ['-created_at'], fields: ['*', { user_created: ['*'] }] })); } catch (e) { return []; } }
-export async function getArticleDetails(idOrSlug: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('magazine', { filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, fields: ['*', { user_created: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
+export async function getArticles() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('magazine', { filter: { status: { _in: ['published', 'publicado', 'Publicado'] } }, sort: ['-created_at'], fields: ['*', { user_created: ['*'] }] })); } catch (e) { return []; } }
+export async function getArticleDetails(idOrSlug: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('magazine', { filter: { _and: [{ _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, { status: { _in: ['published', 'publicado', 'Publicado'] } }] }, fields: ['*', { user_created: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
 
 export async function getArtworkDetails(fileId: string) { 
     try { 

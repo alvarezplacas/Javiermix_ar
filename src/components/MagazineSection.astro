@@ -5,7 +5,8 @@ const INTERNAL_DIRECTUS_URL = process.env.INTERNAL_DIRECTUS_URL || PUBLIC_DIRECT
 
 let fetchedArticles = [];
 try {
-  const response = await fetch(`${INTERNAL_DIRECTUS_URL}/items/magazine?filter[status][_eq]=published&sort=-created_at&limit=3`);
+  // 🔍 Filtro flexible para aceptar 'published' o 'publicado'
+  const response = await fetch(`${INTERNAL_DIRECTUS_URL}/items/magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
   const data = await response.json();
   fetchedArticles = data.data || [];
 } catch (e) {
