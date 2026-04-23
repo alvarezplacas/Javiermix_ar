@@ -39,7 +39,7 @@ const articles = fetchedArticles.map(a => ({
   title: a.title,
   excerpt: a.content_html ? a.content_html.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : '',
   image: a.featured_image ? resolveMediaURL(a.featured_image) : null,
-  link: `/revista/${a.slug}`,
+  link: `/revista/${a.id}`,
   location: "Buenos Aires",
   readTime: "5 min"
 }));

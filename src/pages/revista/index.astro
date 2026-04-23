@@ -27,7 +27,7 @@ const articles = dbArticles.map(art => {
     excerpt: (art.content_html || '').replace(/<[^>]*>/g, '').substring(0, 180) + '...',
     image: resolveMediaURL(art.featured_image),
     readTime: `${readTime} min`,
-    link: `/revista/${art.slug}`,
+    link: `/revista/${art.id}`,
     location: "Buenos Aires",
     category: art.tags ? art.tags.split(',')[0].trim() : "Ensayo Visual"
   };
