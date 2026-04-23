@@ -8,12 +8,19 @@ import { getArticleDetails, getAssetUrl, fetchFromDirectus } from '@conexion/dir
 export const prerender = false;
 const { slug } = Astro.params;
 
-// 1. Obtener datos con resiliencia total
+// 1. Obtener datos con resiliencia total (Soporte Híbrido ID-Slug)
 let articulo = null;
 let connectionError = null;
 
 try {
-    articulo = await getArticleDetails(slug!);
+    // Extraer el ID si el slug tiene formato "1-nombre"
+    const idFromSlug = slug!.split('-')[0];
+    articulo = await getArticleDetails(idFromSlug);
+    
+    // Si no lo encuentra por ID, intentamos por el slug completo
+    if (!articulo) {
+        articulo = await getArticleDetails(slug!);
+    }
 } catch (e: any) {
     connectionError = `Error de conexión: ${e.message}`;
 }
