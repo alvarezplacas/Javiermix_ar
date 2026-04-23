@@ -15,13 +15,13 @@
 		--ok-burgundy: oklch(0.45 0.18 25);
 		
 		/* Neutral Tones (Onyx & Travertine) */
-		--color-onyx-deep: oklch(0.12 0 0);    /* #050505 approx */
-		--color-onyx-soft: oklch(0.18 0 0);    /* #111111 approx */
-		--color-onyx-charcoal: oklch(0.15 0 0);
+		--color-onyx-deep: oklch(0.15 0.01 25);    /* Negro Papel Carbón */
+		--color-onyx-soft: oklch(0.18 0.01 25);    /* Gris Profundo */
+		--color-onyx-charcoal: oklch(0.20 0.01 25);
 		
-		--color-travertine-light: oklch(0.88 0.01 20);
-		--color-travertine-mid: oklch(0.65 0.02 30);
-		--color-travertine-dark: oklch(0.35 0.01 20);
+		--color-travertine-light: oklch(0.82 0.01 35); /* Blanco Hueso Suave */
+		--color-travertine-mid: oklch(0.65 0.02 35);
+		--color-travertine-dark: oklch(0.45 0.01 35);
 
 		/* Legacy Aliases for compatibility */
 		--color-gold: var(--ok-gold);
