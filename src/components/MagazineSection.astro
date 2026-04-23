@@ -7,11 +7,13 @@ let connectionError = null;
 let fetchedArticles = [];
 try {
   const baseUrl = typeof window === 'undefined' ? INTERNAL_DOCKER_URL : PUBLIC_DIRECTUS_URL;
-  const response = await fetch(`${baseUrl}/items/magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
+  
+  // 🔓 Petición ultra-abierta: Sin filtros para ver si trae ALGO
+  const response = await fetch(`${baseUrl}/items/magazine`);
   
   if (!response.ok) {
       connectionError = `Error HTTP: ${response.status} ${response.statusText}`;
-      const resCap = await fetch(`${baseUrl}/items/Magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
+      const resCap = await fetch(`${baseUrl}/items/Magazine`);
       const dataCap = await resCap.json();
       fetchedArticles = dataCap.data || [];
   } else {

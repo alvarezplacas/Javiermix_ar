@@ -131,23 +131,17 @@ export async function updateOrder(id: string, data: any) { try { const client = 
 export async function getArticles() { 
     try { 
         const client = await DirectusManager.getClient(); 
-        // 🔓 Primero intentamos con minúscula (estándar)
+        // 🔓 Búsqueda Total: Sin filtros ni orden para ver si trae ALGO
         return await client.request(readItems('magazine' as any, { 
-            filter: { status: { _in: ['published', 'publicado', 'Publicado'] } }, 
-            sort: ['-created_at'], 
             fields: ['*', { user_created: ['*'] }] 
         })); 
     } catch (e: any) { 
-        console.error(`[Directus] Falló lectura de 'magazine', probando con 'Magazine':`, e.message);
         try {
             const client = await DirectusManager.getClient(); 
             return await client.request(readItems('Magazine' as any, { 
-                filter: { status: { _in: ['published', 'publicado', 'Publicado'] } },
-                sort: ['-created_at'],
-                fields: ['*', { user_created: ['*'] }]
+                fields: ['*', { user_created: ['*'] }] 
             }));
         } catch (e2: any) {
-            console.error(`[Directus] Fallo total en artículos:`, e2.message);
             return []; 
         }
     } 
