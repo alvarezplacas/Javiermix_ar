@@ -254,8 +254,8 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
 
 /* Left: Immersive Visual */
 .split-visual {
-    flex: 0 0 50vw !important;
-    width: 50vw !important;
+    flex: 0 0 50vw;
+    width: 50vw;
     position: sticky;
     top: 0;
     height: 100dvh;
@@ -534,14 +534,30 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
 @media (max-width: 1024px) {
     .split-screen {
         flex-direction: column;
+        overflow-y: auto;
     }
     .split-visual, .split-content {
-        width: 100%;
-        flex: none;
+        width: 100% !important;
+        flex: none !important;
     }
     .split-visual {
-        height: 60vh;
+        height: 65vh; /* 65% de la pantalla para el impacto visual */
         position: relative;
+    }
+    .split-content {
+        padding: 4rem 10% 6rem; /* Más aire para lectura móvil */
+        border-left: none;
+        border-top: 1px solid var(--glass-border);
+    }
+    .main-heading .gold-text {
+        font-size: 3rem;
+    }
+    .intro-text {
+        max-width: 100%;
+        font-size: 1.05rem;
+    }
+    .glass-cta-stack {
+        width: 85%; /* Botones más anchos en móvil */
     }
 }
 </style>
