@@ -1,66 +1,47 @@
 ---
 // h:\Javiermix_web_v2\frontend\components\MagazineSection.astro
-const PUBLIC_DIRECTUS_URL = process.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
-const INTERNAL_DIRECTUS_URL = process.env.INTERNAL_DIRECTUS_URL || PUBLIC_DIRECTUS_URL;
+const PUBLIC_DIRECTUS_URL = 'https://admin.javiermix.ar';
+// 🌐 Configuración de URL Interna para Docker
+const INTERNAL_DOCKER_URL = 'http://javiermix-directus:8055';
 
 let fetchedArticles = [];
 try {
-  // 🔍 Primero intentamos con 'Magazine' (Mayúscula) que es como se ve en el UI
-  const response = await fetch(`${INTERNAL_DIRECTUS_URL}/items/Magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
+  // Intentamos conexión interna (Docker) primero, luego externa
+  const baseUrl = typeof window === 'undefined' ? INTERNAL_DOCKER_URL : PUBLIC_DIRECTUS_URL;
+  
+  const response = await fetch(`${baseUrl}/items/Magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`, {
+      headers: { 'Authorization': `Bearer ${process.env.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg'}` }
+  });
   const data = await response.json();
   
   if (data.errors) {
-      // Si falla, intentamos con minúscula
-      const resFallback = await fetch(`${INTERNAL_DIRECTUS_URL}/items/magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
+      // Fallback a minúsculas
+      const resFallback = await fetch(`${baseUrl}/items/magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
       const dataFallback = await resFallback.json();
       fetchedArticles = dataFallback.data || [];
   } else {
       fetchedArticles = data.data || [];
   }
 } catch (e) {
-  console.error("Error fetching magazine articles for Home via API:", e);
+  console.error("Error fetching magazine articles for Home:", e);
 }
 
 function resolveMediaURL(url: string | null): string {
   if (!url) return '/img/placeholder.jpg';
-  
-  // Si hay múltiples nombres separados por coma, tomar el primero
   const cleanUrl = url.includes(',') ? url.split(',')[0].trim() : url;
-  
   if (cleanUrl.startsWith('http') || cleanUrl.startsWith('/')) return cleanUrl;
   if (cleanUrl.length === 36 && cleanUrl.includes('-')) return `${PUBLIC_DIRECTUS_URL}/assets/${cleanUrl}`;
   return `/uploads/revista/${cleanUrl}`;
 }
 
-const placeholderArticles = [
-  {
-    title: "Cartógrafo de lo Invisible",
-    excerpt: "Navegando las fronteras entre la sombra y la memoria. Una exploración profunda sobre la arquitectura industrial.",
-    image: "https://images.unsplash.com/photo-1469334031218-e382a71b716?auto=format&fit=crop&q=80&w=1200",
-    link: "/revista/cartografo-de-lo-invisible",
-    location: "Buenos Aires",
-    readTime: "5 min"
-  },
-  {
-    title: "La Luz en el Interior",
-    excerpt: "Ensayo visual sobre la potencia de la iluminación natural en espacios minimalistas.",
-    image: "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&q=80&w=1200",
-    link: "/revista/la-luz-en-el-interior",
-    location: "Estudio JMX",
-    readTime: "3 min"
-  }
-];
-
-const articles = fetchedArticles.length > 0 
-  ? fetchedArticles.map(a => ({
-      title: a.title,
-      excerpt: a.content_html ? a.content_html.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : '',
-      image: a.featured_image ? resolveMediaURL(a.featured_image) : null,
-      link: `/revista/${a.slug}`,
-      location: "Buenos Aires",
-      readTime: "5 min"
-    }))
-  : placeholderArticles;
+const articles = fetchedArticles.map(a => ({
+  title: a.title,
+  excerpt: a.content_html ? a.content_html.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : '',
+  image: a.featured_image ? resolveMediaURL(a.featured_image) : null,
+  link: `/revista/${a.slug}`,
+  location: "Buenos Aires",
+  readTime: "5 min"
+}));
 ---
 
 <section class="magazine-section">
