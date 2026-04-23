@@ -39,11 +39,11 @@ const { imageSrc, title, showUpload = false, isOpen = false } = Astro.props;
       <div class="control-group">
         <h3>ACABADO DEL MARCO</h3>
         <div class="swatch-grid" id="frame-swatches">
-          <div class="swatch active" data-frame="black" style="background: #111;" title="Negro Matte"></div>
-          <div class="swatch" data-frame="gold" style="background: linear-gradient(45deg, #bf953f, #fcf6ba);" title="Dorado Envejecido"></div>
-          <div class="swatch" data-frame="brown" style="background: #3d2b1f;" title="Nogal Natural"></div>
-          <div class="swatch" data-frame="white" style="background: #eee;" title="Blanco Galería"></div>
-          <div class="swatch" data-frame="green" style="background: #1a3c31;" title="Verde Museo"></div>
+          <div class="swatch active" data-frame="black" style="background: oklch(0.15 0 0);" title="Negro Matte"></div>
+          <div class="swatch" data-frame="gold" style="background: linear-gradient(45deg, oklch(0.65 0.12 85), oklch(0.85 0.1 95));" title="Dorado Envejecido"></div>
+          <div class="swatch" data-frame="brown" style="background: oklch(0.3 0.05 45);" title="Nogal Natural"></div>
+          <div class="swatch" data-frame="white" style="background: oklch(0.95 0.01 85);" title="Blanco Galería"></div>
+          <div class="swatch" data-frame="green" style="background: oklch(0.25 0.04 160);" title="Verde Museo"></div>
         </div>
       </div>
 
@@ -111,11 +111,11 @@ const { imageSrc, title, showUpload = false, isOpen = false } = Astro.props;
       <div class="control-group">
         <h3>ENTORNO / PARED</h3>
         <div class="swatch-grid" id="env-swatches">
-          <div class="swatch active" data-env="plaster" style="background: #f2ede4;" title="Yeso Suave"></div>
-          <div class="swatch" data-env="linen" style="background: #e0dcd3;" title="Lino Natural"></div>
-          <div class="swatch" data-env="concrete" style="background: #bababa;" title="Hormigón Visto"></div>
-          <div class="swatch" data-env="brick" style="background: #7a3a23; background-image: url('https://www.transparenttextures.com/patterns/brick-wall.png');" title="Ladrillo Inglés"></div>
-          <div class="swatch" data-env="dark" style="background: #1a1a1a;" title="Antracita"></div>
+          <div class="swatch active" data-env="plaster" style="background: oklch(0.92 0.01 85);" title="Yeso Suave"></div>
+          <div class="swatch" data-env="linen" style="background: oklch(0.88 0.02 80);" title="Lino Natural"></div>
+          <div class="swatch" data-env="concrete" style="background: oklch(0.75 0 0);" title="Hormigón Visto"></div>
+          <div class="swatch" data-env="brick" style="background: oklch(0.45 0.12 35); background-image: url('https://www.transparenttextures.com/patterns/brick-wall.png');" title="Ladrillo Inglés"></div>
+          <div class="swatch" data-env="dark" style="background: oklch(0.18 0 0);" title="Antracita"></div>
         </div>
       </div>
 
@@ -188,9 +188,9 @@ const { imageSrc, title, showUpload = false, isOpen = false } = Astro.props;
 
     // 2.2 Buttons: Light Temperature (RESTAURACION)
     const tempMap: Record<string, string> = {
-        '6000k': 'rgba(200, 220, 255, 0.6)', // Daylight/Cold
-        '3000k': 'rgba(255, 230, 180, 0.6)', // Warm/Studio
-        '1000k': 'rgba(255, 120, 40, 0.5)'   // Candle/Night
+        '6000k': 'oklch(0.9 0.05 240 / 0.5)', // Daylight (Azul frío suave)
+        '3000k': 'oklch(0.9 0.08 85 / 0.6)',  // Warm Studio (Dorado cálido)
+        '1000k': 'oklch(0.7 0.15 45 / 0.7)'   // Candle/Amber (Naranja profundo)
     };
 
     document.querySelectorAll('#light-temps .temp-btn').forEach(btn => {

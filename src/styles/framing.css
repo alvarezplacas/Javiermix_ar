@@ -14,8 +14,9 @@
     --zoom-scale: 1;
     --reflection-pos: 50% 50%;
     --ambient-pos: -10% -10%;
-    /* Corner top-left */
-    --ambient-color: transparent;
+    --ambient-color: oklch(0 0 0 / 0);
+    --reflection-color: oklch(1 0 0 / 0.5);
+    --specular-color: oklch(1 0 0 / 0.8);
     /* Off by default */
 }
 
@@ -91,13 +92,13 @@
     height: 100%;
     pointer-events: none;
     z-index: 10;
-    /* Arriba de todo */
-    background: radial-gradient(circle at var(--ambient-pos),
-            var(--ambient-color) 0%,
-            transparent 80%);
-    mix-blend-mode: screen;
-    opacity: 0.6;
-    transition: background 0.5s ease;
+    /* OKLCH para una mezcla cromática pura */
+    background: radial-gradient(circle at var(--ambient-pos), 
+                var(--ambient-color) 0%, 
+                oklch(0 0 0 / 0) 70%);
+    mix-blend-mode: soft-light; /* Luz suave que no quema los negros */
+    opacity: 0.8;
+    transition: background 0.8s ease;
 }
 
 /* Ensure texture from .env classes is preserved under the light layers */
@@ -221,15 +222,21 @@
 }
 
 .glass-standard {
-    --glass-opacity: 0.25;
-    background: radial-gradient(circle at var(--reflection-pos), rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 60%);
+    --glass-opacity: 1;
+    /* Reflejo especular duro (Ventana) */
+    background: 
+        radial-gradient(circle at var(--reflection-pos), var(--specular-color) 0%, oklch(1 0 0 / 0.1) 15%, transparent 40%),
+        linear-gradient(135deg, oklch(1 0 0 / 0.1) 0%, transparent 50%);
     mix-blend-mode: screen;
+    backdrop-filter: blur(0.3px) brightness(1.05); /* El vidrio común brilla y difumina un poco */
 }
 
 .glass-museum {
-    backdrop-filter: contrast(1.05) brightness(1.02);
-    --glass-opacity: 0.15;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+    --glass-opacity: 1;
+    /* Tinte anti-reflectante típico (Azul/Violeta muy sutil) */
+    background: linear-gradient(160deg, oklch(0.3 0.05 300 / 0.03) 0%, transparent 100%);
+    backdrop-filter: contrast(1.08) brightness(1.03) saturate(1.02); /* El vidrio museo mejora la obra */
+    mix-blend-mode: multiply; /* Para el tinte */
 }
 
 /* Controls Panel */
