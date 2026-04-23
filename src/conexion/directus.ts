@@ -53,13 +53,25 @@ export class DirectusManager {
         const useInternal = !this.isLocalFallback && typeof window === 'undefined';
         const baseUrl = useInternal ? INTERNAL_URL : PUBLIC_URL;
         const url = `${baseUrl}${path}`;
+        
+        // 🔓 Intento sin token primero para evitar bloqueos 403 si el rol público ya tiene acceso
         const headers: any = { 
             'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${STATIC_TOKEN}`, 
             ...options.headers 
         };
+        
+        // Solo añadir Authorization si el token parece válido
+        if (STATIC_TOKEN && STATIC_TOKEN.length > 10) {
+            headers['Authorization'] = `Bearer ${STATIC_TOKEN}`;
+        }
+
         try {
             const response = await fetch(url, { ...options, headers });
+            if (!response.ok && response.status === 403) {
+                // Si da 403, re-intentamos SIN token por si acaso
+                const publicHeaders = { 'Content-Type': 'application/json', ...options.headers };
+                return await fetch(url, { ...options, headers: publicHeaders });
+            }
             return response;
         } catch (e: any) {
             if (useInternal) {
@@ -143,13 +155,28 @@ export async function getArticleDetails(idOrSlug: string) {
     try { 
         const client = await DirectusManager.getClient(); 
         const results = await client.request(readItems('magazine' as any, { 
-            filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, 
+            filter: { 
+                _and: [
+                    { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] },
+                    { status: { _in: ['published', 'publicado', 'Publicado'] } }
+                ]
+            }, 
             fields: ['*', { user_created: ['*'] }], 
             limit: 1 
         })); 
         return results[0] || null; 
-    } catch (e) { 
-        return null; 
+    } catch (e: any) { 
+        console.error(`[Directus] Falló detalle de 'magazine', probando con 'Magazine':`, e.message);
+        try {
+            const client = await DirectusManager.getClient(); 
+            const results = await client.request(readItems('Magazine' as any, { 
+                filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] },
+                limit: 1 
+            }));
+            return results[0] || null;
+        } catch (e2) {
+            return null; 
+        }
     } 
 }
 

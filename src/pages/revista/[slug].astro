@@ -12,7 +12,11 @@ const { slug } = Astro.params;
 // Fetch article from Directus SDK
 const articulo = await getArticleDetails(slug!);
 
-if (!articulo) return Astro.redirect('/revista');
+let connectionError = null;
+if (!articulo) {
+    // No redirigir para poder diagnosticar
+    console.error(`[Revista] Error al cargar artículo: ${slug}`);
+}
 
 function resolveMediaURL(id: string | null): string {
   if (!id) return '/img/placeholder.jpg';
@@ -78,9 +82,21 @@ const wordCount = (articulo.content_html || '').replace(/<[^>]*>/g, '').split(/\
 const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 ---
 
-<Layout title={articulo.title} description={articulo.title}>
+<Layout title={articulo?.title || "Error en Artículo"} description={articulo?.title || "No se pudo cargar el artículo"}>
   <Header currentPath="/revista" />
   
+  {!articulo ? (
+    <main class="error-container" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; text-align: center; background: #000;">
+      <div class="error-box" style="max-width: 600px; padding: 4rem; border: 1px solid rgba(255,255,255,0.1);">
+        <h1 style="color: var(--color-accent); font-size: 2rem; margin-bottom: 2rem;">CRÓNICA NO ENCONTRADA</h1>
+        <p style="color: rgba(255,255,255,0.6); margin-bottom: 3rem; line-height: 1.8;">
+          No hemos podido recuperar esta historia. Verifica que el artículo esté marcado como 'Publicado' y que el slug sea correcto en Directus.
+        </p>
+        <a href="/revista" style="color: #fff; text-decoration: none; border-bottom: 1px solid var(--color-accent); padding-bottom: 5px; font-size: 0.8rem; letter-spacing: 2px;">← VOLVER A LA REVISTA</a>
+      </div>
+    </main>
+  ) : (
+    <>
   {/* Barra de Progreso de Lectura */}
   <div class="reading-progress-container">
     <div class="reading-progress-bar" id="reading-progress"></div>
@@ -134,6 +150,8 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
     </div>
   </article>
 
+    </>
+  )}
   <Footer />
 </Layout>
 
