@@ -5,10 +5,18 @@ const INTERNAL_DIRECTUS_URL = process.env.INTERNAL_DIRECTUS_URL || PUBLIC_DIRECT
 
 let fetchedArticles = [];
 try {
-  // 🔍 Filtro flexible para aceptar 'published' o 'publicado'
-  const response = await fetch(`${INTERNAL_DIRECTUS_URL}/items/magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
+  // 🔍 Primero intentamos con 'Magazine' (Mayúscula) que es como se ve en el UI
+  const response = await fetch(`${INTERNAL_DIRECTUS_URL}/items/Magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
   const data = await response.json();
-  fetchedArticles = data.data || [];
+  
+  if (data.errors) {
+      // Si falla, intentamos con minúscula
+      const resFallback = await fetch(`${INTERNAL_DIRECTUS_URL}/items/magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
+      const dataFallback = await resFallback.json();
+      fetchedArticles = dataFallback.data || [];
+  } else {
+      fetchedArticles = data.data || [];
+  }
 } catch (e) {
   console.error("Error fetching magazine articles for Home via API:", e);
 }
