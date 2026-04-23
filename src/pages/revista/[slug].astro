@@ -3,107 +3,102 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-
 import { getArticleDetails, getAssetUrl, fetchFromDirectus } from '@conexion/directus';
 
 export const prerender = false;
 const { slug } = Astro.params;
 
-// Fetch article from Directus SDK
-const articulo = await getArticleDetails(slug!);
-
+// 1. Obtener datos con resiliencia total
+let articulo = null;
 let connectionError = null;
-if (!articulo) {
-    // No redirigir para poder diagnosticar
-    console.error(`[Revista] Error al cargar artículo: ${slug}`);
+
+try {
+    articulo = await getArticleDetails(slug!);
+} catch (e: any) {
+    connectionError = `Error de conexión: ${e.message}`;
 }
 
 function resolveMediaURL(id: string | null): string {
   if (!id) return '/img/placeholder.jpg';
   if (id.startsWith('http') || id.startsWith('/')) return id;
-  return getAssetUrl(id, { width: 1400 }) || '/img/placeholder.jpg';
+  const PUBLIC_DIRECTUS_URL = 'https://admin.javiermix.ar';
+  return `${PUBLIC_DIRECTUS_URL}/assets/${id}`;
 }
 
-let mediaItems = [];
-try {
-  if (articulo && articulo.media_json) {
-    mediaItems = typeof articulo.media_json === 'string' ? JSON.parse(articulo.media_json) : articulo.media_json;
-  }
-} catch (e) {}
+// 2. Procesar Multimedia (Solo si existe el artículo)
+let media = [];
+let readingTime = 5;
+let formattedDate = "Edición 2026";
 
-// 1. Búsqueda dinámica por carpeta raíz "Revista" via API Shim
-let dynamicMedia = [];
-try {
-    if (articulo) {
+if (articulo) {
+    let mediaItems = [];
+    try {
+        if (articulo.media_json) {
+            mediaItems = typeof articulo.media_json === 'string' ? JSON.parse(articulo.media_json) : articulo.media_json;
+        }
+    } catch (e) {}
+
+    // Búsqueda dinámica por carpeta
+    let dynamicMedia = [];
+    try {
         const parentRes = await fetchFromDirectus(`/folders?filter[name][_eq]=Revista&limit=1`);
         const parentData = await parentRes.json();
         const parentFolder = parentData.data?.[0];
 
         if (parentFolder) {
-            const parentId = parentFolder.id;
-            
-            // Buscar subcarpeta dentro de Revista
-            const subRes = await fetchFromDirectus(`/folders?filter[parent][_eq]=${parentId}&filter[name][_in]=${articulo.title},${articulo.slug}`);
+            const subRes = await fetchFromDirectus(`/folders?filter[parent][_eq]=${parentFolder.id}&filter[name][_in]=${articulo.title},${articulo.slug}`);
             const subData = await subRes.json();
             const subFolder = subData.data?.[0];
             
             if (subFolder) {
-                const folderId = subFolder.id;
-                const filesRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${folderId}&sort=filename_download`);
+                const filesRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${subFolder.id}&sort=filename_download`);
                 const filesData = await filesRes.json();
-                const folderFiles = filesData.data || [];
-                    
-                dynamicMedia = folderFiles.map(f => {
-                    const isVideo = f.type?.startsWith('video/');
-                    return {
-                        type: isVideo ? 'video' : 'image',
-                        src: getAssetUrl(f.id, isVideo ? { raw: true } : { width: 1600 }),
-                        caption: f.title || ''
-                    };
-                });
+                dynamicMedia = (filesData.data || []).map(f => ({
+                    type: f.type?.startsWith('video/') ? 'video' : 'image',
+                    src: getAssetUrl(f.id, f.type?.startsWith('video/') ? { raw: true } : { width: 1600 }),
+                    caption: f.title || ''
+                }));
             }
         }
+    } catch (e) {}
+
+    media = dynamicMedia.length > 0 ? dynamicMedia : [
+        articulo.video_url ? { type: 'video', src: resolveMediaURL(articulo.video_url), caption: '' } : null,
+        articulo.featured_image ? { type: 'image', src: resolveMediaURL(articulo.featured_image), caption: '' } : null,
+        ...mediaItems.map(m => ({ ...m, src: resolveMediaURL(m.src) }))
+    ].filter(Boolean);
+
+    if (media.length === 0) media.push({ type: 'image', src: '/img/placeholder.jpg', caption: 'Imagen no disponible' });
+
+    // Fecha y Tiempo
+    if (articulo.date_created) {
+        formattedDate = new Date(articulo.date_created).toLocaleDateString('es-ES', {
+            day: 'numeric', month: 'long', year: 'numeric'
+        });
     }
-} catch (e) {
-    console.error("Error fetching dynamic magazine media via API:", e);
+    const wordCount = (articulo.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
+    readingTime = Math.max(1, Math.ceil(wordCount / 200));
 }
-
-const media = dynamicMedia.length > 0 ? dynamicMedia : (articulo ? [
-  articulo.video_url ? { type: 'video', src: resolveMediaURL(articulo.video_url), caption: '' } : null,
-  articulo.featured_image ? { type: 'image', src: resolveMediaURL(articulo.featured_image), caption: '' } : null,
-  ...mediaItems.map(m => ({ ...m, src: resolveMediaURL(m.src) }))
-].filter(Boolean) : []);
-
-if (media.length === 0) media.push({ type: 'image', src: '/img/placeholder.jpg', caption: 'Imagen no disponible' });
-
-// 📅 Fecha: Usamos la fecha real de Directus
-const formattedDate = articulo.date_created ? new Date(articulo.date_created).toLocaleDateString('es-ES', {
-  day: 'numeric', month: 'long', year: 'numeric'
-}) : 'Edición 2026';
-
-const wordCount = articulo ? (articulo.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length : 0;
-const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 ---
 
 <Layout title={articulo?.title || "Error en Artículo"} description={articulo?.title || "No se pudo cargar el artículo"}>
   <Header currentPath="/revista" />
   
   {!articulo ? (
-    <main class="error-container" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; text-align: center; background: #000;">
-      <div class="error-box" style="max-width: 600px; padding: 4rem; border: 1px solid rgba(255,255,255,0.1);">
-        <h1 style="color: var(--color-accent); font-size: 2rem; margin-bottom: 2rem;">CRÓNICA NO ENCONTRADA</h1>
-        <p style="color: rgba(255,255,255,0.6); margin-bottom: 3rem; line-height: 1.8;">
-          No hemos podido recuperar esta historia. Verifica que el artículo esté marcado como 'Publicado' y que el slug sea correcto en Directus.
+    <main class="error-container" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; text-align: center; background: #000; padding: 2rem;">
+      <div class="error-box" style="max-width: 600px; padding: 4rem; border: 1px solid rgba(255,255,255,0.1); background: #0a0a0a;">
+        <h1 style="color: var(--color-accent); font-size: 1.5rem; margin-bottom: 2rem; letter-spacing: 5px;">CRÓNICA NO DISPONIBLE</h1>
+        <p style="color: rgba(255,255,255,0.6); margin-bottom: 3rem; line-height: 1.8; font-size: 0.9rem;">
+            {connectionError || "No hemos podido recuperar esta historia. Verifica que el artículo esté marcado como 'Publicado' y que el slug sea correcto en Directus."}
         </p>
-        <a href="/revista" style="color: #fff; text-decoration: none; border-bottom: 1px solid var(--color-accent); padding-bottom: 5px; font-size: 0.8rem; letter-spacing: 2px;">← VOLVER A LA REVISTA</a>
+        <a href="/revista" style="color: var(--color-accent); text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 5px; font-size: 0.7rem; letter-spacing: 3px; font-weight: 700;">← VOLVER A LA REVISTA</a>
       </div>
     </main>
   ) : (
     <>
-  {/* Barra de Progreso de Lectura */}
-  <div class="reading-progress-container">
-    <div class="reading-progress-bar" id="reading-progress"></div>
-  </div>
+    <div class="reading-progress-container">
+        <div class="reading-progress-bar" id="reading-progress"></div>
+    </div>
 
     <article class={`magazine-article ${articulo.is_premium ? 'premium-edition' : ''}`}>
         <div class="split-layout">
@@ -130,29 +125,28 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
                     </div>
                 </header>
 
-        <div class="prose-content" set:html={articulo.content_html}></div>
-        
-        <div class="article-footer-nav">
-          <a href="/revista" class="back-link">← VOLVER A REVISTA</a>
-        </div>
-      </section>
+                <div class="prose-content" set:html={articulo.content_html}></div>
+                
+                <div class="article-footer-nav">
+                    <a href="/revista" class="back-link">← VOLVER A REVISTA</a>
+                </div>
+            </section>
 
-      <aside class="visual-column">
-        <div class="media-stage">
-          {media.map((m, index) => (
-            <div class={`media-layer ${index === 0 ? 'active' : ''}`}>
-              {m.type === 'video' ? (
-                <video src={m.src} class="media-video" muted autoplay loop playsinline></video>
-              ) : (
-                <img src={m.src} alt={articulo.title} class="media-img" loading="lazy" />
-              )}
-            </div>
-          ))}
+            <aside class="visual-column">
+                <div class="media-stage">
+                    {media.map((m, index) => (
+                        <div class={`media-layer ${index === 0 ? 'active' : ''}`}>
+                            {m.type === 'video' ? (
+                                <video src={m.src} class="media-video" muted autoplay loop playsinline></video>
+                            ) : (
+                                <img src={m.src} alt={articulo.title} class="media-img" loading="lazy" />
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </aside>
         </div>
-      </aside>
-    </div>
-  </article>
-
+    </article>
     </>
   )}
   <Footer />
@@ -160,7 +154,6 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
 <script>
   document.addEventListener('astro:page-load', () => {
-    // 🚀 1. Ciclo de Multimedia Lateral
     const layers = document.querySelectorAll('.media-layer');
     if (layers.length > 1) {
         let current = 0;
@@ -171,7 +164,6 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
         }, 5000);
     }
 
-    // 🚀 2. Barra de Progreso de Lectura
     const progressBar = document.getElementById('reading-progress');
     window.addEventListener('scroll', () => {
         const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
@@ -180,37 +172,34 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
         if (progressBar) progressBar.style.width = scrolled + "%";
     });
 
-    // 🚀 3. IA de Audio-Lectura (Web Speech API - Gratis)
     const btnListen = document.getElementById('btn-listen');
     const content = document.querySelector('.prose-content');
     let isReading = false;
     let synth = window.speechSynthesis;
-    let utterance: SpeechSynthesisUtterance | null = null;
+    let utterance = null;
 
     btnListen?.addEventListener('click', () => {
         if (isReading) {
             synth.cancel();
             isReading = false;
             btnListen.classList.remove('playing');
-            (btnListen.querySelector('.btn-text') as HTMLElement).innerText = "ESCUCHAR NOTA";
+            btnListen.querySelector('.btn-text').innerText = "ESCUCHAR NOTA";
             return;
         }
 
-        const text = content?.textContent || "";
-        utterance = new SpeechSynthesisUtterance(text);
+        utterance = new SpeechSynthesisUtterance(content?.textContent || "");
         utterance.lang = 'es-ES';
-        utterance.rate = 0.95; // Un poco más lento para elegancia
-
+        utterance.rate = 0.95;
         utterance.onend = () => {
             isReading = false;
             btnListen.classList.remove('playing');
-            (btnListen.querySelector('.btn-text') as HTMLElement).innerText = "ESCUCHAR NOTA";
+            btnListen.querySelector('.btn-text').innerText = "ESCUCHAR NOTA";
         };
 
         synth.speak(utterance);
         isReading = true;
         btnListen.classList.add('playing');
-        (btnListen.querySelector('.btn-text') as HTMLElement).innerText = "DETENER AUDIO";
+        btnListen.querySelector('.btn-text').innerText = "DETENER AUDIO";
     });
   });
 </script>
@@ -222,8 +211,7 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
 .magazine-article { 
     width: 100%; 
-    --color-onyx-deep: oklch(0.15 0.01 25); /* Forzar papel carbón para lectura */
-    --color-travertine-light: oklch(0.82 0.01 35);
+    --color-onyx-deep: oklch(0.15 0.01 25);
     background-color: var(--color-onyx-deep); 
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 }
