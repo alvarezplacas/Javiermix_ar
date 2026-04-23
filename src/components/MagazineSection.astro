@@ -1,27 +1,25 @@
 ---
 // h:\Javiermix_web_v2\frontend\components\MagazineSection.astro
 const PUBLIC_DIRECTUS_URL = 'https://admin.javiermix.ar';
-// 🌐 Configuración de URL Interna para Docker
-const INTERNAL_DOCKER_URL = 'http://javiermix-directus:8055';
+const INTERNAL_DOCKER_URL = 'http://directus:8055';
+let connectionError = null;
 
 let fetchedArticles = [];
 try {
   const baseUrl = typeof window === 'undefined' ? INTERNAL_DOCKER_URL : PUBLIC_DIRECTUS_URL;
-  
-  // 🔓 Petición pública (sin Token) para evitar errores 403 de validación
   const response = await fetch(`${baseUrl}/items/magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
-  const data = await response.json();
   
-  if (data.errors) {
-      // Intento final con Mayúscula por si el sistema es sensible
+  if (!response.ok) {
+      connectionError = `Error HTTP: ${response.status} ${response.statusText}`;
       const resCap = await fetch(`${baseUrl}/items/Magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
       const dataCap = await resCap.json();
       fetchedArticles = dataCap.data || [];
   } else {
+      const data = await response.json();
       fetchedArticles = data.data || [];
   }
 } catch (e) {
-  console.error("Error fetching magazine articles for Home:", e);
+  connectionError = `Fallo de red: ${e.message}`;
 }
 
 function resolveMediaURL(url: string | null): string {
@@ -46,44 +44,56 @@ const articles = fetchedArticles.map(a => ({
   <div class="section-header reveal">
     <h2 class="section-title">REVISTA DIGITAL</h2>
     <p class="section-subtitle">Crónicas de luz, memoria y potencia estética en la vanguardia contemporánea.</p>
+    
+    {connectionError && (
+      <div style="color: #c94c4c; font-size: 0.7rem; margin-top: 1.5rem; opacity: 0.8; letter-spacing: 2px; border: 1px solid rgba(201, 76, 76, 0.3); padding: 0.5rem 1rem; display: inline-block; border-radius: 2px;">
+        DIAGNÓSTICO: {connectionError}
+      </div>
+    )}
   </div>
 
   <div class="articles-container">
-    {articles.map((article, index) => (
-      <article class={`magazine-card ${index % 2 === 0 ? 'row' : 'row-reverse'} reveal`}>
-        <div class="card-image-wrapper">
-          <div class="tilt-container">
-            {article.image ? (
-              <img src={article.image} alt={article.title} class="article-image" loading="lazy" />
-            ) : (
-              <div class="fallback-icon-container">
-                <i class="far fa-image"></i>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div class="card-content-block">
-          <span class="article-location">{article.location}</span>
-          <h3 class="article-title">{article.title}</h3>
-          <p class="article-excerpt">{article.excerpt}</p>
-          
-          <div class="article-meta">
-            <div class="time-indicator">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="clock-icon">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              <span>{article.readTime} LECTURA</span>
+    {articles.length > 0 ? (
+      articles.map((article, index) => (
+        <article class={`magazine-card ${index % 2 === 0 ? 'row' : 'row-reverse'} reveal`}>
+          <div class="card-image-wrapper">
+            <div class="tilt-container">
+              {article.image ? (
+                <img src={article.image} alt={article.title} class="article-image" loading="lazy" />
+              ) : (
+                <div class="fallback-icon-container">
+                  <i class="far fa-image"></i>
+                </div>
+              )}
             </div>
-            <a href={article.link} class="btn-read-premium">
-              <span class="btn-label">LEER NOTA</span>
-              <span class="btn-line"></span>
-            </a>
           </div>
-        </div>
-      </article>
-    ))}
+
+          <div class="card-content-block">
+            <span class="article-location">{article.location}</span>
+            <h3 class="article-title">{article.title}</h3>
+            <p class="article-excerpt">{article.excerpt}</p>
+            
+            <div class="article-meta">
+              <div class="time-indicator">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="clock-icon">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>{article.readTime} LECTURA</span>
+              </div>
+              <a href={article.link} class="btn-read-premium">
+                <span class="btn-label">LEER NOTA</span>
+                <span class="btn-line"></span>
+              </a>
+            </div>
+          </div>
+        </article>
+      ))
+    ) : (
+      <div style="text-align: center; width: 100%; color: rgba(255,255,255,0.3); letter-spacing: 3px; font-size: 0.8rem; margin-top: 5rem;">
+        NO SE ENCONTRARON ARTÍCULOS PUBLICADOS
+      </div>
+    )}
   </div>
 </section>
 
