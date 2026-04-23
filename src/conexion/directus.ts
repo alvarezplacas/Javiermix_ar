@@ -156,18 +156,12 @@ export async function getArticleDetails(idOrSlug: string) {
     try { 
         const client = await DirectusManager.getClient(); 
         const results = await client.request(readItems('magazine' as any, { 
-            filter: { 
-                _and: [
-                    { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] },
-                    { status: { _in: ['published', 'publicado', 'Publicado'] } }
-                ]
-            }, 
+            filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, 
             fields: ['*', { user_created: ['*'] }], 
             limit: 1 
         })); 
         return results[0] || null; 
     } catch (e: any) { 
-        console.error(`[Directus] Falló detalle de 'magazine', probando con 'Magazine':`, e.message);
         try {
             const client = await DirectusManager.getClient(); 
             const results = await client.request(readItems('Magazine' as any, { 

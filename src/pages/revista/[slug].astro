@@ -32,6 +32,16 @@ function resolveMediaURL(id: string | null): string {
   return `${PUBLIC_DIRECTUS_URL}/assets/${id}`;
 }
 
+function getYouTubeEmbed(url: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+  const match = url.match(regExp);
+  const id = (match && match[2].length === 11) ? match[2] : null;
+  if (!id) return null;
+  // Mute=1 y autoplay=1 para respetar la lectura
+  return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&modestbranding=1&rel=0`;
+}
+
 // 2. Procesar Multimedia (Solo si existe el artículo)
 let media = [];
 let readingTime = 5;
@@ -69,8 +79,13 @@ if (articulo) {
         }
     } catch (e) {}
 
+    const youtubeUrl = articulo.video_url?.includes('youtube.com') || articulo.video_url?.includes('youtu.be') 
+        ? getYouTubeEmbed(articulo.video_url) 
+        : null;
+
     media = dynamicMedia.length > 0 ? dynamicMedia : [
-        articulo.video_url ? { type: 'video', src: resolveMediaURL(articulo.video_url), caption: '' } : null,
+        youtubeUrl ? { type: 'youtube', src: youtubeUrl, caption: '' } : null,
+        articulo.video_url && !youtubeUrl ? { type: 'video', src: resolveMediaURL(articulo.video_url), caption: '' } : null,
         articulo.featured_image ? { type: 'image', src: resolveMediaURL(articulo.featured_image), caption: '' } : null,
         ...mediaItems.map(m => ({ ...m, src: resolveMediaURL(m.src) }))
     ].filter(Boolean);
@@ -145,6 +160,8 @@ if (articulo) {
                         <div class={`media-layer ${index === 0 ? 'active' : ''}`}>
                             {m.type === 'video' ? (
                                 <video src={m.src} class="media-video" muted autoplay loop playsinline></video>
+                            ) : m.type === 'youtube' ? (
+                                <iframe src={m.src} class="media-iframe" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                             ) : (
                                 <img src={m.src} alt={articulo.title} class="media-img" loading="lazy" />
                             )}
@@ -182,31 +199,76 @@ if (articulo) {
     const btnListen = document.getElementById('btn-listen');
     const content = document.querySelector('.prose-content');
     let isReading = false;
-    let synth = window.speechSynthesis;
     let utterance = null;
 
+    // 🛡️ Detección de soporte y visibilidad
+    if (!('speechSynthesis' in window)) {
+        if (btnListen) btnListen.style.display = 'none';
+    }
+
+    // Inicializar voces para navegadores que cargan asíncronamente
+    window.speechSynthesis.getVoices();
+
     btnListen?.addEventListener('click', () => {
+        const synth = window.speechSynthesis;
+
         if (isReading) {
-            synth.cancel();
-            isReading = false;
-            btnListen.classList.remove('playing');
-            btnListen.querySelector('.btn-text').innerText = "ESCUCHAR NOTA";
+            resetAudioState();
             return;
         }
 
-        utterance = new SpeechSynthesisUtterance(content?.textContent || "");
-        utterance.lang = 'es-ES';
+        // Limpieza de texto para una lectura fluida
+        const rawText = content?.textContent || "";
+        const cleanText = rawText.replace(/\s+/g, ' ').trim();
+        
+        if (!cleanText) return;
+
+        utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        // Selección inteligente de voz (Cualquier español disponible)
+        const voices = synth.getVoices();
+        const spanishVoice = voices.find(v => v.lang.startsWith('es-') || v.lang === 'es') || voices[0];
+        
+        if (spanishVoice) utterance.voice = spanishVoice;
+        utterance.lang = spanishVoice?.lang || 'es-ES';
         utterance.rate = 0.95;
-        utterance.onend = () => {
-            isReading = false;
-            btnListen.classList.remove('playing');
-            btnListen.querySelector('.btn-text').innerText = "ESCUCHAR NOTA";
+        utterance.pitch = 1;
+
+        utterance.onstart = () => {
+            isReading = true;
+            btnListen.classList.add('playing');
+            const btnText = btnListen.querySelector('.btn-text');
+            if (btnText) (btnText as HTMLElement).innerText = "DETENER AUDIO";
         };
 
-        synth.speak(utterance);
-        isReading = true;
-        btnListen.classList.add('playing');
-        btnListen.querySelector('.btn-text').innerText = "DETENER AUDIO";
+        utterance.onend = () => resetAudioState();
+        utterance.onerror = (e) => {
+            console.error("SpeechSynthesis Error:", e);
+            resetAudioState();
+        };
+
+        // 🚀 Ejecución con limpieza de buffer previa
+        synth.cancel();
+        // Un pequeño delay ayuda a algunos navegadores móviles a procesar el nuevo speak
+        setTimeout(() => {
+            synth.speak(utterance!);
+        }, 100);
+    });
+
+    function resetAudioState() {
+        isReading = false;
+        window.speechSynthesis.cancel();
+        if (btnListen) {
+            btnListen.classList.remove('playing');
+            const btnText = btnListen.querySelector('.btn-text');
+            if (btnText) (btnText as HTMLElement).innerText = "ESCUCHAR NOTA";
+        }
+    }
+
+    // 🛑 Seguridad: Detener audio si el usuario navega (Astro View Transitions)
+    document.addEventListener('astro:before-preparation', () => {
+        window.speechSynthesis.cancel();
+        isReading = false;
     });
   });
 </script>
@@ -225,11 +287,12 @@ if (articulo) {
 .split-layout { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
 .narrative-column { padding: 12rem 8% 10rem; }
 .visual-column { position: sticky; top: 0; height: 100vh; overflow: hidden; }
-.media-stage { width: 100%; height: 100%; position: relative; }
-.media-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease-in-out; }
+.media-stage { width: 100%; height: 100%; position: relative; padding: 4rem; box-sizing: border-box; }
+.media-layer { position: absolute; inset: 4rem; opacity: 0; transition: opacity 1.2s ease-in-out; display: flex; align-items: center; justify-content: center; }
 .media-layer.active { opacity: 1; z-index: 5; }
-.media-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.75); }
-.media-video { width: 100%; height: 100%; object-fit: cover; }
+.media-img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0.85) drop-shadow(0 20px 50px rgba(0,0,0,0.5)); }
+.media-video { width: 100%; height: 100%; object-fit: contain; }
+.media-iframe { width: 100%; height: 100%; border-radius: 4px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
 .eyebrow-row { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; }
 .eyebrow { font-size: 0.7rem; letter-spacing: 4px; color: var(--color-accent); font-weight: 700; }
 .premium-badge { font-size: 0.6rem; letter-spacing: 2px; color: #000; background: var(--color-accent); padding: 0.2rem 0.8rem; border-radius: 2px; font-weight: 800; }
