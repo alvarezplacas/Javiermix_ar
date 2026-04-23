@@ -35,7 +35,7 @@ export class DirectusManager {
             const baseUrl = isServer ? INTERNAL_URL : PUBLIC_URL;
             try {
                 const baseClient = createDirectus(baseUrl).with(rest());
-                if (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') {
+                if (STATIC_TOKEN && STATIC_TOKEN !== 'undefined' && STATIC_TOKEN !== '') {
                     this.client = baseClient.with(staticToken(STATIC_TOKEN));
                 } else {
                     this.client = baseClient;
@@ -131,19 +131,23 @@ export async function updateOrder(id: string, data: any) { try { const client = 
 export async function getArticles() { 
     try { 
         const client = await DirectusManager.getClient(); 
-        // 🔓 Intentar lectura pública/estándar
-        const response = await client.request(readItems('magazine' as any, { 
+        // 🔓 Primero intentamos con minúscula (estándar)
+        return await client.request(readItems('magazine' as any, { 
             filter: { status: { _in: ['published', 'publicado', 'Publicado'] } }, 
             sort: ['-created_at'], 
             fields: ['*', { user_created: ['*'] }] 
         })); 
-        return response;
     } catch (e: any) { 
-        // Fallback a Mayúscula si falla
+        console.error(`[Directus] Falló lectura de 'magazine', probando con 'Magazine':`, e.message);
         try {
             const client = await DirectusManager.getClient(); 
-            return await client.request(readItems('Magazine' as any, { sort: ['-created_at'] }));
-        } catch (e2) {
+            return await client.request(readItems('Magazine' as any, { 
+                filter: { status: { _in: ['published', 'publicado', 'Publicado'] } },
+                sort: ['-created_at'],
+                fields: ['*', { user_created: ['*'] }]
+            }));
+        } catch (e2: any) {
+            console.error(`[Directus] Fallo total en artículos:`, e2.message);
             return []; 
         }
     } 

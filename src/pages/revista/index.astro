@@ -47,6 +47,12 @@ const articles = dbArticles.map(art => {
       <span class="issue-tag">Vol. I · 2026</span>
       <h1 class="revista-title">REVISTA DIGITAL</h1>
       <p class="revista-subtitle">Crónicas de luz, memoria y potencia estética para coleccionistas y decoradores.</p>
+      
+      {articles.length === 0 && (
+        <div style="color: #c94c4c; font-size: 0.7rem; margin-top: 1rem; opacity: 0.7; letter-spacing: 2px;">
+          DIAGNÓSTICO: No se encontraron artículos. Verifica permisos en Directus (colección 'magazine' o 'Magazine').
+        </div>
+      )}
     </div>
 
     <div class="articles-wrapper">
