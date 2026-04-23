@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Base de Datos Principal
+  db:
+    image: mariadb:latest
+    container_name: javiermix_db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: javiermix_obras
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - javiermix_network
+
+  # Sitio Web Principal (Astro)
+  web_javiermix:
+    build:
+      context: ../../
+      dockerfile: Dockerfile.prod
+    container_name: javiermix_web
+    restart: always
+    env_file:
+      - ../../.env
+    networks:
+      - javiermix_network
+
+  # FileBrowser (Gestión de Archivos Multi-Sitio)
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: javiermix_files
+    restart: always
+    ports:
+      - "8082:80"
+    volumes:
+      - /home/ubuntu:/srv
+      - ./filebrowser.db:/database.db
+    environment:
+      - FB_BASEURL=/
+    networks:
+      - javiermix_network
+
+  # Umami Analytics (Estadísticas)
+  umami:
+    image: ghcr.io/umami-software/umami:mysql-latest
+    container_name: javiermix_stats
+    restart: always
+    environment:
+      DATABASE_URL: mysql://root:root@db:3306/javiermix_obras
+      APP_SECRET: 3L3X1T0LL3G0!#@a
+    networks:
+      - javiermix_network
+
+  # Caching Layer (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: javiermix_redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - javiermix_network
+
+  # Directus (Gestión de Contenido)
+  directus:
+    image: directus/directus:latest
+    container_name: javiermix_directus
+    restart: always
+    environment:
+      KEY: "9876543210abcdef9876543210abcdef"
+      SECRET: "abcdef0123456789abcdef0123456789"
+      DB_CLIENT: "mysql"
+      DB_HOST: "db"
+      DB_PORT: "3306"
+      DB_DATABASE: "javiermix_obras"
+      DB_USER: "javiermix_usr"
+      DB_PASSWORD: "JavierMix_Db_2026*"
+      PUBLIC_URL: "https://admin.javiermix.ar"
+      ADMIN_EMAIL: "admin@javiermix.ar"
+      ADMIN_PASSWORD: "JavierMix2026!"
+      CACHE_ENABLED: "true"
+      CACHE_STORE: "redis"
+      REDIS: "redis://javiermix_redis:6379"
+      CACHE_REDIS: "redis://javiermix_redis:6379"
+      REDIS_HOST: "javiermix_redis"
+      REDIS_PORT: "6379"
+    depends_on:
+      - db
+    networks:
+      - javiermix_network
+
+networks:
+  javiermix_network:
+    external: true
+
+volumes:
+  db_data:
+  redis_data:

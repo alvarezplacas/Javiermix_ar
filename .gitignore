@@ -37,15 +37,5 @@ exotic-equator
 gullible-gravity
 tender-transit
 
-# Carpetas de Organización Local (Trackeadas)
-/docs/
-/scripts/
-README.md
-Manual_ayuda.md
-AGENT_HANDBOOK.md
-ESTETICA_JMX.md
-package-lock.json
-build_debug.log
-build_error_output.txt
-catch_build.cjs
-run_build.cjs
+# 🛡️ ARCHIVOS QUE NO SE IGNORAN (ELIMINADOS DE AQUÍ)
+# README.md y /docs/ ahora se trackean correctamente.

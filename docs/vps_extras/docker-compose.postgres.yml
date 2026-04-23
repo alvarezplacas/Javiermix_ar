@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  db-pg:
+    image: postgres:16-alpine
+    container_name: javiermix_db_pg
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "JavierMix2026!"
+      POSTGRES_DB: javiermix_pg
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - javiermix_network
+
+networks:
+  javiermix_network:
+    external: true
+
+volumes:
+  pg_data:
