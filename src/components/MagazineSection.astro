@@ -6,22 +6,25 @@ let connectionError = null;
 
 let fetchedArticles = [];
 try {
-  const baseUrl = typeof window === 'undefined' ? INTERNAL_DOCKER_URL : PUBLIC_DIRECTUS_URL;
+  // 🚀 Intentar primero por la red interna de Docker (más rápido)
+  let response = await fetch(`${INTERNAL_DOCKER_URL}/items/magazine`);
   
-  // 🔓 Petición ultra-abierta: Sin filtros para ver si trae ALGO
-  const response = await fetch(`${baseUrl}/items/magazine`);
-  
+  // 🔄 Si falla la red interna, intentamos por la URL pública
   if (!response.ok) {
-      connectionError = `Error HTTP: ${response.status} ${response.statusText}`;
-      const resCap = await fetch(`${baseUrl}/items/Magazine`);
-      const dataCap = await resCap.json();
-      fetchedArticles = dataCap.data || [];
-  } else {
-      const data = await response.json();
-      fetchedArticles = data.data || [];
+      response = await fetch(`${PUBLIC_DIRECTUS_URL}/items/magazine`);
   }
+  
+  const data = await response.json();
+  fetchedArticles = data.data || [];
 } catch (e) {
-  connectionError = `Fallo de red: ${e.message}`;
+  // 🚑 Último recurso: URL pública directa
+  try {
+      const resPublic = await fetch(`${PUBLIC_DIRECTUS_URL}/items/magazine`);
+      const dataPublic = await resPublic.json();
+      fetchedArticles = dataPublic.data || [];
+  } catch (err) {
+      connectionError = `Error crítico de conexión: ${err.message}`;
+  }
 }
 
 function resolveMediaURL(url: string | null): string {

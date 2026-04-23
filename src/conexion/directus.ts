@@ -131,19 +131,12 @@ export async function updateOrder(id: string, data: any) { try { const client = 
 export async function getArticles() { 
     try { 
         const client = await DirectusManager.getClient(); 
-        // 🔓 Búsqueda Total: Sin filtros ni orden para ver si trae ALGO
         return await client.request(readItems('magazine' as any, { 
             fields: ['*', { user_created: ['*'] }] 
         })); 
     } catch (e: any) { 
-        try {
-            const client = await DirectusManager.getClient(); 
-            return await client.request(readItems('Magazine' as any, { 
-                fields: ['*', { user_created: ['*'] }] 
-            }));
-        } catch (e2: any) {
-            return []; 
-        }
+        console.error(`[Directus] Fallo total en artículos:`, e.message);
+        return []; 
     } 
 }
 export async function getArticleDetails(idOrSlug: string) { 
@@ -156,13 +149,7 @@ export async function getArticleDetails(idOrSlug: string) {
         })); 
         return results[0] || null; 
     } catch (e) { 
-        try {
-            const client = await DirectusManager.getClient(); 
-            const results = await client.request(readItems('Magazine' as any, { filter: { slug: { _eq: idOrSlug } }, limit: 1 }));
-            return results[0] || null;
-        } catch (e2) {
-            return null; 
-        }
+        return null; 
     } 
 }
 
