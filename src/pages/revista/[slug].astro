@@ -80,6 +80,11 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
 <Layout title={articulo.title} description={articulo.title}>
   <Header currentPath="/revista" />
+  
+  {/* Barra de Progreso de Lectura */}
+  <div class="reading-progress-container">
+    <div class="reading-progress-bar" id="reading-progress"></div>
+  </div>
 
     <article class={`magazine-article ${articulo.is_premium ? 'premium-edition' : ''}`}>
         <div class="split-layout">
@@ -94,8 +99,15 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
                         <div class="author-info">Por <strong>{articulo.author || 'Javier Mix'}</strong></div>
                         <div class="stats-info">
                             <span class="date">{formattedDate}</span>
-                            <span class="read-time">{readingTime} MIN LECTURA</span>
+                            <span class="read-time"><i class="far fa-clock"></i> {readingTime} MIN LECTURA</span>
                         </div>
+                        <button id="btn-listen" class="btn-listen-article" title="Escuchar artículo con IA">
+                            <i class="fas fa-volume-up"></i>
+                            <span class="btn-text">ESCUCHAR NOTA</span>
+                            <div class="audio-waves">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </button>
                     </div>
                 </header>
 
@@ -127,19 +139,66 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
 <script>
   document.addEventListener('astro:page-load', () => {
+    // 🚀 1. Ciclo de Multimedia Lateral
     const layers = document.querySelectorAll('.media-layer');
-    if (layers.length <= 1) return;
+    if (layers.length > 1) {
+        let current = 0;
+        setInterval(() => {
+            layers[current].classList.remove('active');
+            current = (current + 1) % layers.length;
+            layers[current].classList.add('active');
+        }, 5000);
+    }
 
-    let current = 0;
-    setInterval(() => {
-      layers[current].classList.remove('active');
-      current = (current + 1) % layers.length;
-      layers[current].classList.add('active');
-    }, 5000);
+    // 🚀 2. Barra de Progreso de Lectura
+    const progressBar = document.getElementById('reading-progress');
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        if (progressBar) progressBar.style.width = scrolled + "%";
+    });
+
+    // 🚀 3. IA de Audio-Lectura (Web Speech API - Gratis)
+    const btnListen = document.getElementById('btn-listen');
+    const content = document.querySelector('.prose-content');
+    let isReading = false;
+    let synth = window.speechSynthesis;
+    let utterance: SpeechSynthesisUtterance | null = null;
+
+    btnListen?.addEventListener('click', () => {
+        if (isReading) {
+            synth.cancel();
+            isReading = false;
+            btnListen.classList.remove('playing');
+            (btnListen.querySelector('.btn-text') as HTMLElement).innerText = "ESCUCHAR NOTA";
+            return;
+        }
+
+        const text = content?.textContent || "";
+        utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es-ES';
+        utterance.rate = 0.95; // Un poco más lento para elegancia
+
+        utterance.onend = () => {
+            isReading = false;
+            btnListen.classList.remove('playing');
+            (btnListen.querySelector('.btn-text') as HTMLElement).innerText = "ESCUCHAR NOTA";
+        };
+
+        synth.speak(utterance);
+        isReading = true;
+        btnListen.classList.add('playing');
+        (btnListen.querySelector('.btn-text') as HTMLElement).innerText = "DETENER AUDIO";
+    });
   });
 </script>
 
 <style>
+/* Reading Progress Bar */
+.reading-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 3px; background: rgba(255,255,255,0.05); z-index: 3000; }
+.reading-progress-bar { height: 100%; background: var(--color-accent); width: 0%; transition: width 0.1s ease-out; box-shadow: 0 0 10px var(--color-accent); }
+
 .magazine-article { width: 100%; background-color: #050505; }
 .split-layout { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
 .narrative-column { padding: 12rem 8% 10rem; }
@@ -152,6 +211,17 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 .eyebrow-row { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; }
 .eyebrow { font-size: 0.7rem; letter-spacing: 4px; color: var(--color-accent); font-weight: 700; }
 .premium-badge { font-size: 0.6rem; letter-spacing: 2px; color: #000; background: var(--color-accent); padding: 0.2rem 0.8rem; border-radius: 2px; font-weight: 800; }
+.meta-row { display: flex; align-items: center; justify-content: space-between; gap: 2rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.5rem; }
+.btn-listen-article { background: transparent; border: 1px solid var(--color-accent); color: var(--color-accent); padding: 0.5rem 1rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; cursor: pointer; display: flex; align-items: center; gap: 0.8rem; transition: all 0.3s ease; }
+.btn-listen-article:hover { background: var(--color-accent); color: #000; }
+.btn-listen-article.playing { background: #6b1020; border-color: #6b1020; color: #fff; }
+.audio-waves { display: none; align-items: flex-end; gap: 2px; height: 12px; }
+.btn-listen-article.playing .audio-waves { display: flex; }
+.audio-waves span { width: 2px; height: 100%; background: currentColor; animation: wave 1s ease-in-out infinite; }
+.audio-waves span:nth-child(2) { animation-delay: 0.2s; }
+.audio-waves span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes wave { 0%, 100% { height: 4px; } 50% { height: 12px; } }
+
 .headline { font-size: clamp(2.2rem, 5vw, 3.8rem); font-style: italic; color: #fff; font-family: var(--font-primary); margin-bottom: 2rem; }
 .prose-content { font-family: var(--font-secondary); font-size: 1.1rem; line-height: 1.9; color: rgba(255,255,255,0.7); }
 .prose-content :global(p) { margin-bottom: 2rem; }
