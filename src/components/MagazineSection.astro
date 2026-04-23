@@ -7,11 +7,11 @@ let connectionError = null;
 let fetchedArticles = [];
 try {
   // 🚀 Intentar primero por la red interna de Docker (más rápido)
-  let response = await fetch(`${INTERNAL_DOCKER_URL}/items/magazine`);
+  let response = await fetch(`${INTERNAL_DOCKER_URL}/items/magazine?sort=-date_created`);
   
   // 🔄 Si falla la red interna, intentamos por la URL pública
   if (!response.ok) {
-      response = await fetch(`${PUBLIC_DIRECTUS_URL}/items/magazine`);
+      response = await fetch(`${PUBLIC_DIRECTUS_URL}/items/magazine?sort=-date_created`);
   }
   
   const data = await response.json();

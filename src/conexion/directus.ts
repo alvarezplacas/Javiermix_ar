@@ -144,6 +144,7 @@ export async function getArticles() {
     try { 
         const client = await DirectusManager.getClient(); 
         return await client.request(readItems('magazine' as any, { 
+            sort: ['-date_created'],
             fields: ['*', { user_created: ['*'] }] 
         })); 
     } catch (e: any) { 

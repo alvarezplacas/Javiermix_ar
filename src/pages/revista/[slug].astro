@@ -26,7 +26,7 @@ function resolveMediaURL(id: string | null): string {
 
 let mediaItems = [];
 try {
-  if (articulo.media_json) {
+  if (articulo && articulo.media_json) {
     mediaItems = typeof articulo.media_json === 'string' ? JSON.parse(articulo.media_json) : articulo.media_json;
   }
 } catch (e) {}
@@ -34,51 +34,54 @@ try {
 // 1. Búsqueda dinámica por carpeta raíz "Revista" via API Shim
 let dynamicMedia = [];
 try {
-    const parentRes = await fetchFromDirectus(`/folders?filter[name][_eq]=Revista&limit=1`);
-    const parentData = await parentRes.json();
-    const parentFolder = parentData.data?.[0];
+    if (articulo) {
+        const parentRes = await fetchFromDirectus(`/folders?filter[name][_eq]=Revista&limit=1`);
+        const parentData = await parentRes.json();
+        const parentFolder = parentData.data?.[0];
 
-    if (parentFolder) {
-        const parentId = parentFolder.id;
-        
-        // Buscar subcarpeta dentro de Revista
-        const subRes = await fetchFromDirectus(`/folders?filter[parent][_eq]=${parentId}&filter[name][_in]=${articulo.title},${articulo.slug}`);
-        const subData = await subRes.json();
-        const subFolder = subData.data?.[0];
-        
-        if (subFolder) {
-            const folderId = subFolder.id;
-            const filesRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${folderId}&sort=filename_download`);
-            const filesData = await filesRes.json();
-            const folderFiles = filesData.data || [];
-                
-            dynamicMedia = folderFiles.map(f => {
-                const isVideo = f.type?.startsWith('video/');
-                return {
-                    type: isVideo ? 'video' : 'image',
-                    src: getAssetUrl(f.id, isVideo ? { raw: true } : { width: 1600 }),
-                    caption: f.title || ''
-                };
-            });
+        if (parentFolder) {
+            const parentId = parentFolder.id;
+            
+            // Buscar subcarpeta dentro de Revista
+            const subRes = await fetchFromDirectus(`/folders?filter[parent][_eq]=${parentId}&filter[name][_in]=${articulo.title},${articulo.slug}`);
+            const subData = await subRes.json();
+            const subFolder = subData.data?.[0];
+            
+            if (subFolder) {
+                const folderId = subFolder.id;
+                const filesRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${folderId}&sort=filename_download`);
+                const filesData = await filesRes.json();
+                const folderFiles = filesData.data || [];
+                    
+                dynamicMedia = folderFiles.map(f => {
+                    const isVideo = f.type?.startsWith('video/');
+                    return {
+                        type: isVideo ? 'video' : 'image',
+                        src: getAssetUrl(f.id, isVideo ? { raw: true } : { width: 1600 }),
+                        caption: f.title || ''
+                    };
+                });
+            }
         }
     }
 } catch (e) {
     console.error("Error fetching dynamic magazine media via API:", e);
 }
 
-const media = dynamicMedia.length > 0 ? dynamicMedia : [
+const media = dynamicMedia.length > 0 ? dynamicMedia : (articulo ? [
   articulo.video_url ? { type: 'video', src: resolveMediaURL(articulo.video_url), caption: '' } : null,
   articulo.featured_image ? { type: 'image', src: resolveMediaURL(articulo.featured_image), caption: '' } : null,
   ...mediaItems.map(m => ({ ...m, src: resolveMediaURL(m.src) }))
-].filter(Boolean);
+].filter(Boolean) : []);
 
 if (media.length === 0) media.push({ type: 'image', src: '/img/placeholder.jpg', caption: 'Imagen no disponible' });
 
-const formattedDate = articulo.created_at ? new Date(articulo.created_at).toLocaleDateString('es-ES', {
+// 📅 Fecha: Usamos la fecha real de Directus
+const formattedDate = articulo.date_created ? new Date(articulo.date_created).toLocaleDateString('es-ES', {
   day: 'numeric', month: 'long', year: 'numeric'
-}) : '';
+}) : 'Edición 2026';
 
-const wordCount = (articulo.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
+const wordCount = articulo ? (articulo.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length : 0;
 const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 ---
 
