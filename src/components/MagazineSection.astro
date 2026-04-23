@@ -6,19 +6,17 @@ const INTERNAL_DOCKER_URL = 'http://javiermix-directus:8055';
 
 let fetchedArticles = [];
 try {
-  // Intentamos conexión interna (Docker) primero, luego externa
   const baseUrl = typeof window === 'undefined' ? INTERNAL_DOCKER_URL : PUBLIC_DIRECTUS_URL;
   
-  const response = await fetch(`${baseUrl}/items/Magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`, {
-      headers: { 'Authorization': `Bearer ${process.env.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg'}` }
-  });
+  // 🔓 Petición pública (sin Token) para evitar errores 403 de validación
+  const response = await fetch(`${baseUrl}/items/magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
   const data = await response.json();
   
   if (data.errors) {
-      // Fallback a minúsculas
-      const resFallback = await fetch(`${baseUrl}/items/magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
-      const dataFallback = await resFallback.json();
-      fetchedArticles = dataFallback.data || [];
+      // Intento final con Mayúscula por si el sistema es sensible
+      const resCap = await fetch(`${baseUrl}/items/Magazine?filter[status][_in]=published,publicado,Publicado&sort=-created_at&limit=3`);
+      const dataCap = await resCap.json();
+      fetchedArticles = dataCap.data || [];
   } else {
       fetchedArticles = data.data || [];
   }

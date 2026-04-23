@@ -131,19 +131,18 @@ export async function updateOrder(id: string, data: any) { try { const client = 
 export async function getArticles() { 
     try { 
         const client = await DirectusManager.getClient(); 
-        const response = await client.request(readItems('Magazine' as any, { 
+        // 🔓 Intentar lectura pública/estándar
+        const response = await client.request(readItems('magazine' as any, { 
             filter: { status: { _in: ['published', 'publicado', 'Publicado'] } }, 
             sort: ['-created_at'], 
             fields: ['*', { user_created: ['*'] }] 
         })); 
-        console.log(`[Directus] 📰 Artículos encontrados en 'Magazine':`, response.length);
         return response;
     } catch (e: any) { 
-        console.error(`[Directus-Error] ❌ Error al obtener artículos de 'Magazine':`, e.message);
-        // Re-intento con minúscula por si acaso
+        // Fallback a Mayúscula si falla
         try {
             const client = await DirectusManager.getClient(); 
-            return await client.request(readItems('magazine' as any, { sort: ['-created_at'] }));
+            return await client.request(readItems('Magazine' as any, { sort: ['-created_at'] }));
         } catch (e2) {
             return []; 
         }
@@ -152,7 +151,7 @@ export async function getArticles() {
 export async function getArticleDetails(idOrSlug: string) { 
     try { 
         const client = await DirectusManager.getClient(); 
-        const results = await client.request(readItems('Magazine' as any, { 
+        const results = await client.request(readItems('magazine' as any, { 
             filter: { _or: [{ id: { _eq: idOrSlug } }, { slug: { _eq: idOrSlug } }] }, 
             fields: ['*', { user_created: ['*'] }], 
             limit: 1 
@@ -161,7 +160,7 @@ export async function getArticleDetails(idOrSlug: string) {
     } catch (e) { 
         try {
             const client = await DirectusManager.getClient(); 
-            const results = await client.request(readItems('magazine' as any, { filter: { slug: { _eq: idOrSlug } }, limit: 1 }));
+            const results = await client.request(readItems('Magazine' as any, { filter: { slug: { _eq: idOrSlug } }, limit: 1 }));
             return results[0] || null;
         } catch (e2) {
             return null; 
