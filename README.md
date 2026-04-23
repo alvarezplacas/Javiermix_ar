@@ -28,6 +28,15 @@ Para garantizar la estabilidad del sistema, los cambios deben seguir este flujo 
 > [!IMPORTANT]
 > **NO EDITAR** archivos directamente en el VPS. Esto genera conflictos de Git que rompen el flujo de despliegue.
 
+## 📰 Estado de la Revista Digital (Abril 2026)
+### ✅ Logros Recientes
+- **Resolución de Conectividad**: Se eliminaron los bloqueos 403/500 mediante el uso de permisos públicos en Directus y la eliminación de dependencia de tokens estáticos para lectura.
+- **Data Model**: Se integraron los campos `date_created` y `user_created` en la colección `magazine` para permitir ordenamiento cronológico.
+- **UX Premium**:
+    - **Audio-Narrador**: Integrado vía Web Speech API (sin costo).
+    - **Lectura Confort**: Implementación de colores "Papel Carbón" (#111) y tipografías hueso para evitar fatiga visual en móviles.
+    - **Dual-Networking**: La web intenta conexión vía `http://directus:8055` (Docker) con fallback automático a `https://admin.javiermix.ar`.
+
 ## 🏛️ Reglas de Oro del SDK (Directus v11)
 Para futuras IAs trabajando en este repo, seguir estas reglas para evitar errores 404/500:
 
