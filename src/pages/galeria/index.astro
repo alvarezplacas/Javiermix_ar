@@ -16,11 +16,13 @@ const seriesList = seriesListRaw.map(s => ({
 }));
 
 const artworksRaw = await getCatalogoFiles();
-const artworks = artworksRaw.map(file => ({
+const artworks = artworksRaw
+    .filter(file => !file.filename_download.toLowerCase().includes('_2')) // 🚫 Excluir muestras de ambiente
+    .map(file => ({
     id: file.id,
     title: file.title || file.filename_download.split('.')[0],
     serie: file.serie_name || 'Sin Serie',
-    thumb: getOptimizedImageURL(file.id, { width: 800, format: 'avif', quality: 85 })
+    thumb: getOptimizedImageURL(file.id, { width: 800, format: 'avif', quality: 90 })
 }));
 ---
 
