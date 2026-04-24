@@ -18,12 +18,18 @@ const seriesList = seriesListRaw.map(s => ({
 const artworksRaw = await getCatalogoFiles();
 const artworks = artworksRaw
     .filter(file => !file.filename_download.toLowerCase().includes('_2')) // 🚫 Excluir muestras de ambiente
-    .map(file => ({
-    id: file.id,
-    title: file.title || file.filename_download.split('.')[0],
-    serie: file.serie_name || 'Sin Serie',
-    thumb: getOptimizedImageURL(file.id, { width: 800, format: 'avif', quality: 90 })
-}));
+    .map(file => {
+        // Encontrar el mockup correspondiente (_2)
+        const baseName = file.filename_download.split('.')[0];
+        const mockup = artworksRaw.find(f => f.filename_download.toLowerCase().startsWith(baseName.toLowerCase() + '_2'));
+        return {
+            id: file.id,
+            title: file.title || file.filename_download.split('.')[0],
+            serie: file.serie_name || 'Sin Serie',
+            thumb: getOptimizedImageURL(file.id, { width: 800, format: 'avif', quality: 90 }),
+            mockup: mockup ? getOptimizedImageURL(mockup.id, { width: 800, format: 'avif', quality: 90 }) : null
+        };
+    });
 ---
 
 <Layout
@@ -56,7 +62,8 @@ const artworks = artworksRaw
             <div id="gallery-grid" class="masonry-grid">
                 {artworks.slice(0, 15).map((art) => (
                     <a href={`/obra/${art.id}`} class="grid-item" data-tilt>
-                        <img src={art.thumb} alt={art.title} loading="lazy" />
+                        <img src={art.thumb} alt={art.title} class="img-main" loading="lazy" />
+                        {art.mockup && <img src={art.mockup} alt={`${art.title} ambiente`} class="img-mockup" loading="lazy" />}
                         <div class="item-overlay">
                             <span class="art-title">{art.title}</span>
                             <span class="art-serie">{art.serie}</span>
@@ -180,12 +187,12 @@ const artworks = artworksRaw
 }
 
 .series-info-side { flex: 1; }
-.s-name { font-size: 2.2rem; font-family: var(--font-primary); font-weight: 200; color: #fff; margin: 0; }
-.s-count { font-size: 0.7rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 800; margin-top: 1rem; text-transform: uppercase; }
+.s-name { font-size: 3rem; font-family: var(--font-primary); font-weight: 200; color: #fff; margin: 0; line-height: 1; }
+.s-count { font-size: 0.8rem; letter-spacing: 4px; color: var(--color-accent); font-weight: 800; margin-top: 1.5rem; text-transform: uppercase; }
 
-.series-photo-side { width: 300px; height: 180px; overflow: hidden; margin-left: 3rem; border: 1px solid rgba(255,255,255,0.1); }
-.series-photo-side img { width: 100%; height: 100%; object-fit: cover; transition: 1s; }
-.series-card-result:hover .series-photo-side img { transform: scale(1.1); }
+.series-photo-side { width: 220px; height: 140px; overflow: hidden; margin-left: 3rem; border: 1px solid rgba(255,255,255,0.05); filter: grayscale(1) opacity(0.5); transition: 0.6s; }
+.series-photo-side img { width: 100%; height: 100%; object-fit: cover; }
+.series-card-result:hover .series-photo-side { filter: grayscale(0) opacity(1); }
 
 .grid-item {
     break-inside: avoid;
@@ -195,14 +202,25 @@ const artworks = artworksRaw
     position: relative;
     background: #080808;
     transition: transform 0.1s ease-out;
+    overflow: hidden;
 }
 
 .grid-item img {
     width: 100%;
     height: auto;
     display: block;
-    transition: filter 0.4s;
+    transition: opacity 0.6s ease, transform 0.6s ease;
 }
+
+.img-mockup {
+    position: absolute;
+    top: 0; left: 0;
+    opacity: 0;
+    z-index: 2;
+}
+
+.grid-item:hover .img-main { opacity: 0; transform: scale(1.05); }
+.grid-item:hover .img-mockup { opacity: 1; transform: scale(1); }
 
 .item-overlay {
     padding: 1.5rem;
@@ -299,7 +317,8 @@ const artworks = artworksRaw
                 const url = `/obra/${item.id}`;
                 return `
                     <a href="${url}" class="grid-item">
-                        <img src="${item.thumb}" alt="${item.title}" loading="lazy" />
+                        <img src="${item.thumb}" alt="${item.title}" class="img-main" loading="lazy" />
+                        ${item.mockup ? `<img src="${item.mockup}" alt="${item.title} ambiente" class="img-mockup" loading="lazy" />` : ''}
                         <div class="item-overlay">
                             <span class="art-title">${item.title}</span>
                             <span class="art-serie">${item.serie}</span>
