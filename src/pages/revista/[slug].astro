@@ -132,17 +132,27 @@ if (articulo) {
                     </div>
                     <h1 class="headline">{articulo.title}</h1>
                     <div class="meta-row">
-                        <div class="author-info">Por <strong>{articulo.author || 'Javier Mix'}</strong></div>
-                        <div class="stats-info">
-                            <span class="date">{formattedDate}</span>
-                            <span class="read-time"><i class="far fa-clock"></i> {readingTime} MIN LECTURA</span>
+                        <div class="meta-item">
+                            <span class="meta-label">AUTOR</span>
+                            <span class="meta-value">{articulo.author || 'Javier Mix'}</span>
                         </div>
+                        <div class="meta-item">
+                            <span class="meta-label">EDICIÓN</span>
+                            <span class="meta-value">{formattedDate}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">LECTURA</span>
+                            <span class="meta-value">{readingTime} MINUTOS</span>
+                        </div>
+                        
                         <button id="btn-listen" class="btn-listen-article" title="Escuchar artículo con IA">
-                            <i class="fas fa-volume-up"></i>
-                            <span class="btn-text">ESCUCHAR NOTA</span>
-                            <div class="audio-waves">
-                                <span></span><span></span><span></span>
+                            <div class="btn-icon-wrapper">
+                                <i class="fas fa-volume-up"></i>
+                                <div class="audio-waves">
+                                    <span></span><span></span><span></span>
+                                </div>
                             </div>
+                            <span class="btn-text">ESCUCHAR NOTA</span>
                         </button>
                     </div>
                 </header>
@@ -217,6 +227,11 @@ if (articulo) {
             return;
         }
 
+        // 📱 Parche para Móviles: Algunos navegadores necesitan un "resume" previo o están bloqueados
+        if (synth.paused) {
+            synth.resume();
+        }
+
         // Limpieza de texto para una lectura fluida
         const rawText = content?.textContent || "";
         const cleanText = rawText.replace(/\s+/g, ' ').trim();
@@ -226,7 +241,13 @@ if (articulo) {
         utterance = new SpeechSynthesisUtterance(cleanText);
         
         // Selección inteligente de voz (Cualquier español disponible)
-        const voices = synth.getVoices();
+        let voices = synth.getVoices();
+        
+        // Si no hay voces, intentamos forzar una carga (algunos móviles lo requieren)
+        if (voices.length === 0) {
+            voices = window.speechSynthesis.getVoices();
+        }
+
         const spanishVoice = voices.find(v => v.lang.startsWith('es-') || v.lang === 'es') || voices[0];
         
         if (spanishVoice) utterance.voice = spanishVoice;
@@ -244,15 +265,21 @@ if (articulo) {
         utterance.onend = () => resetAudioState();
         utterance.onerror = (e) => {
             console.error("SpeechSynthesis Error:", e);
+            // Si falla, intentamos resetear todo para permitir un nuevo intento
             resetAudioState();
         };
 
         // 🚀 Ejecución con limpieza de buffer previa
         synth.cancel();
+        
         // Un pequeño delay ayuda a algunos navegadores móviles a procesar el nuevo speak
         setTimeout(() => {
             synth.speak(utterance!);
-        }, 100);
+            // 📱 Segundo parche para móviles: Forzar el inicio si se queda en pendiente
+            if (synth.paused) {
+                synth.resume();
+            }
+        }, 150);
     });
 
     function resetAudioState() {
@@ -296,12 +323,45 @@ if (articulo) {
 .eyebrow-row { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; }
 .eyebrow { font-size: 0.7rem; letter-spacing: 4px; color: var(--color-accent); font-weight: 700; }
 .premium-badge { font-size: 0.6rem; letter-spacing: 2px; color: #000; background: var(--color-accent); padding: 0.2rem 0.8rem; border-radius: 2px; font-weight: 800; }
-.meta-row { display: flex; align-items: center; justify-content: space-between; gap: 2rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.5rem; }
-.btn-listen-article { background: transparent; border: 1px solid var(--color-accent); color: var(--color-accent); padding: 0.5rem 1rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; cursor: pointer; display: flex; align-items: center; gap: 0.8rem; transition: all 0.3s ease; }
-.btn-listen-article:hover { background: var(--color-accent); color: #000; }
+
+.meta-row { 
+    display: flex; 
+    flex-wrap: wrap;
+    align-items: center; 
+    justify-content: flex-start;
+    gap: 3rem; 
+    border-top: 1px solid rgba(255,255,255,0.06); 
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 2rem 0;
+    margin: 3rem 0;
+}
+.meta-item { display: flex; flex-direction: column; gap: 0.6rem; }
+.meta-label { font-size: 0.55rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 800; opacity: 0.9; }
+.meta-value { font-size: 0.9rem; color: #fff; font-weight: 300; letter-spacing: 1px; }
+
+.btn-listen-article { 
+    background: transparent; 
+    border: 1px solid rgba(220, 177, 74, 0.3); 
+    color: var(--color-accent); 
+    padding: 0.8rem 1.5rem; 
+    font-size: 0.65rem; 
+    font-weight: 700; 
+    letter-spacing: 2px; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 1.2rem; 
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    margin-left: auto;
+}
+.btn-listen-article:hover { background: var(--color-accent); color: #000; border-color: var(--color-accent); }
 .btn-listen-article.playing { background: #6b1020; border-color: #6b1020; color: #fff; }
-.audio-waves { display: none; align-items: flex-end; gap: 2px; height: 12px; }
+
+.btn-icon-wrapper { position: relative; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; }
+.audio-waves { display: none; align-items: flex-end; gap: 2px; height: 12px; position: absolute; inset: 0; justify-content: center; }
 .btn-listen-article.playing .audio-waves { display: flex; }
+.btn-listen-article.playing .fa-volume-up { display: none; }
+
 .audio-waves span { width: 2px; height: 100%; background: currentColor; animation: wave 1s ease-in-out infinite; }
 .audio-waves span:nth-child(2) { animation-delay: 0.2s; }
 .audio-waves span:nth-child(3) { animation-delay: 0.4s; }
