@@ -53,6 +53,9 @@ const allArtworks = allArtworksRaw.map(file => ({
             
 			<div class="portal-search-wrapper">
 				<input type="text" id="gallery-search-input" placeholder="Busca atmósfera, color o tema..." autocomplete="off">
+                <div class="search-filters">
+                    <button id="btn-filter-series" class="filter-pill">SERIES</button>
+                </div>
                 <div class="search-accent-line"></div>
                 <div class="search-pulse"></div>
                 <i class="fas fa-search portal-icon"></i>
@@ -157,8 +160,11 @@ const allArtworks = allArtworksRaw.map(file => ({
 @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
 .portal-search-wrapper { width: 100%; max-width: 800px; position: relative; }
-#gallery-search-input { width: 100%; padding: 2rem 5rem 2rem 3rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 2px; color: #fff; font-size: 1.2rem; font-weight: 200; backdrop-filter: blur(30px); transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+#gallery-search-input { width: 100%; padding: 2rem 10rem 2rem 3rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 2px; color: #fff; font-size: 1.2rem; font-weight: 200; backdrop-filter: blur(30px); transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
 #gallery-search-input:focus { background: rgba(255,255,255,0.05); border-color: var(--color-accent); outline: none; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+.search-filters { position: absolute; right: 5.5rem; top: 50%; transform: translateY(-50%); display: flex; gap: 0.5rem; z-index: 10; }
+.filter-pill { background: rgba(197, 160, 89, 0.1); border: 1px solid var(--color-accent); color: var(--color-accent); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.6rem; letter-spacing: 2px; font-weight: 800; cursor: pointer; transition: all 0.3s ease; }
+.filter-pill:hover { background: var(--color-accent); color: #000; }
 .portal-icon { position: absolute; right: 2.5rem; top: 50%; transform: translateY(-50%); color: var(--color-accent); font-size: 1.4rem; opacity: 0.5; }
 
 /* 🏛️ TRÍPTICO KINÉTICO */
@@ -276,6 +282,20 @@ const allArtworks = allArtworksRaw.map(file => ({
     const resultsGrid = document.getElementById('results-grid');
     const resCount = document.getElementById('res-count');
     const artworks = JSON.parse(document.getElementById('artworks-data')?.innerHTML || '[]');
+    const btnSeries = document.getElementById('btn-filter-series');
+
+    btnSeries?.addEventListener('click', () => {
+        const ribbon = document.querySelector('.discovery-ribbon');
+        if (ribbon) {
+            ribbon.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            // Si no hay ribbon (pocos resultados), mostramos todo
+            viewSeries!.style.display = 'block';
+            viewResults!.style.display = 'none';
+            searchInput.value = '';
+            window.scrollTo({ top: viewSeries!.offsetTop - 100, behavior: 'smooth' });
+        }
+    });
 
     searchInput?.addEventListener('input', (e) => {
       const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
