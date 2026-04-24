@@ -3,129 +3,83 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getSeries, getCatalogoFiles, DirectusManager } from '@conexion/directus';
+import { getSeries, getCatalogoFiles } from '@conexion/directus';
 import { getOptimizedImageURL } from '@utils/media';
 
 export const prerender = false;
 
-// 🏺 Series for default view
+// 🏺 Datos
 const seriesFromAPI = await getSeries();
 const seriesList = seriesFromAPI.map(s => ({
     ...s,
-    coverUrl: getOptimizedImageURL(s.coverId, { width: 1000, format: 'avif', quality: 90 })
+    coverUrl: getOptimizedImageURL(s.coverId, { width: 1200, format: 'avif', quality: 95 })
 }));
 
-const featuredSeries = seriesList.slice(0, 3);
-const otherSeries = seriesList.slice(3);
-
-// 🔍 Load all artworks for GLOBAL search
 const allArtworksRaw = await getCatalogoFiles();
 const allArtworks = allArtworksRaw.map(file => ({
     id: file.id,
     title: file.title || file.filename_download.split('.')[0],
-    description: file.description || '',
-    tags: file.tags || [],
     serie: file.serie_name || 'Sin Serie',
-    thumb: getOptimizedImageURL(file.id, { width: 800, format: 'avif', quality: 80 })
+    thumb: getOptimizedImageURL(file.id, { width: 800, format: 'avif', quality: 90 })
 }));
 ---
 
 <Layout
-  title="Galería Curada | Javier Mix"
-  description="Explore el universo visual de Javier Mix a través de sus series exclusivas."
+  title="Galería | Javier Mix"
+  description="Exposición fotográfica inmersiva."
   url="/galeria"
-  image={seriesList[0]?.coverUrl}
 >
-    
     <Header currentPath="/galeria" />
 
-	<main class="gallery-immersive-master">
-        <canvas id="canvas-particles" class="particles-bg"></canvas>
-        <div class="glow-overlay"></div>
+	<main class="gallery-focus-master">
+        <!-- 🌌 FONDO DISCRETO -->
+        <div class="gallery-void"></div>
 
-		<!-- 🔍 BUSCADOR DE PRECISIÓN -->
-		<header class="immersive-hero">
-            <div class="hero-context">
-                <span class="fine-label">FINE ART SEARCH</span>
-                <h1 class="portal-title">Explorar <span class="gold-dot">.</span> Archivo</h1>
+		<!-- 🕵️ CABECERA TÁCTICA -->
+		<header class="gallery-nav-header">
+            <div class="nav-brand">
+                <h1 class="main-title">ARCHIVO <span class="accent">MIX</span></h1>
+                <p class="sub-label">EXPLORACIÓN CURADA</p>
             </div>
             
-			<div class="portal-search-container">
-                <div class="search-input-box">
-				    <input type="text" id="gallery-search-input" placeholder="Busca atmósfera, color o tema..." autocomplete="off">
-                    <div class="search-accent-glow"></div>
+			<div class="nav-controls">
+                <div class="search-box">
+				    <input type="text" id="gallery-search-input" placeholder="Buscar por tema, color..." autocomplete="off">
+                    <div class="search-line"></div>
                 </div>
-                <button id="btn-mode-series" class="mode-toggle">
-                    <span class="mode-label">SERIES</span>
-                    <div class="mode-indicator"></div>
+                
+                <button id="btn-mode-series" class="mode-button">
+                    <span class="label">SERIES</span>
+                    <div class="indicator"></div>
                 </button>
 			</div>
 		</header>
 
-		<!-- 🏛️ VISTA DE SERIES (Modo Default) -->
-		<div id="view-series" class="gallery-view active">
-            <section class="kinetic-triptych">
-                <div class="section-label">
-                    <span class="label-text">ÚLTIMAS SERIES</span>
-                    <div class="label-line"></div>
-                </div>
-                
-                <div class="triptych-container">
-                    {featuredSeries.length > 0 ? featuredSeries.map((serie, index) => (
-                        <a href={`/galeria/${serie.id}`} class="kinetic-card" data-tilt>
-                            <div class="card-visual">
-                                <img src={serie.coverUrl} alt={serie.name} class="visual-img" />
-                                <div class="visual-vignette"></div>
-                            </div>
-                            <div class="card-content">
-                                <div class="card-meta">
-                                    <span class="m-count">{serie.count} OBRAS</span>
-                                    <div class="m-line"></div>
-                                </div>
-                                <h3 class="card-name">{serie.name}</h3>
-                                <span class="explore-link">VER COLECCIÓN</span>
-                            </div>
-                        </a>
-                    )) : (
-                        <div class="empty-state-lux">
-                            <p>Sincronizando Archivo Maestro...</p>
-                            <div class="loader-line"></div>
+		<!-- 🏛️ EXPOSICIÓN (MODO DEFAULT) -->
+		<div id="view-series" class="viewport active">
+            <section class="gallery-hero-grid">
+                {seriesList.length > 0 ? seriesList.slice(0,3).map((serie, index) => (
+                    <a href={`/galeria/${serie.id}`} class="hero-card" data-tilt>
+                        <div class="card-image">
+                            <img src={serie.coverUrl} alt={serie.name} class="art-img" />
                         </div>
-                    )}
-                </div>
+                        <div class="card-info">
+                            <span class="info-tag">COLECCIÓN 0{index + 1}</span>
+                            <h2 class="info-title">{serie.name}</h2>
+                            <span class="info-btn">VER SERIE COMPLETA</span>
+                        </div>
+                    </a>
+                )) : null}
             </section>
-
-            {otherSeries.length > 0 && (
-                <section class="discovery-ribbon">
-                    <div class="ribbon-outer">
-                        <div class="ribbon-inner">
-                            {[...otherSeries, ...otherSeries].map((serie) => (
-                                <a href={`/galeria/${serie.id}`} class="ribbon-item">
-                                    <div class="item-frame">
-                                        <img src={serie.coverUrl} alt={serie.name} />
-                                        <div class="item-overlay">
-                                            <span class="it-name">{serie.name}</span>
-                                        </div>
-                                    </div>
-                                </a>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
 		</div>
 
-        <!-- 🕵️ RESULTADOS MASONRY (Respeto al formato) -->
-        <div id="view-results" class="gallery-view" style="display: none;">
-            <div class="results-layout">
-                <header class="results-header">
-                    <p class="results-count">FILTRANDO POR <span class="accent" id="search-mode-text">OBRAS</span>: <span id="res-count">0</span> COINCIDENCIAS</p>
-                </header>
-                
-                <!-- 🖼️ MASONRY NATURAL GRID (Sin Recortes) -->
-                <div id="results-grid" class="natural-masonry-grid">
-                    <!-- Inyección dinámica -->
-                </div>
+        <!-- 🕵️ RESULTADOS MASONRY 3D -->
+        <div id="view-results" class="viewport" style="display: none;">
+            <div class="results-header">
+                <p class="status">MOSTRANDO <span id="mode-text">OBRAS</span> <span class="sep">/</span> <span id="res-count">0</span> COINCIDENCIAS</p>
+            </div>
+            <div id="results-grid" class="masonry-3d-grid">
+                <!-- Dinámico -->
             </div>
         </div>
 
@@ -137,176 +91,166 @@ const allArtworks = allArtworksRaw.map(file => ({
 </Layout>
 
 <style>
-/* 🌑 CORE DESIGN */
-.gallery-immersive-master { background: #080808; min-height: 100vh; position: relative; overflow-x: hidden; }
-.particles-bg { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.3; }
-.glow-overlay { position: fixed; top: -20%; left: -10%; width: 140%; height: 140%; background: radial-gradient(circle at 50% 50%, rgba(197,160,89,0.03) 0%, transparent 60%); pointer-events: none; z-index: 2; }
-
-/* 🔍 BUSCADOR INTEGRADO */
-.immersive-hero { position: relative; z-index: 10; padding: 12rem 2rem 6rem; display: flex; flex-direction: column; align-items: center; }
-.hero-context { text-align: center; margin-bottom: 5rem; }
-.fine-label { font-size: 0.6rem; letter-spacing: 8px; color: var(--color-accent); font-weight: 800; display: block; margin-bottom: 1.5rem; }
-.portal-title { font-size: clamp(3rem, 7vw, 4.5rem); font-family: var(--font-primary); color: #fff; font-weight: 200; }
-.gold-dot { color: var(--color-accent); }
-
-.portal-search-container {
-    display: flex;
-    gap: 1.5rem;
-    width: 100%;
-    max-width: 900px;
-    align-items: stretch;
-}
-
-.search-input-box {
-    flex: 1;
+/* 🌑 ESTÉTICA FOCUS (EL ARTE ES LO PRIMERO) */
+.gallery-focus-master {
+    background: #000;
+    color: #fff;
+    min-height: 100vh;
+    padding-bottom: 5rem;
     position: relative;
+    font-family: 'Inter', sans-serif;
 }
 
+.gallery-void { position: fixed; inset: 0; background: #000; z-index: -1; }
+
+/* 🕵️ HEADER NÍTIDO */
+.gallery-nav-header {
+    padding: 8rem 5% 4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.main-title { font-size: 3.5rem; font-family: var(--font-primary); font-weight: 200; letter-spacing: -2px; margin: 0; }
+.main-title .accent { color: var(--color-accent); }
+.sub-label { font-size: 0.6rem; letter-spacing: 5px; color: rgba(255,255,255,0.4); font-weight: 800; margin: 0.5rem 0 0; }
+
+.nav-controls { display: flex; gap: 3rem; align-items: center; }
+
+.search-box { position: relative; width: 300px; }
 #gallery-search-input {
     width: 100%;
-    padding: 1.8rem 2.5rem;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    border: none;
     color: #fff;
-    font-size: 1.1rem;
-    font-weight: 200;
-    transition: all 0.5s ease;
-}
-
-#gallery-search-input:focus {
-    background: rgba(255,255,255,0.04);
-    border-color: var(--color-accent);
+    padding: 0.8rem 0;
+    font-size: 1rem;
     outline: none;
 }
+.search-line { position: absolute; bottom: 0; left: 0; width: 100%; height: 1px; background: rgba(255,255,255,0.1); transition: 0.4s; }
+#gallery-search-input:focus ~ .search-line { background: var(--color-accent); }
 
-.mode-toggle {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.4);
-    padding: 0 2.5rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
+.mode-button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+    padding: 0.8rem 1.5rem;
     cursor: pointer;
-    transition: all 0.4s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.4s;
+}
+.mode-button.active { border-color: var(--color-accent); color: #fff; }
+.mode-button .indicator { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+.mode-button.active .indicator { background: var(--color-accent); box-shadow: 0 0 10px var(--color-accent); }
+
+/* 🏛️ HERO GRID (Triptych 3.0) */
+.gallery-hero-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    padding: 0 5%;
+    max-width: 1800px;
+    margin: 0 auto;
 }
 
-.mode-toggle.active {
-    border-color: var(--color-accent);
-    color: #fff;
-    background: rgba(197, 160, 89, 0.05);
+.hero-card {
+    position: relative;
+    background: #111;
+    text-decoration: none;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: transform 0.1s ease-out;
 }
 
-.mode-label { font-size: 0.65rem; letter-spacing: 3px; font-weight: 800; }
-.mode-indicator { width: 4px; height: 4px; border-radius: 50%; background: currentColor; transition: transform 0.4s; }
-.mode-toggle.active .mode-indicator { background: var(--color-accent); transform: scale(1.5); box-shadow: 0 0 10px var(--color-accent); }
+.card-image { width: 100%; height: 65vh; position: relative; overflow: hidden; }
+.art-img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s ease; }
+.hero-card:hover .art-img { transform: scale(1.05); }
 
-/* 🏛️ TRÍPTICO */
-.kinetic-triptych { max-width: 1700px; margin: 0 auto; padding: 0 4%; position: relative; z-index: 10; }
-.section-label { display: flex; align-items: center; gap: 2rem; margin-bottom: 4rem; }
-.label-text { font-size: 0.7rem; letter-spacing: 5px; color: rgba(255,255,255,0.3); font-weight: 800; }
-.label-line { height: 1px; flex: 1; background: linear-gradient(to right, rgba(255,255,255,0.05), transparent); }
+.card-info { padding: 2.5rem; background: #080808; border-top: 1px solid rgba(255,255,255,0.05); }
+.info-tag { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 800; display: block; margin-bottom: 0.8rem; }
+.info-title { font-size: 1.8rem; font-family: var(--font-primary); font-weight: 200; color: #fff; margin-bottom: 1.5rem; }
+.info-btn { font-size: 0.65rem; letter-spacing: 2px; color: rgba(255,255,255,0.4); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.4rem; transition: 0.3s; }
+.hero-card:hover .info-btn { color: #fff; border-color: #fff; }
 
-.triptych-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem; }
-.kinetic-card { position: relative; height: 75vh; background: #000; overflow: hidden; text-decoration: none; }
-.visual-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); transition: transform 2s cubic-bezier(0.165, 0.84, 0.44, 1); }
-.kinetic-card:hover .visual-img { transform: scale(1.05); filter: brightness(0.9); }
-.card-content { position: absolute; inset: 0; padding: 4rem; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); }
-.card-name { font-size: 2.5rem; font-family: var(--font-primary); color: #fff; font-weight: 200; margin-bottom: 1rem; }
-.explore-link { font-size: 0.6rem; letter-spacing: 2px; color: var(--color-accent); font-weight: 800; }
+/* 🖼️ MASONRY 3D (Resultados) */
+.viewport { max-width: 1800px; margin: 0 auto; padding: 0 5% 10rem; }
+.results-header { margin-bottom: 4rem; text-align: center; }
+.status { font-size: 0.7rem; letter-spacing: 4px; color: rgba(255,255,255,0.3); font-weight: 800; }
+#mode-text { color: var(--color-accent); }
 
-/* 🖼️ NATURAL MASONRY GRID (Sin Recortes) */
-.results-layout { max-width: 1800px; margin: 0 auto; padding: 4rem 4% 10rem; }
-.results-header { margin-bottom: 5rem; text-align: center; }
-.results-count { font-size: 0.7rem; letter-spacing: 4px; color: rgba(255,255,255,0.3); font-weight: 800; text-transform: uppercase; }
-.accent { color: var(--color-accent); }
-
-.natural-masonry-grid {
+.masonry-3d-grid {
     column-count: 3;
     column-gap: 2rem;
 }
 
-.masonry-item {
+.art-card {
     break-inside: avoid;
     margin-bottom: 2rem;
     display: block;
     text-decoration: none;
+    background: #080808;
     position: relative;
-    overflow: hidden;
-    background: #111;
-    transition: all 0.5s ease;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
 }
 
-.masonry-item img {
+.art-card img {
     width: 100%;
-    height: auto; /* IMPORTANTE: Respeta la altura natural */
+    height: auto;
     display: block;
-    filter: brightness(0.8);
-    transition: all 0.8s ease;
+    filter: brightness(0.9);
+    transition: filter 0.4s;
 }
 
-.masonry-item:hover img { filter: brightness(1); transform: scale(1.03); }
+.art-card:hover img { filter: brightness(1.1); }
 
-.masonry-info {
-    padding: 1.5rem;
-    background: #000;
-}
+.art-card-meta { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); }
+.art-title { font-size: 0.75rem; letter-spacing: 2px; color: #fff; font-weight: 700; text-transform: uppercase; }
+.art-serie { font-size: 0.55rem; letter-spacing: 1.5px; color: var(--color-accent); font-weight: 800; display: block; margin-top: 0.3rem; }
 
-.m-title { color: #fff; font-size: 0.75rem; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; margin-bottom: 0.3rem; display: block; }
-.m-serie { color: var(--color-accent); font-size: 0.55rem; letter-spacing: 1.5px; font-weight: 800; text-transform: uppercase; }
-
-/* 🎡 RIBBON */
-.discovery-ribbon { margin-top: 10rem; padding: 4rem 0; overflow: hidden; }
-.ribbon-inner { display: flex; gap: 2rem; width: max-content; animation: ribbonScroll 120s linear infinite; }
-@keyframes ribbonScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.ribbon-item { width: 350px; height: 250px; display: block; overflow: hidden; position: relative; }
-.ribbon-item img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); }
-
-/* 📱 RESPONSIVE */
-@media (max-width: 1200px) { .natural-masonry-grid { column-count: 2; } }
-@media (max-width: 1024px) {
-    .triptych-container { grid-template-columns: 1fr; }
-    .kinetic-card { height: 50vh; }
-    .portal-search-container { flex-direction: column; }
-    .mode-toggle { padding: 1.5rem; }
-}
-@media (max-width: 768px) { .natural-masonry-grid { column-count: 1; } }
+/* 📱 MOBILE */
+@media (max-width: 1200px) { .masonry-3d-grid { column-count: 2; } .gallery-hero-grid { grid-template-columns: 1fr; } .card-image { height: 45vh; } }
+@media (max-width: 768px) { .masonry-3d-grid { column-count: 1; } .gallery-nav-header { flex-direction: column; align-items: flex-start; gap: 3rem; } .search-box { width: 100%; } }
 </style>
 
 <script>
   document.addEventListener('astro:page-load', () => {
-    // 🌌 PARTICULAS
-    const canvas = document.getElementById('canvas-particles') as HTMLCanvasElement;
-    const ctx = canvas?.getContext('2d');
-    if (canvas && ctx) {
-        let p: any[] = [];
-        const res = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-        window.addEventListener('resize', res); res();
-        for(let i=0;i<50;i++) p.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*1, sx:Math.random()*0.2-0.1, sy:Math.random()*0.2-0.1});
-        const draw = () => {
-            ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle="rgba(197,160,89,0.3)";
-            p.forEach(i=>{ i.x+=i.sx; i.y+=i.sy; if(i.x>canvas.width)i.x=0; if(i.y>canvas.height)i.y=0; ctx.beginPath(); ctx.arc(i.x,i.y,i.s,0,Math.PI*2); ctx.fill(); });
-            requestAnimationFrame(draw);
-        };
-        draw();
-    }
-
-    // 🕵️ MOTOR DE BÚSQUEDA HÍBRIDO
     const searchInput = document.getElementById('gallery-search-input') as HTMLInputElement;
     const btnMode = document.getElementById('btn-mode-series');
     const viewSeries = document.getElementById('view-series');
     const viewResults = document.getElementById('view-results');
     const resultsGrid = document.getElementById('results-grid');
     const resCount = document.getElementById('res-count');
-    const modeText = document.getElementById('search-mode-text');
+    const modeText = document.getElementById('mode-text');
 
     const artworks = JSON.parse(document.getElementById('artworks-data')?.innerHTML || '[]');
     const series = JSON.parse(document.getElementById('series-data')?.innerHTML || '[]');
 
-    let searchMode = 'WORKS'; // 'WORKS' o 'SERIES'
+    let searchMode = 'WORKS';
 
+    // 💡 LÓGICA TILT 3D
+    const applyTilt = () => {
+        const cards = document.querySelectorAll('[data-tilt], .art-card');
+        cards.forEach((card: any) => {
+            card.addEventListener('mousemove', (e: MouseEvent) => {
+                const r = card.getBoundingClientRect();
+                const x = e.clientX - r.left; const y = e.clientY - r.top;
+                const rx = (y - r.height/2) / 15; const ry = (r.width/2 - x) / 15;
+                card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.02, 1.02, 1.02)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+            });
+        });
+    };
+    applyTilt();
+
+    // 🔘 MODO BUSQUEDA
     btnMode?.addEventListener('click', () => {
         searchMode = (searchMode === 'WORKS') ? 'SERIES' : 'WORKS';
         btnMode.classList.toggle('active');
@@ -321,48 +265,30 @@ const allArtworks = allArtworksRaw.map(file => ({
             viewResults!.style.display = 'none';
             return;
         }
-
         viewSeries!.style.display = 'none';
         viewResults!.style.display = 'block';
 
-        if (searchMode === 'WORKS') {
-            const filtered = artworks.filter((a: any) => 
-                a.title.toLowerCase().includes(term) || a.description.toLowerCase().includes(term) || a.tags.some((t:string)=>t.toLowerCase().includes(term))
-            );
-            renderResults(filtered, 'WORK');
-        } else {
-            // BUSCAR SOLO SERIES
-            const filtered = series.filter((s: any) => s.name.toLowerCase().includes(term));
-            renderResults(filtered, 'SERIE');
-        }
-    };
+        const filtered = (searchMode === 'WORKS') 
+            ? artworks.filter((a:any) => a.title.toLowerCase().includes(term))
+            : series.filter((s:any) => s.name.toLowerCase().includes(term));
 
-    const renderResults = (items: any[], type: 'WORK' | 'SERIE') => {
-        if (resCount) resCount.textContent = items.length.toString();
-        
-        resultsGrid!.innerHTML = items.map((item: any) => {
-            if (type === 'WORK') {
-                return `
-                    <a href="/obra/${item.id}" class="masonry-item">
-                        <img src="${item.thumb}" alt="${item.title}" loading="lazy" />
-                        <div class="masonry-info">
-                            <span class="m-title">${item.title}</span>
-                            <span class="m-serie">${item.serie}</span>
-                        </div>
-                    </a>
-                `;
-            } else {
-                return `
-                    <a href="/galeria/${item.id}" class="masonry-item">
-                        <img src="${item.coverUrl}" alt="${item.name}" loading="lazy" />
-                        <div class="masonry-info">
-                            <span class="m-title">${item.name}</span>
-                            <span class="m-serie">COLECCIÓN COMPLETA</span>
-                        </div>
-                    </a>
-                `;
-            }
+        if (resCount) resCount.textContent = filtered.length.toString();
+        resultsGrid!.innerHTML = filtered.map((item: any) => {
+            const url = searchMode === 'WORKS' ? `/obra/${item.id}` : `/galeria/${item.id}`;
+            const img = searchMode === 'WORKS' ? item.thumb : item.coverUrl;
+            const title = searchMode === 'WORKS' ? item.title : item.name;
+            const sub = searchMode === 'WORKS' ? item.serie : 'COLECCIÓN';
+            return `
+                <a href="${url}" class="art-card">
+                    <img src="${img}" alt="${title}" loading="lazy" />
+                    <div class="art-card-meta">
+                        <span class="art-title">${title}</span>
+                        <span class="art-serie">${sub}</span>
+                    </div>
+                </a>
+            `;
         }).join('');
+        applyTilt();
     };
 
     searchInput?.addEventListener('input', triggerSearch);
