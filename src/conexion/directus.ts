@@ -108,7 +108,7 @@ export async function getSeries() {
     try {
         const client = await DirectusManager.getClient();
         // Primero encontrar la carpeta raíz "Catalogo"
-        const catalogoFolders = await client.request(readFolders({ filter: { name: { _eq: 'Catalogo' } }, limit: 1 }));
+        const catalogoFolders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Coleccion'] } }, limit: 1 }));
         const catalogoId = catalogoFolders[0]?.id;
         if (!catalogoId) return [];
         // Obtener TODAS las subcarpetas de Catalogo (limit: -1 evita el límite por defecto)
@@ -199,7 +199,7 @@ export async function getArtworks() { try { const client = await DirectusManager
 export async function getCertificates() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('certificates' as any, { fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: -1 })); } catch (e) { return []; } }
 export async function getCertificateByUuid(uuid: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('certificates', { filter: { id: { _eq: uuid } }, fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
 
-export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _eq: 'Catalogo' } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }
+export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Coleccion'] } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }
 
 export async function loginAdmin(email: string, password: string) {
     const res = await fetch(`${PUBLIC_URL}/auth/login`, {

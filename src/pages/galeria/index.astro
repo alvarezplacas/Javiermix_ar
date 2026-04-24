@@ -12,10 +12,10 @@ export const prerender = false;
 const seriesFromAPI = await getSeries();
 const seriesList = seriesFromAPI.map(s => ({
     ...s,
-    coverUrl: getOptimizedImageURL(s.coverId, { width: 800, format: 'avif' })
+    coverUrl: getOptimizedImageURL(s.coverId, { width: 1000, format: 'avif', quality: 90 })
 }));
 
-// Separación para el nuevo layout
+// Separación para el nuevo layout (Soportando el vacío accidental)
 const featuredSeries = seriesList.slice(0, 3);
 const otherSeries = seriesList.slice(3);
 
@@ -27,77 +27,89 @@ const allArtworks = allArtworksRaw.map(file => ({
     description: file.description || '',
     tags: file.tags || [],
     serie: file.serie_name || 'Sin Serie',
-    thumb: getOptimizedImageURL(file.id, { width: 600, format: 'avif', quality: 70 })
+    thumb: getOptimizedImageURL(file.id, { width: 600, format: 'avif', quality: 75 })
 }));
 ---
 
 <Layout
-  title="Galería Fine Art | Javier Mix"
-  description="Explore las series fotográficas de Javier Mix."
+  title="Galería Inmersiva | Javier Mix"
+  description="Explore el universo visual de Javier Mix a través de sus series exclusivas."
   url="/galeria"
   image={seriesList[0]?.coverUrl}
 >
     
     <Header currentPath="/galeria" />
 
-	<main class="gallery-master-container">
-		<!-- 🔍 HERO BUSCADOR (Estilo Minimalista) -->
-		<header class="minimal-search-hero">
-            <div class="hero-labels">
-                <span class="eyebrow">FINE ART PORTFOLIO</span>
-                <h1 class="minimal-title">Javier Mix <span class="gold-dot">.</span> Galería</h1>
+	<main class="gallery-immersive-master">
+        <!-- ✨ FONDO CINÉTICO DE LUZ -->
+        <canvas id="canvas-particles" class="particles-bg"></canvas>
+        <div class="glow-overlay"></div>
+
+		<!-- 🔍 HERO BUSCADOR (Portal Minimalista) -->
+		<header class="immersive-hero">
+            <div class="hero-context" data-aos="fade-down">
+                <span class="fine-label">CURATED PORTFOLIO</span>
+                <h1 class="portal-title">Javier Mix <span class="gold-dot">.</span> Galería</h1>
             </div>
-			<div class="search-box-wrapper">
-				<input type="text" id="gallery-search-input" placeholder="Busca atmósfera, color o tema..." aria-label="Buscar obras">
-                <i class="fas fa-search search-icon"></i>
+            
+			<div class="portal-search-wrapper" data-aos="zoom-in">
+				<input type="text" id="gallery-search-input" placeholder="Busca atmósfera, color o tema..." autocomplete="off">
+                <div class="search-accent-line"></div>
+                <div class="search-pulse"></div>
+                <i class="fas fa-search portal-icon"></i>
 			</div>
 		</header>
 
-		<!-- 🏛️ VISTA DE SERIES (Default) -->
+		<!-- 🏛️ VISTA DE SERIES -->
 		<div id="view-series" class="gallery-view active">
 			
-            <!-- 🎨 SECCIÓN 1: TRÍPTICO DESTACADO -->
-            <section class="featured-triptych-section">
-                <div class="section-header">
-                    <h2 class="section-title">SERIES DESTACADAS</h2>
-                    <div class="title-line"></div>
+            <!-- 🎨 SECCIÓN 1: TRÍPTICO KINÉTICO -->
+            <section class="kinetic-triptych">
+                <div class="section-label">
+                    <span class="label-text">SERIES DESTACADAS</span>
+                    <div class="label-line"></div>
                 </div>
                 
-                <div class="triptych-grid">
+                <div class="triptych-container">
                     {featuredSeries.length > 0 ? featuredSeries.map((serie, index) => (
-                        <a href={`/galeria/${serie.id}`} class={`triptych-card fade-in-up`} style={`animation-delay: ${index * 0.2}s`}>
-                            <div class="card-image-wrapper">
-                                <img src={serie.coverUrl} alt={serie.name} class="card-bg" loading="lazy" />
-                                <div class="card-overlay"></div>
+                        <a href={`/galeria/${serie.id}`} class="kinetic-card" data-tilt>
+                            <div class="card-visual">
+                                <img src={serie.coverUrl} alt={serie.name} class="visual-img" />
+                                <div class="visual-glow"></div>
+                                <div class="visual-vignette"></div>
                             </div>
-                            <div class="card-info">
-                                <span class="card-count">{serie.count} Obras</span>
-                                <h3 class="card-title">{serie.name}</h3>
-                                <span class="card-cta">EXPLORAR SERIE</span>
+                            <div class="card-content">
+                                <div class="card-meta">
+                                    <span class="m-count">{serie.count} PIEZAS</span>
+                                    <div class="m-line"></div>
+                                </div>
+                                <h3 class="card-name">{serie.name}</h3>
+                                <div class="card-footer">
+                                    <span class="explore-btn">ENTRAR EN SERIE <i class="fas fa-arrow-right"></i></span>
+                                </div>
                             </div>
                         </a>
                     )) : (
-                        <div class="empty-state">No hay series destacadas disponibles.</div>
+                        <div class="empty-state-lux">
+                            <p>Sincronizando Archivo Maestro...</p>
+                            <div class="loader-line"></div>
+                        </div>
                     )}
                 </div>
             </section>
 
-            <!-- 🎡 SECCIÓN 2: DISCOVERY CAROUSEL (Infinite Marquee) -->
+            <!-- 🎡 SECCIÓN 2: DISCOVERY RIBBON (Infinite Scroll) -->
             {otherSeries.length > 0 && (
-                <section class="discovery-marquee-section">
-                    <div class="section-header centered">
-                        <h2 class="section-title">EXPLORACIÓN CONTINUA</h2>
-                    </div>
-                    
-                    <div class="marquee-container">
-                        <div class="marquee-track">
-                            {/* Duplicamos el contenido para el efecto infinito */}
+                <section class="discovery-ribbon">
+                    <div class="ribbon-label">EXPLORACIÓN CONTINUA</div>
+                    <div class="ribbon-outer">
+                        <div class="ribbon-inner">
                             {[...otherSeries, ...otherSeries, ...otherSeries].map((serie) => (
-                                <a href={`/galeria/${serie.id}`} class="marquee-item">
-                                    <div class="marquee-img-wrapper">
-                                        <img src={serie.coverUrl} alt={serie.name} loading="lazy" />
-                                        <div class="marquee-overlay">
-                                            <span class="m-title">{serie.name}</span>
+                                <a href={`/galeria/${serie.id}`} class="ribbon-item">
+                                    <div class="item-frame">
+                                        <img src={serie.coverUrl} alt={serie.name} />
+                                        <div class="item-overlay">
+                                            <span class="it-name">{serie.name}</span>
                                         </div>
                                     </div>
                                 </a>
@@ -108,20 +120,17 @@ const allArtworks = allArtworksRaw.map(file => ({
             )}
 		</div>
 
-        <!-- 🕵️ RESULTADOS DE BÚSQUEDA (Global) -->
+        <!-- 🕵️ RESULTADOS SCANLINE -->
         <div id="view-results" class="gallery-view" style="display: none;">
-          <div class="results-container">
-              <div class="results-info">
-                 Resultados para: <span id="search-term-display"></span>
-              </div>
-              <div id="results-grid" class="v8-artworks-grid">
-                 <!-- Renderizado Dinámico -->
-              </div>
-              <div id="no-results" style="display: none;">
-                 <i class="fas fa-search search-empty-icon"></i>
-                 <p class="empty-msg">No encontramos obras con esos términos.</p>
-              </div>
-          </div>
+            <div class="results-layout">
+                <header class="results-header">
+                    <div class="scanline-effect"></div>
+                    <p class="results-count">RESULTADOS ENCONTRADOS <span class="accent" id="res-count">0</span></p>
+                </header>
+                <div id="results-grid" class="immersive-grid">
+                    <!-- Dinámico -->
+                </div>
+            </div>
         </div>
 
         <script id="artworks-data" type="application/json" is:inline set:html={JSON.stringify(allArtworks)} />
@@ -131,165 +140,231 @@ const allArtworks = allArtworksRaw.map(file => ({
 </Layout>
 
 <style>
-/* 🌑 CONTENEDOR MAESTRO */
-.gallery-master-container {
-    background-color: var(--color-onyx-deep);
+/* 🌌 INMERSIVIDAD TOTAL */
+.gallery-immersive-master {
+    background: #080808;
     min-height: 100vh;
-    padding-bottom: 8rem;
+    position: relative;
+    overflow-x: hidden;
 }
 
-/* 🔍 HERO BUSCADOR */
-.minimal-search-hero {
+.particles-bg { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.4; }
+.glow-overlay { 
+    position: fixed; 
+    top: -20%; left: -10%; width: 140%; height: 140%; 
+    background: radial-gradient(circle at 50% 50%, rgba(197, 160, 89, 0.05) 0%, transparent 50%);
+    pointer-events: none; z-index: 2;
+}
+
+/* 🔍 PORTAL HERO */
+.immersive-hero {
+    position: relative;
+    z-index: 10;
+    padding: 12rem 2rem 8rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10rem 2rem 6rem;
     text-align: center;
 }
-.hero-labels { margin-bottom: 3.5rem; }
-.eyebrow { font-size: 0.65rem; letter-spacing: 5px; color: var(--color-accent); font-weight: 700; margin-bottom: 1rem; display: block; }
-.minimal-title { font-size: clamp(2.5rem, 6vw, 4rem); font-family: var(--font-primary); color: var(--color-white); font-weight: 300; }
-.gold-dot { color: var(--color-accent); font-weight: 900; }
 
-.search-box-wrapper {
+.hero-context { margin-bottom: 4rem; }
+.fine-label { font-size: 0.6rem; letter-spacing: 6px; color: var(--color-accent); font-weight: 800; display: block; margin-bottom: 1.5rem; }
+.portal-title { font-size: clamp(3rem, 7vw, 5rem); font-family: var(--font-primary); color: #fff; font-weight: 200; letter-spacing: -2px; }
+.gold-dot { color: var(--color-accent); animation: pulseDot 2s infinite; }
+@keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.portal-search-wrapper {
     width: 100%;
-    max-width: 700px;
+    max-width: 800px;
     position: relative;
-    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
 }
-.search-box-wrapper:focus-within { transform: scale(1.02); }
 
 #gallery-search-input {
     width: 100%;
-    padding: 1.5rem 4rem 1.5rem 2rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
-    color: var(--color-white);
-    font-size: 1.1rem;
+    padding: 2rem 5rem 2rem 3rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 2px;
+    color: #fff;
+    font-size: 1.2rem;
     font-weight: 200;
-    backdrop-filter: blur(20px);
-    transition: all 0.4s ease;
-}
-#gallery-search-input:focus {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: var(--color-accent);
-    outline: none;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-}
-.search-icon { position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); color: var(--color-accent); font-size: 1.2rem; opacity: 0.6; }
-
-/* 🎨 SECCIÓN DESTACADOS (TRÍPTICO) */
-.featured-triptych-section { max-width: 1600px; margin: 0 auto; padding: 0 4%; }
-.section-header { display: flex; align-items: center; gap: 2rem; margin-bottom: 3.5rem; }
-.section-header.centered { justify-content: center; text-align: center; }
-.section-title { font-size: 0.75rem; letter-spacing: 4px; color: var(--color-travertine-mid); font-weight: 700; }
-.title-line { height: 1px; flex: 1; background: linear-gradient(to right, rgba(255,255,255,0.1), transparent); }
-
-.triptych-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-}
-
-.triptych-card {
-    position: relative;
-    height: 65vh;
-    min-height: 500px;
-    overflow: hidden;
-    text-decoration: none;
-    display: block;
-}
-
-.card-image-wrapper { width: 100%; height: 100%; position: relative; }
-.card-bg { width: 100%; height: 100%; object-fit: cover; transition: transform 2s cubic-bezier(0.165, 0.84, 0.44, 1); filter: brightness(0.7); }
-.card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--color-onyx-deep) 0%, transparent 60%); opacity: 0.8; }
-
-.card-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 3rem;
-    color: var(--color-white);
-    transform: translateY(20px);
+    backdrop-filter: blur(30px);
     transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.card-count { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 700; display: block; margin-bottom: 1rem; }
-.card-title { font-size: 2.2rem; font-family: var(--font-primary); font-weight: 300; margin-bottom: 1.5rem; line-height: 1.1; }
-.card-cta { font-size: 0.65rem; letter-spacing: 2px; font-weight: 800; border-bottom: 1px solid var(--color-accent); padding-bottom: 0.3rem; opacity: 0; transition: opacity 0.4s ease; }
-
-.triptych-card:hover .card-bg { transform: scale(1.08); filter: brightness(0.9); }
-.triptych-card:hover .card-info { transform: translateY(0); }
-.triptych-card:hover .card-cta { opacity: 1; }
-
-/* 🎡 DISCOVERY CAROUSEL (MARQUEE) */
-.discovery-marquee-section { margin-top: 10rem; overflow: hidden; padding: 4rem 0; }
-.marquee-container { position: relative; width: 100%; margin-top: 2rem; }
-.marquee-track {
-    display: flex;
-    width: max-content;
-    gap: 2rem;
-    animation: scrollInfinite 60s linear infinite;
-}
-.marquee-track:hover { animation-play-state: paused; }
-
-@keyframes scrollInfinite {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-33.33%); }
+#gallery-search-input:focus {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--color-accent);
+    outline: none;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
 }
 
-.marquee-item { width: 350px; height: 250px; display: block; text-decoration: none; position: relative; overflow: hidden; }
-.marquee-img-wrapper { width: 100%; height: 100%; }
-.marquee-img-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease; filter: grayscale(0.4); }
-.marquee-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 1; transition: opacity 0.4s ease; }
-.marquee-item:hover img { transform: scale(1.1); filter: grayscale(0); }
-.marquee-item:hover .marquee-overlay { background: rgba(0,0,0,0.2); }
-.m-title { color: #fff; font-size: 0.7rem; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+.search-accent-line {
+    position: absolute; bottom: 0; left: 50%; width: 0; height: 1px; 
+    background: var(--color-accent); transition: all 0.6s ease; transform: translateX(-50%);
+}
+#gallery-search-input:focus ~ .search-accent-line { width: 100%; }
 
-/* 🕵️ RESULTADOS BÚSQUEDA */
-.results-container { max-width: 1600px; margin: 0 auto; padding: 0 4%; }
-.results-info { margin-bottom: 3rem; color: var(--color-travertine-mid); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; }
-#search-term-display { color: var(--color-accent); font-weight: 700; }
+.portal-icon { position: absolute; right: 2.5rem; top: 50%; transform: translateY(-50%); color: var(--color-accent); font-size: 1.4rem; opacity: 0.5; transition: all 0.4s ease; }
+#gallery-search-input:focus ~ .portal-icon { opacity: 1; transform: translateY(-50%) scale(1.1); }
 
-.v8-artworks-grid {
+/* 🏛️ TRÍPTICO KINÉTICO */
+.kinetic-triptych { max-width: 1700px; margin: 0 auto; padding: 0 4%; position: relative; z-index: 10; }
+.section-label { display: flex; align-items: center; gap: 2rem; margin-bottom: 4rem; }
+.label-text { font-size: 0.7rem; letter-spacing: 5px; color: rgba(255,255,255,0.4); font-weight: 800; }
+.label-line { height: 1px; flex: 1; background: linear-gradient(to right, rgba(255,255,255,0.1), transparent); }
+
+.triptych-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2.5rem;
-    padding-bottom: 5rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3rem;
 }
 
-.search-empty-icon { font-size: 3rem; opacity: 0.1; margin-bottom: 2rem; display: block; text-align: center; width: 100%; color: var(--color-white); }
-.empty-msg { text-align: center; letter-spacing: 4px; font-size: 1.1rem; font-style: italic; color: var(--color-travertine-mid); }
+.kinetic-card {
+    position: relative;
+    height: 75vh;
+    min-height: 600px;
+    background: #000;
+    overflow: hidden;
+    text-decoration: none;
+    transition: transform 0.1s ease-out; /* Para Tilt suave */
+}
 
-/* 📱 RESPONSIVE */
+.card-visual { width: 100%; height: 100%; position: relative; overflow: hidden; }
+.visual-img { width: 100%; height: 100%; object-fit: cover; transition: transform 2s cubic-bezier(0.165, 0.84, 0.44, 1); filter: brightness(0.6) saturate(0.8); }
+.visual-glow { position: absolute; inset: 0; background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.15) 0%, transparent 40%); opacity: 0; transition: opacity 0.4s; }
+.kinetic-card:hover .visual-glow { opacity: 1; }
+.kinetic-card:hover .visual-img { transform: scale(1.1); filter: brightness(0.8) saturate(1.1); }
+
+.card-content {
+    position: absolute; inset: 0; padding: 4rem;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    background: linear-gradient(to top, #000 0%, transparent 50%);
+}
+
+.card-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.m-count { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 700; }
+.m-line { height: 1px; width: 30px; background: var(--color-accent); }
+
+.card-name { font-size: 3rem; font-family: var(--font-primary); color: #fff; font-weight: 200; line-height: 1; margin-bottom: 2rem; transition: transform 0.6s ease; }
+.explore-btn { font-size: 0.65rem; letter-spacing: 2px; color: #fff; font-weight: 800; border: 1px solid rgba(255,255,255,0.2); padding: 1rem 2rem; display: inline-flex; align-items: center; gap: 1rem; transition: all 0.4s; }
+.kinetic-card:hover .explore-btn { background: #fff; color: #000; border-color: #fff; }
+
+/* 🎡 RIBBON CAROUSEL */
+.discovery-ribbon { margin-top: 15rem; padding: 5rem 0; background: rgba(255,255,255,0.01); border-top: 1px solid rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.03); }
+.ribbon-label { text-align: center; font-size: 0.6rem; letter-spacing: 4px; color: var(--color-accent); font-weight: 800; margin-bottom: 4rem; }
+
+.ribbon-outer { overflow: hidden; width: 100%; position: relative; }
+.ribbon-inner { display: flex; gap: 2rem; width: max-content; animation: ribbonScroll 100s linear infinite; }
+@keyframes ribbonScroll { from { transform: translateX(0); } to { transform: translateX(-33.33%); } }
+.ribbon-inner:hover { animation-play-state: paused; }
+
+.ribbon-item { width: 400px; height: 300px; display: block; overflow: hidden; position: relative; }
+.item-frame { width: 100%; height: 100%; }
+.item-frame img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.5) grayscale(1); transition: all 0.8s ease; }
+.item-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); transition: all 0.4s; }
+.it-name { color: #fff; font-size: 0.7rem; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; }
+.ribbon-item:hover img { filter: brightness(0.9) grayscale(0); transform: scale(1.1); }
+.ribbon-item:hover .item-overlay { background: transparent; }
+
+/* 🕵️ RESULTADOS INMERSIVOS */
+.results-layout { max-width: 1800px; margin: 0 auto; padding: 4rem 4%; }
+.results-header { position: relative; margin-bottom: 5rem; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.results-count { font-size: 0.8rem; letter-spacing: 3px; color: rgba(255,255,255,0.5); font-weight: 700; }
+.results-count .accent { color: var(--color-accent); }
+
+.immersive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 3rem;
+}
+
+/* 📱 RESPONSIVE KINÉTICO */
 @media (max-width: 1024px) {
-    .triptych-grid { grid-template-columns: 1fr; gap: 3rem; }
-    .triptych-card { height: 50vh; }
-    .minimal-search-hero { padding: 8rem 1.5rem 4rem; }
-    .featured-triptych-section { padding: 0 6%; }
+    .triptych-container { grid-template-columns: 1fr; gap: 4rem; }
+    .kinetic-card { height: 60vh; min-height: 450px; }
+    .card-name { font-size: 2.2rem; }
 }
+
+/* EMPTY STATE LUX */
+.empty-state-lux { grid-column: 1 / -1; text-align: center; padding: 10rem 0; }
+.empty-state-lux p { font-size: 1.2rem; font-weight: 200; color: rgba(255,255,255,0.3); letter-spacing: 5px; margin-bottom: 2rem; }
+.loader-line { width: 100px; height: 1px; background: var(--color-accent); margin: 0 auto; animation: loadLine 1.5s infinite; }
+@keyframes loadLine { 0% { transform: scaleX(0); } 50% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
 </style>
 
 <script>
   import { getOptimizedImageURL } from '@utils/media';
 
   document.addEventListener('astro:page-load', () => {
+    // 🌌 MOTOR DE PARTÍCULAS CINÉTICO
+    const canvas = document.getElementById('canvas-particles') as HTMLCanvasElement;
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let particles: any[] = [];
+        const particleCount = 60;
+
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            x: number; y: number; size: number; speedX: number; speedY: number; opacity: number;
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                if (!ctx) return;
+                ctx.fillStyle = `rgba(197, 160, 89, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const init = () => {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+        };
+        init();
+
+        const animate = () => {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        };
+        animate();
+    }
+
+    // 🕵️ MOTOR DE BÚSQUEDA
     const searchInput = document.getElementById('gallery-search-input') as HTMLInputElement;
     const viewSeries = document.getElementById('view-series');
     const viewResults = document.getElementById('view-results');
     const resultsGrid = document.getElementById('results-grid');
-    const noResults = document.getElementById('no-results');
-    const termDisplay = document.getElementById('search-term-display');
+    const resCount = document.getElementById('res-count');
     
-    // Data injection
     const dataEl = document.getElementById('artworks-data');
     const artworks = dataEl ? JSON.parse(dataEl.innerHTML) : [];
     
     searchInput?.addEventListener('input', (e) => {
-      const originalValue = (e.target as HTMLInputElement).value;
-      const term = originalValue.toLowerCase().trim();
+      const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
       
       if (term === '') {
         viewSeries!.style.display = 'block';
@@ -303,28 +378,43 @@ const allArtworks = allArtworksRaw.map(file => ({
                a.tags.some((t: string) => t.toLowerCase().includes(term));
       });
 
-      // Show Results
       viewSeries!.style.display = 'none';
       viewResults!.style.display = 'block';
-      termDisplay!.textContent = `"${term}"`;
+      if (resCount) resCount.textContent = filtered.length.toString();
       
-      if (filtered.length === 0) {
-        resultsGrid!.innerHTML = '';
-        noResults!.style.display = 'block';
-      } else {
-        noResults!.style.display = 'none';
-        resultsGrid!.innerHTML = filtered.map((a: any, i: number) => `
-            <a href="/obra/${a.id}" class="v8-artwork-card" style="animation-delay: ${i * 0.05}s">
-                <div class="v8-artwork-img-container">
-                    <img src="${a.thumb}" alt="${a.title}" class="v8-artwork-img" loading="lazy" />
-                </div>
-                <div class="v8-overlay-info">
-                   <h3 class="v8-title">${a.title}</h3>
-                   <span class="v8-serie">${a.serie}</span>
-                </div>
-            </a>
-        `).join('');
-      }
+      resultsGrid!.innerHTML = filtered.map((a: any, i: number) => `
+        <a href="/obra/${a.id}" class="v8-artwork-card" style="animation-delay: ${i * 0.05}s">
+            <div class="v8-artwork-img-container">
+                <img src="${a.thumb}" alt="${a.title}" class="v8-artwork-img" loading="lazy" />
+            </div>
+            <div class="v8-overlay-info">
+               <h3 class="v8-title">${a.title}</h3>
+               <span class="v8-serie">${a.serie}</span>
+            </div>
+        </a>
+      `).join('');
+    });
+
+    // 💡 EFECTO TILT (Vanilla JS)
+    const cards = document.querySelectorAll('.kinetic-card');
+    cards.forEach((card: any) => {
+        card.addEventListener('mousemove', (e: MouseEvent) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = (y - centerY) / 20;
+            const rotateY = (centerX - x) / 20;
+            
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            card.style.setProperty('--x', `${(x / rect.width) * 100}%`);
+            card.style.setProperty('--y', `${(y / rect.height) * 100}%`);
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+        });
     });
   });
 </script>
