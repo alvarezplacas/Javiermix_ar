@@ -15,7 +15,6 @@ const seriesList = seriesFromAPI.map(s => ({
     coverUrl: getOptimizedImageURL(s.coverId, { width: 1000, format: 'avif', quality: 90 })
 }));
 
-// Separación para el nuevo layout
 const featuredSeries = seriesList.slice(0, 3);
 const otherSeries = seriesList.slice(3);
 
@@ -27,12 +26,12 @@ const allArtworks = allArtworksRaw.map(file => ({
     description: file.description || '',
     tags: file.tags || [],
     serie: file.serie_name || 'Sin Serie',
-    thumb: getOptimizedImageURL(file.id, { width: 800, format: 'avif', quality: 75 })
+    thumb: getOptimizedImageURL(file.id, { width: 800, format: 'avif', quality: 80 })
 }));
 ---
 
 <Layout
-  title="Galería Inmersiva | Javier Mix"
+  title="Galería Curada | Javier Mix"
   description="Explore el universo visual de Javier Mix a través de sus series exclusivas."
   url="/galeria"
   image={seriesList[0]?.coverUrl}
@@ -44,29 +43,30 @@ const allArtworks = allArtworksRaw.map(file => ({
         <canvas id="canvas-particles" class="particles-bg"></canvas>
         <div class="glow-overlay"></div>
 
-		<!-- 🔍 HERO BUSCADOR -->
+		<!-- 🔍 BUSCADOR DE PRECISIÓN -->
 		<header class="immersive-hero">
             <div class="hero-context">
-                <span class="fine-label">CURATED PORTFOLIO</span>
-                <h1 class="portal-title">Javier Mix <span class="gold-dot">.</span> Galería</h1>
+                <span class="fine-label">FINE ART SEARCH</span>
+                <h1 class="portal-title">Explorar <span class="gold-dot">.</span> Archivo</h1>
             </div>
             
-			<div class="portal-search-wrapper">
-				<input type="text" id="gallery-search-input" placeholder="Busca atmósfera, color o tema..." autocomplete="off">
-                <div class="search-filters">
-                    <button id="btn-filter-series" class="filter-pill">SERIES</button>
+			<div class="portal-search-container">
+                <div class="search-input-box">
+				    <input type="text" id="gallery-search-input" placeholder="Busca atmósfera, color o tema..." autocomplete="off">
+                    <div class="search-accent-glow"></div>
                 </div>
-                <div class="search-accent-line"></div>
-                <div class="search-pulse"></div>
-                <i class="fas fa-search portal-icon"></i>
+                <button id="btn-mode-series" class="mode-toggle">
+                    <span class="mode-label">SERIES</span>
+                    <div class="mode-indicator"></div>
+                </button>
 			</div>
 		</header>
 
-		<!-- 🏛️ VISTA DE SERIES -->
+		<!-- 🏛️ VISTA DE SERIES (Modo Default) -->
 		<div id="view-series" class="gallery-view active">
             <section class="kinetic-triptych">
                 <div class="section-label">
-                    <span class="label-text">SERIES DESTACADAS</span>
+                    <span class="label-text">ÚLTIMAS SERIES</span>
                     <div class="label-line"></div>
                 </div>
                 
@@ -75,18 +75,15 @@ const allArtworks = allArtworksRaw.map(file => ({
                         <a href={`/galeria/${serie.id}`} class="kinetic-card" data-tilt>
                             <div class="card-visual">
                                 <img src={serie.coverUrl} alt={serie.name} class="visual-img" />
-                                <div class="visual-glow"></div>
                                 <div class="visual-vignette"></div>
                             </div>
                             <div class="card-content">
                                 <div class="card-meta">
-                                    <span class="m-count">{serie.count} PIEZAS</span>
+                                    <span class="m-count">{serie.count} OBRAS</span>
                                     <div class="m-line"></div>
                                 </div>
                                 <h3 class="card-name">{serie.name}</h3>
-                                <div class="card-footer">
-                                    <span class="explore-btn">ENTRAR EN SERIE <i class="fas fa-arrow-right"></i></span>
-                                </div>
+                                <span class="explore-link">VER COLECCIÓN</span>
                             </div>
                         </a>
                     )) : (
@@ -100,10 +97,9 @@ const allArtworks = allArtworksRaw.map(file => ({
 
             {otherSeries.length > 0 && (
                 <section class="discovery-ribbon">
-                    <div class="ribbon-label">EXPLORACIÓN CONTINUA</div>
                     <div class="ribbon-outer">
                         <div class="ribbon-inner">
-                            {[...otherSeries, ...otherSeries, ...otherSeries].map((serie) => (
+                            {[...otherSeries, ...otherSeries].map((serie) => (
                                 <a href={`/galeria/${serie.id}`} class="ribbon-item">
                                     <div class="item-frame">
                                         <img src={serie.coverUrl} alt={serie.name} />
@@ -119,236 +115,256 @@ const allArtworks = allArtworksRaw.map(file => ({
             )}
 		</div>
 
-        <!-- 🕵️ RESULTADOS TETRIS (V9) -->
+        <!-- 🕵️ RESULTADOS MASONRY (Respeto al formato) -->
         <div id="view-results" class="gallery-view" style="display: none;">
             <div class="results-layout">
                 <header class="results-header">
-                    <p class="results-count">OBRAS ENCONTRADAS <span class="accent" id="res-count">0</span></p>
+                    <p class="results-count">FILTRANDO POR <span class="accent" id="search-mode-text">OBRAS</span>: <span id="res-count">0</span> COINCIDENCIAS</p>
                 </header>
                 
-                <!-- 🧩 MASONRY TETRIS GRID -->
-                <div id="results-grid" class="tetris-masonry-grid">
-                    <!-- Los items se inyectan aquí -->
+                <!-- 🖼️ MASONRY NATURAL GRID (Sin Recortes) -->
+                <div id="results-grid" class="natural-masonry-grid">
+                    <!-- Inyección dinámica -->
                 </div>
             </div>
         </div>
 
         <script id="artworks-data" type="application/json" is:inline set:html={JSON.stringify(allArtworks)} />
+        <script id="series-data" type="application/json" is:inline set:html={JSON.stringify(seriesList)} />
 	</main>
 
 	<Footer />
 </Layout>
 
 <style>
-/* 🌑 ESTILOS BASE INMERSIVOS */
-.gallery-immersive-master {
-    background: #080808;
-    min-height: 100vh;
-    position: relative;
-    overflow-x: hidden;
+/* 🌑 CORE DESIGN */
+.gallery-immersive-master { background: #080808; min-height: 100vh; position: relative; overflow-x: hidden; }
+.particles-bg { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.3; }
+.glow-overlay { position: fixed; top: -20%; left: -10%; width: 140%; height: 140%; background: radial-gradient(circle at 50% 50%, rgba(197,160,89,0.03) 0%, transparent 60%); pointer-events: none; z-index: 2; }
+
+/* 🔍 BUSCADOR INTEGRADO */
+.immersive-hero { position: relative; z-index: 10; padding: 12rem 2rem 6rem; display: flex; flex-direction: column; align-items: center; }
+.hero-context { text-align: center; margin-bottom: 5rem; }
+.fine-label { font-size: 0.6rem; letter-spacing: 8px; color: var(--color-accent); font-weight: 800; display: block; margin-bottom: 1.5rem; }
+.portal-title { font-size: clamp(3rem, 7vw, 4.5rem); font-family: var(--font-primary); color: #fff; font-weight: 200; }
+.gold-dot { color: var(--color-accent); }
+
+.portal-search-container {
+    display: flex;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 900px;
+    align-items: stretch;
 }
 
-.particles-bg { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.4; }
-.glow-overlay { position: fixed; top: -20%; left: -10%; width: 140%; height: 140%; background: radial-gradient(circle at 50% 50%, rgba(197,160,89,0.05) 0%, transparent 50%); pointer-events: none; z-index: 2; }
+.search-input-box {
+    flex: 1;
+    position: relative;
+}
 
-/* 🔍 HERO BUSCADOR */
-.immersive-hero { position: relative; z-index: 10; padding: 12rem 2rem 8rem; display: flex; flex-direction: column; align-items: center; text-align: center; }
-.hero-context { margin-bottom: 4rem; }
-.fine-label { font-size: 0.6rem; letter-spacing: 6px; color: var(--color-accent); font-weight: 800; display: block; margin-bottom: 1.5rem; }
-.portal-title { font-size: clamp(3rem, 7vw, 5rem); font-family: var(--font-primary); color: #fff; font-weight: 200; letter-spacing: -2px; }
-.gold-dot { color: var(--color-accent); animation: pulseDot 2s infinite; }
-@keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+#gallery-search-input {
+    width: 100%;
+    padding: 1.8rem 2.5rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 200;
+    transition: all 0.5s ease;
+}
 
-.portal-search-wrapper { width: 100%; max-width: 800px; position: relative; }
-#gallery-search-input { width: 100%; padding: 2rem 10rem 2rem 3rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 2px; color: #fff; font-size: 1.2rem; font-weight: 200; backdrop-filter: blur(30px); transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
-#gallery-search-input:focus { background: rgba(255,255,255,0.05); border-color: var(--color-accent); outline: none; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
-.search-filters { position: absolute; right: 5.5rem; top: 50%; transform: translateY(-50%); display: flex; gap: 0.5rem; z-index: 10; }
-.filter-pill { background: rgba(197, 160, 89, 0.1); border: 1px solid var(--color-accent); color: var(--color-accent); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.6rem; letter-spacing: 2px; font-weight: 800; cursor: pointer; transition: all 0.3s ease; }
-.filter-pill:hover { background: var(--color-accent); color: #000; }
-.portal-icon { position: absolute; right: 2.5rem; top: 50%; transform: translateY(-50%); color: var(--color-accent); font-size: 1.4rem; opacity: 0.5; }
+#gallery-search-input:focus {
+    background: rgba(255,255,255,0.04);
+    border-color: var(--color-accent);
+    outline: none;
+}
 
-/* 🏛️ TRÍPTICO KINÉTICO */
+.mode-toggle {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.4);
+    padding: 0 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.4s ease;
+}
+
+.mode-toggle.active {
+    border-color: var(--color-accent);
+    color: #fff;
+    background: rgba(197, 160, 89, 0.05);
+}
+
+.mode-label { font-size: 0.65rem; letter-spacing: 3px; font-weight: 800; }
+.mode-indicator { width: 4px; height: 4px; border-radius: 50%; background: currentColor; transition: transform 0.4s; }
+.mode-toggle.active .mode-indicator { background: var(--color-accent); transform: scale(1.5); box-shadow: 0 0 10px var(--color-accent); }
+
+/* 🏛️ TRÍPTICO */
 .kinetic-triptych { max-width: 1700px; margin: 0 auto; padding: 0 4%; position: relative; z-index: 10; }
 .section-label { display: flex; align-items: center; gap: 2rem; margin-bottom: 4rem; }
-.label-text { font-size: 0.7rem; letter-spacing: 5px; color: rgba(255,255,255,0.4); font-weight: 800; }
-.label-line { height: 1px; flex: 1; background: linear-gradient(to right, rgba(255,255,255,0.1), transparent); }
-.triptych-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3rem; }
-.kinetic-card { position: relative; height: 75vh; min-height: 600px; background: #000; overflow: hidden; text-decoration: none; transition: transform 0.1s ease-out; }
-.card-visual { width: 100%; height: 100%; position: relative; overflow: hidden; }
-.visual-img { width: 100%; height: 100%; object-fit: cover; transition: transform 2s cubic-bezier(0.165, 0.84, 0.44, 1); filter: brightness(0.6); }
-.card-content { position: absolute; inset: 0; padding: 4rem; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(to top, #000 0%, transparent 50%); }
-.card-name { font-size: 3rem; font-family: var(--font-primary); color: #fff; font-weight: 200; line-height: 1; margin-bottom: 2rem; }
-.explore-btn { font-size: 0.65rem; letter-spacing: 2px; color: #fff; font-weight: 800; border: 1px solid rgba(255,255,255,0.2); padding: 1rem 2rem; display: inline-flex; align-items: center; gap: 1rem; }
+.label-text { font-size: 0.7rem; letter-spacing: 5px; color: rgba(255,255,255,0.3); font-weight: 800; }
+.label-line { height: 1px; flex: 1; background: linear-gradient(to right, rgba(255,255,255,0.05), transparent); }
 
-/* 🧩 TETRIS MASONRY GRID (V9) */
-.results-layout { max-width: 1800px; margin: 0 auto; padding: 0 4% 10rem; }
-.results-header { margin-bottom: 4rem; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.results-count { font-size: 0.7rem; letter-spacing: 4px; color: rgba(255,255,255,0.4); font-weight: 800; }
-.results-count .accent { color: var(--color-accent); font-size: 1rem; }
+.triptych-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem; }
+.kinetic-card { position: relative; height: 75vh; background: #000; overflow: hidden; text-decoration: none; }
+.visual-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); transition: transform 2s cubic-bezier(0.165, 0.84, 0.44, 1); }
+.kinetic-card:hover .visual-img { transform: scale(1.05); filter: brightness(0.9); }
+.card-content { position: absolute; inset: 0; padding: 4rem; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); }
+.card-name { font-size: 2.5rem; font-family: var(--font-primary); color: #fff; font-weight: 200; margin-bottom: 1rem; }
+.explore-link { font-size: 0.6rem; letter-spacing: 2px; color: var(--color-accent); font-weight: 800; }
 
-/* 🧱 EL MOTOR TETRIS */
-.tetris-masonry-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    grid-auto-rows: 250px;
-    grid-auto-flow: dense; /* Crucial: rellena los huecos vacíos */
-    gap: 1.5rem;
+/* 🖼️ NATURAL MASONRY GRID (Sin Recortes) */
+.results-layout { max-width: 1800px; margin: 0 auto; padding: 4rem 4% 10rem; }
+.results-header { margin-bottom: 5rem; text-align: center; }
+.results-count { font-size: 0.7rem; letter-spacing: 4px; color: rgba(255,255,255,0.3); font-weight: 800; text-transform: uppercase; }
+.accent { color: var(--color-accent); }
+
+.natural-masonry-grid {
+    column-count: 3;
+    column-gap: 2rem;
 }
 
-/* 💠 ITEM TETRIS */
-.tetris-item {
+.masonry-item {
+    break-inside: avoid;
+    margin-bottom: 2rem;
+    display: block;
+    text-decoration: none;
     position: relative;
     overflow: hidden;
-    text-decoration: none;
     background: #111;
-    border: 1px solid rgba(255,255,255,0.03);
-    opacity: 0;
-    transform: translateY(100px) rotate(3deg);
-    animation: tetrisEntry 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    transition: all 0.5s ease;
 }
 
-@keyframes tetrisEntry {
-    to { opacity: 1; transform: translateY(0) rotate(0deg); }
+.masonry-item img {
+    width: 100%;
+    height: auto; /* IMPORTANTE: Respeta la altura natural */
+    display: block;
+    filter: brightness(0.8);
+    transition: all 0.8s ease;
 }
 
-/* Variaciones de tamaño para el efecto Tetris */
-.tetris-item.large { grid-column: span 2; grid-row: span 2; } /* 2x2 */
-.tetris-item.wide { grid-column: span 2; } /* 2x1 */
-.tetris-item.tall { grid-row: span 2; } /* 1x2 */
+.masonry-item:hover img { filter: brightness(1); transform: scale(1.03); }
 
-.tetris-visual { width: 100%; height: 100%; position: relative; }
-.tetris-visual img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.5s cubic-bezier(0.19, 1, 0.22, 1); filter: grayscale(0.5) brightness(0.7); }
-
-.tetris-info {
-    position: absolute; bottom: 0; left: 0; width: 100%; padding: 1.5rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
-    transform: translateY(10px); transition: all 0.5s ease;
+.masonry-info {
+    padding: 1.5rem;
+    background: #000;
 }
 
-.tetris-title { color: #fff; font-family: var(--font-secondary); font-size: 0.75rem; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; margin-bottom: 0.3rem; }
-.tetris-serie { color: var(--color-accent); font-size: 0.55rem; letter-spacing: 1.5px; font-weight: 800; text-transform: uppercase; }
-
-.tetris-item:hover .tetris-visual img { transform: scale(1.1); filter: grayscale(0) brightness(1); }
-.tetris-item:hover .tetris-info { transform: translateY(0); }
+.m-title { color: #fff; font-size: 0.75rem; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; margin-bottom: 0.3rem; display: block; }
+.m-serie { color: var(--color-accent); font-size: 0.55rem; letter-spacing: 1.5px; font-weight: 800; text-transform: uppercase; }
 
 /* 🎡 RIBBON */
-.discovery-ribbon { margin-top: 15rem; padding: 5rem 0; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.03); }
-.ribbon-outer { width: 100%; position: relative; }
+.discovery-ribbon { margin-top: 10rem; padding: 4rem 0; overflow: hidden; }
 .ribbon-inner { display: flex; gap: 2rem; width: max-content; animation: ribbonScroll 120s linear infinite; }
-@keyframes ribbonScroll { from { transform: translateX(0); } to { transform: translateX(-33.33%); } }
-.ribbon-item { width: 400px; height: 300px; display: block; overflow: hidden; position: relative; }
-.ribbon-item img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); transition: 0.8s; }
-.ribbon-item:hover img { filter: brightness(1); transform: scale(1.1); }
+@keyframes ribbonScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ribbon-item { width: 350px; height: 250px; display: block; overflow: hidden; position: relative; }
+.ribbon-item img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); }
 
 /* 📱 RESPONSIVE */
+@media (max-width: 1200px) { .natural-masonry-grid { column-count: 2; } }
 @media (max-width: 1024px) {
-    .tetris-masonry-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 200px; gap: 0.8rem; }
-    .tetris-item.large, .tetris-item.wide { grid-column: span 2; }
     .triptych-container { grid-template-columns: 1fr; }
     .kinetic-card { height: 50vh; }
+    .portal-search-container { flex-direction: column; }
+    .mode-toggle { padding: 1.5rem; }
 }
-
-@media (max-width: 600px) {
-    .tetris-masonry-grid { grid-template-columns: 1fr; grid-auto-rows: 250px; }
-    .tetris-item.large, .tetris-item.wide, .tetris-item.tall { grid-column: span 1; grid-row: span 1; }
-}
+@media (max-width: 768px) { .natural-masonry-grid { column-count: 1; } }
 </style>
 
 <script>
   document.addEventListener('astro:page-load', () => {
     // 🌌 PARTICULAS
     const canvas = document.getElementById('canvas-particles') as HTMLCanvasElement;
-    if (canvas) {
-        const ctx = canvas.getContext('2d');
-        let particles: any[] = [];
-        const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-        window.addEventListener('resize', resize);
-        resize();
-        class P {
-            x:number; y:number; s:number; sx:number; sy:number; o:number;
-            constructor(){ this.x=Math.random()*canvas.width; this.y=Math.random()*canvas.height; this.s=Math.random()*1.5; this.sx=Math.random()*0.4-0.2; this.sy=Math.random()*0.4-0.2; this.o=Math.random()*0.5; }
-            u(){ this.x+=this.sx; this.y+=this.sy; if(this.x>canvas.width)this.x=0; if(this.y>canvas.height)this.y=0; }
-            d(){ if(ctx){ ctx.fillStyle=`rgba(197,160,89,${this.o})`; ctx.beginPath(); ctx.arc(this.x,this.y,this.s,0,Math.PI*2); ctx.fill(); }}
-        }
-        for(let i=0;i<60;i++) particles.push(new P());
-        const anim = () => { if(ctx){ ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(p=>{p.u();p.d();}); requestAnimationFrame(anim); }};
-        anim();
+    const ctx = canvas?.getContext('2d');
+    if (canvas && ctx) {
+        let p: any[] = [];
+        const res = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+        window.addEventListener('resize', res); res();
+        for(let i=0;i<50;i++) p.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*1, sx:Math.random()*0.2-0.1, sy:Math.random()*0.2-0.1});
+        const draw = () => {
+            ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle="rgba(197,160,89,0.3)";
+            p.forEach(i=>{ i.x+=i.sx; i.y+=i.sy; if(i.x>canvas.width)i.x=0; if(i.y>canvas.height)i.y=0; ctx.beginPath(); ctx.arc(i.x,i.y,i.s,0,Math.PI*2); ctx.fill(); });
+            requestAnimationFrame(draw);
+        };
+        draw();
     }
 
-    // 🕵️ BUSCADOR TETRIS
+    // 🕵️ MOTOR DE BÚSQUEDA HÍBRIDO
     const searchInput = document.getElementById('gallery-search-input') as HTMLInputElement;
+    const btnMode = document.getElementById('btn-mode-series');
     const viewSeries = document.getElementById('view-series');
     const viewResults = document.getElementById('view-results');
     const resultsGrid = document.getElementById('results-grid');
     const resCount = document.getElementById('res-count');
-    const artworks = JSON.parse(document.getElementById('artworks-data')?.innerHTML || '[]');
-    const btnSeries = document.getElementById('btn-filter-series');
+    const modeText = document.getElementById('search-mode-text');
 
-    btnSeries?.addEventListener('click', () => {
-        const ribbon = document.querySelector('.discovery-ribbon');
-        if (ribbon) {
-            ribbon.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-            // Si no hay ribbon (pocos resultados), mostramos todo
+    const artworks = JSON.parse(document.getElementById('artworks-data')?.innerHTML || '[]');
+    const series = JSON.parse(document.getElementById('series-data')?.innerHTML || '[]');
+
+    let searchMode = 'WORKS'; // 'WORKS' o 'SERIES'
+
+    btnMode?.addEventListener('click', () => {
+        searchMode = (searchMode === 'WORKS') ? 'SERIES' : 'WORKS';
+        btnMode.classList.toggle('active');
+        if (modeText) modeText.textContent = searchMode === 'SERIES' ? 'SERIES' : 'OBRAS';
+        triggerSearch();
+    });
+
+    const triggerSearch = () => {
+        const term = searchInput.value.toLowerCase().trim();
+        if (term === '' && searchMode === 'WORKS') {
             viewSeries!.style.display = 'block';
             viewResults!.style.display = 'none';
-            searchInput.value = '';
-            window.scrollTo({ top: viewSeries!.offsetTop - 100, behavior: 'smooth' });
+            return;
         }
-    });
 
-    searchInput?.addEventListener('input', (e) => {
-      const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
-      if (term === '') { viewSeries!.style.display = 'block'; viewResults!.style.display = 'none'; return; }
+        viewSeries!.style.display = 'none';
+        viewResults!.style.display = 'block';
 
-      const filtered = artworks.filter((a: any) => 
-        a.title.toLowerCase().includes(term) || a.description.toLowerCase().includes(term) || a.tags.some((t:string)=>t.toLowerCase().includes(term))
-      );
-
-      viewSeries!.style.display = 'none';
-      viewResults!.style.display = 'block';
-      if (resCount) resCount.textContent = filtered.length.toString();
-
-      resultsGrid!.innerHTML = filtered.map((a: any, i: number) => {
-        // Lógica de formas Tetris basada en el índice
-        let shapeClass = '';
-        if (i % 7 === 0) shapeClass = 'large';
-        else if (i % 3 === 0) shapeClass = 'wide';
-        else if (i % 5 === 0) shapeClass = 'tall';
-
-        return `
-            <a href="/obra/${a.id}" class="tetris-item ${shapeClass}" style="animation-delay: ${i * 0.08}s">
-                <div class="tetris-visual">
-                    <img src="${a.thumb}" alt="${a.title}" loading="lazy" />
-                </div>
-                <div class="tetris-info">
-                    <h3 class="tetris-title">${a.title}</h3>
-                    <span class="tetris-serie">${a.serie}</span>
-                </div>
-            </a>
-        `;
-      }).join('');
-
-      // Reactivar Tilt para los nuevos items
-      applyTilt();
-    });
-
-    const applyTilt = () => {
-        const items = document.querySelectorAll('.tetris-item, .kinetic-card');
-        items.forEach((item: any) => {
-            item.addEventListener('mousemove', (e: MouseEvent) => {
-                const r = item.getBoundingClientRect();
-                const x = e.clientX - r.left; const y = e.clientY - r.top;
-                const rx = (y - r.height/2) / 15; const ry = (r.width/2 - x) / 15;
-                item.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.02, 1.02, 1.02)`;
-                item.style.zIndex = "50";
-            });
-            item.addEventListener('mouseleave', () => {
-                item.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                item.style.zIndex = "1";
-            });
-        });
+        if (searchMode === 'WORKS') {
+            const filtered = artworks.filter((a: any) => 
+                a.title.toLowerCase().includes(term) || a.description.toLowerCase().includes(term) || a.tags.some((t:string)=>t.toLowerCase().includes(term))
+            );
+            renderResults(filtered, 'WORK');
+        } else {
+            // BUSCAR SOLO SERIES
+            const filtered = series.filter((s: any) => s.name.toLowerCase().includes(term));
+            renderResults(filtered, 'SERIE');
+        }
     };
-    applyTilt();
+
+    const renderResults = (items: any[], type: 'WORK' | 'SERIE') => {
+        if (resCount) resCount.textContent = items.length.toString();
+        
+        resultsGrid!.innerHTML = items.map((item: any) => {
+            if (type === 'WORK') {
+                return `
+                    <a href="/obra/${item.id}" class="masonry-item">
+                        <img src="${item.thumb}" alt="${item.title}" loading="lazy" />
+                        <div class="masonry-info">
+                            <span class="m-title">${item.title}</span>
+                            <span class="m-serie">${item.serie}</span>
+                        </div>
+                    </a>
+                `;
+            } else {
+                return `
+                    <a href="/galeria/${item.id}" class="masonry-item">
+                        <img src="${item.coverUrl}" alt="${item.name}" loading="lazy" />
+                        <div class="masonry-info">
+                            <span class="m-title">${item.name}</span>
+                            <span class="m-serie">COLECCIÓN COMPLETA</span>
+                        </div>
+                    </a>
+                `;
+            }
+        }).join('');
+    };
+
+    searchInput?.addEventListener('input', triggerSearch);
   });
 </script>
