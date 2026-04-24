@@ -111,12 +111,23 @@ export async function getSeries() {
         const catalogoFolders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Coleccion'] } }, limit: 1 }));
         const catalogoId = catalogoFolders[0]?.id;
         if (!catalogoId) return [];
-        // Obtener TODAS las subcarpetas de Catalogo (limit: -1 evita el límite por defecto)
+        // Obtener TODAS las subcarpetas de Catalogo
         const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: catalogoId } }, limit: -1 }));
         const series = await Promise.all(seriesFolders.map(async (f: any) => {
-            const files = await client.request(readFiles({ filter: { folder: { _eq: f.id } }, limit: 1 }));
+            // Contar archivos en esta carpeta (excluyendo variantes _2 si es posible, o contando todos)
+            const files = await client.request(readFiles({ filter: { folder: { _eq: f.id } }, limit: -1 }));
             if (files.length === 0) return null;
-            return { id: f.id, name: f.name, coverId: files[0]?.id || null };
+            
+            // Filtrar principales para el conteo real de "obras"
+            const mainFilesCount = files.filter((file: any) => !file.filename_download.toLowerCase().includes('_2')).length;
+
+            return { 
+                id: f.id, 
+                name: f.name, 
+                description: f.description || "Explora esta serie exclusiva de obras Fine Art.",
+                count: mainFilesCount || files.length,
+                coverId: files[0]?.id || null 
+            };
         }));
         return series.filter(s => s !== null);
     } catch (e) { return []; }
