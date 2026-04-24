@@ -60,7 +60,8 @@ Sistema de autenticidad para obras físicas.
 
 El frontend de Javier Mix depende de una estructura de carpetas estricta:
 - **Carpeta `home`**: Se escanea automáticamente para el Hero Slider de la página de inicio.
-- **Carpeta `Catalogo`**: Contiene subcarpetas nombradas por Serie (ej: "Serie_1"). El sistema usa el nombre de la carpeta para categorizar las obras.
+- **Carpeta `Coleccion`**: (Sincronizada con Directus) Contiene subcarpetas nombradas por Serie. El sistema usa el nombre de la carpeta para categorizar las obras.
+- **Regla de Mockups (_2)**: Los archivos con sufijo `_2` se filtran automáticamente de los resultados principales y se utilizan para el efecto de hover "Vista de Ambiente".
 
 ## 🛡️ Guía para Futuros Agentes
 - **Regla de Oro:** Siempre que modifiques el archivo de conexión `directus.ts` en el servidor, DEBES ejecutar `docker compose up -d --build frontend` para que los cambios surtan efecto en el contenedor.
