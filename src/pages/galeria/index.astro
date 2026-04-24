@@ -1,5 +1,5 @@
 ---
-// h:\Javiermix_web_v2\frontend\/galeria/\index.astro
+// d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\galeria\index.astro
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
@@ -15,7 +15,11 @@ const seriesList = seriesFromAPI.map(s => ({
     coverUrl: getOptimizedImageURL(s.coverId, { width: 800, format: 'avif' })
 }));
 
-// 🔍 [NEW] Load all artworks metadata for GLOBAL search
+// Separación para el nuevo layout
+const featuredSeries = seriesList.slice(0, 3);
+const otherSeries = seriesList.slice(3);
+
+// 🔍 Load all artworks for GLOBAL search
 const allArtworksRaw = await getCatalogoFiles();
 const allArtworks = allArtworksRaw.map(file => ({
     id: file.id,
@@ -36,52 +40,90 @@ const allArtworks = allArtworksRaw.map(file => ({
     
     <Header currentPath="/galeria" />
 
-	<main class="gallery-container" style="padding-top: 5rem;">
-		<header class="gallery-header">
-			<h1 class="gallery-title">Fine Art Portfolio</h1>
-			<p class="gallery-subtitle">Selección Exclusiva de Obras Disponibles</p>
+	<main class="gallery-master-container">
+		<!-- 🔍 HERO BUSCADOR (Estilo Minimalista) -->
+		<header class="minimal-search-hero">
+            <div class="hero-labels">
+                <span class="eyebrow">FINE ART PORTFOLIO</span>
+                <h1 class="minimal-title">Javier Mix <span class="gold-dot">.</span> Galería</h1>
+            </div>
+			<div class="search-box-wrapper">
+				<input type="text" id="gallery-search-input" placeholder="Busca atmósfera, color o tema..." aria-label="Buscar obras">
+                <i class="fas fa-search search-icon"></i>
+			</div>
 		</header>
 
-		<div class="gallery-search-container" id="gallery-search-overlay">
-			<div class="search-input-wrapper" style="position: relative;">
-				<input type="text" id="gallery-search-input" placeholder="Buscar por color, tema o título..." aria-label="Buscar obras">
-			</div>
+		<!-- 🏛️ VISTA DE SERIES (Default) -->
+		<div id="view-series" class="gallery-view active">
+			
+            <!-- 🎨 SECCIÓN 1: TRÍPTICO DESTACADO -->
+            <section class="featured-triptych-section">
+                <div class="section-header">
+                    <h2 class="section-title">SERIES DESTACADAS</h2>
+                    <div class="title-line"></div>
+                </div>
+                
+                <div class="triptych-grid">
+                    {featuredSeries.length > 0 ? featuredSeries.map((serie, index) => (
+                        <a href={`/galeria/${serie.id}`} class={`triptych-card fade-in-up`} style={`animation-delay: ${index * 0.2}s`}>
+                            <div class="card-image-wrapper">
+                                <img src={serie.coverUrl} alt={serie.name} class="card-bg" loading="lazy" />
+                                <div class="card-overlay"></div>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-count">{serie.count} Obras</span>
+                                <h3 class="card-title">{serie.name}</h3>
+                                <span class="card-cta">EXPLORAR SERIE</span>
+                            </div>
+                        </a>
+                    )) : (
+                        <div class="empty-state">No hay series destacadas disponibles.</div>
+                    )}
+                </div>
+            </section>
+
+            <!-- 🎡 SECCIÓN 2: DISCOVERY CAROUSEL (Infinite Marquee) -->
+            {otherSeries.length > 0 && (
+                <section class="discovery-marquee-section">
+                    <div class="section-header centered">
+                        <h2 class="section-title">EXPLORACIÓN CONTINUA</h2>
+                    </div>
+                    
+                    <div class="marquee-container">
+                        <div class="marquee-track">
+                            {/* Duplicamos el contenido para el efecto infinito */}
+                            {[...otherSeries, ...otherSeries, ...otherSeries].map((serie) => (
+                                <a href={`/galeria/${serie.id}`} class="marquee-item">
+                                    <div class="marquee-img-wrapper">
+                                        <img src={serie.coverUrl} alt={serie.name} loading="lazy" />
+                                        <div class="marquee-overlay">
+                                            <span class="m-title">{serie.name}</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            )}
 		</div>
 
-		<div id="view-series" class="gallery-view active" data-api={DirectusManager.getBaseUrl()}>
-			<section class="series-snap-container" style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
-				{seriesList.length === 0 ? (
-					<div class="empty-state">No se encontraron colecciones</div>
-				) : (
-					seriesList.map((serie) => (
-						<a href={`/galeria/${serie.id}`} class="series-card fade-in-content">
-							<div class="series-card-bg" style={`background-image: url('${serie.coverUrl}');`}></div>
-							<div class="series-card-content">
-								<h2 class="series-title">{serie.name}</h2>
-								<p class="series-count">{serie.count} Obras</p>
-								<span class="series-cta">Explorar Serie &rarr;</span>
-							</div>
-						</a>
-					))
-				)}
-			</section>
-		</div>
-
-        <!-- 🕵️ GLOBAL SEARCH RESULTS VIEW (V8) -->
-        <div id="view-results" class="gallery-view" style="display: none; padding: 0 2rem; max-width: 1600px; margin: 0 auto; position: relative; z-index: 10;">
-          <div class="results-info" style="margin-bottom: 3rem; color: var(--color-travertine-mid); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">
-             Resultados para: <span id="search-term-display" style="color: var(--color-accent); font-weight: 700;"></span>
-          </div>
-          <div id="results-grid" class="v8-artworks-grid">
-             <!-- Renderizado Dinámico -->
-          </div>
-          <div id="no-results" style="display: none; text-align: center; padding: 8rem 0; color: var(--color-travertine-mid);">
-             <i class="fas fa-search" style="font-size: 3rem; opacity: 0.1; margin-bottom: 2rem; display: block;"></i>
-             <p style="letter-spacing: 4px; font-size: 1.1rem; font-style: italic;">No encontramos obras con esos términos.</p>
+        <!-- 🕵️ RESULTADOS DE BÚSQUEDA (Global) -->
+        <div id="view-results" class="gallery-view" style="display: none;">
+          <div class="results-container">
+              <div class="results-info">
+                 Resultados para: <span id="search-term-display"></span>
+              </div>
+              <div id="results-grid" class="v8-artworks-grid">
+                 <!-- Renderizado Dinámico -->
+              </div>
+              <div id="no-results" style="display: none;">
+                 <i class="fas fa-search search-empty-icon"></i>
+                 <p class="empty-msg">No encontramos obras con esos términos.</p>
+              </div>
           </div>
         </div>
 
-        <!-- 📦 Inyección de Datos para el Motor de Búsqueda -->
         <script id="artworks-data" type="application/json" is:inline set:html={JSON.stringify(allArtworks)} />
 	</main>
 
@@ -89,184 +131,144 @@ const allArtworks = allArtworksRaw.map(file => ({
 </Layout>
 
 <style>
-.gallery-container {
+/* 🌑 CONTENEDOR MAESTRO */
+.gallery-master-container {
     background-color: var(--color-onyx-deep);
     min-height: 100vh;
+    padding-bottom: 8rem;
 }
 
-.gallery-header {
+/* 🔍 HERO BUSCADOR */
+.minimal-search-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10rem 2rem 6rem;
     text-align: center;
-    padding: 6rem 1rem 4rem;
 }
+.hero-labels { margin-bottom: 3.5rem; }
+.eyebrow { font-size: 0.65rem; letter-spacing: 5px; color: var(--color-accent); font-weight: 700; margin-bottom: 1rem; display: block; }
+.minimal-title { font-size: clamp(2.5rem, 6vw, 4rem); font-family: var(--font-primary); color: var(--color-white); font-weight: 300; }
+.gold-dot { color: var(--color-accent); font-weight: 900; }
 
-.gallery-title {
-    font-size: var(--text-h1);
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
-    font-family: var(--font-primary);
-    color: var(--color-white);
-    font-weight: 600;
-}
-
-.gallery-subtitle {
-    color: var(--color-text-muted);
-    font-family: var(--font-secondary);
-    font-size: 1.1rem;
-    letter-spacing: 1px;
-}
-
-.gallery-search-container {
-    text-align: center;
-    margin: 2rem auto;
+.search-box-wrapper {
     width: 100%;
-    max-width: 800px;
+    max-width: 700px;
     position: relative;
-    padding: 0 1rem;
+    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
 }
+.search-box-wrapper:focus-within { transform: scale(1.02); }
 
 #gallery-search-input {
     width: 100%;
-    padding: 1.25rem 2rem;
-    border-radius: 50px;
-    border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
+    padding: 1.5rem 4rem 1.5rem 2rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
     color: var(--color-white);
-    font-family: var(--font-secondary);
-    font-size: 1rem;
-    backdrop-filter: blur(12px);
-    transition: var(--transition-premium);
+    font-size: 1.1rem;
+    font-weight: 200;
+    backdrop-filter: blur(20px);
+    transition: all 0.4s ease;
 }
-
 #gallery-search-input:focus {
-    background: var(--color-onyx-charcoal);
+    background: rgba(255, 255, 255, 0.06);
     border-color: var(--color-accent);
     outline: none;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
 }
+.search-icon { position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); color: var(--color-accent); font-size: 1.2rem; opacity: 0.6; }
 
-.series-snap-container {
+/* 🎨 SECCIÓN DESTACADOS (TRÍPTICO) */
+.featured-triptych-section { max-width: 1600px; margin: 0 auto; padding: 0 4%; }
+.section-header { display: flex; align-items: center; gap: 2rem; margin-bottom: 3.5rem; }
+.section-header.centered { justify-content: center; text-align: center; }
+.section-title { font-size: 0.75rem; letter-spacing: 4px; color: var(--color-travertine-mid); font-weight: 700; }
+.title-line { height: 1px; flex: 1; background: linear-gradient(to right, rgba(255,255,255,0.1), transparent); }
+
+.triptych-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
-    gap: 3rem;
-    padding-bottom: 6rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
 }
 
-.series-card {
+.triptych-card {
     position: relative;
-    display: block;
-    height: 500px;
+    height: 65vh;
+    min-height: 500px;
     overflow: hidden;
     text-decoration: none;
-    transition: var(--transition-premium);
-    background-color: var(--color-onyx-charcoal);
+    display: block;
 }
 
-.series-card-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
-}
+.card-image-wrapper { width: 100%; height: 100%; position: relative; }
+.card-bg { width: 100%; height: 100%; object-fit: cover; transition: transform 2s cubic-bezier(0.165, 0.84, 0.44, 1); filter: brightness(0.7); }
+.card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--color-onyx-deep) 0%, transparent 60%); opacity: 0.8; }
 
-.series-card:hover .series-card-bg {
-    transform: scale(1.1);
-}
-
-.series-card-content {
+.card-info {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
     padding: 3rem;
-    background: linear-gradient(to top, var(--color-onyx-deep) 0%, transparent 100%);
     color: var(--color-white);
-    transform: translateY(10px);
-    transition: var(--transition-premium);
+    transform: translateY(20px);
+    transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.series-card:hover .series-card-content {
-    transform: translateY(0);
+.card-count { font-size: 0.6rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 700; display: block; margin-bottom: 1rem; }
+.card-title { font-size: 2.2rem; font-family: var(--font-primary); font-weight: 300; margin-bottom: 1.5rem; line-height: 1.1; }
+.card-cta { font-size: 0.65rem; letter-spacing: 2px; font-weight: 800; border-bottom: 1px solid var(--color-accent); padding-bottom: 0.3rem; opacity: 0; transition: opacity 0.4s ease; }
+
+.triptych-card:hover .card-bg { transform: scale(1.08); filter: brightness(0.9); }
+.triptych-card:hover .card-info { transform: translateY(0); }
+.triptych-card:hover .card-cta { opacity: 1; }
+
+/* 🎡 DISCOVERY CAROUSEL (MARQUEE) */
+.discovery-marquee-section { margin-top: 10rem; overflow: hidden; padding: 4rem 0; }
+.marquee-container { position: relative; width: 100%; margin-top: 2rem; }
+.marquee-track {
+    display: flex;
+    width: max-content;
+    gap: 2rem;
+    animation: scrollInfinite 60s linear infinite;
 }
+.marquee-track:hover { animation-play-state: paused; }
+
+@keyframes scrollInfinite {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-33.33%); }
+}
+
+.marquee-item { width: 350px; height: 250px; display: block; text-decoration: none; position: relative; overflow: hidden; }
+.marquee-img-wrapper { width: 100%; height: 100%; }
+.marquee-img-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s ease; filter: grayscale(0.4); }
+.marquee-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 1; transition: opacity 0.4s ease; }
+.marquee-item:hover img { transform: scale(1.1); filter: grayscale(0); }
+.marquee-item:hover .marquee-overlay { background: rgba(0,0,0,0.2); }
+.m-title { color: #fff; font-size: 0.7rem; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+
+/* 🕵️ RESULTADOS BÚSQUEDA */
+.results-container { max-width: 1600px; margin: 0 auto; padding: 0 4%; }
+.results-info { margin-bottom: 3rem; color: var(--color-travertine-mid); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; }
+#search-term-display { color: var(--color-accent); font-weight: 700; }
 
 .v8-artworks-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2.5rem;
     padding-bottom: 5rem;
 }
 
-.v8-artwork-card {
-    text-decoration: none !important;
-    display: block !important;
-    position: relative !important;
-    overflow: hidden !important;
-    opacity: 0;
-    animation: v8-tetris-entry 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-    background: var(--color-onyx-charcoal);
-    border: 1px solid rgba(255,255,255,0.05);
-}
+.search-empty-icon { font-size: 3rem; opacity: 0.1; margin-bottom: 2rem; display: block; text-align: center; width: 100%; color: var(--color-white); }
+.empty-msg { text-align: center; letter-spacing: 4px; font-size: 1.1rem; font-style: italic; color: var(--color-travertine-mid); }
 
-@keyframes v8-tetris-entry {
-    from { opacity: 0; transform: translateY(-40px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.v8-artwork-card:hover { border-color: var(--color-accent); }
-
-.v8-artwork-img-container {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-}
-
-.v8-artwork-img { 
-    width: 100%; 
-    height: 100%; 
-    object-fit: cover; 
-    transition: transform 1.2s cubic-bezier(0.165, 0.84, 0.44, 1); 
-}
-.v8-artwork-card:hover .v8-artwork-img { transform: scale(1.1); }
-
-.v8-overlay-info { 
-    position: absolute !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    padding: 1.2rem !important;
-    background: linear-gradient(to top, rgba(0,0,0,0.95), transparent) !important;
-    backdrop-filter: blur(8px) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0.1rem;
-    z-index: 5 !important;
-}
-
-.v8-title { 
-    font-family: var(--font-secondary) !important;
-    font-size: 0.65rem !important; 
-    color: var(--color-white) !important; 
-    margin: 0 !important; 
-    line-height: 1.2 !important; 
-    text-transform: uppercase !important;
-    letter-spacing: 2.5px !important;
-    font-weight: 700 !important;
-}
-
-.v8-serie { 
-    font-size: 0.45rem !important; 
-    color: var(--color-accent) !important; 
-    text-transform: uppercase !important; 
-    letter-spacing: 1.5px !important; 
-    font-weight: 800 !important; 
-    opacity: 0.8; 
-}
-
-@media (max-width: 768px) {
-    .v8-artworks-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.5rem; }
-    .v8-title { font-size: 0.55rem !important; letter-spacing: 1px !important; }
+/* 📱 RESPONSIVE */
+@media (max-width: 1024px) {
+    .triptych-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .triptych-card { height: 50vh; }
+    .minimal-search-hero { padding: 8rem 1.5rem 4rem; }
+    .featured-triptych-section { padding: 0 6%; }
 }
 </style>
 
@@ -280,52 +282,8 @@ const allArtworks = allArtworksRaw.map(file => ({
     const resultsGrid = document.getElementById('results-grid');
     const noResults = document.getElementById('no-results');
     const termDisplay = document.getElementById('search-term-display');
-    const seriesContainer = document.querySelector('.series-snap-container');
     
-    // 🔍 HYBRID HYDRATION: Si el servidor no trajo series, las buscamos desde el cliente
-    const isEmpty = seriesContainer?.querySelector('.empty-state');
-    if (isEmpty) {
-        console.log('[Gallery-Client] 🚑 Activando hidratación de emergencia...');
-        const PUBLIC_URL = viewSeries?.dataset.api || 'https://admin.javiermix.ar';
-        
-        fetch(`${PUBLIC_URL}/folders`)
-            .then(res => res.json())
-            .then(async (json) => {
-                const folders = json.data || [];
-                // Filtrar carpetas que no sean Home y ocultas
-                const validFolders = folders.filter((f: any) => 
-                    !['Home', 'home', 'HOME'].includes(f.name) && !f.name.startsWith('_')
-                );
-
-                if (validFolders.length > 0) {
-                    seriesContainer!.innerHTML = ''; // Limpiar mensaje de vacio
-
-                    for (const folder of validFolders) {
-                        // Buscar la primera imagen de la carpeta para la portada
-                        const fileRes = await fetch(`${PUBLIC_URL}/items/directus_files?filter[folder][_eq]=${folder.id}&filter[type][_contains]=image&limit=1`);
-                        const fileJson = await fileRes.json();
-                        const coverId = fileJson.data?.[0]?.id;
-                        const coverUrl = coverId ? getOptimizedImageURL(coverId, { width: 800, format: 'avif' }) : '/media/fallback-serie.jpg';
-
-                        const card = document.createElement('a');
-                        card.href = `/galeria/${folder.id}`;
-                        card.className = 'series-card fade-in-content';
-                        card.innerHTML = `
-                            <div class="series-card-bg" style="background-image: url('${coverUrl}');"></div>
-                            <div class="series-card-content">
-                                <h2 class="series-title">${folder.name}</h2>
-                                <p class="series-count">Explorar Colección</p>
-                                <span class="series-cta">Contenido en vivo &rarr;</span>
-                            </div>
-                        `;
-                        seriesContainer?.appendChild(card);
-                    }
-                }
-            })
-            .catch(err => console.error('[Gallery-Client] Error fatal de hidratación:', err));
-    }
-
-    // Parse index data
+    // Data injection
     const dataEl = document.getElementById('artworks-data');
     const artworks = dataEl ? JSON.parse(dataEl.innerHTML) : [];
     
@@ -339,29 +297,16 @@ const allArtworks = allArtworksRaw.map(file => ({
         return;
       }
 
-      // 🎯 [SHORTCUT] Si empieza con @, es una búsqueda maestra
-      const isMaestra = term.startsWith('@');
-      const cleanTerm = isMaestra ? term.substring(1) : term;
-
-      // GLOBAL SEARCH LOGIC (Title, Desc, Tags)
       const filtered = artworks.filter((a: any) => {
-        const inTitle = a.title.toLowerCase().includes(cleanTerm);
-        const inDesc = a.description.toLowerCase().includes(cleanTerm);
-        const inTags = a.tags.some((t: string) => t.toLowerCase().includes(cleanTerm));
-        
-        if (isMaestra) {
-            // Coincidencia exacta simplificada (slug)
-            return a.title.toLowerCase().replaceAll(' ', '-') === cleanTerm || 
-                   a.serie.toLowerCase().replaceAll(' ', '-') === cleanTerm;
-        }
-
-        return inTitle || inDesc || inTags;
+        return a.title.toLowerCase().includes(term) || 
+               a.description.toLowerCase().includes(term) || 
+               a.tags.some((t: string) => t.toLowerCase().includes(term));
       });
 
       // Show Results
       viewSeries!.style.display = 'none';
       viewResults!.style.display = 'block';
-      termDisplay!.textContent = isMaestra ? `Maestra: ${originalValue}` : `"${term}"`;
+      termDisplay!.textContent = `"${term}"`;
       
       if (filtered.length === 0) {
         resultsGrid!.innerHTML = '';
