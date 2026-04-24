@@ -153,6 +153,40 @@ const artworks = artworksRaw
     column-gap: 2rem;
 }
 
+/* Cuando estamos en modo serie, forzamos 1 columna para que las tarjetas horizontales ocupen todo el ancho */
+.masonry-grid.list-mode {
+    column-count: 1 !important;
+}
+
+/* 🗂️ SERIES CARD RESULT (HORIZONTAL) */
+.series-card-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 3rem;
+    margin-bottom: 2rem;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    break-inside: avoid;
+    width: 100%;
+}
+
+.series-card-result:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--color-accent);
+    transform: translateX(10px);
+}
+
+.series-info-side { flex: 1; }
+.s-name { font-size: 2.2rem; font-family: var(--font-primary); font-weight: 200; color: #fff; margin: 0; }
+.s-count { font-size: 0.7rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 800; margin-top: 1rem; text-transform: uppercase; }
+
+.series-photo-side { width: 300px; height: 180px; overflow: hidden; margin-left: 3rem; border: 1px solid rgba(255,255,255,0.1); }
+.series-photo-side img { width: 100%; height: 100%; object-fit: cover; transition: 1s; }
+.series-card-result:hover .series-photo-side img { transform: scale(1.1); }
+
 .grid-item {
     break-inside: avoid;
     margin-bottom: 2rem;
@@ -244,21 +278,36 @@ const artworks = artworksRaw
     };
 
     const renderGrid = (items: any[], type: 'WORK' | 'SERIE') => {
-        grid!.innerHTML = items.map((item: any) => {
-            const url = type === 'WORK' ? `/obra/${item.id}` : `/galeria/${item.id}`;
-            const img = type === 'WORK' ? item.thumb : item.coverUrl;
-            const title = type === 'WORK' ? item.title : item.name;
-            const sub = type === 'WORK' ? item.serie : 'COLECCIÓN COMPLETA';
-            return `
-                <a href="${url}" class="grid-item">
-                    <img src="${img}" alt="${title}" loading="lazy" />
-                    <div class="item-overlay">
-                        <span class="art-title">${title}</span>
-                        <span class="art-serie">${sub}</span>
-                    </div>
-                </a>
-            `;
-        }).join('');
+        if (type === 'SERIE') {
+            grid!.classList.add('list-mode');
+            grid!.innerHTML = items.map((item: any) => {
+                return `
+                    <a href="/galeria/${item.id}" class="series-card-result">
+                        <div class="series-info-side">
+                            <h3 class="s-name">${item.name}</h3>
+                            <p class="s-count">${item.count} OBRAS DISPONIBLES</p>
+                        </div>
+                        <div class="series-photo-side">
+                            <img src="${item.coverUrl}" alt="${item.name}" loading="lazy" />
+                        </div>
+                    </a>
+                `;
+            }).join('');
+        } else {
+            grid!.classList.remove('list-mode');
+            grid!.innerHTML = items.map((item: any) => {
+                const url = `/obra/${item.id}`;
+                return `
+                    <a href="${url}" class="grid-item">
+                        <img src="${item.thumb}" alt="${item.title}" loading="lazy" />
+                        <div class="item-overlay">
+                            <span class="art-title">${item.title}</span>
+                            <span class="art-serie">${item.serie}</span>
+                        </div>
+                    </a>
+                `;
+            }).join('');
+        }
         applyTilt();
     };
 
