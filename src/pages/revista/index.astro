@@ -8,34 +8,34 @@ import { getArticles, getAssetUrl } from '@conexion/directus';
 // Fetch articles from Directus SDK
 const dbArticles = await getArticles();
 
-function resolveMediaURL(id: string | null): string {
-  if (!id) return '/img/placeholder.jpg';
-  
-  // Si ya es una URL completa, devolverla
-  if (id.startsWith('http') || id.startsWith('/')) return id;
-  
-  // Usar el resolver centralizado del SDK
-  return getAssetUrl(id, { width: 800 }) || '/img/placeholder.jpg';
+function resolveMedia(id: any): { url: string, type: 'image' | 'video' } {
+  const url = id?.id ? getAssetUrl(id.id) : (typeof id === 'string' ? (id.startsWith('http') ? id : getAssetUrl(id)) : '/img/placeholder.jpg');
+  const type = (url?.toLowerCase().endsWith('.mp4') || url?.includes('video')) ? 'video' : 'image';
+  return { url: url || '/img/placeholder.jpg', type };
 }
 
 const articles = dbArticles.map(art => {
   const wordCount = (art.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  // Extraer imágenes para el slideshow (Featured + Media)
-  let slideshowImages = [resolveMediaURL(art.featured_image)];
+  // Extraer multimedia (Featured + Media JSON)
+  let slideshow = [resolveMedia(art.featured_image)];
+  
   if (art.media_json) {
     try {
-        const extra = JSON.parse(art.media_json).map((m:any) => resolveMediaURL(m.id || m));
-        slideshowImages = [...slideshowImages, ...extra].slice(0, 5); // Limitamos a 5 para performance
-    } catch(e) { /* ignore */ }
+        const extraRaw = typeof art.media_json === 'string' ? JSON.parse(art.media_json) : art.media_json;
+        if (Array.isArray(extraRaw)) {
+            const extra = extraRaw.map(m => resolveMedia(m));
+            slideshow = [...slideshow, ...extra].slice(0, 6);
+        }
+    } catch(e) { console.error("Error parsing media_json", e); }
   }
 
   return {
     id: art.id,
     title: art.title,
     excerpt: (art.content_html || '').replace(/<[^>]*>/g, '').substring(0, 180) + '...',
-    slideshow: slideshowImages,
+    slideshow,
     readTime: `${readTime} min`,
     link: `/revista/${art.id}-${art.slug}`,
     location: "Buenos Aires",
@@ -72,8 +72,12 @@ const articles = dbArticles.map(art => {
             <div class="article-visual">
               <div class="tilt-frame" data-tilt-container>
                 <div class="slideshow-wrapper">
-                    {article.slideshow.map((img, i) => (
-                        <img src={img} alt={`${article.title} - view ${i}`} class={`article-img ${i === 0 ? 'active' : ''}`} loading="lazy" />
+                    {article.slideshow.map((media, i) => (
+                        media.type === 'video' ? (
+                            <video src={media.url} class={`article-media ${i === 0 ? 'active' : ''}`} muted playsinline loop autoplay></video>
+                        ) : (
+                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" />
+                        )
                     ))}
                 </div>
                 <div class="image-glare"></div>
@@ -111,18 +115,23 @@ const articles = dbArticles.map(art => {
 
 <script>
     document.addEventListener('astro:page-load', () => {
-        // 🎞️ SLIDESHOW LÓGICA (CROSS-FADE)
+        // 🎞️ SLIDESHOW LÓGICA (CROSS-FADE HÍBRIDO)
         const articles = document.querySelectorAll('[data-article-card]');
         articles.forEach(art => {
-            const imgs = art.querySelectorAll('.article-img');
-            if (imgs.length <= 1) return;
+            const media = art.querySelectorAll('.article-media');
+            if (media.length <= 1) return;
 
             let current = 0;
             setInterval(() => {
-                imgs[current].classList.remove('active');
-                current = (current + 1) % imgs.length;
-                imgs[current].classList.add('active');
-            }, 4000);
+                media[current].classList.remove('active');
+                current = (current + 1) % media.length;
+                media[current].classList.add('active');
+                
+                // Si es video, asegurar que se reproduce
+                if (media[current].tagName === 'VIDEO') {
+                    (media[current] as HTMLVideoElement).play().catch(() => {});
+                }
+            }, 5000);
         });
 
         // 💡 EFECTO 3D MARCADO (FERRARI STYLE)
@@ -182,13 +191,24 @@ const articles = dbArticles.map(art => {
       transition: transform 0.2s ease-out;
       transform-style: preserve-3d;
   }
-  .slideshow-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-  .article-img { 
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; 
-      filter: grayscale(30%) brightness(0.8); transition: opacity 2s ease, transform 1s ease; 
-      opacity: 0;
+  .slideshow-wrapper { 
+      position: absolute; 
+      top: 0; left: 0; width: 100%; height: 100%; 
+      background: #000;
+      /* 🌫️ Efecto de borde fundido (Vignette) */
+      box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+      z-index: 2;
   }
-  .article-img.active { opacity: 1; filter: grayscale(0%) brightness(1); }
+  .article-media { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; 
+      filter: grayscale(20%) brightness(0.8); transition: opacity 1.5s ease; 
+      opacity: 0;
+      z-index: 1;
+      /* 🎭 Máscara para suavizar bordes */
+      mask-image: radial-gradient(circle, black 60%, transparent 100%);
+      -webkit-mask-image: radial-gradient(circle, black 60%, transparent 100%);
+  }
+  .article-media.active { opacity: 1; filter: grayscale(0%) brightness(1); z-index: 2; }
   .image-glare { 
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
       pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.3s;
