@@ -249,27 +249,40 @@ const artworks = artworksRaw
     .gallery-title { font-size: 2.2rem; } 
     .search-portal-wrapper { border-radius: 10px; } 
 
-    /* Series Mobile Fix */
-    .series-card-result {
-        flex-direction: column-reverse;
-        padding: 1.5rem;
-        align-items: center;
-        text-align: center;
-        gap: 2rem;
+    /* 📱 Estilos específicos para el modo lista (SERIES) */
+    .masonry-grid.list-mode {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        width: 100% !important;
     }
-    .series-info-side { padding-right: 0; width: 100%; }
-    .s-name { font-size: 1.8rem; margin-top: 1rem; }
-    .s-teaser { font-size: 0.85rem; margin-top: 0.8rem; margin-left: auto; margin-right: auto; }
+
+    .masonry-grid.list-mode .series-card-result {
+        flex-direction: column !important; /* Título arriba, imagen abajo */
+        padding: 2rem 1rem !important;
+        align-items: center !important;
+        text-align: center !important;
+        border: none !important;
+        border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+        background: transparent !important;
+        width: 100% !important;
+        max-width: 600px !important; /* Centrar el bloque de texto */
+        margin: 0 auto 2rem !important;
+    }
+
+    .series-info-side { padding-right: 0; width: 100%; order: 1; }
+    .s-name { font-size: 2rem; margin-top: 0; letter-spacing: -1px; }
+    .s-count { font-size: 0.65rem; margin-top: 0.8rem; }
+    .s-teaser { font-size: 0.9rem; margin: 1.2rem auto 0; max-width: 90%; }
+
     .series-photo-side { 
-        width: 100%;
-        max-width: 320px; /* Tamaño controlado para que no desborde */
-        height: auto;
-        aspect-ratio: 16 / 10;
-        margin-left: auto;
-        margin-right: auto;
+        order: 2; /* Imagen debajo del texto */
+        width: 180px !important; /* Imagen mucho más pequeña como pediste */
+        height: 120px !important;
+        margin: 2rem auto 0 !important;
         filter: grayscale(0) opacity(1);
-        border-radius: 4px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.8);
     }
 }
 </style>
