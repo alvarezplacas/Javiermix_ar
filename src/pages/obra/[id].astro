@@ -96,7 +96,15 @@ const etiqueta = "Fine Art Print";
             <button class="control-btn" id="btn-marco">PROBAR MARCO</button>
           </div>
           
-          <!-- Share controls moved to left column or bottom left -->
+          <div class="share-controls-left">
+            <span>COMPARTIR:</span>
+            <div class="social-icons">
+               <i class="fab fa-whatsapp"></i>
+               <i class="fab fa-x-twitter"></i>
+               <i class="fab fa-facebook-f"></i>
+               <i class="fab fa-instagram"></i>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -107,28 +115,18 @@ const etiqueta = "Fine Art Print";
         <div class="serie-label-top">SERIE: {serieName}</div>
         <h1 class="obra-title">{title}</h1>
         
-        <div class="header-actions-premium">
-            <div class="share-aside-left">
-                <span class="share-label">COMPARTIR</span>
-                <div class="social-links-vertical">
-                    <a href="#" class="social-link"><i class="fab fa-whatsapp"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-x-twitter"></i></a>
-                </div>
-            </div>
-
-            <div class="interaction-block">
-                <button class="btn-like-gold" id="btn-like-premium" data-id={id}>
-                    <svg class="heart-icon" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                    </svg>
-                    <span class="like-text">COLECCIONAR LIKE</span>
-                </button>
-                <div class="social-feedback-badge">
-                    <i class="fas fa-eye"></i>
-                    <span class="social-count" id="social-view-count">0 PERSONAS LES GUSTA ESTO</span>
-                </div>
-            </div>
+        <div class="serie-label-top">SERIE: {serieName}</div>
+        <h1 class="obra-title">{title}</h1>
+        
+        <!-- Badge Superior de Likes Minimalista -->
+        <div class="social-feedback-badge">
+             <button class="btn-like-minimal" id="btn-like-premium" data-id={id}>
+                <svg class="heart-icon" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+             </button>
+             <i class="fas fa-eye"></i>
+             <span class="social-count" id="social-view-count">0 PERSONAS LES GUSTA ESTO</span>
         </div>
 
         <div class="tags-container">
@@ -536,103 +534,94 @@ const etiqueta = "Fine Art Print";
     background: rgba(220, 177, 74, 0.05);
 }
 
-.header-actions-premium {
+.share-controls-left {
+    position: absolute;
+    bottom: 5vh;
+    left: 5%; /* Alineado a la izquierda */
     display: flex;
     align-items: center;
-    gap: 4rem;
-    margin-bottom: 4rem;
-}
-
-.share-aside-left {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    border-left: 1px solid rgba(255,255,255,0.05);
-    padding-left: 2rem;
-}
-
-.share-label {
-    font-size: 0.5rem;
-    letter-spacing: 3px;
+    gap: 1rem;
+    font-size: 0.7rem;
     color: var(--color-text-muted);
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
+    letter-spacing: 2px;
+    z-index: 100;
 }
 
-.social-links-vertical {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
+.social-icons { display: flex; gap: 1rem; }
+.social-icons i { cursor: pointer; transition: color 0.3s; }
+.social-icons i:hover { color: var(--color-white); }
+
+/* 📜 Columna Derecha Scroll */
+.info-column {
+  width: 50vw;
+  padding: 180px 8% 10rem;
+  background: var(--color-onyx-deep); 
 }
 
-.social-link {
-    color: var(--color-travertine-muted);
-    font-size: 0.8rem;
-    transition: var(--transition-premium);
+.back-link {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--color-accent);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 3rem;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
-.social-link:hover {
-    color: var(--color-accent);
-    transform: translateX(3px);
+.serie-label-top {
+  font-size: 0.6rem;
+  letter-spacing: 4px;
+  color: var(--color-travertine-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
 }
 
-.interaction-block {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.btn-like-gold {
-    background: transparent;
-    border: 1px solid rgba(220, 177, 74, 0.2);
-    padding: 1rem 2rem;
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    cursor: pointer;
-    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-    color: var(--color-travertine-light);
-}
-
-.heart-icon {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: var(--color-accent);
-    stroke-width: 1.5;
-    transition: all 0.5s ease;
-}
-
-.btn-like-gold:hover {
-    border-color: var(--color-accent);
-    background: rgba(220, 177, 74, 0.05);
-}
-
-.btn-like-gold.liked .heart-icon {
-    fill: var(--color-accent);
-    stroke: var(--color-accent);
-    filter: drop-shadow(0 0 8px var(--color-accent));
-}
-
-.btn-like-gold.liked {
-    border-color: var(--color-accent);
-    color: var(--color-white);
-}
-
-.like-text {
-    font-size: 0.65rem;
-    letter-spacing: 3px;
-    font-weight: 700;
+.obra-title {
+  font-family: var(--font-primary);
+  font-size: 4rem;
+  color: var(--color-white);
+  margin-bottom: 2rem;
+  line-height: 1;
+  font-weight: 300;
 }
 
 .social-feedback-badge {
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    opacity: 0.6;
+    background: rgba(255,255,255,0.03);
+    padding: 0.6rem 1rem;
+    width: fit-content;
+    border-radius: 4px;
+    margin-bottom: 3rem;
 }
 
 .social-count { font-size: 0.55rem; letter-spacing: 2px; color: var(--color-text-muted); }
+
+.btn-like-minimal {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.heart-icon {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 1.5;
+    transition: all 0.3s ease;
+}
+
+.btn-like-minimal.liked .heart-icon {
+    fill: var(--color-accent);
+    filter: drop-shadow(0 0 5px var(--color-accent));
+}
 
 .tags-container { display: flex; gap: 1rem; margin-bottom: 4rem; }
 .tag-accent { font-size: 0.6rem; letter-spacing: 2px; border: 1px solid var(--color-accent); color: var(--color-accent); padding: 0.5rem 1rem; }
