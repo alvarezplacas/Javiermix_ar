@@ -252,18 +252,24 @@ const artworks = artworksRaw
     /* Series Mobile Fix */
     .series-card-result {
         flex-direction: column-reverse;
-        padding: 2rem;
-        align-items: flex-start;
-        text-align: left;
+        padding: 1.5rem;
+        align-items: center;
+        text-align: center;
+        gap: 2rem;
     }
     .series-info-side { padding-right: 0; width: 100%; }
-    .s-name { font-size: 2rem; margin-top: 1.5rem; }
-    .s-teaser { font-size: 0.85rem; margin-top: 1rem; }
+    .s-name { font-size: 1.8rem; margin-top: 1rem; }
+    .s-teaser { font-size: 0.85rem; margin-top: 0.8rem; margin-left: auto; margin-right: auto; }
     .series-photo-side { 
-        width: 100%; 
-        height: 180px; 
-        margin-left: 0; 
+        width: 100%;
+        max-width: 320px; /* Tamaño controlado para que no desborde */
+        height: auto;
+        aspect-ratio: 16 / 10;
+        margin-left: auto;
+        margin-right: auto;
         filter: grayscale(0) opacity(1);
+        border-radius: 4px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 }
 </style>
