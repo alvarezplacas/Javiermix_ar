@@ -27,22 +27,33 @@ try {
   }
 }
 
-function resolveMediaURL(url: string | null): string {
-  if (!url) return '/img/placeholder.jpg';
-  const cleanUrl = url.includes(',') ? url.split(',')[0].trim() : url;
-  if (cleanUrl.startsWith('http') || cleanUrl.startsWith('/')) return cleanUrl;
-  if (cleanUrl.length === 36 && cleanUrl.includes('-')) return `${PUBLIC_DIRECTUS_URL}/assets/${cleanUrl}`;
-  return `/uploads/revista/${cleanUrl}`;
+function resolveMedia(id: any): { url: string, type: 'image' | 'video' } {
+  const url = id?.id ? `${PUBLIC_DIRECTUS_URL}/assets/${id.id}` : (typeof id === 'string' ? (id.startsWith('http') ? id : `${PUBLIC_DIRECTUS_URL}/assets/${id}`) : '/img/placeholder.jpg');
+  const type = (url?.toLowerCase().endsWith('.mp4') || url?.includes('video')) ? 'video' : 'image';
+  return { url: url || '/img/placeholder.jpg', type };
 }
 
-const articles = fetchedArticles.map(a => ({
-  title: a.title,
-  excerpt: a.content_html ? a.content_html.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : '',
-  image: a.featured_image ? resolveMediaURL(a.featured_image) : null,
-  link: `/revista/${a.id}-${a.slug}`,
-  location: "Buenos Aires",
-  readTime: "5 min"
-}));
+const articles = fetchedArticles.map(a => {
+  let slideshow = [resolveMedia(a.featured_image)];
+  if (a.media_json) {
+    try {
+        const extraRaw = typeof a.media_json === 'string' ? JSON.parse(a.media_json) : a.media_json;
+        if (Array.isArray(extraRaw)) {
+            const extra = extraRaw.map(m => resolveMedia(m));
+            slideshow = [...slideshow, ...extra].slice(0, 5);
+        }
+    } catch(e) {}
+  }
+
+  return {
+    title: a.title,
+    excerpt: a.content_html ? a.content_html.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : '',
+    slideshow,
+    link: `/revista/${a.id}-${a.slug}`,
+    location: "Buenos Aires",
+    readTime: "5 min"
+  };
+});
 ---
 
 <section class="magazine-section">
@@ -60,16 +71,18 @@ const articles = fetchedArticles.map(a => ({
   <div class="articles-container">
     {articles.length > 0 ? (
       articles.map((article, index) => (
-        <article class={`magazine-card ${index % 2 === 0 ? 'row' : 'row-reverse'} reveal`}>
-          <div class="card-image-wrapper">
-            <div class="tilt-container">
-              {article.image ? (
-                <img src={article.image} alt={article.title} class="article-image" loading="lazy" />
-              ) : (
-                <div class="fallback-icon-container">
-                  <i class="far fa-image"></i>
+          <div class="card-image-wrapper" data-article-card>
+            <div class="tilt-container" data-tilt-container>
+                <div class="slideshow-wrapper">
+                    {article.slideshow.map((media, i) => (
+                        media.type === 'video' ? (
+                            <video src={media.url} class={`article-media ${i === 0 ? 'active' : ''}`} muted playsinline loop autoplay></video>
+                        ) : (
+                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" />
+                        )
+                    ))}
                 </div>
-              )}
+                <div class="image-glare"></div>
             </div>
           </div>
 
@@ -117,11 +130,27 @@ const articles = fetchedArticles.map(a => ({
   .magazine-card.row { flex-direction: row; }
   .magazine-card.row-reverse { flex-direction: row-reverse; }
   .card-image-wrapper { flex: 0 0 50%; position: relative; z-index: 1; }
-  .tilt-container { position: relative; width: 100%; height: 550px; background-color: var(--color-onyx-charcoal); box-shadow: 0 30px 60px rgba(0,0,0,0.5); perspective: 1000px; overflow: hidden; }
-  .article-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); filter: grayscale(20%) brightness(0.9); }
-  .fallback-icon-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.1); }
-  .fallback-icon-container i { font-size: 5rem; }
-  .magazine-card:hover .article-image { transform: scale(1.05); filter: grayscale(0%) brightness(1); }
+  .tilt-container { 
+      position: relative; width: 100%; height: 550px; background-color: #080808; 
+      box-shadow: 0 30px 60px rgba(0,0,0,0.5); perspective: 1000px; overflow: hidden; 
+      border: 1px solid rgba(220, 177, 74, 0.05);
+      transition: transform 0.2s ease-out;
+  }
+  .slideshow-wrapper { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+      box-shadow: inset 0 0 80px rgba(0,0,0,0.8);
+      z-index: 2;
+  }
+  .article-media { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; 
+      filter: grayscale(20%) brightness(0.85); transition: opacity 1.5s ease; 
+      opacity: 0;
+      z-index: 1;
+      mask-image: radial-gradient(circle, black 65%, transparent 100%);
+      -webkit-mask-image: radial-gradient(circle, black 65%, transparent 100%);
+  }
+  .article-media.active { opacity: 1; filter: grayscale(0%) brightness(1); z-index: 2; }
+  .image-glare { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; opacity: 0; }
   .card-content-block { flex: 1; padding: 4rem; background: rgba(17, 17, 17, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); position: relative; z-index: 2; margin-left: -5%; }
   .row-reverse .card-content-block { margin-left: 0; margin-right: -5%; }
   .article-location { color: var(--color-accent); font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; font-weight: 700; margin-bottom: 2rem; display: block; }
@@ -155,19 +184,57 @@ const articles = fetchedArticles.map(a => ({
     }, { threshold: 0.1 });
     reveals.forEach(r => observer.observe(r));
 
-    const containers = document.querySelectorAll('.tilt-container');
-    containers.forEach(container => {
-      container.addEventListener('mousemove', (e: any) => {
-        const { left, top, width, height } = container.getBoundingClientRect();
-        const x = (e.clientX - left) / width - 0.5;
-        const y = (e.clientY - top) / height - 0.5;
-        const img = container.querySelector('img');
-        if (img) img.style.transform = `scale(1.08) rotateY(${x * 10}deg) rotateX(${y * -10}deg)`;
+    function initHomeMagazine() {
+      const articles = document.querySelectorAll('[data-article-card]');
+      articles.forEach(art => {
+          const media = art.querySelectorAll('.article-media');
+          if (media.length <= 1) {
+              if(media[0]) media[0].classList.add('active');
+              return;
+          }
+          let current = 0;
+          setInterval(() => {
+              media[current].classList.remove('active');
+              current = (current + 1) % media.length;
+              media[current].classList.add('active');
+              if (media[current].tagName === 'VIDEO') {
+                  (media[current] as HTMLVideoElement).play().catch(() => {});
+              }
+          }, 5000);
       });
-      container.addEventListener('mouseleave', () => {
-        const img = container.querySelector('img');
-        if (img) img.style.transform = 'scale(1) rotateY(0) rotateX(0)';
+
+      const handleTilt = (e: MouseEvent) => {
+          const container = (e.target as HTMLElement).closest('[data-tilt-container]') as HTMLElement;
+          if (!container) return;
+          const r = container.getBoundingClientRect();
+          const x = e.clientX - r.left; 
+          const y = e.clientY - r.top;
+          const rx = (y - r.height/2) / 45; // Mucho más sutil
+          const ry = (r.width/2 - x) / 45;
+          container.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.02, 1.02, 1.02)`;
+          const glare = container.querySelector('.image-glare') as HTMLElement;
+          if (glare) {
+              const px = (x / r.width) * 100;
+              const py = (y / r.height) * 100;
+              glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.15) 0%, transparent 80%)`;
+              glare.style.opacity = "1";
+          }
+      };
+
+      const resetTilt = (e: MouseEvent) => {
+          const container = (e.target as HTMLElement).closest('[data-tilt-container]') as HTMLElement;
+          if (!container) return;
+          container.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+          const glare = container.querySelector('.image-glare') as HTMLElement;
+          if (glare) glare.style.opacity = "0";
+      };
+
+      document.querySelectorAll('[data-tilt-container]').forEach(container => {
+          container.addEventListener('mousemove', (e:any) => handleTilt(e));
+          container.addEventListener('mouseleave', (e:any) => resetTilt(e));
       });
-    });
+    }
+
+    initHomeMagazine();
   });
 </script>
