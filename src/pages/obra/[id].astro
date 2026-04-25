@@ -4,6 +4,7 @@ import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import FramingStudio from '@components/FramingStudio.astro';
 import AddToCartButton from '@components/ecommerce/AddToCartButton';
+import '@styles/atmospheres.css';
 import { getArtworkDetails, getAssetUrl, DirectusManager } from '@conexion/directus';
 import { readFolders, readItems } from '@directus/sdk';
 
@@ -84,6 +85,7 @@ const etiqueta = "Fine Art Print";
             {roomImage && (
               <img src={roomImage} alt={`Vista en Ambiente de ${title}`} class="room-artwork" id="secondary-image" />
             )}
+            <div class="atmos-overlay"></div>
           </div>
           
           <div class="image-controls">
@@ -93,6 +95,19 @@ const etiqueta = "Fine Art Print";
                <button class="control-btn" style="opacity: 0.3; cursor: not-allowed;" disabled>SIN VISTA EN SALA</button>
             )}
             <button class="control-btn" id="btn-framing-config">CONFIGURAR MARCO ARTESANAL</button>
+            
+            <div class="atmos-selector">
+                <button class="atmos-btn active" id="atmos-gallery" data-label="GALERÍA">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button class="atmos-btn" id="atmos-home" data-label="HOGAR">
+                    <i class="fas fa-lightbulb"></i>
+                </button>
+                <button class="atmos-btn" id="atmos-night" data-label="NOCHE">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
             <button class="control-btn btn-like-glass" id="btn-like-premium" data-id={id}>
                 <svg class="heart-icon-glass" viewBox="0 0 24 24">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -413,6 +428,28 @@ const etiqueta = "Fine Art Print";
         currentSelection.set({ price: parseInt(price), label, dimensions });
       });
     });
+
+    // --- ATMOSPHERE SIMULATOR LOGIC ---
+    const atmosBtns = document.querySelectorAll('.atmos-btn');
+    const artworkWrapper = document.getElementById('artwork-wrapper');
+
+    atmosBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!artworkWrapper) return;
+            
+            // UI state
+            atmosBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Effect state
+            const target = btn.id; // atmos-gallery, atmos-home, atmos-night
+            artworkWrapper.classList.remove('is-atmos-gallery', 'is-atmos-home', 'is-atmos-night');
+            artworkWrapper.classList.add(`is-${target}`);
+        });
+    });
+
+    // Default init
+    if (artworkWrapper) artworkWrapper.classList.add('is-atmos-gallery');
   });
 </script>
 

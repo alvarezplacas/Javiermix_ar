@@ -1,0 +1,123 @@
+/* 🏺 JMX AMBIENT ATMOSPHERES - PREMIUM V1 🏺 */
+
+:root {
+  --atmos-gallery-filter: none;
+  --atmos-home-filter: sepia(0.2) brightness(1.05) contrast(0.95);
+  --atmos-night-filter: brightness(0.6) contrast(1.1) saturate(0.8);
+  
+  --atmos-home-tint: rgba(255, 160, 20, 0.08);
+  --atmos-night-tint: rgba(5, 5, 20, 0.4);
+  
+  --atmos-transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Wrapper Container */
+#artwork-wrapper {
+  transition: var(--atmos-transition);
+  position: relative;
+}
+
+/* Overlay for light simulation */
+.atmos-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  transition: var(--atmos-transition);
+  opacity: 0;
+}
+
+/* --- MODOS --- */
+
+/* 1. Galería (Default) */
+.is-atmos-gallery .main-artwork,
+.is-atmos-gallery .room-artwork {
+  filter: var(--atmos-gallery-filter);
+}
+
+/* 2. Hogar (Luz Cálida) */
+.is-atmos-home .main-artwork,
+.is-atmos-home .room-artwork {
+  filter: var(--atmos-home-filter);
+}
+.is-atmos-home .atmos-overlay {
+  opacity: 1;
+  background: var(--atmos-home-tint);
+}
+
+/* 3. Nocturno (Spotlight) */
+.is-atmos-night .main-artwork,
+.is-atmos-night .room-artwork {
+  filter: var(--atmos-night-filter);
+}
+.is-atmos-night .atmos-overlay {
+  opacity: 1;
+  background: var(--atmos-night-tint);
+  /* Efecto de Foco Radial sobre la obra */
+  mask-image: radial-gradient(circle at center, transparent 30%, black 80%);
+  -webkit-mask-image: radial-gradient(circle at center, transparent 30%, black 80%);
+}
+
+/* Controles de selector */
+.atmos-selector {
+  display: flex;
+  gap: 0.8rem;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+  padding: 0.5rem;
+  border-radius: 40px;
+  border: 1px solid rgba(255,255,255,0.1);
+  margin-left: 1rem;
+}
+
+.atmos-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+}
+
+.atmos-btn:hover {
+  color: var(--color-white);
+  background: rgba(255,255,255,0.1);
+}
+
+.atmos-btn.active {
+  background: var(--color-accent);
+  color: #000;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 15px rgba(220, 177, 74, 0.4);
+}
+
+/* Tooltip sutil */
+.atmos-btn { position: relative; }
+.atmos-btn::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 140%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000;
+  color: #fff;
+  font-size: 0.6rem;
+  padding: 4px 8px;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+  letter-spacing: 1px;
+}
+.atmos-btn:hover::after {
+  opacity: 1;
+  visibility: visible;
+  bottom: 120%;
+}
