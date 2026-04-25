@@ -82,19 +82,21 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
                 const initialX = parseFloat(plane.style.getPropertyValue('--x-pos'));
                 const distance = zOffset + scrollY;
                 
-                // 🚀 LÓGICA DE EXPANSIÓN MEJORADA (Efecto Imán)
+                // 🚀 LÓGICA DE EXPANSIÓN MEJORADA (Uso de VW para evitar choques)
                 const absDist = Math.abs(distance);
                 const spreadFactor = Math.max(0, 1 - (absDist / 2500));
                 
-                // Las obras se abren más tarde para dar tiempo a verlas
-                const spreadCurve = Math.pow(spreadFactor, 3); 
-                const dynamicX = initialX + (initialX > 0 ? 60 : -60) * spreadCurve;
+                // Escape lateral en unidades de pantalla (VW)
+                const spreadCurve = Math.pow(spreadFactor, 2.5); 
+                const baseVW = (initialX > 0 ? 20 : -20); // Posición inicial en vw
+                const pushVW = (initialX > 0 ? 100 : -100) * spreadCurve; // Empuje final masivo
+                const totalX = baseVW + pushVW;
                 
-                // Rotación impulsada por presencia (más sutil al inicio, fuerte al pasar)
-                const rotationY = (initialX > 0 ? -20 : 20) * Math.pow(spreadFactor, 2.5);
+                // Rotación impulsada por presencia
+                const rotationY = (initialX > 0 ? -25 : 25) * Math.pow(spreadFactor, 2);
                 const rotationX = (initialX > 0 ? 5 : -5) * spreadFactor;
                 
-                plane.style.transform = `translate3d(${dynamicX}%, 0, ${zOffset}px) rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
+                plane.style.transform = `translate3d(${totalX}vw, 0, ${zOffset}px) rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
 
                 // Opacidad y Blur dinámico
                 if (absDist < 400) {
