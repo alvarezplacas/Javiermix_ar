@@ -98,10 +98,10 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
                 
                 plane.style.transform = `translate3d(${totalX}vw, 0, ${zOffset}px) rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
 
-                // Opacidad y Blur dinámico (Umbral de 400px para impacto visual)
-                if (absDist < 400) {
-                    plane.style.opacity = (absDist / 400);
-                    plane.style.filter = `blur(${(400 - absDist) / 8}px)`;
+                // Opacidad y Blur dinámico (Umbral de 250px para máxima cercanía)
+                if (absDist < 250) {
+                    plane.style.opacity = (absDist / 250);
+                    plane.style.filter = `blur(${(250 - absDist) / 10}px)`;
                 } else if (absDist > 4000) {
                     plane.style.opacity = Math.max(0, 1 - (absDist - 4000) / 1000);
                 } else {
