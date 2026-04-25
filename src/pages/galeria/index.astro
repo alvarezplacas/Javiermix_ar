@@ -40,16 +40,25 @@ const artworks = artworksRaw
     <Header currentPath="/galeria" />
 
 	<main class="gallery-clean-container">
-		<!-- 🔍 HERO BUSCADOR ESTILO GOOGLE -->
+		<!-- 🎭 HERO INMERSIVO ARTÍSTICO -->
 		<header class="google-hero">
-            <h1 class="gallery-title">Explorar Archivo</h1>
-			<div class="search-portal-wrapper">
-				<input type="text" id="gallery-search-input" placeholder="Busca por tema, color, textura..." autocomplete="off">
-                <button id="btn-toggle-series" class="series-toggle">
-                    <span class="dot"></span>
-                    SERIES
-                </button>
-			</div>
+            <div class="immersive-hero-bg">
+                <div class="bg-layer active" id="bg-1"></div>
+                <div class="bg-layer" id="bg-2"></div>
+                <div class="bg-overlay"></div>
+            </div>
+
+            <div class="hero-content">
+                <h1 class="gallery-title">GALERy</h1>
+                <p class="hero-subtitle">Buscador De Obras</p>
+                <div class="search-portal-wrapper">
+                    <input type="text" id="gallery-search-input" placeholder="Busca por tema, color, textura..." autocomplete="off">
+                    <button id="btn-toggle-series" class="series-toggle">
+                        <span class="dot"></span>
+                        SERIES
+                    </button>
+                </div>
+            </div>
 		</header>
 
 		<!-- 🏛️ CONTENIDO (Default: Obras Recientes / Resultados) -->
@@ -90,34 +99,92 @@ const artworks = artworksRaw
     font-family: 'Inter', sans-serif;
 }
 
-/* 🔍 GOOGLE HERO */
+/* 🎭 ARTISTIC HERO */
 .google-hero {
-    padding: 12rem 5% 6rem;
+    position: relative;
+    height: 550px;
     display: flex;
-    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #000;
+}
+
+.immersive-hero-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 1;
+}
+
+.bg-layer {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1.1); /* Efecto zoom sutil */
+}
+
+.bg-layer.active { opacity: 0.4; transform: scale(1); transition: opacity 2s, transform 8s linear; }
+
+.bg-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.5), #000);
+    z-index: 2;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 900px;
+    padding: 0 5%;
     text-align: center;
 }
 
-.gallery-title { font-size: 3rem; font-weight: 200; font-family: var(--font-primary); margin-bottom: 3rem; letter-spacing: -1px; }
+.gallery-title { 
+    font-size: 6rem; 
+    font-weight: 200; 
+    font-family: var(--font-primary); 
+    margin: 0; 
+    letter-spacing: 15px; 
+    text-transform: uppercase;
+    color: #fff;
+    opacity: 0.9;
+}
+
+.hero-subtitle {
+    font-family: var(--font-secondary);
+    font-size: 0.8rem;
+    letter-spacing: 5px;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    margin-top: -1rem;
+    margin-bottom: 3rem;
+    font-weight: 700;
+}
 
 .search-portal-wrapper {
     width: 100%;
-    max-width: 800px;
     position: relative;
     display: flex;
     align-items: center;
-    background: #111;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 50px;
-    padding: 0.5rem 0.5rem 0.5rem 2rem;
-    transition: all 0.3s ease;
+    padding: 0.6rem 0.6rem 0.6rem 2.5rem;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
 }
 
 .search-portal-wrapper:focus-within {
-    background: #181818;
+    background: rgba(255,255,255,0.12);
     border-color: var(--color-accent);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transform: translateY(-5px);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 5px rgba(197, 160, 89, 0.1);
 }
 
 #gallery-search-input {
@@ -125,9 +192,10 @@ const artworks = artworksRaw
     background: transparent;
     border: none;
     color: #fff;
-    padding: 1rem 0;
-    font-size: 1.1rem;
+    padding: 1.2rem 0;
+    font-size: 1.2rem;
     outline: none;
+    font-weight: 300;
 }
 
 .series-toggle {
@@ -246,8 +314,11 @@ const artworks = artworksRaw
 
 @media (max-width: 768px) { 
     .masonry-grid { column-count: 1; } 
-    .gallery-title { font-size: 2.2rem; } 
-    .search-portal-wrapper { border-radius: 10px; } 
+    .gallery-title { font-size: 3.5rem; letter-spacing: 8px; }
+    .hero-subtitle { font-size: 0.6rem; letter-spacing: 3px; }
+    .google-hero { height: 450px; }
+    .search-portal-wrapper { padding-left: 1.5rem; }
+    #gallery-search-input { font-size: 1rem; }
 
     /* 📱 Estilos específicos para el modo lista (SERIES) */
     .masonry-grid.list-mode {
@@ -298,6 +369,31 @@ const artworks = artworksRaw
 
     const artworks = JSON.parse(document.getElementById('artworks-data')?.innerHTML || '[]');
     const series = JSON.parse(document.getElementById('series-data')?.innerHTML || '[]');
+
+    // 🎭 BACKGROUND SLIDESHOW
+    const bg1 = document.getElementById('bg-1');
+    const bg2 = document.getElementById('bg-2');
+    if (bg1 && artworks.length > 0) {
+        let currentIdx = 0;
+        let activeLayer = 1;
+        const bgImages = artworks.slice(0, 10).map((a:any) => a.thumb.replace('width=800', 'width=1600'));
+        
+        bg1.style.backgroundImage = `url(${bgImages[0]})`;
+        
+        setInterval(() => {
+            currentIdx = (currentIdx + 1) % bgImages.length;
+            const nextImg = bgImages[currentIdx];
+            if (activeLayer === 1) {
+                if (bg2) { bg2.style.backgroundImage = `url(${nextImg})`; bg2.classList.add('active'); }
+                if (bg1) bg1.classList.remove('active');
+                activeLayer = 2;
+            } else {
+                if (bg1) { bg1.style.backgroundImage = `url(${nextImg})`; bg1.classList.add('active'); }
+                if (bg2) bg2.classList.remove('active');
+                activeLayer = 1;
+            }
+        }, 6000);
+    }
 
     let searchMode = 'WORKS'; // WORKS or SERIES
 
