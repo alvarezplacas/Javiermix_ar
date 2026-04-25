@@ -57,8 +57,8 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
         <button class="theme-btn" data-theme="red" title="Classic Maroon">
             <span style="background: #4a0a0a;"></span>
         </button>
-        <button class="theme-btn" data-theme="stone" title="Industrial Stone">
-            <span style="background: #2a2a2a;"></span>
+        <button class="theme-btn" data-theme="worn" title="Old Loft (Worn)">
+            <span style="background: #333; border: 1px dashed rgba(255,255,255,0.3)"></span>
         </button>
     </div>
 
@@ -156,10 +156,22 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
   .royal-gallery-wrapper {
     width: 100vw;
     height: 100vh;
-    background: #050505;
+    background-color: var(--wall-color); /* 💎 Color global */
     overflow: hidden;
     position: relative;
     cursor: grab;
+    transition: background-color 1s ease;
+  }
+
+  /* 🌫️ Capa de Grano/Ruido para todas las paredes */
+  .royal-gallery-wrapper::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.05;
+      pointer-events: none;
+      z-index: 5;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
   }
 
   #lighting-canvas {
@@ -206,30 +218,39 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
     will-change: transform;
     z-index: 2;
     position: relative;
-    transition: background 1s ease;
-    background-color: var(--wall-color);
+    background: transparent; /* Ahora el fondo es del wrapper */
   }
 
   /* 💎 Variaciones de Pared */
+  :root { --wall-color: #050505; }
   .royal-gallery-wrapper[data-theme="dark"] { --wall-color: #050505; }
   .royal-gallery-wrapper[data-theme="white"] { --wall-color: #e5e5e5; }
-  .royal-gallery-wrapper[data-theme="red"] { --wall-color: #3d0505; }
-  .royal-gallery-wrapper[data-theme="stone"] { --wall-color: #1a1a1a; }
+  .royal-gallery-wrapper[data-theme="red"] { --wall-color: #2d0505; }
+  .royal-gallery-wrapper[data-theme="worn"] { --wall-color: #1e1e1e; }
 
   /* Texturas específicas por tema */
-  .royal-gallery-wrapper[data-theme="dark"] .gallery-wall {
+  .royal-gallery-wrapper[data-theme="dark"] {
       background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0);
       background-size: 40px 40px;
   }
-  .royal-gallery-wrapper[data-theme="white"] .gallery-wall {
+  .royal-gallery-wrapper[data-theme="white"] {
       background-image: linear-gradient(rgba(0,0,0,0.01) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.01) 1px, transparent 1px);
       background-size: 100px 100px;
   }
   .royal-gallery-wrapper[data-theme="white"] .artwork-label h3 { color: #222; }
   .royal-gallery-wrapper[data-theme="white"] .artwork-label p { color: #666; }
-  .royal-gallery-wrapper[data-theme="red"] .gallery-wall {
+  .royal-gallery-wrapper[data-theme="red"] {
       background-image: radial-gradient(rgba(0,0,0,0.2) 2px, transparent 0);
       background-size: 60px 60px;
+  }
+  
+  /* 🏚️ Textura DESGASTADA (Old Loft) */
+  .royal-gallery-wrapper[data-theme="worn"] {
+      background-image: 
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+        linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.5));
+      background-blend-mode: overlay;
+      background-size: 800px 800px;
   }
 
   .wall-spot {
@@ -294,7 +315,7 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
   }
 
   .art-image {
-    max-height: 60vh;
+    max-height: 50vh; /* 💎 Un punto más pequeñas para mayor elegancia */
     width: auto;
     display: block;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
