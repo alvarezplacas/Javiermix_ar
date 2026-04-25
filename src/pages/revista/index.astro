@@ -114,27 +114,33 @@ const articles = dbArticles.map(art => {
 </Layout>
 
 <script>
-    document.addEventListener('astro:page-load', () => {
+    function initMagazine() {
         // 🎞️ SLIDESHOW LÓGICA (CROSS-FADE HÍBRIDO)
         const articles = document.querySelectorAll('[data-article-card]');
         articles.forEach(art => {
             const media = art.querySelectorAll('.article-media');
-            if (media.length <= 1) return;
+            if (media.length <= 1) {
+                // Si solo hay una imagen, igual activarla
+                if(media[0]) media[0].classList.add('active');
+                return;
+            }
 
             let current = 0;
-            setInterval(() => {
+            // Limpiar intervalos previos si existen
+            if ((art as any)._slideInterval) clearInterval((art as any)._slideInterval);
+            
+            (art as any)._slideInterval = setInterval(() => {
                 media[current].classList.remove('active');
                 current = (current + 1) % media.length;
                 media[current].classList.add('active');
                 
-                // Si es video, asegurar que se reproduce
                 if (media[current].tagName === 'VIDEO') {
                     (media[current] as HTMLVideoElement).play().catch(() => {});
                 }
             }, 5000);
         });
 
-        // 💡 EFECTO 3D MARCADO (FERRARI STYLE)
+        // 💡 EFECTO 3D MARCADO
         const handleTilt = (e: MouseEvent) => {
             const container = (e.target as HTMLElement).closest('[data-tilt-container]') as HTMLElement;
             if (!container) return;
@@ -142,19 +148,16 @@ const articles = dbArticles.map(art => {
             const r = container.getBoundingClientRect();
             const x = e.clientX - r.left; 
             const y = e.clientY - r.top;
-            
-            // Ángulo más marcado (divisor menor = más rotación)
-            const rx = (y - r.height/2) / 12; 
-            const ry = (r.width/2 - x) / 12;
+            const rx = (y - r.height/2) / 10; // Más sensible
+            const ry = (r.width/2 - x) / 10;
             
             container.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.05, 1.05, 1.05)`;
             
-            // Glare dinámico
             const glare = container.querySelector('.image-glare') as HTMLElement;
             if (glare) {
                 const px = (x / r.width) * 100;
                 const py = (y / r.height) * 100;
-                glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.15) 0%, transparent 80%)`;
+                glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.2) 0%, transparent 80%)`;
                 glare.style.opacity = "1";
             }
         };
@@ -171,7 +174,12 @@ const articles = dbArticles.map(art => {
             wrapper.addEventListener('mousemove', (e:any) => handleTilt(e));
             wrapper.addEventListener('mouseleave', (e:any) => resetTilt(e));
         });
-    });
+    }
+
+    // Ejecutar en ambos eventos para máxima compatibilidad
+    document.addEventListener('astro:page-load', initMagazine);
+    document.addEventListener('DOMContentLoaded', initMagazine);
+    initMagazine(); // Ejecución inmediata
 </script>
 
 <style>
@@ -188,6 +196,7 @@ const articles = dbArticles.map(art => {
   .tilt-frame { 
       width: 100%; height: 500px; overflow: hidden; position: relative; background: #080808; 
       box-shadow: 0 40px 80px rgba(0,0,0,0.6); 
+      border: 1px solid rgba(220, 177, 74, 0.1); /* 🏆 Confirmación Visual Dorado */
       transition: transform 0.2s ease-out;
       transform-style: preserve-3d;
   }
