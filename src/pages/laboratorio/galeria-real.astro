@@ -1,0 +1,282 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getLaboratorioFiles, getAssetUrl } from '../../conexion/directus';
+
+const artworks = await getLaboratorioFiles();
+// Filtramos solo las obras principales
+const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match(/[\s_]2\.[^.]+$/i)).slice(0, 10);
+---
+
+<Layout title="Royal Gallery | Experimentación Inmersiva">
+  <main class="royal-gallery-wrapper">
+    <!-- 🧭 Menú Supremo -->
+    <nav class="supreme-nav">
+        <a href="/">INICIO</a>
+        <a href="/galeria">GALERÍA</a>
+        <a href="/revista">REVISTA</a>
+        <a href="/laboratorio">LABORATORIO</a>
+    </nav>
+
+    <!-- 💡 Canvas para Iluminación Ambiental -->
+    <canvas id="lighting-canvas"></canvas>
+
+    <div class="horizontal-scroll-container" id="scroll-container">
+        <div class="gallery-wall" id="wall">
+            {filteredArtworks.map((art, i) => (
+                <article class="wall-spot">
+                    <div class="ceiling-light"></div>
+                    <div class="artwork-frame">
+                        <img 
+                          src={getAssetUrl(art.id, { width: 1000, quality: 90 })} 
+                          alt={art.title} 
+                          class="art-image"
+                        />
+                        <div class="frame-shadow"></div>
+                    </div>
+                    <div class="artwork-label">
+                        <span class="index">0{i+1}</span>
+                        <h3>{art.title || 'Obra Javier Mix'}</h3>
+                        <p>Fine Art Selection 2026</p>
+                    </div>
+                </article>
+            ))}
+        </div>
+    </div>
+
+    <!-- Guía de Navegación -->
+    <div class="scroll-guide">
+        <div class="guide-line"></div>
+        <span>DESLIZA PARA RECORRER LA PARED</span>
+    </div>
+  </main>
+</Layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const wall = document.getElementById('wall');
+        const container = document.getElementById('scroll-container');
+        
+        let scrollY = 0;
+        let targetScrollY = 0;
+        
+        // --- 🧊 MOTOR DE DESPLAZAMIENTO LATERAL ---
+        window.addEventListener('wheel', (e) => {
+            targetScrollY += e.deltaY;
+            // Limitamos el scroll según el ancho de la pared
+            const maxScroll = wall ? wall.scrollWidth - window.innerWidth : 0;
+            targetScrollY = Math.max(0, Math.min(targetScrollY, maxScroll));
+        }, { passive: true });
+
+        function updateWall() {
+            scrollY += (targetScrollY - scrollY) * 0.05;
+            if (wall) {
+                wall.style.transform = `translateX(-${scrollY}px)`;
+            }
+            requestAnimationFrame(updateWall);
+        }
+
+        updateWall();
+
+        // --- 💡 MOTOR DE ILUMINACIÓN ---
+        const canvas = document.getElementById('lighting-canvas') as HTMLCanvasElement;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function drawLight() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Luz ambiental tenue
+            const ambient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, canvas.width
+            );
+            ambient.addColorStop(0, 'rgba(220, 177, 74, 0.03)');
+            ambient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = ambient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            requestAnimationFrame(drawLight);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        drawLight();
+    });
+</script>
+
+<style>
+  :root {
+    --lab-gold: #dcb14a;
+    --wall-color: #0a0a0a;
+  }
+
+  .royal-gallery-wrapper {
+    width: 100vw;
+    height: 100vh;
+    background: #050505;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+  }
+
+  #lighting-canvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* 🧭 Menú Supremo */
+  .supreme-nav {
+      position: fixed;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      display: flex;
+      gap: 3rem;
+      padding: 1rem 3rem;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 50px;
+  }
+
+  .supreme-nav a {
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      font-weight: 700;
+      transition: all 0.3s;
+  }
+
+  .supreme-nav a:hover { color: var(--lab-gold); }
+
+  .gallery-wall {
+    display: flex;
+    padding: 0 20vw;
+    height: 100vh;
+    align-items: center;
+    gap: 30vw;
+    will-change: transform;
+    z-index: 2;
+    position: relative;
+    /* Textura de micro-cemento sutil */
+    background-image: 
+        radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0);
+    background-size: 40px 40px;
+  }
+
+  .wall-spot {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 600px;
+  }
+
+  /* 💡 Foco de luz superior */
+  .ceiling-light {
+      position: absolute;
+      top: -30vh;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(220, 177, 74, 0.15) 0%, transparent 70%);
+      filter: blur(40px);
+      pointer-events: none;
+  }
+
+  .ceiling-light::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 2px;
+      height: 100vh;
+      background: linear-gradient(to bottom, rgba(220, 177, 74, 0.2), transparent);
+      transform: translateX(-50%);
+  }
+
+  .artwork-frame {
+    position: relative;
+    padding: 2rem;
+    background: #000;
+    box-shadow: 
+        0 30px 60px rgba(0,0,0,0.8),
+        inset 0 0 0 1px rgba(255,255,255,0.05);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .artwork-frame:hover {
+      transform: scale(1.02) translateY(-10px);
+  }
+
+  .art-image {
+    max-height: 60vh;
+    width: auto;
+    display: block;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    filter: brightness(0.9) contrast(1.1);
+  }
+
+  .artwork-label {
+      margin-top: 3rem;
+      text-align: center;
+      color: #fff;
+  }
+
+  .index {
+      font-size: 0.6rem;
+      color: var(--lab-gold);
+      letter-spacing: 5px;
+      display: block;
+      margin-bottom: 0.5rem;
+  }
+
+  .artwork-label h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      font-weight: 300;
+  }
+
+  .artwork-label p {
+      font-size: 0.6rem;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+  }
+
+  .scroll-guide {
+      position: fixed;
+      bottom: 3rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      color: rgba(255,255,255,0.2);
+      font-size: 0.6rem;
+      letter-spacing: 4px;
+      z-index: 10;
+  }
+
+  .guide-line {
+      width: 1px;
+      height: 50px;
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.2));
+  }
+
+  @media (max-width: 768px) {
+      .wall-spot { min-width: 300px; }
+      .art-image { max-height: 40vh; }
+  }
+</style>
