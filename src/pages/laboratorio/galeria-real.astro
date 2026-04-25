@@ -27,20 +27,29 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
                     <div class="ceiling-light"></div>
                     <div class="artwork-frame">
                         <div class="loading-spinner"></div>
-                        <img 
-                          src={getAssetUrl(art.id, { width: 900, quality: 80, format: 'webp' })} 
-                          alt={art.title} 
-                          class="art-image"
-                          loading="lazy"
-                          decoding="async"
-                          onload="this.parentElement.querySelector('.loading-spinner').remove()"
-                        />
+                        <a href={`/galeria/${art.id}`} class="art-link">
+                            <img 
+                              src={getAssetUrl(art.id, { width: 900, quality: 80, format: 'webp' })} 
+                              alt={art.title} 
+                              class="art-image"
+                              loading="lazy"
+                              decoding="async"
+                              onload="this.parentElement.parentElement.querySelector('.loading-spinner').remove()"
+                            />
+                        </a>
                         <div class="frame-shadow"></div>
                     </div>
                     <div class="artwork-label">
                         <span class="index">0{i+1}</span>
                         <h3>{art.title || 'Obra Javier Mix'}</h3>
                         <p>Fine Art Selection 2026</p>
+                        
+                        <div class="action-area">
+                            <a href={`/galeria/${art.id}`} class="btn-collect">
+                                COLECCIONAR
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4v16m8-8H4"/></svg>
+                            </a>
+                        </div>
                     </div>
                 </article>
             ))}
@@ -228,25 +237,22 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
 
   /* 💎 TEXTURAS AVANZADAS */
   
-  /* MÁRMOL CARRARA */
+  /* MÁRMOL CARRARA RE-REALISTA */
   .royal-gallery-wrapper[data-theme="marble"] {
       background-image: 
-        linear-gradient(45deg, rgba(0,0,0,0.02) 25%, transparent 25%),
-        linear-gradient(-45deg, rgba(0,0,0,0.02) 25%, transparent 25%),
-        radial-gradient(circle at 50% 50%, #fff 0%, #ddd 100%);
-      background-size: 200px 200px, 200px 200px, 100% 100%;
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.8), transparent),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='discrete' tableValues='0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E"),
+        linear-gradient(45deg, #fff 0%, #eee 50%, #ddd 100%);
   }
 
-  /* LADRILLO URBAN */
+  /* LADRILLO URBAN RE-REALISTA */
   .royal-gallery-wrapper[data-theme="brick"] {
       background-color: #3d1b14;
       background-image: 
-        linear-gradient(335deg, #2d140f 23px, transparent 23px),
-        linear-gradient(155deg, #2d140f 23px, transparent 23px),
-        linear-gradient(335deg, #2d140f 23px, transparent 23px),
-        linear-gradient(155deg, #2d140f 23px, transparent 23px);
-      background-size: 58px 58px;
-      background-position: 0px 2px, 4px 35px, 29px 31px, 34px 6px;
+        linear-gradient(90deg, rgba(0,0,0,0.1) 2px, transparent 2px),
+        linear-gradient(rgba(0,0,0,0.1) 2px, transparent 2px),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
+      background-size: 80px 40px, 80px 40px, auto;
   }
 
   .royal-gallery-wrapper[data-theme="white"] .artwork-label h3,
@@ -296,42 +302,61 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
 
   .artwork-frame {
     position: relative;
-    padding: 2rem;
+    padding: 1.5rem;
     background: #000;
     box-shadow: 
-        0 40px 100px rgba(0,0,0,0.9),
+        0 50px 100px rgba(0,0,0,0.9),
+        0 10px 20px rgba(0,0,0,0.5),
         inset 0 0 0 1px rgba(255,255,255,0.05);
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     min-width: 300px;
-    min-height: 400px;
+    min-height: 350px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 1px solid rgba(255,255,255,0.02);
   }
 
-  .loading-spinner {
-      position: absolute;
-      width: 40px;
-      height: 40px;
-      border: 2px solid rgba(220, 177, 74, 0.2);
-      border-top-color: var(--lab-gold);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .artwork-frame:hover {
-      transform: scale(1.02) translateY(-10px);
-  }
+  .art-link { display: block; cursor: pointer; overflow: hidden; }
 
   .art-image {
-    max-height: 50vh; /* 💎 Un punto más pequeñas para mayor elegancia */
+    max-height: 45vh;
     width: auto;
     display: block;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    filter: brightness(0.9) contrast(1.1);
+    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
+
+  .art-link:hover .art-image { transform: scale(1.05); }
+
+  /* 🛒 Botón Coleccionar */
+  .action-area {
+      margin-top: 2rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.6s ease;
+  }
+
+  .wall-spot:hover .action-area {
+      opacity: 1;
+      transform: translateY(0);
+  }
+
+  .btn-collect {
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.8rem 2rem;
+      background: var(--lab-gold);
+      color: black;
+      text-decoration: none;
+      font-size: 0.65rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      transition: all 0.3s;
+  }
+
+  .btn-collect svg { width: 14px; height: 14px; }
+  .btn-collect:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(220, 177, 74, 0.3); }
 
   .artwork-label {
       margin-top: 3rem;
