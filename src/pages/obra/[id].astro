@@ -94,6 +94,11 @@ const etiqueta = "Fine Art Print";
             )}
             <button class="control-btn" id="btn-3d">VER EN 3D</button>
             <button class="control-btn" id="btn-marco">PROBAR MARCO</button>
+            <button class="control-btn btn-like-glass" id="btn-like-premium" data-id={id}>
+                <svg class="heart-icon-glass" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+            </button>
           </div>
           
           <div class="share-controls-left">
@@ -115,16 +120,8 @@ const etiqueta = "Fine Art Print";
         <div class="serie-label-top">SERIE: {serieName}</div>
         <h1 class="obra-title">{title}</h1>
         
-        <div class="serie-label-top">SERIE: {serieName}</div>
-        <h1 class="obra-title">{title}</h1>
-        
-        <!-- Badge Superior de Likes Minimalista -->
+        <!-- Badge Superior de Visualizaciones -->
         <div class="social-feedback-badge">
-             <button class="btn-like-minimal" id="btn-like-premium" data-id={id}>
-                <svg class="heart-icon" viewBox="0 0 24 24">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-             </button>
              <i class="fas fa-eye"></i>
              <span class="social-count" id="social-view-count">0 PERSONAS LES GUSTA ESTO</span>
         </div>
@@ -507,49 +504,72 @@ const etiqueta = "Fine Art Print";
 
 .image-controls {
     position: absolute;
-    bottom: 5vh;
+    bottom: 12vh; /* Más arriba para no pisar */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 1rem;
+    gap: 1.2rem;
     z-index: 100;
     width: fit-content;
 }
 
 .control-btn {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--color-travertine-muted);
-    padding: 0.8rem 1.5rem;
-    font-size: 0.65rem;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--color-white);
+    padding: 1.2rem 2.2rem; /* Más grandes */
+    font-size: 0.75rem; /* Más legibles */
     letter-spacing: 2px;
     text-transform: uppercase;
     cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.btn-like-glass {
+    width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.heart-icon-glass {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 1.5;
     transition: all 0.4s;
+}
+
+.btn-like-glass.liked .heart-icon-glass {
+    fill: var(--color-accent);
+    filter: drop-shadow(0 0 10px var(--color-accent));
 }
 
 .control-btn:hover {
     border-color: var(--color-accent);
-    color: var(--color-accent);
-    background: rgba(220, 177, 74, 0.05);
+    background: rgba(220, 177, 74, 0.15);
+    transform: translateY(-3px);
 }
 
 .share-controls-left {
     position: absolute;
-    bottom: 5vh;
-    left: 5%; /* Alineado a la izquierda */
+    bottom: 3vh; /* Más abajo para despejar */
+    left: 4%;
     display: flex;
     align-items: center;
-    gap: 1rem;
-    font-size: 0.7rem;
+    gap: 1.5rem;
+    font-size: 0.6rem;
     color: var(--color-text-muted);
     letter-spacing: 2px;
     z-index: 100;
 }
 
-.social-icons { display: flex; gap: 1rem; }
-.social-icons i { cursor: pointer; transition: color 0.3s; }
-.social-icons i:hover { color: var(--color-white); }
+.social-icons { display: flex; gap: 1.5rem; }
+.social-icons i { cursor: pointer; transition: color 0.3s; font-size: 0.9rem; }
+.social-icons i:hover { color: var(--color-accent); }
 
 /* 📜 Columna Derecha Scroll */
 .info-column {
@@ -598,30 +618,6 @@ const etiqueta = "Fine Art Print";
 }
 
 .social-count { font-size: 0.55rem; letter-spacing: 2px; color: var(--color-text-muted); }
-
-.btn-like-minimal {
-    background: transparent;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.heart-icon {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: var(--color-accent);
-    stroke-width: 1.5;
-    transition: all 0.3s ease;
-}
-
-.btn-like-minimal.liked .heart-icon {
-    fill: var(--color-accent);
-    filter: drop-shadow(0 0 5px var(--color-accent));
-}
 
 .tags-container { display: flex; gap: 1rem; margin-bottom: 4rem; }
 .tag-accent { font-size: 0.6rem; letter-spacing: 2px; border: 1px solid var(--color-accent); color: var(--color-accent); padding: 0.5rem 1rem; }
