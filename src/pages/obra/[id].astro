@@ -96,15 +96,7 @@ const etiqueta = "Fine Art Print";
             <button class="control-btn" id="btn-marco">PROBAR MARCO</button>
           </div>
           
-          <div class="share-controls">
-            <span>COMPARTIR:</span>
-            <div class="social-icons">
-               <i class="fab fa-whatsapp"></i>
-               <i class="fab fa-x-twitter"></i>
-               <i class="fab fa-facebook-f"></i>
-               <i class="fab fa-instagram"></i>
-            </div>
-          </div>
+          <!-- Share controls moved to left column or bottom left -->
         </div>
       </section>
 
@@ -115,10 +107,28 @@ const etiqueta = "Fine Art Print";
         <div class="serie-label-top">SERIE: {serieName}</div>
         <h1 class="obra-title">{title}</h1>
         
-        <!-- Badge Superior de Likes (Captura v1) -->
-        <div class="social-feedback-badge">
-             <i class="fas fa-eye"></i>
-             <span class="social-count" id="social-view-count">0 PERSONAS LES GUSTA ESTO</span>
+        <div class="header-actions-premium">
+            <div class="share-aside-left">
+                <span class="share-label">COMPARTIR</span>
+                <div class="social-links-vertical">
+                    <a href="#" class="social-link"><i class="fab fa-whatsapp"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-x-twitter"></i></a>
+                </div>
+            </div>
+
+            <div class="interaction-block">
+                <button class="btn-like-gold" id="btn-like-premium" data-id={id}>
+                    <svg class="heart-icon" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    <span class="like-text">COLECCIONAR LIKE</span>
+                </button>
+                <div class="social-feedback-badge">
+                    <i class="fas fa-eye"></i>
+                    <span class="social-count" id="social-view-count">0 PERSONAS LES GUSTA ESTO</span>
+                </div>
+            </div>
         </div>
 
         <div class="tags-container">
@@ -371,6 +381,34 @@ const etiqueta = "Fine Art Print";
         btnObra.addEventListener('mouseleave', () => { primaryImg.style.opacity = '1'; (imgSec as HTMLElement).style.opacity = '0'; });
     }
 
+    // --- LIKE BUTTON LOGIC (FERRARI & GOLD) ---
+    const btnLike = document.getElementById('btn-like-premium');
+    const viewCountEl = document.getElementById('social-view-count');
+
+    btnLike?.addEventListener('click', async () => {
+        const artworkId = btnLike.getAttribute('data-id');
+        btnLike.classList.add('animating');
+        
+        try {
+            const res = await fetch('/api/like', {
+                method: 'POST',
+                body: JSON.stringify({ artworkId })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                btnLike.classList.add('liked');
+                if (viewCountEl) {
+                    const current = parseInt(viewCountEl.textContent?.match(/\d+/)?.join('') || '0');
+                    viewCountEl.textContent = `${current + 1} PERSONAS LES GUSTA ESTO`;
+                }
+            }
+        } catch (e) {
+            console.error("Error liking:", e);
+        } finally {
+            setTimeout(() => btnLike.classList.remove('animating'), 500);
+        }
+    });
+
     // --- SIZE SELECTOR ---
     const sizeOptions = document.querySelectorAll('.size-option');
     const priceDisplay = document.getElementById('price-display');
@@ -498,64 +536,100 @@ const etiqueta = "Fine Art Print";
     background: rgba(220, 177, 74, 0.05);
 }
 
-.share-controls {
-    margin-top: 2rem;
+.header-actions-premium {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    font-size: 0.7rem;
+    gap: 4rem;
+    margin-bottom: 4rem;
+}
+
+.share-aside-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    border-left: 1px solid rgba(255,255,255,0.05);
+    padding-left: 2rem;
+}
+
+.share-label {
+    font-size: 0.5rem;
+    letter-spacing: 3px;
     color: var(--color-text-muted);
-    letter-spacing: 2px;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
 }
 
-.social-icons { display: flex; gap: 1rem; }
-.social-icons i { cursor: pointer; transition: color 0.3s; }
-.social-icons i:hover { color: var(--color-white); }
-
-/* 📜 Columna Derecha Scroll */
-.info-column {
-  width: 50vw;
-  padding: 180px 8% 10rem;
-  background: var(--color-onyx-deep); 
+.social-links-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
 }
 
-.back-link {
-  font-size: 0.65rem;
-  letter-spacing: 2px;
-  color: var(--color-accent);
-  text-decoration: none;
-  display: block;
-  margin-bottom: 3rem;
-  text-transform: uppercase;
-  font-weight: 600;
+.social-link {
+    color: var(--color-travertine-muted);
+    font-size: 0.8rem;
+    transition: var(--transition-premium);
 }
 
-.serie-label-top {
-  font-size: 0.6rem;
-  letter-spacing: 4px;
-  color: var(--color-travertine-muted);
-  text-transform: uppercase;
-  margin-bottom: 0.5rem;
+.social-link:hover {
+    color: var(--color-accent);
+    transform: translateX(3px);
 }
 
-.obra-title {
-  font-family: var(--font-primary);
-  font-size: 4rem;
-  color: var(--color-white);
-  margin-bottom: 2rem;
-  line-height: 1;
-  font-weight: 300;
+.interaction-block {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.btn-like-gold {
+    background: transparent;
+    border: 1px solid rgba(220, 177, 74, 0.2);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    color: var(--color-travertine-light);
+}
+
+.heart-icon {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 1.5;
+    transition: all 0.5s ease;
+}
+
+.btn-like-gold:hover {
+    border-color: var(--color-accent);
+    background: rgba(220, 177, 74, 0.05);
+}
+
+.btn-like-gold.liked .heart-icon {
+    fill: var(--color-accent);
+    stroke: var(--color-accent);
+    filter: drop-shadow(0 0 8px var(--color-accent));
+}
+
+.btn-like-gold.liked {
+    border-color: var(--color-accent);
+    color: var(--color-white);
+}
+
+.like-text {
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    font-weight: 700;
 }
 
 .social-feedback-badge {
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    background: rgba(255,255,255,0.03);
-    padding: 0.6rem 1rem;
-    width: fit-content;
-    border-radius: 4px;
-    margin-bottom: 3rem;
+    opacity: 0.6;
 }
 
 .social-count { font-size: 0.55rem; letter-spacing: 2px; color: var(--color-text-muted); }
