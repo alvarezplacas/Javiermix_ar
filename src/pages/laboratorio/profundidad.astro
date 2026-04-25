@@ -97,7 +97,6 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
                 plane.style.transform = `translate3d(${dynamicX}%, 0, ${zOffset}px) rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
 
                 // Opacidad y Blur dinámico
-                const absDist = Math.abs(distance);
                 if (absDist < 400) {
                     plane.style.opacity = (absDist / 400);
                     plane.style.filter = `blur(${(400 - absDist) / 10}px)`;
