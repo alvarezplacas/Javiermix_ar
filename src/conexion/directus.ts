@@ -91,16 +91,20 @@ export class DirectusManager {
 export async function getHomeFiles() {
     try {
         const client = await DirectusManager.getClient();
-        const HOME_FOLDER_ID = 'f74cc3cc-4fce-46e4-8efd-477c65c79e67'; 
-        return await client.request(readFiles({ filter: { folder: { _eq: HOME_FOLDER_ID } }, sort: ['filename_download'], limit: -1 }));
+        const folders = await client.request(readFolders({ filter: { name: { _eq: 'Home' } }, limit: 1 }));
+        const homeId = folders[0]?.id;
+        if (!homeId) return [];
+        return await client.request(readFiles({ filter: { folder: { _eq: homeId } }, sort: ['filename_download'], limit: -1 }));
     } catch (e) { return []; }
 }
 
 export async function getLaboratorioFiles() {
     try {
         const client = await DirectusManager.getClient();
-        const LAB_FOLDER_ID = 'd69266c5-90b3-467f-af9c-de4c7fa02f46';
-        return await client.request(readFiles({ filter: { folder: { _eq: LAB_FOLDER_ID } }, sort: ['filename_download'], limit: -1 }));
+        const folders = await client.request(readFolders({ filter: { name: { _eq: 'Laboratorio' } }, limit: 1 }));
+        const labId = folders[0]?.id;
+        if (!labId) return [];
+        return await client.request(readFiles({ filter: { folder: { _eq: labId } }, sort: ['filename_download'], limit: -1 }));
     } catch (e) { return []; }
 }
 
