@@ -812,7 +812,7 @@ const etiqueta = "Fine Art Print";
   
   .image-controls {
     position: absolute;
-    bottom: 2rem;
+    bottom: 2.5rem;
     left: 0;
     right: 0;
     transform: none;
@@ -820,22 +820,30 @@ const etiqueta = "Fine Art Print";
     max-width: none;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 0.8rem;
     padding: 0 1rem;
     z-index: 100;
   }
 
   .control-btn {
-    padding: 0.7rem 1rem;
-    font-size: 0.6rem;
+    padding: 0.8rem 1.4rem;
+    font-size: 0.65rem;
     flex-shrink: 0;
   }
 
   .btn-like-glass {
-    margin-left: 0.5rem;
-    width: 45px;
+    margin-left: 0.2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(220, 177, 74, 0.1);
+    border: 1px solid rgba(220, 177, 74, 0.3);
+    border-radius: 50%;
   }
-  .heart-icon-glass { width: 24px; height: 24px; }
+  .heart-icon-glass { width: 28px; height: 28px; }
 
   .info-column { 
       padding: 4rem 8%; 
