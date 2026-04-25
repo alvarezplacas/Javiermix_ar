@@ -784,20 +784,50 @@ const etiqueta = "Fine Art Print";
 
 @media (max-width: 1024px) {
   .split-layout { flex-direction: column; }
-  .image-column { height: 60vh; padding: 0; }
+  .image-column { 
+      width: 100% !important; 
+      height: 50vh !important; 
+      padding: 0; 
+      position: relative; /* Reemplaza sticky para mejor flujo en móvil */
+  }
+  
+  .info-column { 
+      width: 100% !important; 
+      padding: 3rem 6%; 
+      padding-bottom: 120px;
+  }
+
+  .image-wrapper {
+      width: 100% !important;
+      height: 100% !important;
+      aspect-ratio: auto !important;
+      background: transparent;
+  }
+
+  .main-artwork {
+      object-fit: contain;
+      max-height: 85%; /* Deja espacio para los botones abajo */
+      top: 5%;
+  }
   
   .image-controls {
-    bottom: 4vh;
-    width: 90%;
-    max-width: 400px;
+    position: absolute;
+    bottom: 2rem;
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    max-width: none;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
+    padding: 0 1rem;
+    z-index: 100;
   }
 
   .control-btn {
-    padding: 0.8rem 1.2rem;
-    font-size: 0.65rem;
+    padding: 0.7rem 1rem;
+    font-size: 0.6rem;
     flex-shrink: 0;
   }
 
