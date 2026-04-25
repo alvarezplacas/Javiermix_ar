@@ -22,10 +22,20 @@ const articles = dbArticles.map(art => {
   const wordCount = (art.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
 
+  // Extraer imágenes para el slideshow (Featured + Media)
+  let slideshowImages = [resolveMediaURL(art.featured_image)];
+  if (art.media_json) {
+    try {
+        const extra = JSON.parse(art.media_json).map((m:any) => resolveMediaURL(m.id || m));
+        slideshowImages = [...slideshowImages, ...extra].slice(0, 5); // Limitamos a 5 para performance
+    } catch(e) { /* ignore */ }
+  }
+
   return {
+    id: art.id,
     title: art.title,
     excerpt: (art.content_html || '').replace(/<[^>]*>/g, '').substring(0, 180) + '...',
-    image: resolveMediaURL(art.featured_image),
+    slideshow: slideshowImages,
     readTime: `${readTime} min`,
     link: `/revista/${art.id}-${art.slug}`,
     location: "Buenos Aires",
@@ -58,10 +68,14 @@ const articles = dbArticles.map(art => {
     <div class="articles-wrapper">
       {articles.length > 0 ? (
         articles.map((article, index) => (
-          <article class={`article-row ${index % 2 !== 0 ? 'reversed' : ''}`}>
+          <article class={`article-row ${index % 2 !== 0 ? 'reversed' : ''}`} data-article-card>
             <div class="article-visual">
-              <div class="tilt-frame">
-                <img src={article.image} alt={article.title} class="article-img" loading="lazy" />
+              <div class="tilt-frame" data-tilt-container>
+                <div class="slideshow-wrapper">
+                    {article.slideshow.map((img, i) => (
+                        <img src={img} alt={`${article.title} - view ${i}`} class={`article-img ${i === 0 ? 'active' : ''}`} loading="lazy" />
+                    ))}
+                </div>
                 <div class="image-glare"></div>
               </div>
               <span class="category-tag">{article.category}</span>
@@ -95,6 +109,62 @@ const articles = dbArticles.map(art => {
   <Footer />
 </Layout>
 
+<script>
+    document.addEventListener('astro:page-load', () => {
+        // 🎞️ SLIDESHOW LÓGICA (CROSS-FADE)
+        const articles = document.querySelectorAll('[data-article-card]');
+        articles.forEach(art => {
+            const imgs = art.querySelectorAll('.article-img');
+            if (imgs.length <= 1) return;
+
+            let current = 0;
+            setInterval(() => {
+                imgs[current].classList.remove('active');
+                current = (current + 1) % imgs.length;
+                imgs[current].classList.add('active');
+            }, 4000);
+        });
+
+        // 💡 EFECTO 3D MARCADO (FERRARI STYLE)
+        const handleTilt = (e: MouseEvent) => {
+            const container = (e.target as HTMLElement).closest('[data-tilt-container]') as HTMLElement;
+            if (!container) return;
+
+            const r = container.getBoundingClientRect();
+            const x = e.clientX - r.left; 
+            const y = e.clientY - r.top;
+            
+            // Ángulo más marcado (divisor menor = más rotación)
+            const rx = (y - r.height/2) / 12; 
+            const ry = (r.width/2 - x) / 12;
+            
+            container.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.05, 1.05, 1.05)`;
+            
+            // Glare dinámico
+            const glare = container.querySelector('.image-glare') as HTMLElement;
+            if (glare) {
+                const px = (x / r.width) * 100;
+                const py = (y / r.height) * 100;
+                glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.15) 0%, transparent 80%)`;
+                glare.style.opacity = "1";
+            }
+        };
+
+        const resetTilt = (e: MouseEvent) => {
+            const container = (e.target as HTMLElement).closest('[data-tilt-container]') as HTMLElement;
+            if (!container) return;
+            container.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+            const glare = container.querySelector('.image-glare') as HTMLElement;
+            if (glare) glare.style.opacity = "0";
+        };
+
+        document.querySelectorAll('.articles-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('mousemove', (e:any) => handleTilt(e));
+            wrapper.addEventListener('mouseleave', (e:any) => resetTilt(e));
+        });
+    });
+</script>
+
 <style>
   .revista-main { background-color: var(--color-onyx-deep); min-height: 100vh; padding-top: 5rem; }
   .revista-hero { text-align: center; padding: 8rem 2rem 6rem; position: relative; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -105,11 +175,25 @@ const articles = dbArticles.map(art => {
   .article-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center; }
   .article-row.reversed { direction: rtl; }
   .article-row.reversed > * { direction: ltr; }
-  .article-visual { position: relative; }
-  .tilt-frame { width: 100%; height: 500px; overflow: hidden; position: relative; background: #111; box-shadow: 0 40px 80px rgba(0,0,0,0.6); }
-  .article-img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(30%) brightness(0.85); transition: transform 0.8s ease; }
-  .tilt-frame:hover .article-img { transform: scale(1.06); filter: grayscale(0%) brightness(1); }
-  .category-tag { position: absolute; bottom: -1rem; left: 2rem; background: var(--color-accent); color: #000; font-size: 0.65rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 0.5rem 1.2rem; }
+  .article-visual { position: relative; perspective: 1000px; }
+  .tilt-frame { 
+      width: 100%; height: 500px; overflow: hidden; position: relative; background: #080808; 
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6); 
+      transition: transform 0.2s ease-out;
+      transform-style: preserve-3d;
+  }
+  .slideshow-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .article-img { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; 
+      filter: grayscale(30%) brightness(0.8); transition: opacity 2s ease, transform 1s ease; 
+      opacity: 0;
+  }
+  .article-img.active { opacity: 1; filter: grayscale(0%) brightness(1); }
+  .image-glare { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+      pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.3s;
+  }
+  .category-tag { position: absolute; bottom: -1rem; left: 2rem; background: var(--color-accent); color: #000; font-size: 0.65rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 0.5rem 1.2rem; z-index: 10; }
   .article-text { padding: 2rem 0; }
   .article-location { display: block; font-size: 0.7rem; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 1.5rem; }
   .article-headline { font-size: clamp(2.5rem, 4vw, 3.5rem); font-weight: 400; font-style: italic; color: #fff; line-height: 1.1; margin-bottom: 2rem; font-family: var(--font-primary); }
