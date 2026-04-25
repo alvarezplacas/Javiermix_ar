@@ -26,10 +26,13 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
                 <article class="wall-spot">
                     <div class="ceiling-light"></div>
                     <div class="artwork-frame">
+                        <div class="loading-spinner"></div>
                         <img 
-                          src={getAssetUrl(art.id, { width: 1000, quality: 90 })} 
+                          src={getAssetUrl(art.id, { width: 1200, quality: 85 })} 
                           alt={art.title} 
                           class="art-image"
+                          onload="this.parentElement.querySelector('.loading-spinner').remove()"
+                          onerror="this.src='/fallback-art.jpg'"
                         />
                         <div class="frame-shadow"></div>
                     </div>
@@ -41,6 +44,22 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
                 </article>
             ))}
         </div>
+    </div>
+
+    <!-- 🎨 Selector de Estilos -->
+    <div class="theme-selector">
+        <button class="theme-btn active" data-theme="dark" title="Dark Museum">
+            <span style="background: #0a0a0a;"></span>
+        </button>
+        <button class="theme-btn" data-theme="white" title="White Gallery">
+            <span style="background: #e0e0e0;"></span>
+        </button>
+        <button class="theme-btn" data-theme="red" title="Classic Maroon">
+            <span style="background: #4a0a0a;"></span>
+        </button>
+        <button class="theme-btn" data-theme="stone" title="Industrial Stone">
+            <span style="background: #2a2a2a;"></span>
+        </button>
     </div>
 
     <!-- Guía de Navegación -->
@@ -77,6 +96,25 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
 
         updateWall();
 
+        // --- 🎨 GESTIÓN DE TEMAS ---
+        const wrapper = document.querySelector('.royal-gallery-wrapper');
+        const themeBtns = document.querySelectorAll('.theme-btn');
+        let currentLightColor = 'rgba(220, 177, 74, 0.03)';
+
+        themeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const theme = btn.getAttribute('data-theme');
+                wrapper?.setAttribute('data-theme', theme || 'dark');
+                
+                themeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Ajustamos la luz según el tema
+                if (theme === 'white') currentLightColor = 'rgba(0, 0, 0, 0.05)';
+                else currentLightColor = 'rgba(220, 177, 74, 0.03)';
+            });
+        });
+
         // --- 💡 MOTOR DE ILUMINACIÓN ---
         const canvas = document.getElementById('lighting-canvas') as HTMLCanvasElement;
         const ctx = canvas.getContext('2d');
@@ -90,12 +128,12 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
         function drawLight() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Luz ambiental tenue
+            // Luz ambiental tenue dinámica
             const ambient = ctx.createRadialGradient(
                 canvas.width / 2, canvas.height / 2, 0,
                 canvas.width / 2, canvas.height / 2, canvas.width
             );
-            ambient.addColorStop(0, 'rgba(220, 177, 74, 0.03)');
+            ambient.addColorStop(0, currentLightColor);
             ambient.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = ambient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -168,10 +206,30 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
     will-change: transform;
     z-index: 2;
     position: relative;
-    /* Textura de micro-cemento sutil */
-    background-image: 
-        radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0);
-    background-size: 40px 40px;
+    transition: background 1s ease;
+    background-color: var(--wall-color);
+  }
+
+  /* 💎 Variaciones de Pared */
+  .royal-gallery-wrapper[data-theme="dark"] { --wall-color: #050505; }
+  .royal-gallery-wrapper[data-theme="white"] { --wall-color: #e5e5e5; }
+  .royal-gallery-wrapper[data-theme="red"] { --wall-color: #3d0505; }
+  .royal-gallery-wrapper[data-theme="stone"] { --wall-color: #1a1a1a; }
+
+  /* Texturas específicas por tema */
+  .royal-gallery-wrapper[data-theme="dark"] .gallery-wall {
+      background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0);
+      background-size: 40px 40px;
+  }
+  .royal-gallery-wrapper[data-theme="white"] .gallery-wall {
+      background-image: linear-gradient(rgba(0,0,0,0.01) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.01) 1px, transparent 1px);
+      background-size: 100px 100px;
+  }
+  .royal-gallery-wrapper[data-theme="white"] .artwork-label h3 { color: #222; }
+  .royal-gallery-wrapper[data-theme="white"] .artwork-label p { color: #666; }
+  .royal-gallery-wrapper[data-theme="red"] .gallery-wall {
+      background-image: radial-gradient(rgba(0,0,0,0.2) 2px, transparent 0);
+      background-size: 60px 60px;
   }
 
   .wall-spot {
@@ -209,10 +267,27 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
     padding: 2rem;
     background: #000;
     box-shadow: 
-        0 30px 60px rgba(0,0,0,0.8),
+        0 40px 100px rgba(0,0,0,0.9),
         inset 0 0 0 1px rgba(255,255,255,0.05);
     transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    min-width: 300px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+
+  .loading-spinner {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 2px solid rgba(220, 177, 74, 0.2);
+      border-top-color: var(--lab-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .artwork-frame:hover {
       transform: scale(1.02) translateY(-10px);
@@ -256,18 +331,56 @@ const filteredArtworks = artworks.filter(f => !(f.filename_download || "").match
 
   .scroll-guide {
       position: fixed;
-      bottom: 3rem;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 2rem;
+      left: 2rem;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 1rem;
+      gap: 1.5rem;
       color: rgba(255,255,255,0.2);
       font-size: 0.6rem;
       letter-spacing: 4px;
       z-index: 10;
   }
+
+  /* 🎨 Estilo Theme Selector */
+  .theme-selector {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 100;
+      display: flex;
+      gap: 1rem;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(20px);
+      padding: 0.8rem;
+      border-radius: 40px;
+      border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .theme-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      padding: 2px;
+      background: none;
+      cursor: pointer;
+      transition: all 0.3s;
+  }
+
+  .theme-btn span {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+  }
+
+  .theme-btn.active {
+      border-color: var(--lab-gold);
+      transform: scale(1.2);
+  }
+
+  .theme-btn:hover { transform: scale(1.1); }
 
   .guide-line {
       width: 1px;
