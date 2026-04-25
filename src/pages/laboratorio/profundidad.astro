@@ -82,28 +82,25 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
                 const initialX = parseFloat(plane.style.getPropertyValue('--x-pos'));
                 const distance = zOffset + scrollY;
                 
-                // 🚀 CALIBRACIÓN FINAL: ESCAPE TOTAL + INCLINACIÓN
+                // 🛣️ LÓGICA DE RUTA INFINITA (Efecto Árboles al Pasar)
                 const absDist = Math.abs(distance);
-                const spreadFactor = Math.max(0, 1 - (absDist / 2800));
+                const spreadFactor = Math.max(0, 1 - (absDist / 3000));
                 
-                // Escape lateral masivo (120vw) para evitar cualquier choque
-                const spreadCurve = Math.pow(spreadFactor, 2.2); 
-                const baseVW = (initialX > 0 ? 15 : -15); 
-                const pushVW = (initialX > 0 ? 120 : -120) * spreadCurve; 
-                const totalX = baseVW + pushVW;
+                // Las obras se abren en V desde el punto de fuga
+                // Dejamos un carril central despejado de 40vw
+                const dynamicX = (initialX > 0 ? 40 : -40) + (initialX > 0 ? 100 : -100) * spreadFactor;
                 
-                // Rotación Y marcada (30 grados) para efecto de desvío
-                const rotationY = (initialX > 0 ? -30 : 30) * Math.pow(spreadFactor, 2);
-                const rotationX = (initialX > 0 ? 5 : -5) * spreadFactor;
+                // Rotación tipo "Árbol/Billboard" (mirando levemente al centro)
+                const rotationY = (initialX > 0 ? -45 : 45) * (1 - spreadFactor * 0.5);
                 
-                plane.style.transform = `translate3d(${totalX}vw, 0, ${zOffset}px) rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
+                plane.style.transform = `translate3d(${dynamicX}vw, 0, ${zOffset}px) rotateY(${rotationY}deg)`;
 
-                // Opacidad y Blur dinámico (Umbral de 500px para seguridad visual)
-                if (absDist < 500) {
-                    plane.style.opacity = (absDist / 500);
-                    plane.style.filter = `blur(${(500 - absDist) / 8}px)`;
-                } else if (absDist > 4000) {
-                    plane.style.opacity = Math.max(0, 1 - (absDist - 4000) / 1000);
+                // Opacidad y Blur (Desaparecen al pasar por tu lado)
+                if (absDist < 300) {
+                    plane.style.opacity = (absDist / 300);
+                    plane.style.filter = `blur(${(300 - absDist) / 5}px)`;
+                } else if (absDist > 5000) {
+                    plane.style.opacity = Math.max(0, 1 - (absDist - 5000) / 1000);
                 } else {
                     plane.style.opacity = 1;
                     plane.style.filter = 'blur(0px)';
