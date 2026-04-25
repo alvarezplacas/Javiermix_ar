@@ -1,173 +1,174 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getLaboratorioFiles, getAssetUrl } from '../conexion/directus';
-
-const rawFiles = await getLaboratorioFiles();
-
-// 🧠 Lógica de Agrupación Inteligente para el Laboratorio
-const groups = [];
-const processed = new Set();
-
-rawFiles.forEach(file => {
-    const filename = file.filename_download || "";
-    // Si el archivo termina en " 2.ext" o "2.ext", es una variante de ambiente
-    if (filename.match(/[\s_]2\.[^.]+$/i) || processed.has(file.id)) return;
-
-    // Buscamos si existe su pareja " 2"
-    const baseName = filename.substring(0, filename.lastIndexOf('.'));
-    const variant = rawFiles.find(f => {
-        const fName = f.filename_download || "";
-        return fName.includes(baseName) && (fName.match(/[\s_]2\.[^.]+$/i));
-    });
-
-    groups.push({
-        main: file,
-        room: variant || null
-    });
-    
-    processed.add(file.id);
-    if (variant) processed.add(variant.id);
-});
 ---
 
 <Layout title="Laboratorio de Diseño 2026 | JavierMix">
-  <main class="lab-container">
+  <main class="lab-portal">
     <header class="lab-header">
       <div class="badge">ESTÁNDAR 2026</div>
       <h1>Gabinete de Experimentación</h1>
       <p class="description">
-        Sincronía entre <span>materia y ambiente</span>. 
-        Pasa el ratón para situar la obra en su contexto.
+        Un espacio dedicado a <span>redefinir</span> la forma en que el coleccionista interactúa con el arte fino. 
+        Aquí exploramos interfaces inmersivas y tecnologías de vanguardia.
       </p>
 
-      <div class="experiment-cta">
-        <a href="/laboratorio/profundidad" class="btn-lab-new">
-            <span class="pulse"></span>
-            EXPERIMENTO: INFINITY GALLERY 3D
-        </a>
+      <div class="experiment-list">
+        <!-- Experimento 01: Infinity Gallery -->
+        <div class="experiment-card">
+            <span class="exp-number">01</span>
+            <div class="exp-content">
+                <h2>Infinity Gallery 3D</h2>
+                <p>Navegación inmersiva en profundidad con motor de atmósfera y escape lateral.</p>
+                <a href="/laboratorio/profundidad" class="btn-lab-new">
+                    <span class="pulse"></span>
+                    INICIAR EXPERIENCIA
+                </a>
+            </div>
+        </div>
+
+        <!-- Experimento 02: Gabinete de Contexto -->
+        <div class="experiment-card">
+            <span class="exp-number">02</span>
+            <div class="exp-content">
+                <h2>Sincronía de Espacios</h2>
+                <p>Exploración de la obra situada en ambientes reales. Interacción de hover comparativo.</p>
+                <a href="/laboratorio/contexto" class="btn-lab-new">
+                    <span class="pulse"></span>
+                    VER CONTEXTOS
+                </a>
+            </div>
+        </div>
+
+        <!-- Futuros experimentos se añadirán aquí -->
       </div>
     </header>
-
-    <section class="lab-grid">
-      {groups.map((group, index) => (
-        <div class="lab-card" style={`--index: ${index}`}>
-          <div class="image-box">
-            {/* Obra Principal */}
-            <img 
-              src={getAssetUrl(group.main.id, { width: 1000, quality: 85 })} 
-              alt={group.main.title || 'Obra Javier Mix'} 
-              class="img-main"
-              loading="lazy"
-            />
-            
-            {/* Vista en Sala (Hover) */}
-            {group.room && (
-              <img 
-                src={getAssetUrl(group.room.id, { width: 1000, quality: 85 })} 
-                alt="Vista en Sala" 
-                class="img-room"
-                loading="lazy"
-              />
-            )}
-
-            <div class="hover-overlay">
-                <span class="view-tag">{group.room ? 'VISTA EN AMBIENTE' : 'OBRA ÚNICA'}</span>
-            </div>
-          </div>
-
-          <div class="card-footer">
-            <span class="serial">JMX-LAB-{group.main.id.substring(0,4).toUpperCase()}</span>
-            <h3>{group.main.title || 'Estudio Fotográfico'}</h3>
-            <div class="tech-specs">Fine Art · Canson Museum Pro</div>
-          </div>
-        </div>
-      ))}
-    </section>
   </main>
 </Layout>
 
 <style>
   :root {
     --lab-gold: #dcb14a;
-    --lab-bg: #050505;
-    --lab-card-bg: #0d0d0d;
     --transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .lab-container {
-    padding: 10rem 4vw;
-    background: var(--lab-bg);
+  .lab-portal {
     min-height: 100vh;
-    color: white;
+    background: #030303;
+    padding: 8rem 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .lab-header {
-    text-align: center;
     max-width: 900px;
-    margin: 0 auto 8rem;
+    width: 100%;
+    text-align: center;
   }
 
   .badge {
     display: inline-block;
-    padding: 0.6rem 1.4rem;
+    padding: 0.5rem 1.5rem;
     background: var(--lab-gold);
     color: black;
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     font-weight: 900;
-    letter-spacing: 0.3rem;
-    margin-bottom: 2.5rem;
-    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 2rem;
   }
 
   h1 {
     font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(3rem, 10vw, 6rem);
-    font-weight: 300;
+    font-size: clamp(3rem, 8vw, 6rem);
+    color: #fff;
     line-height: 1;
     margin-bottom: 2rem;
+    text-transform: uppercase;
+    letter-spacing: -2px;
   }
 
   .description {
-    font-size: 1.2rem;
-    color: #888;
+    color: rgba(255,255,255,0.4);
+    font-size: 1.1rem;
     max-width: 600px;
-    margin: 0 auto;
+    margin: 0 auto 5rem;
     line-height: 1.6;
   }
 
   .description span { color: var(--lab-gold); font-weight: 600; }
 
-  /* 🧪 New Experiment CTA */
-  .experiment-cta {
-      margin-top: 4rem;
+  /* 🧪 Experiment List */
+  .experiment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      align-items: center;
+  }
+
+  .experiment-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      padding: 3rem;
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      gap: 3rem;
+      text-align: left;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+  }
+
+  .experiment-card:hover {
+      border-color: var(--lab-gold);
+      background: rgba(220, 177, 74, 0.05);
+      transform: translateY(-10px);
+  }
+
+  .exp-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 4rem;
+      color: rgba(220, 177, 74, 0.2);
+      line-height: 1;
+  }
+
+  .exp-content h2 {
+      color: #fff;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      letter-spacing: 2px;
+  }
+
+  .exp-content p {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      line-height: 1.6;
   }
 
   .btn-lab-new {
       display: inline-flex;
       align-items: center;
       gap: 1.5rem;
-      padding: 1.2rem 2.5rem;
+      padding: 1rem 2rem;
       border: 1px solid var(--lab-gold);
       color: var(--lab-gold);
       text-decoration: none;
-      font-size: 0.8rem;
+      font-size: 0.7rem;
       font-weight: 800;
-      letter-spacing: 4px;
+      letter-spacing: 3px;
       position: relative;
       transition: var(--transition);
-      background: rgba(220, 177, 74, 0.05);
   }
 
   .btn-lab-new:hover {
       background: var(--lab-gold);
       color: black;
-      transform: translateY(-5px);
-      box-shadow: 0 15px 30px rgba(220, 177, 74, 0.2);
   }
 
   .pulse {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       background: var(--lab-gold);
       border-radius: 50%;
       position: relative;
@@ -176,7 +177,7 @@ rawFiles.forEach(file => {
   .pulse::after {
       content: '';
       position: absolute;
-      inset: -5px;
+      inset: -4px;
       border: 1px solid var(--lab-gold);
       border-radius: 50%;
       animation: pulseAnim 2s infinite;
@@ -187,113 +188,8 @@ rawFiles.forEach(file => {
       100% { transform: scale(3); opacity: 0; }
   }
 
-  /* Grid Centrado y Premium */
-  .lab-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-    gap: 6rem;
-    max-width: 1600px;
-    margin: 0 auto;
-  }
-
-  .lab-card {
-    opacity: 0;
-    transform: translateY(30px);
-    animation: revealCard 1s forwards;
-    animation-delay: calc(var(--index) * 0.15s);
-  }
-
-  @keyframes revealCard {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .image-box {
-    position: relative;
-    aspect-ratio: 4/5;
-    background: #111;
-    overflow: hidden;
-    cursor: crosshair;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-  }
-
-  .image-box img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* 🚀 FIX: No recorta las fotos */
-    transition: var(--transition);
-    padding: 2rem; /* Espacio para que respire la obra */
-  }
-
-  .img-room {
-    opacity: 0;
-    transform: scale(1.05);
-    z-index: 2;
-  }
-
-  /* Efecto Hover */
-  .image-box:hover .img-main {
-    opacity: 0.2;
-    transform: scale(0.95);
-    filter: blur(10px);
-  }
-
-  .image-box:hover .img-room {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  .hover-overlay {
-    position: absolute;
-    bottom: 2rem;
-    left: 2rem;
-    z-index: 10;
-    opacity: 0;
-    transition: var(--transition);
-  }
-
-  .image-box:hover .hover-overlay { opacity: 1; }
-
-  .view-tag {
-    background: var(--lab-gold);
-    color: black;
-    font-size: 0.6rem;
-    font-weight: 800;
-    padding: 0.5rem 1rem;
-    letter-spacing: 2px;
-  }
-
-  /* Footer de la Card */
-  .card-footer {
-    margin-top: 2.5rem;
-    text-align: left;
-  }
-
-  .serial {
-    font-size: 0.6rem;
-    color: var(--lab-gold);
-    letter-spacing: 3px;
-    display: block;
-    margin-bottom: 0.5rem;
-  }
-
-  h3 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2.2rem;
-    font-weight: 400;
-    margin-bottom: 0.5rem;
-  }
-
-  .tech-specs {
-    font-size: 0.8rem;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-  }
-
   @media (max-width: 768px) {
-    .lab-grid { grid-template-columns: 1fr; }
-    .image-box { aspect-ratio: 1; }
+      .experiment-card { flex-direction: column; gap: 1rem; padding: 2rem; }
+      .exp-number { font-size: 2.5rem; }
   }
 </style>

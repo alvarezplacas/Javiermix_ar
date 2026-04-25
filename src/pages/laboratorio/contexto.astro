@@ -1,0 +1,158 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getLaboratorioFiles, getAssetUrl } from '../../conexion/directus';
+
+const rawFiles = await getLaboratorioFiles();
+const processed = new Set();
+const artworkPairs = [];
+
+rawFiles.forEach(file => {
+  const baseName = file.filename_download.replace(/[\s_]2\.[^.]+$/i, '');
+  if (!processed.has(baseName)) {
+    const mainArt = rawFiles.find(f => f.filename_download.startsWith(baseName) && !f.filename_download.match(/[\s_]2\.[^.]+$/i));
+    const roomArt = rawFiles.find(f => f.filename_download.startsWith(baseName) && f.filename_download.match(/[\s_]2\.[^.]+$/i));
+    
+    if (mainArt) {
+      artworkPairs.push({
+        id: mainArt.id,
+        title: mainArt.title || 'Obra Javier Mix',
+        mainUrl: getAssetUrl(mainArt.id, { width: 800, quality: 80 }),
+        roomUrl: roomArt ? getAssetUrl(roomArt.id, { width: 800, quality: 80 }) : null
+      });
+      processed.add(baseName);
+    }
+  }
+});
+---
+
+<Layout title="Gabinete de Contexto | JavierMix">
+  <main class="context-lab">
+    <header class="lab-header">
+        <a href="/laboratorio" class="btn-back">← VOLVER AL GABINETE</a>
+        <h1>Sincronía: Obra y Ambiente</h1>
+        <p>Pasa el ratón sobre la obra para situarla en su contexto espacial.</p>
+    </header>
+
+    <section class="lab-grid">
+      {artworkPairs.map((pair) => (
+        <article class="lab-card">
+          <div class="image-container">
+            <img src={pair.mainUrl} alt={pair.title} class="main-img" loading="lazy" />
+            {pair.roomUrl && <img src={pair.roomUrl} alt={`${pair.title} en ambiente`} class="room-img" loading="lazy" />}
+            <div class="overlay">
+              <span class="view-label">AMBIENTE</span>
+            </div>
+          </div>
+          <div class="card-info">
+            <h3>{pair.title}</h3>
+            <span class="year">Colección 2026</span>
+          </div>
+        </article>
+      ))}
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .context-lab {
+    background: #030303;
+    min-height: 100vh;
+    padding: 6rem 2rem;
+  }
+
+  .lab-header {
+      text-align: center;
+      margin-bottom: 5rem;
+  }
+
+  .btn-back {
+      color: var(--lab-gold);
+      text-decoration: none;
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      margin-bottom: 2rem;
+      display: inline-block;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 4rem;
+    color: #fff;
+    margin-bottom: 1rem;
+  }
+
+  p { color: rgba(255,255,255,0.4); letter-spacing: 2px; font-size: 0.8rem; }
+
+  .lab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 3rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .lab-card {
+    background: #0a0a0a;
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 1.5rem;
+    transition: all 0.5s ease;
+  }
+
+  .image-container {
+    position: relative;
+    aspect-ratio: 4/5;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .main-img, .room-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+  }
+
+  .room-img { opacity: 0; transform: scale(1.1); }
+
+  .lab-card:hover .main-img { opacity: 0; transform: scale(1.05); }
+  .lab-card:hover .room-img { opacity: 1; transform: scale(1); }
+
+  .overlay {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+      padding: 0.5rem 1rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+  }
+
+  .lab-card:hover .overlay { opacity: 1; }
+  .view-label { color: #fff; font-size: 0.6rem; letter-spacing: 2px; }
+
+  .card-info {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+
+  h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  .year {
+    font-size: 0.6rem;
+    color: var(--lab-gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 768px) {
+    .lab-grid { grid-template-columns: 1fr; }
+  }
+</style>
