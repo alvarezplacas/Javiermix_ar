@@ -39,6 +39,13 @@ rawFiles.forEach(file => {
         Sincronía entre <span>materia y ambiente</span>. 
         Pasa el ratón para situar la obra en su contexto.
       </p>
+
+      <div class="experiment-cta">
+        <a href="/laboratorio/profundidad" class="btn-lab-new">
+            <span class="pulse"></span>
+            EXPERIMENTO: INFINITY GALLERY 3D
+        </a>
+      </div>
     </header>
 
     <section class="lab-grid">
@@ -129,6 +136,56 @@ rawFiles.forEach(file => {
   }
 
   .description span { color: var(--lab-gold); font-weight: 600; }
+
+  /* 🧪 New Experiment CTA */
+  .experiment-cta {
+      margin-top: 4rem;
+  }
+
+  .btn-lab-new {
+      display: inline-flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.2rem 2.5rem;
+      border: 1px solid var(--lab-gold);
+      color: var(--lab-gold);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      position: relative;
+      transition: var(--transition);
+      background: rgba(220, 177, 74, 0.05);
+  }
+
+  .btn-lab-new:hover {
+      background: var(--lab-gold);
+      color: black;
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(220, 177, 74, 0.2);
+  }
+
+  .pulse {
+      width: 10px;
+      height: 10px;
+      background: var(--lab-gold);
+      border-radius: 50%;
+      position: relative;
+  }
+
+  .pulse::after {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border: 1px solid var(--lab-gold);
+      border-radius: 50%;
+      animation: pulseAnim 2s infinite;
+  }
+
+  @keyframes pulseAnim {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(3); opacity: 0; }
+  }
 
   /* Grid Centrado y Premium */
   .lab-grid {

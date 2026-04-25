@@ -1,0 +1,272 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getLaboratorioFiles, getAssetUrl } from '../../conexion/directus';
+
+const rawFiles = await getLaboratorioFiles();
+// Filtramos solo las obras principales para el túnel
+const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2\.[^.]+$/i)).slice(0, 15);
+---
+
+<Layout title="Infinity Gallery 2026 | Profundidad 3D">
+  <main class="depth-viewer">
+    <canvas id="atmosphere-canvas"></canvas>
+    
+    <div class="depth-instructions">
+      <span class="mouse-icon">🖱️</span>
+      <p>Scroll para caminar por la galería</p>
+    </div>
+
+    <div class="depth-scene" id="main-scene">
+      {artworks.map((art, i) => (
+        <div 
+          class="art-plane" 
+          style={`--z-offset: ${i * -1500}px; --x-pos: ${(i % 2 === 0 ? 1 : -1) * 30}%`}
+          data-id={art.id}
+        >
+          <div class="art-frame">
+            <img 
+              src={getAssetUrl(art.id, { width: 1200, quality: 90 })} 
+              alt={art.title} 
+              class="art-img"
+            />
+            <div class="art-info">
+              <span class="label">Colección 2026</span>
+              <h3>{art.title || 'Obra Javier Mix'}</h3>
+              <a href={`/obra/${art.id}`} class="btn-collect">COLECCIONAR</a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="progress-bar">
+        <div class="fill" id="depth-progress"></div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const scene = document.getElementById('main-scene');
+        const progressFill = document.getElementById('depth-progress');
+        const planes = document.querySelectorAll('.art-plane');
+        
+        let scrollY = 0;
+        let targetScrollY = 0;
+        const maxScroll = (planes.length - 1) * 1500;
+
+        // --- 🧊 MOTOR DE PROFUNDIDAD ---
+        window.addEventListener('wheel', (e) => {
+            targetScrollY += e.deltaY * 2;
+            targetScrollY = Math.max(0, Math.min(targetScrollY, maxScroll + 1000));
+        }, { passive: true });
+
+        function updateDepth() {
+            // Suavizado (Lerp) para efecto Ferrari
+            scrollY += (targetScrollY - scrollY) * 0.05;
+            
+            if (scene) {
+                scene.style.transform = `perspective(1200px) translateZ(${scrollY}px)`;
+            }
+
+            // Opacidad dinámica basada en la cercanía
+            planes.forEach((plane: any) => {
+                const zOffset = parseInt(plane.style.getPropertyValue('--z-offset'));
+                const distance = Math.abs(zOffset + scrollY);
+                
+                // Si está muy cerca, se desvanece (pasa por el costado)
+                if (distance < 500) {
+                    plane.style.opacity = (distance / 500);
+                    plane.style.filter = `blur(${(500 - distance) / 20}px)`;
+                } else if (distance > 3000) {
+                    plane.style.opacity = Math.max(0, 1 - (distance - 3000) / 1000);
+                } else {
+                    plane.style.opacity = 1;
+                    plane.style.filter = 'blur(0px)';
+                }
+            });
+
+            if (progressFill) {
+                const progress = (scrollY / maxScroll) * 100;
+                progressFill.style.width = `${Math.min(100, progress)}%`;
+            }
+
+            requestAnimationFrame(updateDepth);
+        }
+
+        updateDepth();
+
+        // --- ✨ ATMOSPHERE CANVAS (POLVO DE LUZ) ---
+        const canvas = document.getElementById('atmosphere-canvas') as HTMLCanvasElement;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let particles: any[] = [];
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = Array.from({ length: 150 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                z: Math.random() * 2000,
+                s: Math.random() * 2 + 1
+            }));
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const camZ = scrollY;
+            
+            particles.forEach(p => {
+                const relativeZ = (p.z - (camZ % 2000) + 2000) % 2000;
+                const scale = 500 / relativeZ;
+                const x = (p.x - canvas.width/2) * scale + canvas.width/2;
+                const y = (p.y - canvas.height/2) * scale + canvas.height/2;
+                
+                if (relativeZ > 10) {
+                    ctx.fillStyle = `rgba(220, 177, 74, ${Math.min(1, scale * 0.5)})`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, p.s * scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+        drawParticles();
+    });
+</script>
+
+<style>
+  :root {
+    --lab-gold: #dcb14a;
+    --depth-bg: #030303;
+  }
+
+  .depth-viewer {
+    width: 100vw;
+    height: 100vh;
+    background: var(--depth-bg);
+    overflow: hidden;
+    position: relative;
+  }
+
+  #atmosphere-canvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .depth-instructions {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    z-index: 5;
+    pointer-events: none;
+    animation: fadeOut 3s forwards 2s;
+  }
+
+  @keyframes fadeOut { to { opacity: 0; } }
+
+  .mouse-icon { font-size: 2rem; display: block; margin-bottom: 1rem; }
+
+  .depth-scene {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    will-change: transform;
+    z-index: 2;
+  }
+
+  .art-plane {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 600px;
+    height: 800px;
+    margin-left: -300px;
+    margin-top: -400px;
+    transform-style: preserve-3d;
+    transform: translate3d(var(--x-pos), 0, var(--z-offset));
+    transition: opacity 0.5s;
+  }
+
+  .art-frame {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    padding: 1rem;
+    box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .art-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.8);
+  }
+
+  .art-info {
+    position: absolute;
+    bottom: -100px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    transform: translateZ(50px);
+    opacity: 0;
+    transition: all 0.5s;
+  }
+
+  .art-plane:hover .art-info {
+      opacity: 1;
+      bottom: 2rem;
+  }
+
+  .art-info h3 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; margin-bottom: 1rem; color: #fff; }
+  .label { font-size: 0.6rem; letter-spacing: 4px; color: var(--lab-gold); text-transform: uppercase; margin-bottom: 0.5rem; display: block; }
+
+  .btn-collect {
+      display: inline-block;
+      padding: 0.8rem 2rem;
+      border: 1px solid var(--lab-gold);
+      color: var(--lab-gold);
+      text-decoration: none;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      transition: all 0.3s;
+  }
+
+  .btn-collect:hover { background: var(--lab-gold); color: black; }
+
+  .progress-bar {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      height: 2px;
+      background: rgba(255,255,255,0.1);
+      z-index: 10;
+  }
+
+  .progress-bar .fill {
+      height: 100%;
+      background: var(--lab-gold);
+      width: 0;
+      transition: width 0.1s;
+      box-shadow: 0 0 10px var(--lab-gold);
+  }
+
+  @media (max-width: 768px) {
+      .art-plane { width: 300px; height: 400px; margin-left: -150px; margin-top: -200px; }
+  }
+</style>
