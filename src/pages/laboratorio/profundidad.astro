@@ -62,24 +62,31 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
         }, { passive: true });
 
         function updateDepth() {
-            // Suavizado (Lerp) para efecto Ferrari
             scrollY += (targetScrollY - scrollY) * 0.05;
             
             if (scene) {
                 scene.style.transform = `perspective(1200px) translateZ(${scrollY}px)`;
             }
 
-            // Opacidad dinámica basada en la cercanía
             planes.forEach((plane: any) => {
                 const zOffset = parseInt(plane.style.getPropertyValue('--z-offset'));
-                const distance = Math.abs(zOffset + scrollY);
+                const initialX = parseFloat(plane.style.getPropertyValue('--x-pos'));
+                const distance = zOffset + scrollY;
                 
-                // Si está muy cerca, se desvanece (pasa por el costado)
-                if (distance < 500) {
-                    plane.style.opacity = (distance / 500);
-                    plane.style.filter = `blur(${(500 - distance) / 20}px)`;
-                } else if (distance > 3000) {
-                    plane.style.opacity = Math.max(0, 1 - (distance - 3000) / 1000);
+                // 🚀 LÓGICA DE EXPANSIÓN LATERAL
+                // A medida que la distancia se acerca a 0 (el espectador), el X aumenta
+                const spreadFactor = Math.max(0, 1 - (Math.abs(distance) / 2000));
+                const dynamicX = initialX + (initialX > 0 ? 40 : -40) * Math.pow(spreadFactor, 2);
+                
+                plane.style.transform = `translate3d(${dynamicX}%, 0, ${zOffset}px)`;
+
+                // Opacidad y Blur dinámico
+                const absDist = Math.abs(distance);
+                if (absDist < 400) {
+                    plane.style.opacity = (absDist / 400);
+                    plane.style.filter = `blur(${(400 - absDist) / 10}px)`;
+                } else if (absDist > 4000) {
+                    plane.style.opacity = Math.max(0, 1 - (absDist - 4000) / 1000);
                 } else {
                     plane.style.opacity = 1;
                     plane.style.filter = 'blur(0px)';
@@ -188,30 +195,33 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 600px;
-    height: 800px;
-    margin-left: -300px;
-    margin-top: -400px;
+    width: 700px;
+    height: 80vh;
+    margin-left: -350px;
+    margin-top: -40vh;
     transform-style: preserve-3d;
-    transform: translate3d(var(--x-pos), 0, var(--z-offset));
-    transition: opacity 0.5s;
+    will-change: transform, opacity;
   }
 
   .art-frame {
     width: 100%;
     height: 100%;
-    background: #000;
-    padding: 1rem;
-    box-shadow: 0 50px 100px rgba(0,0,0,0.8);
     position: relative;
-    border: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .art-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain; /* 💎 No recortar nunca */
+    box-shadow: 0 50px 100px rgba(0,0,0,0.9);
+    border: 1px solid rgba(255,255,255,0.1);
     filter: brightness(0.8);
+    transition: filter 0.3s;
   }
 
   .art-info {
