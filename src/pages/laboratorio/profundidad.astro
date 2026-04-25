@@ -82,26 +82,26 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
                 const initialX = parseFloat(plane.style.getPropertyValue('--x-pos'));
                 const distance = zOffset + scrollY;
                 
-                // 🚀 AFINACIÓN DE CERCANÍA MÁXIMA
+                // 🚀 CALIBRACIÓN FINAL: ESCAPE TOTAL + INCLINACIÓN
                 const absDist = Math.abs(distance);
-                const spreadFactor = Math.max(0, 1 - (absDist / 2500));
+                const spreadFactor = Math.max(0, 1 - (absDist / 2800));
                 
-                // Escape lateral retardado (Exponente 4 para mantener centro más tiempo)
-                const spreadCurve = Math.pow(spreadFactor, 4); 
+                // Escape lateral masivo (120vw) para evitar cualquier choque
+                const spreadCurve = Math.pow(spreadFactor, 2.2); 
                 const baseVW = (initialX > 0 ? 15 : -15); 
-                const pushVW = (initialX > 0 ? 65 : -65) * spreadCurve; // Menos empuje, más cercanía
+                const pushVW = (initialX > 0 ? 120 : -120) * spreadCurve; 
                 const totalX = baseVW + pushVW;
                 
-                // Rotación impulsada por presencia
-                const rotationY = (initialX > 0 ? -25 : 25) * Math.pow(spreadFactor, 3);
+                // Rotación Y marcada (30 grados) para efecto de desvío
+                const rotationY = (initialX > 0 ? -30 : 30) * Math.pow(spreadFactor, 2);
                 const rotationX = (initialX > 0 ? 5 : -5) * spreadFactor;
                 
                 plane.style.transform = `translate3d(${totalX}vw, 0, ${zOffset}px) rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
 
-                // Opacidad y Blur dinámico (Umbral reducido a 200 para cercanía extrema)
-                if (absDist < 200) {
-                    plane.style.opacity = (absDist / 200);
-                    plane.style.filter = `blur(${(200 - absDist) / 5}px)`;
+                // Opacidad y Blur dinámico (Umbral de 500px para seguridad visual)
+                if (absDist < 500) {
+                    plane.style.opacity = (absDist / 500);
+                    plane.style.filter = `blur(${(500 - absDist) / 8}px)`;
                 } else if (absDist > 4000) {
                     plane.style.opacity = Math.max(0, 1 - (absDist - 4000) / 1000);
                 } else {
@@ -175,7 +175,8 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
   .depth-viewer {
     width: 100vw;
     height: 100vh;
-    background: var(--depth-bg);
+    /* 🌅 Horizonte difuso de luz amarilla */
+    background: radial-gradient(circle at 50% 50%, rgba(220, 177, 74, 0.08) 0%, #030303 80%);
     overflow: hidden;
     position: relative;
   }
