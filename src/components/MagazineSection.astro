@@ -67,10 +67,10 @@ const articles = fetchedArticles.map(a => {
       </div>
     )}
   </div>
-
   <div class="articles-container">
     {articles.length > 0 ? (
       articles.map((article, index) => (
+        <article class={`magazine-card ${index % 2 === 0 ? 'row' : 'row-reverse'} reveal`}>
           <div class="card-image-wrapper" data-article-card>
             <div class="tilt-container" data-tilt-container>
                 <div class="slideshow-wrapper">
@@ -81,6 +81,7 @@ const articles = fetchedArticles.map(a => {
                             <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" />
                         )
                     ))}
+                    <div class="vignette-overlay"></div>
                 </div>
                 <div class="image-glare"></div>
             </div>
@@ -126,7 +127,7 @@ const articles = fetchedArticles.map(a => {
   .section-title { font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: 12px; font-weight: 300; margin-bottom: 1.5rem; color: var(--color-white); }
   .section-subtitle { color: var(--color-text-muted); font-family: var(--font-secondary); font-size: 0.9rem; letter-spacing: 3px; text-transform: uppercase; line-height: 1.6; }
   .articles-container { max-width: var(--container-max); margin: 0 auto; display: flex; flex-direction: column; gap: 15rem; }
-  .magazine-card { display: flex; align-items: center; gap: 8%; position: relative; }
+  .magazine-card { display: flex; align-items: center; gap: 4%; position: relative; } /* Gap reducido */
   .magazine-card.row { flex-direction: row; }
   .magazine-card.row-reverse { flex-direction: row-reverse; }
   .card-image-wrapper { flex: 0 0 50%; position: relative; z-index: 1; }
@@ -138,19 +139,24 @@ const articles = fetchedArticles.map(a => {
   }
   .slideshow-wrapper { 
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+      z-index: 1;
+  }
+  .vignette-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       box-shadow: inset 0 0 80px rgba(0,0,0,0.8);
-      z-index: 2;
+      pointer-events: none;
+      z-index: 10;
   }
   .article-media { 
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; 
       filter: grayscale(20%) brightness(0.85); transition: opacity 1.5s ease; 
       opacity: 0;
-      z-index: 1;
-      mask-image: radial-gradient(circle, black 65%, transparent 100%);
-      -webkit-mask-image: radial-gradient(circle, black 65%, transparent 100%);
+      z-index: 2;
+      mask-image: radial-gradient(circle, black 70%, transparent 100%);
+      -webkit-mask-image: radial-gradient(circle, black 70%, transparent 100%);
   }
-  .article-media.active { opacity: 1; filter: grayscale(0%) brightness(1); z-index: 2; }
-  .image-glare { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; opacity: 0; }
+  .article-media.active { opacity: 1; filter: grayscale(0%) brightness(1); z-index: 5; }
+  .image-glare { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; opacity: 0; }
   .card-content-block { flex: 1; padding: 4rem; background: rgba(17, 17, 17, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); position: relative; z-index: 2; margin-left: -5%; }
   .row-reverse .card-content-block { margin-left: 0; margin-right: -5%; }
   .article-location { color: var(--color-accent); font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; font-weight: 700; margin-bottom: 2rem; display: block; }
