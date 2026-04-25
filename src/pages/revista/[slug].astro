@@ -159,6 +159,13 @@ if (articulo) {
 
                 <div class="prose-content" set:html={articulo.content_html}></div>
                 
+                {articulo.bibliografia && (
+                    <div class="article-bibliography">
+                        <span class="bib-label">BIBLIOGRAFÍA:</span>
+                        <p class="bib-content">{articulo.bibliografia}</p>
+                    </div>
+                )}
+                
                 <div class="article-footer-nav">
                     <a href="/revista" class="back-link">← VOLVER A REVISTA</a>
                 </div>
@@ -371,6 +378,29 @@ if (articulo) {
 .prose-content { font-family: var(--font-secondary); font-size: 1.1rem; line-height: 1.9; color: rgba(255,255,255,0.7); }
 .prose-content :global(p) { margin-bottom: 2rem; }
 .back-link { color: var(--color-accent); font-size: 0.8rem; letter-spacing: 2px; }
+
+/* Bibliografía Styles */
+.article-bibliography {
+    margin-top: 6rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    max-width: 600px;
+}
+.bib-label {
+    display: block;
+    font-size: 0.55rem;
+    letter-spacing: 3px;
+    color: var(--color-accent);
+    margin-bottom: 0.8rem;
+    font-weight: 800;
+}
+.bib-content {
+    font-size: 0.7rem;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.3);
+    font-style: italic;
+    text-align: justify;
+}
 @media (max-width: 1024px) {
   .split-layout { grid-template-columns: 1fr; }
   .visual-column { height: 50vh; }
