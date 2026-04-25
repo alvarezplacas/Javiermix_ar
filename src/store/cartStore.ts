@@ -8,6 +8,11 @@ export interface CartItem {
   image: string;
   quantity: number;
   category?: string;
+  framing?: {
+    type: string;
+    paspartu: boolean;
+    price: number;
+  };
 }
 
 export type CartStoreType = Record<string, CartItem>;
@@ -40,6 +45,12 @@ export const currentSelection = atom({
     label: '',
     dimensions: ''
 });
+
+export const currentFraming = atom<{
+    type: string;
+    paspartu: boolean;
+    price: number;
+} | null>(null);
 
 // 🛠️ Acciones
 export function addItem(item: Omit<CartItem, 'quantity'>) {

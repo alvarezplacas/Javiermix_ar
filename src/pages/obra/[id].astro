@@ -4,6 +4,7 @@ import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import FramingStudio from '@components/FramingStudio.astro';
 import AddToCartButton from '@components/ecommerce/AddToCartButton';
+import FramingUpsell from '@components/ecommerce/FramingUpsell';
 import '@styles/atmospheres.css';
 import { getArtworkDetails, getAssetUrl, DirectusManager } from '@conexion/directus';
 import { readFolders, readItems } from '@directus/sdk';
@@ -94,8 +95,7 @@ const etiqueta = "Fine Art Print";
             ) : (
                <button class="control-btn" style="opacity: 0.3; cursor: not-allowed;" disabled>SIN VISTA EN SALA</button>
             )}
-            <button class="control-btn" id="btn-framing-config">CONFIGURAR MARCO ARTESANAL</button>
-            
+                        
             <div class="atmos-selector">
                 <button class="atmos-btn active" id="atmos-gallery" data-label="GALERÍA">
                     <i class="fas fa-sun"></i>
@@ -251,6 +251,11 @@ const etiqueta = "Fine Art Print";
             </p>
           </div>
         </div>
+        
+        <hr class="divider" />
+
+        <!-- Propuesta 3: E-commerce Invisible (Framing Upsell) -->
+        <FramingUpsell client:load />
 
         <!-- 🛒 Area de Pago (Fuerza ARS) -->
         <div class="checkout-area">

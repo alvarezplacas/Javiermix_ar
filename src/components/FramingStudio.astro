@@ -305,6 +305,41 @@ const { imageSrc, title, showUpload = false, isOpen = false } = Astro.props;
       document.body.style.overflow = 'auto'; 
     });
 
+    // 💾 SAVE LOGIC (Invisible Ecommerce Integration)
+    const saveBtn = document.getElementById('save-framing');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            const { currentFraming } = await import('@store/cartStore');
+            
+            const activeFrame = document.querySelector('#frame-swatches .swatch.active') as HTMLElement;
+            const activeMat = document.querySelector('#mat-swatches .mat-swatch.active') as HTMLElement;
+            const hasMat = parseInt(matRange.value) > 0;
+            
+            // Lógica de Precios (Simple para demo)
+            // En un caso real, esto vendría de una tabla de precios de Directus
+            const framePrice = activeFrame.dataset.frame === 'gold' ? 15000 : 8000;
+            const matPrice = hasMat ? 3500 : 0;
+
+            currentFraming.set({
+                type: activeFrame.title || "Standard",
+                paspartu: hasMat,
+                price: framePrice + matPrice
+            });
+
+            // Feedback visual
+            saveBtn.textContent = '¡CONFIGURACIÓN GUARDADA!';
+            saveBtn.style.background = 'var(--ok-gold)';
+            saveBtn.style.color = '#000';
+            
+            setTimeout(() => {
+                saveBtn.textContent = 'GUARDAR CONFIGURACIÓN';
+                saveBtn.style.background = '';
+                saveBtn.style.color = '';
+                document.getElementById('close-studio')?.click();
+            }, 1000);
+        });
+    }
+
     // 🚀 External Hook: Activate 3D automatically
     (window as any).activate3DInStudio = () => {
         if (!is3DActive) {

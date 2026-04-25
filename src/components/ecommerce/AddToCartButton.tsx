@@ -1,22 +1,24 @@
 import { useStore } from '@nanostores/preact';
-import { cartItems, addItem, currentSelection } from '@store/cartStore';
+import { cartItems, addItem, currentSelection, currentFraming } from '@store/cartStore';
 
 /**
  * 🛒 AddToCartButton (Preact)
- * 
- * Componente reactivo que añade el producto al estado global.
- * @param {Object} item - { id, title, price, image }
  */
 export default function AddToCartButton({ item }) {
     const $cartItems = useStore(cartItems);
     const $selection = useStore(currentSelection);
+    const $framing = useStore(currentFraming);
     
-    // Si hay una selección activa (por tamaño), la priorizamos
-    const activePrice = $selection.price > 0 ? $selection.price : item.price;
+    // Priorizamos tamaño y sumamos enmarcado
+    const basePrice = $selection.price > 0 ? $selection.price : item.price;
+    const framingPrice = $framing ? $framing.price : 0;
+    const activePrice = basePrice + framingPrice;
+    
     const activeLabel = $selection.label || 'Standard';
+    const framingLabel = $framing ? ` + Marco ${$framing.type}` : '';
     
-    // Identificador único para la variante
-    const variantId = `${item.id}-${activeLabel.toLowerCase()}`;
+    // Identificador único para la variante (incluye enmarcado)
+    const variantId = `${item.id}-${activeLabel.toLowerCase()}-${$framing ? 'framed' : 'simple'}`;
     const existing = $cartItems[variantId];
 
     const handleClick = (e) => {
@@ -25,8 +27,12 @@ export default function AddToCartButton({ item }) {
             ...item,
             id: variantId,
             price: activePrice,
-            title: `${item.title} (${activeLabel})`
+            title: `${item.title} (${activeLabel})${framingLabel}`,
+            framing: $framing || undefined
         });
+
+        // Opcional: Resetear enmarcado tras añadir
+        // currentFraming.set(null);
     };
 
     return (
