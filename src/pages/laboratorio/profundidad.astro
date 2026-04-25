@@ -82,26 +82,26 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
                 const initialX = parseFloat(plane.style.getPropertyValue('--x-pos'));
                 const distance = zOffset + scrollY;
                 
-                // 🚀 LÓGICA DE EXPANSIÓN MEJORADA (Uso de VW para evitar choques)
+                // 🚀 AFINACIÓN DE CERCANÍA MÁXIMA
                 const absDist = Math.abs(distance);
                 const spreadFactor = Math.max(0, 1 - (absDist / 2500));
                 
-                // Escape lateral en unidades de pantalla (VW)
-                const spreadCurve = Math.pow(spreadFactor, 2.5); 
-                const baseVW = (initialX > 0 ? 20 : -20); // Posición inicial en vw
-                const pushVW = (initialX > 0 ? 100 : -100) * spreadCurve; // Empuje final masivo
+                // Escape lateral retardado (Exponente 4 para mantener centro más tiempo)
+                const spreadCurve = Math.pow(spreadFactor, 4); 
+                const baseVW = (initialX > 0 ? 15 : -15); 
+                const pushVW = (initialX > 0 ? 65 : -65) * spreadCurve; // Menos empuje, más cercanía
                 const totalX = baseVW + pushVW;
                 
                 // Rotación impulsada por presencia
-                const rotationY = (initialX > 0 ? -25 : 25) * Math.pow(spreadFactor, 2);
+                const rotationY = (initialX > 0 ? -25 : 25) * Math.pow(spreadFactor, 3);
                 const rotationX = (initialX > 0 ? 5 : -5) * spreadFactor;
                 
                 plane.style.transform = `translate3d(${totalX}vw, 0, ${zOffset}px) rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
 
-                // Opacidad y Blur dinámico
-                if (absDist < 400) {
-                    plane.style.opacity = (absDist / 400);
-                    plane.style.filter = `blur(${(400 - absDist) / 10}px)`;
+                // Opacidad y Blur dinámico (Umbral reducido a 200 para cercanía extrema)
+                if (absDist < 200) {
+                    plane.style.opacity = (absDist / 200);
+                    plane.style.filter = `blur(${(200 - absDist) / 5}px)`;
                 } else if (absDist > 4000) {
                     plane.style.opacity = Math.max(0, 1 - (absDist - 4000) / 1000);
                 } else {
