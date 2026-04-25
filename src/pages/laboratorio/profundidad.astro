@@ -73,7 +73,8 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
             scrollY += (targetScrollY - scrollY) * 0.05;
             
             if (scene) {
-                scene.style.transform = `perspective(1200px) translateZ(${scrollY}px)`;
+                // Profundidad aumentada para mayor elegancia
+                scene.style.transform = `perspective(1800px) translateZ(${scrollY}px)`;
             }
 
             planes.forEach((plane: any) => {
@@ -81,13 +82,17 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
                 const initialX = parseFloat(plane.style.getPropertyValue('--x-pos'));
                 const distance = zOffset + scrollY;
                 
-                // 🚀 LÓGICA DE EXPANSIÓN LATERAL + EMPUJE 3D
-                const spreadFactor = Math.max(0, 1 - (Math.abs(distance) / 2000));
-                const dynamicX = initialX + (initialX > 0 ? 50 : -50) * Math.pow(spreadFactor, 1.5);
+                // 🚀 LÓGICA DE EXPANSIÓN MEJORADA (Efecto Imán)
+                const absDist = Math.abs(distance);
+                const spreadFactor = Math.max(0, 1 - (absDist / 2500));
                 
-                // Rotación impulsada por presencia
-                const rotationY = (initialX > 0 ? -15 : 15) * Math.pow(spreadFactor, 2);
-                const rotationX = (Math.random() > 0.5 ? 5 : -5) * spreadFactor;
+                // Las obras se abren más tarde para dar tiempo a verlas
+                const spreadCurve = Math.pow(spreadFactor, 3); 
+                const dynamicX = initialX + (initialX > 0 ? 60 : -60) * spreadCurve;
+                
+                // Rotación impulsada por presencia (más sutil al inicio, fuerte al pasar)
+                const rotationY = (initialX > 0 ? -20 : 20) * Math.pow(spreadFactor, 2.5);
+                const rotationX = (initialX > 0 ? 5 : -5) * spreadFactor;
                 
                 plane.style.transform = `translate3d(${dynamicX}%, 0, ${zOffset}px) rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
 
@@ -271,18 +276,24 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
 
   .art-info {
     position: absolute;
-    bottom: -100px;
-    left: 0;
-    width: 100%;
+    bottom: 2rem;
+    left: 10%;
+    width: 80%;
     text-align: center;
-    transform: translateZ(50px);
+    transform: translateZ(80px); /* 💎 Flotado 3D */
     opacity: 0;
-    transition: all 0.5s;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    padding: 2rem;
+    border: 1px solid rgba(220, 177, 74, 0.2);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   }
 
   .art-plane:hover .art-info {
       opacity: 1;
-      bottom: 2rem;
+      transform: translateZ(100px) translateY(-20px);
   }
 
   .art-info h3 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; margin-bottom: 1rem; color: #fff; }
