@@ -1,26 +1,42 @@
----
+import { getFooterSettings, getSeries, getArticles } from '@conexion/directus';
+
 const currentYear = new Date().getFullYear();
----
+const footerSettings = await getFooterSettings();
+const allSeries = await getSeries();
+const latestArticles = await getArticles();
+
+// Limitar a los que necesitamos
+const footerSeries = allSeries.slice(0, 5);
+const footerArticles = latestArticles.slice(0, 3);
+
+// Fallbacks
+const brandText = footerSettings?.brand_text || "Colecciones exclusivas donde la luz, el metal y la memoria convergen en obra de autor. Para coleccionistas y decoradores de interiores que buscan una presencia sólida y honesta.";
+const services = footerSettings?.services?.split('\n').filter((s: string) => s.trim() !== '') || ["Carrito de Ventas", "Prueba tu Obra en tu Espacio", "Laboratorio de Diseño 2026", "Ediciones Limitadas"];
+const instagram = footerSettings?.instagram_url || "https://instagram.com/javiermix";
+const whatsapp = footerSettings?.whatsapp_url || "#";
+const behance = footerSettings?.behance_url || "#";
+const contactEmail = footerSettings?.contact_email || "info@javiermix.com";
+const contactWhatsapp = footerSettings?.contact_whatsapp || "+54 9 11 XXXX XXXX";
+const studioAddress = footerSettings?.contact_studio_address || "Buenos Aires, Argentina";
 
 <footer class="site-footer">
   <div class="footer-sitemap">
-    <div class="sitemap-inner">
-      <div class="footer-brand">
+    <div class="sitemap-inner">      <div class="footer-brand">
         <p class="brand-signature">Javier Mix</p>
         <p class="brand-tagline">Fotografía Fine Art · Buenos Aires</p>
         <p class="brand-desc">
-          Colecciones exclusivas donde la luz, el metal y la memoria convergen en obra de autor. Para coleccionistas y decoradores de interiores que buscan una presencia sólida y honesta.
+          {brandText}
         </p>
         <div class="footer-socials">
-          <a href="#" aria-label="Instagram" class="social-link">
+          <a href={instagram} target="_blank" aria-label="Instagram" class="social-link">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
             Instagram
           </a>
-          <a href="#" aria-label="WhatsApp" class="social-link">
+          <a href={whatsapp} target="_blank" aria-label="WhatsApp" class="social-link">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
             WhatsApp
           </a>
-          <a href="#" aria-label="Behance" class="social-link">
+          <a href={behance} target="_blank" aria-label="Behance" class="social-link">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12C1 5.9 5.9 1 12 1s11 5 11 11-5 11-11 11S1 18.1 1 12z"/><path d="M10 8H6v8h4.5a2.5 2.5 0 0 0 0-5H6"/><line x1="14" y1="9" x2="18" y2="9"/><path d="M18 13h-4c0 1.1.9 2 2 2s2-.5 2-2z"/></svg>
             Behance
           </a>
@@ -34,10 +50,9 @@ const currentYear = new Date().getFullYear();
         </h4>
         <ul>
           <li><a href="/galeria">Ver Portfolio Completo</a></li>
-          <li><a href="/galeria/Rostros_de_metal">Rostros de Metal</a></li>
-          <li><a href="/galeria/Epidermis_urbana">Epidermis Urbana</a></li>
-          <li><a href="/galeria/Estructuras">Estructuras</a></li>
-          <li><a href="/galeria/Monumentos">Monumentos</a></li>
+          {footerSeries.map((serie: any) => (
+             <li><a href={`/galeria/${serie.name.replace(/ /g, '_')}`}>{serie.name}</a></li>
+          ))}
           <li><a href="/galeria" class="link-all">→ Ver todas las series</a></li>
         </ul>
       </nav>
@@ -48,10 +63,9 @@ const currentYear = new Date().getFullYear();
           Servicios
         </h4>
         <ul>
-          <li><a href="/carrito">Carrito de Ventas</a></li>
-          <li><a href="/enmarcado">Prueba tu Obra en tu Espacio</a></li>
-          <li><a href="/laboratorio" class="link-lab">Laboratorio de Diseño 2026</a></li>
-          <li><a href="#">Ediciones Limitadas</a></li>
+          {services.map((service: string) => (
+            <li><a href="#">{service}</a></li>
+          ))}
         </ul>
       </nav>
 
@@ -62,9 +76,9 @@ const currentYear = new Date().getFullYear();
         </h4>
         <ul>
           <li><a href="/revista">Últimas Notas</a></li>
-          <li><a href="/revista/cartografo-de-lo-invisible">Cartógrafo de lo Invisible</a></li>
-          <li><a href="/revista/la-luz-en-el-interior">La Luz en el Interior</a></li>
-          <li><a href="/revista/el-metal-como-memoria">El Metal Como Memoria</a></li>
+          {footerArticles.map((article: any) => (
+            <li><a href={`/revista/${article.slug}`}>{article.title}</a></li>
+          ))}
           <li><a href="/revista" class="link-all">→ Ver todas las notas</a></li>
         </ul>
       </nav>
@@ -77,15 +91,15 @@ const currentYear = new Date().getFullYear();
         <ul>
           <li class="contact-item">
             <span class="contact-label">Consultas de Obra</span>
-            <a href="mailto:info@javiermix.com">info@javiermix.com</a>
+            <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
           </li>
           <li class="contact-item">
             <span class="contact-label">WhatsApp</span>
-            <a href="#">+54 9 11 XXXX XXXX</a>
+            <a href={whatsapp}>{contactWhatsapp}</a>
           </li>
           <li class="contact-item">
             <span class="contact-label">Estudio</span>
-            <span>Buenos Aires, Argentina</span>
+            <span>{studioAddress}</span>
           </li>
         </ul>
       </nav>
@@ -105,7 +119,6 @@ const currentYear = new Date().getFullYear();
         <a href="#">Política de Privacidad</a>
         <a href="#">Términos de Uso</a>
         <a href="#">Envíos y Devoluciones</a>
-        <a href="/dashboard" class="admin-access-link"><i class="fas fa-lock"></i> Admin</a>
       </div>
     </div>
   </div>

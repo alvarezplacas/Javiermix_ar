@@ -8,11 +8,18 @@ import CollectorJoin from '@components/CollectorJoin.astro';
 
 export const prerender = false;
 
-import { getHomeFiles, getAssetUrl, DirectusManager } from '@conexion/directus';
+import { getHomeFiles, getAssetUrl, DirectusManager, getHomeSettings } from '@conexion/directus';
 
 let homeAssets = [];
+let homeSettings = null;
+
 try {
-    homeAssets = await getHomeFiles();
+    const [assets, settings] = await Promise.all([
+        getHomeFiles(),
+        getHomeSettings()
+    ]);
+    homeAssets = assets;
+    homeSettings = settings;
     console.log(`[SSR] 📂 Assets cargados para Home: ${homeAssets.length}`);
 } catch (error: any) {
     console.error(`[SSR-Home-Error] ❌ Fracaso en Fetch de Directus:`, error.message);
@@ -29,6 +36,11 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
     if (id === 'fallback') return '/media/home/00.avif'; 
     return getAssetUrl(id, isVideo ? { raw: true } : {});
 }
+
+// Default values for home narrative
+const homeTitle = homeSettings?.title || "Memoria y Potencia";
+const homeContent = homeSettings?.content || "La fotografía no es solo captura; es la luz escribiendo la historia de nuestra resistencia. En cada obra, buscamos el lenguaje de la luz. Entender de dónde venimos es lo que nos permite capturar con autoridad hacia dónde vamos.";
+const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la luz.";
 ---
 
 <Layout 
@@ -87,10 +99,10 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
       <section class="split-content">
         <header class="hero-text">
           <h1 class="main-heading">
-            <span class="weight-light gold-text">Memoria y Potencia</span>
+            <span class="weight-light gold-text">{homeTitle}</span>
           </h1>
           <p class="intro-text">
-            La fotografía no es solo captura; es la luz escribiendo la historia de nuestra resistencia. En cada obra, buscamos el lenguaje de la luz. Entender de dónde venimos es lo que nos permite capturar con autoridad hacia dónde vamos.
+            {homeContent}
           </p>
         </header>
 
@@ -105,7 +117,7 @@ function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
         </div>
 
         <div class="home-closing">
-            Capturando el lenguaje de la luz.
+            {famousQuote}
         </div>
 
         <!-- Social Links (Floating Bottom Right based on CSS) -->
