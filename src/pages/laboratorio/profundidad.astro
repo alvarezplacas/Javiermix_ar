@@ -9,6 +9,14 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
 
 <Layout title="Infinity Gallery 2026 | Profundidad 3D">
   <main class="depth-viewer">
+    <!-- 🧭 Menú Supremo -->
+    <nav class="supreme-nav">
+        <a href="/">INICIO</a>
+        <a href="/galeria">GALERÍA</a>
+        <a href="/revista">REVISTA</a>
+        <a href="/laboratorio">LABORATORIO</a>
+    </nav>
+
     <canvas id="atmosphere-canvas"></canvas>
     
     <div class="depth-instructions">
@@ -73,12 +81,15 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
                 const initialX = parseFloat(plane.style.getPropertyValue('--x-pos'));
                 const distance = zOffset + scrollY;
                 
-                // 🚀 LÓGICA DE EXPANSIÓN LATERAL
-                // A medida que la distancia se acerca a 0 (el espectador), el X aumenta
+                // 🚀 LÓGICA DE EXPANSIÓN LATERAL + EMPUJE 3D
                 const spreadFactor = Math.max(0, 1 - (Math.abs(distance) / 2000));
-                const dynamicX = initialX + (initialX > 0 ? 40 : -40) * Math.pow(spreadFactor, 2);
+                const dynamicX = initialX + (initialX > 0 ? 50 : -50) * Math.pow(spreadFactor, 1.5);
                 
-                plane.style.transform = `translate3d(${dynamicX}%, 0, ${zOffset}px)`;
+                // Rotación impulsada por presencia
+                const rotationY = (initialX > 0 ? -15 : 15) * Math.pow(spreadFactor, 2);
+                const rotationX = (Math.random() > 0.5 ? 5 : -5) * spreadFactor;
+                
+                plane.style.transform = `translate3d(${dynamicX}%, 0, ${zOffset}px) rotateY(${rotationY}deg) rotateX(${rotationX}deg)`;
 
                 // Opacidad y Blur dinámico
                 const absDist = Math.abs(distance);
@@ -131,7 +142,10 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
                 const y = (p.y - canvas.height/2) * scale + canvas.height/2;
                 
                 if (relativeZ > 10) {
-                    ctx.fillStyle = `rgba(220, 177, 74, ${Math.min(1, scale * 0.5)})`;
+                    const alpha = Math.min(0.3, (scale * 0.2)); // Más transparente
+                    ctx.fillStyle = `rgba(220, 177, 74, ${alpha})`;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "rgba(220, 177, 74, 0.4)";
                     ctx.beginPath();
                     ctx.arc(x, y, p.s * scale, 0, Math.PI * 2);
                     ctx.fill();
@@ -158,6 +172,37 @@ const artworks = rawFiles.filter(f => !(f.filename_download || "").match(/[\s_]2
     background: var(--depth-bg);
     overflow: hidden;
     position: relative;
+  }
+
+  /* 🧭 Estilo Menú Supremo */
+  .supreme-nav {
+      position: fixed;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      display: flex;
+      gap: 3rem;
+      padding: 1rem 3rem;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 50px;
+  }
+
+  .supreme-nav a {
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      font-weight: 700;
+      transition: all 0.3s;
+  }
+
+  .supreme-nav a:hover {
+      color: var(--lab-gold);
+      text-shadow: 0 0 10px var(--lab-gold);
   }
 
   #atmosphere-canvas {
