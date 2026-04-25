@@ -92,8 +92,7 @@ const etiqueta = "Fine Art Print";
             ) : (
                <button class="control-btn" style="opacity: 0.3; cursor: not-allowed;" disabled>SIN VISTA EN SALA</button>
             )}
-            <button class="control-btn" id="btn-3d">VER EN 3D</button>
-            <button class="control-btn" id="btn-marco">PROBAR MARCO</button>
+            <button class="control-btn" id="btn-framing-config">CONFIGURAR MARCO ARTESANAL</button>
             <button class="control-btn btn-like-glass" id="btn-like-premium" data-id={id}>
                 <svg class="heart-icon-glass" viewBox="0 0 24 24">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -301,25 +300,14 @@ const etiqueta = "Fine Art Print";
       });
     });
 
-    // --- FRAMING & 3D STUDIO TRIGGERS (RESTAURACION V1) ---
-    const btnMarco = document.getElementById('btn-marco');
-    const btn3D = document.getElementById('btn-3d');
+    // --- FRAMING & 3D STUDIO TRIGGERS (UNIFICADO) ---
+    const btnFraming = document.getElementById('btn-framing-config');
     const studio = document.getElementById('framing-studio');
 
-    if (btnMarco && studio) {
-      btnMarco.addEventListener('click', () => {
+    if (btnFraming && studio) {
+      btnFraming.addEventListener('click', () => {
         studio.style.display = 'block';
         document.body.style.overflow = 'hidden';
-      });
-    }
-
-    if (btn3D && studio) {
-      btn3D.addEventListener('click', () => {
-        studio.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        if ((window as any).activate3DInStudio) {
-          (window as any).activate3DInStudio();
-        }
       });
     }
 
