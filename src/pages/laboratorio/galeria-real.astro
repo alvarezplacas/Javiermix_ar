@@ -1,7 +1,7 @@
 ---
 // d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\galeria-real.astro
 import Layout from '@layouts/Layout.astro';
-import { getCatalogoFiles } from '@conexion/directus';
+import { getCatalogoFiles, getLaboratorioEntornos, getAssetUrl } from '@conexion/directus';
 import { getOptimizedImageURL } from '@utils/media';
 
 export const prerender = false;
@@ -14,13 +14,26 @@ const artworks = artworksRaw
         id: file.id,
         title: file.title || `Masterpiece ${index + 1}`,
         img: getOptimizedImageURL(file.id, { width: 1200, format: 'webp', quality: 90 }),
-        width: 500 + (Math.random() * 150), 
     }));
+
+const entornos = await getLaboratorioEntornos();
 ---
 
 <Layout title="Royal Gallery | Laboratorio JMX">
     <main class="royal-gallery-wrapper is-atmos-gallery" id="gallery-container">
         <div class="atmos-overlay"></div>
+
+        <!-- Inyectar Estilos Dinámicos para Fondos de Directus -->
+        {entornos.map((ent: any) => ent.background_image && (
+            <style is:global define:vars={{ [`bg-${ent.slug}`]: `url(${getAssetUrl(ent.background_image.id, { format: 'avif', quality: 90, width: 2560 })})` }}>
+                .is-atmos-{ent.slug} {
+                    background-image: var(--bg-{ent.slug}) !important;
+                    background-size: cover !important;
+                    background-position: center !important;
+                    background-attachment: fixed !important;
+                }
+            </style>
+        ))}
 
         <header class="gallery-ui">
             <div class="ui-top">
@@ -41,12 +54,16 @@ const artworks = artworksRaw
                 </div>
 
                 <div class="atmos-controls">
-                    <button class="atmos-btn active" data-atmos="gallery" data-label="Mármol Carrara">🏛️</button>
-                    <button class="atmos-btn" data-atmos="night" data-label="Urban Brick">🧱</button>
-                    <button class="atmos-btn" data-atmos="velvet" data-label="Velvet Red">🍷</button>
-                    <button class="atmos-btn" data-atmos="blue" data-label="Velvet Blue">🌌</button>
-                    <button class="atmos-btn" data-atmos="concrete" data-label="Hormigón Visto">🩶</button>
-                    <button class="atmos-btn" data-atmos="gold" data-label="Golden Leaf">📀</button>
+                    {entornos.map((ent: any, index: number) => (
+                        <button 
+                            class={`atmos-btn ${index === 0 ? 'active' : ''}`} 
+                            data-atmos={ent.slug} 
+                            data-audio={ent.background_audio?.id ? getAssetUrl(ent.background_audio.id, { raw: true }) : ''}
+                            title={ent.name}
+                        >
+                            {ent.icon || '🖼️'}
+                        </button>
+                    ))}
                 </div>
             </div>
         </header>
@@ -116,25 +133,41 @@ const artworks = artworksRaw
 
     .ui-top, .ui-bottom { display: flex; justify-content: space-between; align-items: center; pointer-events: auto; }
 
-    .playback-controls { display: flex; align-items: center; gap: 2rem; }
+    .playback-controls { display: flex; align-items: center; gap: 2.5rem; }
     .control-btn {
         background: rgba(0,0,0,0.1);
         border: 1px solid rgba(0,0,0,0.1);
         color: inherit;
-        padding: 0.6rem 1.2rem;
-        border-radius: 30px;
-        font-size: 0.7rem;
+        padding: 0.8rem 1.8rem;
+        border-radius: 35px;
+        font-size: 0.8rem;
         font-weight: 900;
         letter-spacing: 2px;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 0.6rem;
+        gap: 0.8rem;
         transition: 0.3s;
     }
-    .control-btn.active { background: var(--color-accent, #dcb14a); color: #000; border-color: transparent; }
 
-    .exit-link { font-size: 0.7rem; font-weight: 900; letter-spacing: 3px; color: inherit; text-decoration: none; opacity: 0.5; transition: 0.3s; }
+    .atmos-controls { display: flex; gap: 1.5rem; }
+    .atmos-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,0.1);
+        background: rgba(255,255,255,0.8);
+        cursor: pointer;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.3s;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .atmos-btn.active { transform: scale(1.15); border-color: var(--color-accent); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+    .exit-link { font-size: 0.8rem; font-weight: 900; letter-spacing: 3px; color: inherit; text-decoration: none; opacity: 0.5; transition: 0.3s; }
     .exit-link:hover { opacity: 1; letter-spacing: 5px; }
 
     .museum-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; letter-spacing: 5px; font-weight: 600; }
@@ -283,28 +316,32 @@ const artworks = artworksRaw
             }
         });
 
-        // 🖱️ Rueda del ratón (Scroll Horizontal Manual)
+        // 🖱️ Rueda del ratón
         gallery.addEventListener('wheel', (e) => {
-            if (autoPlayInterval) return; // Desactivar manual si está el tour activo
+            if (autoPlayInterval) return;
             e.preventDefault();
-            
-            // Suavizado del scroll manual
-            gallery.scrollBy({
-                left: e.deltaY * 1.5,
-                behavior: 'smooth'
-            });
+            gallery.scrollBy({ left: e.deltaY * 1.5, behavior: 'smooth' });
         }, { passive: false });
 
-        // 🔘 Atmósferas
+        // 🔘 Atmósferas Dinámicas
         const atmosBtns = document.querySelectorAll('.atmos-btn');
         atmosBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const atmos = btn.getAttribute('data-atmos');
+                const audioUrl = btn.getAttribute('data-audio');
+                
                 gallery.className = 'royal-gallery-wrapper';
                 gallery.classList.add(`is-atmos-${atmos}`);
+                
                 atmosBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                if (soundEnabled) soundManager.play('transition', 0.2);
+
+                if (soundEnabled) {
+                    soundManager.play('transition', 0.2);
+                    if (audioUrl) {
+                        soundManager.playMusic(audioUrl);
+                    }
+                }
             });
         });
 

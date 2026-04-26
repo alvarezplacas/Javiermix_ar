@@ -235,6 +235,23 @@ export async function getFooterSettings() { try { const client = await DirectusM
 
 export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Coleccion'] } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }
 
+export async function getLaboratorioEntornos() {
+    try {
+        const client = await DirectusManager.getClient();
+        return await client.request(readItems('laboratorio_entornos' as any, {
+            fields: ['*', { background_image: ['id'], background_audio: ['id'] }],
+            sort: ['sort']
+        }));
+    } catch (e) {
+        // Fallback si la colección no existe aún
+        return [
+            { name: 'Mármol Carrara', slug: 'gallery', icon: '🏛️' },
+            { name: 'Urban Brick', slug: 'night', icon: '🧱' },
+            { name: 'Velvet Red', slug: 'velvet', icon: '🍷' }
+        ];
+    }
+}
+
 export async function loginAdmin(email: string, password: string) {
     const res = await fetch(`${PUBLIC_URL}/auth/login`, {
         method: 'POST',
