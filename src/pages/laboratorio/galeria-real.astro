@@ -53,22 +53,29 @@ const artworks = artworksRaw
 
         <div class="horizontal-wall" id="wall">
             {artworks.map((art, index) => (
-                <div class="artwork-station" style={`--station-index: ${index}`}>
-                    <div class="frame-container" data-tilt>
-                        <div class="museum-spotlight"></div>
-                        <img 
-                            src={art.img} 
-                            alt={art.title} 
-                            class="main-artwork" 
-                            onerror="this.src='/img/placeholder.jpg'; this.classList.add('error');"
-                        />
-                        <div class="frame-shadow"></div>
-                    </div>
-                    <div class="artwork-caption">
-                        <span class="serial">INV-2026-{index + 100}</span>
-                        <h2>{art.title}</h2>
-                        <p>Impresión Giclée · Papel Hahnemühle Photo Rag.</p>
-                        <button class="buy-btn" data-id={art.id}>COLECCIONAR</button>
+                <div class="artwork-station" style={`--station-index: ${index}`} id={`artwork-${art.id}`}>
+                    <div class="frame-wrapper">
+                        <div class="frame-container" data-tilt>
+                            <div class="museum-spotlight"></div>
+                            <img 
+                                src={art.img} 
+                                alt={art.title} 
+                                class="main-artwork" 
+                                onerror="this.src='/img/placeholder.jpg'; this.classList.add('error');"
+                            />
+                            <div class="frame-shadow"></div>
+                            <!-- Punto Rojo de Vendido -->
+                            <div class="sold-dot" id={`dot-${art.id}`}></div>
+                        </div>
+
+                        <!-- Etiqueta de Museo Lateral -->
+                        <div class="museum-label">
+                            <span class="serial">INV-2026-{index + 100}</span>
+                            <h3>{art.title}</h3>
+                            <p>Javier Mix · 2026</p>
+                            <p class="specs">Giclée Hahnemühle</p>
+                            <button class="buy-btn" data-id={art.id}>COLECCIONAR</button>
+                        </div>
                     </div>
                 </div>
             ))}
@@ -139,19 +146,22 @@ const artworks = artworksRaw
         height: 100%;
         display: flex;
         align-items: center;
-        padding: 0 30vw;
-        gap: 20vw;
+        padding: 0 35vw;
+        gap: 30vw;
         will-change: transform;
     }
 
     .artwork-station {
         flex: 0 0 auto;
         display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 3rem;
-        text-align: center;
-        transform: translateY(5vh); /* Bajar un poco las obras */
+        transform: translateY(2vh);
+    }
+
+    .frame-wrapper {
+        display: flex;
+        align-items: flex-end;
+        gap: 4rem;
     }
 
     .frame-container {
@@ -165,65 +175,66 @@ const artworks = artworksRaw
     }
 
     .main-artwork {
-        max-height: 48vh; /* Tamaño reducido */
+        max-height: 48vh;
         width: auto;
         display: block;
         position: relative;
         z-index: 2;
     }
-    .main-artwork.error { opacity: 0.3; filter: grayscale(1); }
 
-    .museum-spotlight {
+    /* Etiqueta de Museo */
+    .museum-label {
+        width: 180px;
+        text-align: left;
+        border-left: 1px solid rgba(0,0,0,0.1);
+        padding-left: 1.5rem;
+        opacity: 0.6;
+        transition: 0.5s;
+    }
+    .artwork-station:hover .museum-label { opacity: 1; border-color: var(--color-accent); }
+
+    .museum-label h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; margin: 0.5rem 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .museum-label p { font-size: 0.7rem; color: rgba(0,0,0,0.5); font-weight: 400; margin: 0; }
+    .museum-label .specs { font-style: italic; margin-top: 0.3rem; opacity: 0.7; }
+    .serial { font-size: 0.55rem; letter-spacing: 2px; font-weight: 900; color: var(--color-accent, #dcb14a); }
+
+    /* Punto Rojo */
+    .sold-dot {
         position: absolute;
-        top: -150px; left: 50%;
-        transform: translateX(-50%);
-        width: 300px; height: 400px;
-        background: radial-gradient(circle at top, rgba(255,255,255,0.6), transparent 80%);
-        opacity: 0.3;
-        pointer-events: none;
-    }
-
-    .artwork-caption {
-        max-width: 400px;
+        bottom: -20px;
+        right: -20px;
+        width: 12px;
+        height: 12px;
+        background: #ff0000;
+        border-radius: 50%;
+        box-shadow: 0 0 15px rgba(255,0,0,0.8);
         opacity: 0;
-        transform: translateY(20px);
-        transition: 1s ease;
+        transform: scale(0);
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 10;
     }
-    .artwork-station:hover .artwork-caption { opacity: 1; transform: translateY(0); }
-
-    .artwork-caption h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin: 0.5rem 0; font-weight: 400; }
-    .artwork-caption p { font-size: 0.85rem; color: rgba(0,0,0,0.5); font-weight: 300; }
-    .serial { font-size: 0.6rem; letter-spacing: 3px; font-weight: 900; color: var(--color-accent, #dcb14a); }
+    .sold-dot.active { opacity: 1; transform: scale(1); }
 
     .buy-btn {
         margin-top: 1.5rem;
-        padding: 0.8rem 2rem;
+        padding: 0.6rem 1.2rem;
         background: #000;
         color: #fff;
         border: none;
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 900;
-        letter-spacing: 3px;
+        letter-spacing: 2px;
         cursor: pointer;
         transition: 0.3s;
     }
-    .buy-btn:hover { background: var(--color-accent, #dcb14a); color: #000; transform: scale(1.05); }
+    .buy-btn:hover { background: var(--color-accent, #dcb14a); color: #000; }
 
-    .scroll-progress {
-        position: fixed;
-        bottom: 0; left: 0; width: 100%; height: 3px;
-        background: rgba(0,0,0,0.03);
+    /* Adaptaciones para fondos oscuros */
+    .is-atmos-night .museum-label, .is-atmos-velvet .museum-label, .is-atmos-blue .museum-label, .is-atmos-concrete .museum-label, .is-atmos-gold .museum-label { 
+        border-color: rgba(255,255,255,0.1); color: #fff; 
     }
-    .scroll-progress .bar { height: 100%; width: 0%; background: var(--color-accent, #dcb14a); transition: width 0.1s linear; }
-
-    /* Adaptaciones para atmósferas */
-    .is-atmos-night, .is-atmos-velvet, .is-atmos-blue, .is-atmos-concrete, .is-atmos-gold { color: #fff; }
-    .is-atmos-night .frame-container, .is-atmos-velvet .frame-container, .is-atmos-blue .frame-container, .is-atmos-concrete .frame-container, .is-atmos-gold .frame-container { 
-        background: #080808; border-color: rgba(255,255,255,0.05); box-shadow: 0 40px 100px rgba(0,0,0,0.8); 
-    }
+    .is-atmos-night .museum-label p, .is-atmos-velvet .museum-label p, .is-atmos-blue .museum-label p, .is-atmos-concrete .museum-label p, .is-atmos-gold .museum-label p { color: rgba(255,255,255,0.5); }
     .is-atmos-night .buy-btn, .is-atmos-velvet .buy-btn, .is-atmos-blue .buy-btn, .is-atmos-concrete .buy-btn, .is-atmos-gold .buy-btn { background: #fff; color: #000; }
-    .is-atmos-night .artwork-caption p, .is-atmos-velvet .artwork-caption p, .is-atmos-blue .artwork-caption p, .is-atmos-concrete .artwork-caption p, .is-atmos-gold .artwork-caption p { color: rgba(255,255,255,0.4); }
-    .is-atmos-night .control-btn, .is-atmos-velvet .control-btn, .is-atmos-blue .control-btn, .is-atmos-concrete .control-btn, .is-atmos-gold .control-btn { border-color: rgba(255,255,255,0.1); color: #fff; background: rgba(255,255,255,0.05); }
 
 </style>
 
@@ -231,34 +242,29 @@ const artworks = artworksRaw
     import { soundManager } from '../../utils/SoundManager';
 
     document.addEventListener('astro:page-load', () => {
-        const wall = document.getElementById('wall');
         const gallery = document.getElementById('gallery-container');
-        const progressBar = document.getElementById('progress-bar');
         const soundBtn = document.getElementById('sound-btn');
         const playBtn = document.getElementById('play-btn');
         let soundEnabled = false;
         let autoPlayInterval: any = null;
 
-        if (!wall || !gallery) return;
+        if (!gallery) return;
 
-        // 🔊 Inicializar Sonido
+        // 🔊 Audio
         soundManager.init();
         soundBtn?.addEventListener('click', () => {
             soundEnabled = !soundEnabled;
             if (soundEnabled) {
                 soundManager.enable();
                 soundBtn.innerHTML = '<span class="icon">🔊</span> AUDIO ON';
-                soundBtn.classList.add('active');
-                // Intentar reproducir un loop ambiente si el usuario lo activa
                 soundManager.playMusic('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
             } else {
                 soundManager.disable();
                 soundBtn.innerHTML = '<span class="icon">🔇</span> AUDIO OFF';
-                soundBtn.classList.remove('active');
             }
         });
 
-        // 🚀 Auto-Tour (Play Button)
+        // 🚀 Auto-Tour
         playBtn?.addEventListener('click', () => {
             if (autoPlayInterval) {
                 clearInterval(autoPlayInterval);
@@ -270,22 +276,14 @@ const artworks = artworksRaw
                 playBtn.innerHTML = '<span class="icon">⏸</span> STOP TOUR';
                 autoPlayInterval = setInterval(() => {
                     gallery.scrollLeft += 1;
-                    updateProgress();
                     if (gallery.scrollLeft >= gallery.scrollWidth - window.innerWidth) {
                         gallery.scrollLeft = 0;
                     }
-                }, 20); // Velocidad lenta y fluida
+                }, 25);
             }
         });
 
-        const updateProgress = () => {
-            const scrollPercent = (gallery.scrollLeft / (gallery.scrollWidth - window.innerWidth)) * 100;
-            if (progressBar) progressBar.style.width = `${scrollPercent}%`;
-        };
-
-        gallery.addEventListener('scroll', updateProgress);
-
-        // 🔘 Selector de Atmósferas
+        // 🔘 Atmósferas
         const atmosBtns = document.querySelectorAll('.atmos-btn');
         atmosBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -298,13 +296,24 @@ const artworks = artworksRaw
             });
         });
 
-        // 🛒 Botón de Colección
+        // 🛒 Colección + Punto Rojo
         const buyBtns = document.querySelectorAll('.buy-btn');
         buyBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-id');
-                alert(`Iniciando Checkout Express para obra: ${id}`);
-                if (soundEnabled) soundManager.play('hover', 0.3);
+                const dot = document.getElementById(`dot-${id}`);
+                
+                if (dot) {
+                    dot.classList.add('active');
+                    if (soundEnabled) soundManager.play('hover', 0.4);
+                    btn.innerHTML = 'COLECCIONADA';
+                    btn.style.opacity = '0.5';
+                    btn.style.pointerEvents = 'none';
+                    
+                    // Efecto sutil en la etiqueta
+                    const label = btn.closest('.museum-label') as HTMLElement;
+                    if (label) label.style.borderColor = '#ff0000';
+                }
             });
         });
     });
