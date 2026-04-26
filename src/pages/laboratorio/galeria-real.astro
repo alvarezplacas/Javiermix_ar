@@ -199,20 +199,35 @@ const entornos = await getLaboratorioEntornos();
 
     .frame-container {
         position: relative;
-        padding: 1.5rem;
-        background: #fff;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.08);
-        border: 1px solid rgba(0,0,0,0.05);
+        padding: 40px; /* Paspartú / Mat */
+        background-color: #f5f2ed; /* Blanco Museo */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+        border: 20px solid #111; /* Marco Negro Matte */
+        box-shadow: 
+            inset 0 0 10px rgba(0,0,0,0.1),
+            0 20px 50px rgba(0,0,0,0.5);
         transform-style: preserve-3d;
-        transition: all 0.5s ease;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Efecto Vidrio Museo (Antirreflejo) */
+    .frame-container::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(160deg, oklch(0.3 0.05 300 / 0.03) 0%, transparent 100%);
+        backdrop-filter: contrast(1.05) brightness(1.02);
+        pointer-events: none;
+        z-index: 5;
     }
 
     .main-artwork {
-        max-height: 48vh;
+        max-height: 42vh;
         width: auto;
         display: block;
         position: relative;
         z-index: 2;
+        box-shadow: 0 0 5px rgba(0,0,0,0.2);
     }
 
     /* Etiqueta de Museo */

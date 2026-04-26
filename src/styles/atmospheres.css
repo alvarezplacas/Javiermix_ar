@@ -50,17 +50,19 @@
   background: var(--atmos-home-tint);
 }
 
-/* 3. Nocturno (Spotlight) */
-.is-atmos-night .main-artwork,
-.is-atmos-night .room-artwork {
-  filter: var(--atmos-night-filter);
+/* 3. Urban Brick (Ladrillo Industrial) */
+.is-atmos-night {
+  background-color: #4a2a1a !important;
+  background-image: 
+    radial-gradient(circle at center, transparent 20%, rgba(0,0,0,0.6) 100%),
+    url('https://www.transparenttextures.com/patterns/brick-wall.png') !important;
+  background-size: contain, 500px auto !important;
+  background-repeat: no-repeat, repeat !important;
 }
 .is-atmos-night .atmos-overlay {
   opacity: 1;
-  background: var(--atmos-night-tint);
-  /* Efecto de Foco Radial sobre la obra */
-  mask-image: radial-gradient(circle at center, transparent 30%, black 80%);
-  -webkit-mask-image: radial-gradient(circle at center, transparent 30%, black 80%);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: brightness(0.8) contrast(1.1);
 }
 
 /* 4. Velvet Red (Textura y Lujo) */
