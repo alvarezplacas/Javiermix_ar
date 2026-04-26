@@ -1,38 +1,44 @@
-import { updateOrder } from '@conexion/directus';
+import { updateOrder, DirectusManager } from '@conexion/directus';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
+
+const client = new MercadoPagoConfig({
+    accessToken: process.env.MP_ACCESS_TOKEN || ''
+});
 
 /**
- * 🛰️ Webhook Mercado Pago (Motor V8)
- * 
- * Este endpoint escucha las notificaciones asíncronas de Mercado Pago
- * para confirmar el pago y actualizar el estado de la Orden en Directus.
+ * 🛰️ Webhook Mercado Pago (Motor V8 - Producción)
  */
-
 export const POST = async ({ request }) => {
     try {
         const body = await request.json();
         const { type, data } = body;
 
-        // Solo nos interesan los pagos (payment)
         if (type === 'payment') {
             const paymentId = data.id;
-
-            // 🔍 Consultamos el estado del pago en Mercado Pago (Safe side)
-            // En producción, aquí haríamos un fetch a MP con el paymentId
-            // para validar que el pago es 'approved'.
+            const payment = new Payment(client);
             
-            console.log(`💳 Recorriendo Pago MP ID: ${paymentId}`);
+            // Consultamos a Mercado Pago para verificar el estado real
+            const paymentData = await payment.get({ id: paymentId });
+            
+            if (paymentData.status === 'approved') {
+                const orderId = paymentData.external_reference;
+                const mpTransactionId = paymentData.id?.toString();
 
-            // Actualizamos la orden en Directus (En un flujo real, MP envía la external_reference)
-            // Nota: Mercado Pago envía las notificaciones y luego nosotros consultamos el Payment.
-            // Para simplificar esta v1, asumimos que si llega aquí, es para procesar.
+                console.log(`✅ Pago Aprobado: Orden ${orderId} | Pago MP: ${mpTransactionId}`);
 
-            // updateOrder(orderId, { status: 'paid', mercadopago_id: paymentId });
+                // Actualizamos Directus
+                await updateOrder(orderId, { 
+                    status: 'paid', 
+                    mercadopago_id: mpTransactionId,
+                    payment_date: new Date().toISOString()
+                });
+            }
         }
 
         return new Response(JSON.stringify({ success: true }), { status: 200 });
 
     } catch (error) {
         console.error('❌ Error en Webhook V8:', error.message);
-        return new Response(null, { status: 500 });
+        return new Response(null, { status: 200 }); // Siempre 200 para que MP no reintente infinitamente
     }
 };

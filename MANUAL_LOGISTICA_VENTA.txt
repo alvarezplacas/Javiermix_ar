@@ -1,0 +1,57 @@
+============================================================
+       MANUAL DE PROCESO DE VENTA Y LOGÍSTICA
+                JAVIER MIX ART (v1.0)
+============================================================
+
+1. FLUJO DE VENTA AUTOMATIZADO
+------------------------------------------------------------
+A. NOTIFICACIÓN: Cuando un cliente completa el pago, Mercado 
+   Pago envía una señal al sistema.
+B. ACTUALIZACIÓN: La orden en Directus cambia de 'pending' a 
+   'paid' automáticamente.
+C. VERIFICACIÓN: El administrador (Javier) debe confirmar el 
+   ingreso del dinero en el panel de Mercado Pago.
+
+2. PREPARACIÓN DE LA OBRA (FASE C - PREMIUM)
+------------------------------------------------------------
+- Siempre manipular la obra con GUANTES DE ALGODÓN BLANCO.
+- Envolver la pieza en PAPEL SEDA LIBRE DE ÁCIDO (pH Neutro).
+- Para obras sin marco: Enrollar cuidadosamente y colocar 
+  dentro de un TUBO DE CARTÓN RÍGIDO (mínimo 3mm de pared).
+- Incluir el CERTIFICADO DE AUTENTICIDAD físico con su QR.
+
+3. PROVEEDORES RECOMENDADOS (Buenos Aires)
+------------------------------------------------------------
+A. EMBALAJE:
+   - TUBOS RÍGIDOS: Cartouch Argentina (Haedo). 
+     Tel: 011 4629-1100. Web: cartouch.com.ar
+   - PAPEL ÁCIDO-FREE: Teorema (Palermo). 
+     Tel: 011 4777-2200. Web: libreriateorema.com.ar
+   - GUANTES ALGODÓN: Farmacity o Casas de Instrumental Médico.
+
+B. ENMARCADO PROFESIONAL (Zona Oeste):
+   - CARMIÑA ENMARCADOS (Castelar): Especialistas en conservación.
+     Tel: 011 5668-9400.
+   - CUADROS B.A. (Ramos Mejía): Especialistas a medida.
+     Tel: 011 4658-0005. Av. Gaona 2275.
+   - MOLDURAS IMDO (El Palomar): Venta de molduras por mayor.
+     Tel: +54 9 11 3080-9435. Web: moldurasimdo.com.ar
+
+4. DESPACHO Y LOGÍSTICA
+------------------------------------------------------------
+A. NACIONAL (ANDREANI):
+   - Gestionar a través del portal Andreani Envíos.
+   - Cargar el 'Tracking Number' en el pedido de Directus.
+B. INTERNACIONAL (DHL EXPRESS):
+   - Enviar bajo código HS 9705.00.00 (Arte Original).
+   - Completar Declaración Jurada de Obra de Artista Vivo
+     (esto te exime de impuestos de exportación).
+
+5. POST-VENTA
+------------------------------------------------------------
+- El cliente recibe un mail con su código de seguimiento.
+- Al llegar la obra, se recomienda enviarle un mensaje para 
+  asegurar que la experiencia de apertura (unboxing) fue 
+  satisfactoria.
+
+============================================================
