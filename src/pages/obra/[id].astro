@@ -69,9 +69,43 @@ if (meta?.size_large && meta?.precio_large) {
 
 const precio = sizes.length > 0 ? sizes[0].price : (meta?.price || 0);
 const etiqueta = "Fine Art Print";
+
+// --- PROPUESTA 4: SEO DINÁMICO (JSON-LD) ---
+const artworkSchema = {
+  "@context": "https://schema.org",
+  "@type": ["VisualArtwork", "Product"],
+  "name": title,
+  "image": coverImage,
+  "description": mainFile.description || meta?.description || `Obra fotográfica Fine Art de Javier Mix. Serie ${serieName}. Impresión de alta calidad sobre soporte premium.`,
+  "brand": {
+    "@type": "Brand",
+    "name": "Javier Mix"
+  },
+  "creator": {
+    "@type": "Person",
+    "name": "Javier Mix"
+  },
+  "artform": "Photography",
+  "artMedium": meta?.paper || "Fine Art Paper / Aluminium",
+  "offers": {
+    "@type": "Offer",
+    "price": precio,
+    "priceCurrency": "ARS",
+    "availability": "https://schema.org/InStock",
+    "url": Astro.url.href
+  },
+  "category": serieName
+};
+
+const metaDescription = mainFile.description || meta?.description || `Descubre "${title}", una obra fotográfica exclusiva de la serie ${serieName} por Javier Mix. Disponible en múltiples formatos Fine Art con certificado de autenticidad.`;
 ---
 
-<Layout title={`${title} | Obra Fine Art`}>
+<Layout 
+    title={`${title} | Obra Fine Art de Javier Mix`}
+    description={metaDescription}
+    image={coverImage}
+    schema={artworkSchema}
+>
   <Header currentPath="/galeria" />
 
   <article class="obra-container">
