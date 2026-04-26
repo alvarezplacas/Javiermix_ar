@@ -89,13 +89,11 @@ const etiqueta = "Fine Art Print";
             <div class="atmos-overlay"></div>
           </div>
           
-          <div class="image-controls">
-            {roomImage ? (
+           <div class="image-controls">
+            {roomImage && (
                <button class="control-btn" id="btn-obra">VER EN SALA</button>
-            ) : (
-               <button class="control-btn" style="opacity: 0.3; cursor: not-allowed;" disabled>SIN VISTA EN SALA</button>
             )}
-                        
+            
             <div class="atmos-selector">
                 <button class="atmos-btn active" id="atmos-gallery" data-label="GALERÍA">
                     <i class="fas fa-sun"></i>
@@ -114,22 +112,24 @@ const etiqueta = "Fine Art Print";
                 </svg>
             </button>
           </div>
-          
-          <div class="share-controls-left">
-            <span>COMPARTIR:</span>
-            <div class="social-icons">
-               <i class="fab fa-whatsapp"></i>
-               <i class="fab fa-x-twitter"></i>
-               <i class="fab fa-facebook-f"></i>
-               <i class="fab fa-instagram"></i>
-            </div>
-          </div>
         </div>
       </section>
 
       <!-- 📜 Columna Derecha: Información y Venta (RESTAURACION PIXEL-PERFECT V1) -->
       <section class="info-column">
-        <a href="/galeria" class="back-link">← VOLVER AL CATÁLOGO</a>
+        <div class="info-header-meta">
+            <a href="/galeria" class="back-link">← VOLVER AL CATÁLOGO</a>
+            
+            <div class="share-controls-inline">
+                <span>COMPARTIR:</span>
+                <div class="social-icons">
+                   <i class="fab fa-whatsapp"></i>
+                   <i class="fab fa-x-twitter"></i>
+                   <i class="fab fa-facebook-f"></i>
+                   <i class="fab fa-instagram"></i>
+                </div>
+            </div>
+        </div>
         
         <div class="serie-label-top">SERIE: {serieName}</div>
         <h1 class="obra-title">{title}</h1>
@@ -629,10 +629,28 @@ const etiqueta = "Fine Art Print";
   letter-spacing: 2px;
   color: var(--color-accent);
   text-decoration: none;
-  display: block;
-  margin-bottom: 3rem;
   text-transform: uppercase;
   font-weight: 600;
+}
+
+.info-header-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+}
+
+.share-controls-inline {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.55rem;
+    color: var(--color-text-muted);
+    letter-spacing: 1px;
+}
+
+.share-controls-inline .social-icons {
+    gap: 0.8rem;
 }
 
 .serie-label-top {
@@ -854,13 +872,12 @@ const etiqueta = "Fine Art Print";
   
   .image-controls {
     position: absolute;
-    bottom: 2.5rem;
+    bottom: 2rem;
     left: 0;
     right: 0;
     transform: none;
     width: 100%;
-    max-width: none;
-    flex-wrap: wrap;
+    display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.8rem;
@@ -868,28 +885,41 @@ const etiqueta = "Fine Art Print";
     z-index: 100;
   }
 
+  .atmos-selector {
+      margin-left: 0;
+      padding: 0.3rem;
+  }
+
   .control-btn {
-    padding: 0.8rem 1.4rem;
-    font-size: 0.65rem;
-    flex-shrink: 0;
+    padding: 0.6rem 1rem;
+    font-size: 0.6rem;
   }
 
   .btn-like-glass {
-    margin-left: 0.2rem;
-    width: 50px;
-    height: 50px;
+    width: 44px;
+    height: 44px;
+    background: rgba(220, 177, 74, 0.15);
+    border: 1px solid var(--color-accent);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(220, 177, 74, 0.1);
-    border: 1px solid rgba(220, 177, 74, 0.3);
-    border-radius: 50%;
+    margin: 0;
   }
-  .heart-icon-glass { width: 28px; height: 28px; }
+  .heart-icon-glass { 
+      width: 22px; 
+      height: 22px; 
+      stroke-width: 2;
+  }
 
   .info-column { 
-      padding: 4rem 8%; 
-      padding-bottom: 180px;
+      padding: 3rem 6% 120px; 
+  }
+
+  .info-header-meta {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.5rem;
   }
 }
 
