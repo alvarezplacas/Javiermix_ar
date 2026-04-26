@@ -69,7 +69,7 @@ services:
       CACHE_REDIS: "redis://cache:6379"
       LOCK_STORE: "redis"
       LOCK_REDIS: "redis://cache:6379"
-      STORAGE_LOCATIONS: "s3"
+      STORAGE_LOCATIONS: "local,s3"
       # Configuración de S3 (MinIO Activo)
       STORAGE_S3_DRIVER: "s3"
       STORAGE_S3_KEY: "${STORAGE_S3_KEY}"
