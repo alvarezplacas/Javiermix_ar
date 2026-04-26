@@ -9,6 +9,11 @@
   --atmos-night-tint: rgba(5, 5, 20, 0.4);
   
   --atmos-transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Velvet Red (OKLCH Realism) */
+  --atmos-velvet-bg: oklch(0.15 0.05 25); /* Fondo oscuro carmesí */
+  --atmos-velvet-tint: rgba(139, 0, 0, 0.15);
+  --atmos-velvet-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 /* Base Wrapper Container */
@@ -56,6 +61,28 @@
   /* Efecto de Foco Radial sobre la obra */
   mask-image: radial-gradient(circle at center, transparent 30%, black 80%);
   -webkit-mask-image: radial-gradient(circle at center, transparent 30%, black 80%);
+}
+
+/* 4. Velvet Red (Textura y Lujo) */
+.is-atmos-velvet {
+  background: var(--atmos-velvet-bg) !important;
+}
+.is-atmos-velvet .main-artwork,
+.is-atmos-velvet .room-artwork {
+  filter: contrast(1.1) brightness(0.9);
+}
+.is-atmos-velvet .atmos-overlay {
+  opacity: 1;
+  background: var(--atmos-velvet-tint);
+}
+.is-atmos-velvet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--atmos-velvet-grain);
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Controles de selector */

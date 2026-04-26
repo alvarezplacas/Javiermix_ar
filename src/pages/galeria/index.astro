@@ -49,7 +49,7 @@ const artworks = artworksRaw
             </div>
 
             <div class="hero-content">
-                <h1 class="gallery-title">GALERy</h1>
+                <h1 class="gallery-title">GALLERY</h1>
                 <p class="hero-subtitle">Buscador De Obras</p>
                 <div class="search-portal-wrapper">
                     <input type="text" id="gallery-search-input" placeholder="Busca por tema, color, textura..." autocomplete="off">
@@ -152,11 +152,11 @@ const artworks = artworksRaw
 }
 
 .gallery-title { 
-    font-size: 6rem; 
+    font-size: 6.5rem; 
     font-weight: 200; 
     font-family: var(--font-primary); 
     margin: 0; 
-    letter-spacing: 15px; 
+    letter-spacing: 20px; 
     text-transform: uppercase;
     color: #fff;
     opacity: 0.9;
@@ -164,12 +164,12 @@ const artworks = artworksRaw
 
 .hero-subtitle {
     font-family: var(--font-secondary);
-    font-size: 0.8rem;
-    letter-spacing: 5px;
+    font-size: 0.85rem;
+    letter-spacing: 6px;
     color: var(--color-accent);
     text-transform: uppercase;
-    margin-top: -1rem;
-    margin-bottom: 3rem;
+    margin-top: 1rem; /* Aumentado de -1rem a 1rem */
+    margin-bottom: 3.5rem;
     font-weight: 700;
 }
 
@@ -235,19 +235,21 @@ const artworks = artworksRaw
     column-gap: 2rem;
 }
 
-/* Cuando estamos en modo serie, forzamos 1 columna para que las tarjetas horizontales ocupen todo el ancho */
+/* Cuando estamos en modo serie, dividimos en 2 columnas en escritorio */
 .masonry-grid.list-mode {
-    column-count: 1 !important;
+    column-count: 2 !important;
+    column-gap: 2rem;
 }
 
 /* 🗂️ SERIES CARD RESULT (HORIZONTAL) */
 .series-card-result {
     display: flex;
+    flex-direction: column; /* Cambiado a columna para que entre bien en 2 col grid */
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.05);
-    padding: 3rem;
+    padding: 2.5rem;
     margin-bottom: 2rem;
     text-decoration: none;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
@@ -258,17 +260,17 @@ const artworks = artworksRaw
 .series-card-result:hover {
     background: rgba(255,255,255,0.05);
     border-color: var(--color-accent);
-    transform: translateX(10px);
+    transform: translateY(-5px);
 }
 
-.series-info-side { flex: 1; padding-right: 2rem; }
-.s-name { font-size: 3rem; font-family: var(--font-primary); font-weight: 200; color: #fff; margin: 0; line-height: 1.1; }
-.s-count { font-size: 0.7rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 800; margin-top: 1rem; text-transform: uppercase; display: block; opacity: 0.8; }
-.s-teaser { font-size: 0.95rem; color: rgba(255,255,255,0.4); margin-top: 1.5rem; line-height: 1.6; max-width: 500px; font-weight: 300; }
+.series-info-side { flex: 1; padding-right: 0; width: 100%; margin-bottom: 2rem; }
+.s-name { font-size: 2.5rem; font-family: var(--font-primary); font-weight: 200; color: #fff; margin: 0; line-height: 1.1; }
+.s-count { font-size: 0.65rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 800; margin-top: 1rem; text-transform: uppercase; display: block; opacity: 0.8; }
+.s-teaser { font-size: 0.9rem; color: rgba(255,255,255,0.4); margin-top: 1.5rem; line-height: 1.6; max-width: 100%; font-weight: 300; }
 
 .series-photo-side { 
-    width: 320px; 
-    height: 200px; 
+    width: 100%; 
+    height: 250px; 
     overflow: hidden; 
     border: 1px solid rgba(255,255,255,0.05); 
     filter: grayscale(1) opacity(0.5); 
@@ -323,13 +325,15 @@ const artworks = artworksRaw
 /* 📱 MOBILE */
 @media (max-width: 1024px) { 
     .masonry-grid { column-count: 2; } 
-    .series-photo-side { width: 200px; height: 130px; }
+    .series-photo-side { height: 180px; }
+    .s-name { font-size: 2rem; }
 }
 
 @media (max-width: 768px) { 
     .masonry-grid { column-count: 1; } 
+    .masonry-grid.list-mode { column-count: 1 !important; }
     .gallery-title { font-size: 3.5rem; letter-spacing: 8px; }
-    .hero-subtitle { font-size: 0.6rem; letter-spacing: 3px; }
+    .hero-subtitle { font-size: 0.6rem; letter-spacing: 3px; margin-top: 0.5rem; }
     .google-hero { height: 450px; }
     .search-portal-wrapper { padding-left: 1.5rem; }
     #gallery-search-input { font-size: 1rem; }
@@ -355,7 +359,7 @@ const artworks = artworksRaw
         margin: 0 auto 2rem !important;
     }
 
-    .series-info-side { padding-right: 0; width: 100%; order: 1; }
+    .series-info-side { padding-right: 0; width: 100%; order: 1; margin-bottom: 2rem; }
     .s-name { font-size: 2rem; margin-top: 0; letter-spacing: -1px; }
     .s-count { font-size: 0.65rem; margin-top: 0.8rem; }
     .s-teaser { font-size: 0.9rem; margin: 1.2rem auto 0; max-width: 90%; }
@@ -364,7 +368,7 @@ const artworks = artworksRaw
         order: 2; /* Imagen debajo del texto */
         width: 180px !important; /* Imagen mucho más pequeña como pediste */
         height: 120px !important;
-        margin: 2rem auto 0 !important;
+        margin: 0 auto !important;
         filter: grayscale(0) opacity(1);
         border: 1px solid rgba(255,255,255,0.1);
         box-shadow: 0 15px 40px rgba(0,0,0,0.8);

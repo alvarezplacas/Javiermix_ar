@@ -1,0 +1,218 @@
+---
+// d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\profundidad.astro
+import Layout from '@layouts/Layout.astro';
+import { getCatalogoFiles } from '@conexion/directus';
+import { getOptimizedImageURL } from '@utils/media';
+
+export const prerender = false;
+
+const artworksRaw = await getCatalogoFiles();
+const artworks = artworksRaw
+    .filter(file => !file.filename_download.toLowerCase().includes('_2'))
+    .slice(0, 15)
+    .map((file, index) => ({
+        id: file.id,
+        title: file.title || `Obra ${index + 1}`,
+        img: getOptimizedImageURL(file.id, { width: 1200, format: 'avif', quality: 90 }),
+        z: index * -800, // Espaciado inicial en Z
+        x: (Math.random() - 0.5) * 400, // Desvío aleatorio
+        y: (Math.random() - 0.5) * 200
+    }));
+---
+
+<Layout title="Infinity Gallery 3D | Laboratorio JMX">
+    <main class="infinity-container">
+        <!-- 🌌 Fondo de Partículas -->
+        <canvas id="dust-canvas"></canvas>
+
+        <div class="scrolling-scene" id="scene">
+            {artworks.map((art, index) => (
+                <div class="art-frame" style={`--z: ${art.z}px; --x: ${art.x}px; --y: ${art.y}px; animation-delay: ${index * 0.2}s`}>
+                    <img src={art.img} alt={art.title} />
+                    <div class="art-info">
+                        <h3>{art.title}</h3>
+                        <span>0{index + 1}</span>
+                    </div>
+                </div>
+            ))}
+            
+            <div class="horizon-light"></div>
+        </div>
+
+        <div class="scroll-indicator">
+            <div class="mouse"></div>
+            <span>SCROLL PARA NAVEGAR</span>
+        </div>
+
+        <a href="/laboratorio" class="back-btn">← SALIR</a>
+    </main>
+</Layout>
+
+<style>
+    .infinity-container {
+        height: 500vh; /* Espacio para scroll */
+        background: #000;
+        overflow-x: hidden;
+        color: #fff;
+        perspective: 1000px;
+    }
+
+    #dust-canvas {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.3;
+    }
+
+    .scrolling-scene {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform-style: preserve-3d;
+        z-index: 2;
+    }
+
+    .art-frame {
+        position: absolute;
+        width: 600px;
+        transform-style: preserve-3d;
+        transform: translate3d(var(--x), var(--y), var(--z));
+        opacity: 0;
+        transition: opacity 0.8s ease;
+    }
+
+    .art-frame img {
+        width: 100%;
+        height: auto;
+        box-shadow: 0 50px 100px rgba(0,0,0,0.9);
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .art-info {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Cormorant Garamond', serif;
+    }
+
+    .art-info h3 { font-weight: 300; letter-spacing: 2px; text-transform: uppercase; font-size: 1.2rem; }
+    .art-info span { color: var(--color-accent, #dcb14a); font-weight: 800; font-size: 0.8rem; }
+
+    .horizon-light {
+        position: absolute;
+        bottom: -20vh;
+        width: 100%;
+        height: 40vh;
+        background: radial-gradient(ellipse at bottom, rgba(220, 177, 74, 0.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .scroll-indicator {
+        position: fixed;
+        bottom: 3rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        z-index: 10;
+        opacity: 0.6;
+    }
+
+    .mouse { width: 20px; height: 35px; border: 2px solid #fff; border-radius: 15px; position: relative; }
+    .mouse::after { content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: scrollMouse 2s infinite; }
+
+    @keyframes scrollMouse { 0% { opacity: 1; top: 8px; } 100% { opacity: 0; top: 22px; } }
+
+    .back-btn {
+        position: fixed;
+        top: 2rem; left: 2rem;
+        z-index: 100;
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.7rem;
+        letter-spacing: 3px;
+        font-weight: 900;
+        opacity: 0.5;
+        transition: 0.3s;
+    }
+    .back-btn:hover { opacity: 1; color: var(--color-accent, #dcb14a); }
+
+    @media (max-width: 768px) {
+        .art-frame { width: 85vw; }
+    }
+</style>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const scene = document.getElementById('scene');
+        const frames = document.querySelectorAll('.art-frame');
+        const canvas = document.getElementById('dust-canvas') as HTMLCanvasElement;
+        
+        if (!scene || !canvas) return;
+
+        // 🎨 Motor de Partículas (Polvo Estelar)
+        const ctx = canvas.getContext('2d');
+        let particles: any[] = [];
+        
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        window.addEventListener('resize', resize);
+        resize();
+
+        for(let i = 0; i < 150; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.5,
+                speed: Math.random() * 0.5 + 0.2
+            });
+        }
+
+        function animateParticles() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            particles.forEach(p => {
+                p.y -= p.speed;
+                if (p.y < 0) p.y = canvas.height;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // 🚀 Motor de Scroll 3D
+        window.addEventListener('scroll', () => {
+            const scroll = window.scrollY;
+            
+            frames.forEach((frame: any, i) => {
+                const baseZ = parseInt(frame.style.getPropertyValue('--z'));
+                const currentZ = baseZ + scroll * 1.2;
+                const opacity = currentZ > 500 ? 0 : (currentZ < -2000 ? 0 : 1);
+                
+                // Efecto de escape periférico (Desvío lateral al acercarse)
+                let xOffset = 0;
+                let rotateY = 0;
+                if (currentZ > -300) {
+                    const factor = (currentZ + 300) / 800; // 0 to 1
+                    xOffset = factor * 1000; // Se desvía a 1000px
+                    rotateY = factor * 25; // Se inclina
+                }
+
+                frame.style.transform = `translate3d(calc(var(--x) + ${xOffset}px), var(--y), ${currentZ}px) rotateY(${-rotateY}deg)`;
+                frame.style.opacity = opacity.toString();
+                frame.style.pointerEvents = currentZ > -200 && currentZ < 100 ? 'auto' : 'none';
+            });
+        });
+    });
+</script>
