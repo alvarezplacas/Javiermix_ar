@@ -85,6 +85,52 @@
   z-index: 1;
 }
 
+/* 5. Velvet Blue (Profundidad Nocturna) */
+.is-atmos-blue {
+  background: oklch(0.15 0.08 250) !important;
+}
+.is-atmos-blue::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--atmos-velvet-grain);
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 1;
+}
+.is-atmos-blue .atmos-overlay {
+  opacity: 1;
+  background: rgba(0, 20, 60, 0.2);
+}
+
+/* 6. Exposed Concrete (Hormigón Visto) */
+.is-atmos-concrete {
+  background: #2a2a2a !important;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.03' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.2'/%3E%3C/svg%3E") !important;
+}
+.is-atmos-concrete .frame-container {
+  border: 1px solid rgba(0,0,0,0.2);
+  box-shadow: 0 40px 100px rgba(0,0,0,0.4);
+}
+
+/* 7. Golden Leaf (Oro Envejecido) */
+.is-atmos-gold {
+  background: oklch(0.25 0.05 80) !important;
+}
+.is-atmos-gold::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+.is-atmos-gold .atmos-overlay {
+  opacity: 1;
+  background: rgba(220, 177, 74, 0.1);
+}
+
 /* Controles de selector */
 .atmos-selector {
   display: flex;

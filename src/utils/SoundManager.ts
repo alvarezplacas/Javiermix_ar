@@ -15,11 +15,9 @@ class SoundManager {
     }
 
     init() {
-        // Precargar sonidos ligeros (usando URLs de recursos públicos o placeholders)
-        // Nota: En un entorno real, estos archivos deberían existir en /public/audio/
-        this.load('hover', 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'); // Sutil click/pop
-        this.load('transition', 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'); // Woosh suave
-        this.load('ambient', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'); // Solo ejemplo, debería ser un loop ambiente
+        // Precargar sonidos ligeros
+        this.load('hover', 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'); 
+        this.load('transition', 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'); 
     }
 
     private load(name: string, url: string) {
@@ -30,7 +28,6 @@ class SoundManager {
 
     enable() {
         this.enabled = true;
-        // Iniciar ambiente si es necesario
     }
 
     disable() {
@@ -44,8 +41,21 @@ class SoundManager {
         if (sound) {
             sound.currentTime = 0;
             sound.volume = volume;
-            sound.play().catch(() => { /* Autoplay block */ });
+            sound.play().catch(() => {});
         }
+    }
+
+    playMusic(url: string) {
+        if (!this.enabled) return;
+        let music = this.sounds.get('music');
+        if (music) {
+            music.pause();
+        }
+        music = new Audio(url);
+        music.loop = true;
+        music.volume = 0.15;
+        this.sounds.set('music', music);
+        music.play().catch(() => {});
     }
 
     stopAll() {
