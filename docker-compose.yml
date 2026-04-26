@@ -56,7 +56,7 @@ services:
       EXTENSIONS_CHECK_PROXY_HEADERS: "true"
       
       # ⚡ Optimización de Medios (AVIF & Video)
-      FILES_MIME_TYPE_ALLOW_LIST: "image/avif,image/webp,video/mp4,video/quicktime,image/jpeg,image/png,image/svg+xml"
+      FILES_MIME_TYPE_ALLOW_LIST: "image/avif,image/webp,video/mp4,video/quicktime,image/jpeg,image/png,image/svg+xml,audio/mpeg,audio/mp3,audio/wav,audio/ogg"
       FILES_SIZE_LIMIT: "100mb"
       IMAGE_TRANSFORMER: "sharp"
       # AVIF/WebP Quality Tuning
