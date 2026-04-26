@@ -1,0 +1,215 @@
+---
+import Layout from '@layouts/Layout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+---
+
+<Layout title="Curaduría y Artistas Invitados | Javier Mix">
+    <Header currentPath="/curaduria" />
+    
+    <main class="curaduria-page">
+        <section class="curaduria-hero">
+            <div class="hero-content reveal">
+                <span class="eyebrow">CONVOCATORIA EXCLUSIVA</span>
+                <h1>El Diálogo de la Luz</h1>
+                <p class="subtitle">Buscamos miradas que expandan los límites de la fotografía contemporánea.</p>
+            </div>
+        </section>
+
+        <section class="curaduria-manifesto">
+            <div class="manifesto-grid">
+                <div class="manifesto-text">
+                    <h2>Nuestra Visión</h2>
+                    <p>
+                        Javier Mix Art no es solo una galería; es un espacio de curaduría donde la técnica impecable se encuentra con la narrativa profunda. 
+                        Buscamos artistas que compartan nuestra pasión por el detalle, el soporte físico y la obra de autor.
+                    </p>
+                    <p>
+                        Invitamos a fotógrafos y artistas visuales a presentar su portfolio para formar parte de nuestras colecciones exclusivas, 
+                        bajo un modelo de representación premium y ediciones limitadas.
+                    </p>
+                </div>
+                <div class="manifesto-points">
+                    <div class="point">
+                        <span class="point-num">01</span>
+                        <h3>Excelencia Técnica</h3>
+                        <p>Obras preparadas para impresión Fine Art de altísima fidelidad.</p>
+                    </div>
+                    <div class="point">
+                        <span class="point-num">02</span>
+                        <h3>Narrativa Única</h3>
+                        <p>Series con un hilo conductor claro y una voz propia.</p>
+                    </div>
+                    <div class="point">
+                        <span class="point-num">03</span>
+                        <h3>Compromiso</h3>
+                        <p>Artistas dedicados a la evolución de su lenguaje visual.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="curaduria-cta">
+            <div class="cta-box">
+                <h2>Envío de Portfolios</h2>
+                <p>Las aplicaciones se revisan trimestralmente por Javier Mix. Por favor, envíe un enlace a su sitio web o un PDF con su serie más representativa.</p>
+                <a href="mailto:curaduria@javiermix.ar" class="btn-primary">ENVIAR PROPUESTA</a>
+                <p class="cta-note">Solo se contactará a los artistas seleccionados para una entrevista personal.</p>
+            </div>
+        </section>
+    </main>
+
+    <Footer />
+</Layout>
+
+<style>
+    .curaduria-page {
+        background: #050505;
+        color: #fff;
+    }
+
+    .curaduria-hero {
+        height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 5%;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.8), #050505), url('/img/bg/curaduria-bg.jpg');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .eyebrow {
+        font-size: 0.7rem;
+        letter-spacing: 5px;
+        color: var(--color-accent);
+        display: block;
+        margin-bottom: 2rem;
+    }
+
+    h1 {
+        font-family: var(--font-primary);
+        font-size: 5rem;
+        font-weight: 300;
+        margin-bottom: 2rem;
+        letter-spacing: -1px;
+    }
+
+    .subtitle {
+        font-size: 1.2rem;
+        color: var(--color-text-muted);
+        max-width: 600px;
+        margin: 0 auto;
+        font-weight: 300;
+        line-height: 1.6;
+    }
+
+    .curaduria-manifesto {
+        padding: 10rem 10%;
+    }
+
+    .manifesto-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 10rem;
+        align-items: center;
+    }
+
+    .manifesto-text h2 {
+        font-family: var(--font-primary);
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        font-weight: 400;
+    }
+
+    .manifesto-text p {
+        font-size: 1.1rem;
+        line-height: 1.9;
+        color: var(--color-text-muted);
+        margin-bottom: 2rem;
+    }
+
+    .manifesto-points {
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
+    }
+
+    .point h3 {
+        font-size: 1rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        color: var(--color-accent);
+    }
+
+    .point p {
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+        line-height: 1.6;
+    }
+
+    .point-num {
+        font-family: var(--font-primary);
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.2);
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .curaduria-cta {
+        padding: 10rem 5%;
+        text-align: center;
+        background: #080808;
+    }
+
+    .cta-box {
+        max-width: 800px;
+        margin: 0 auto;
+        border: 1px solid rgba(255,255,255,0.05);
+        padding: 6rem;
+        background: rgba(255,255,255,0.01);
+    }
+
+    .cta-box h2 {
+        font-family: var(--font-primary);
+        font-size: 3rem;
+        margin-bottom: 2rem;
+    }
+
+    .cta-box p {
+        color: var(--color-text-muted);
+        margin-bottom: 3rem;
+        line-height: 1.7;
+    }
+
+    .btn-primary {
+        display: inline-block;
+        background: var(--color-accent);
+        color: #000;
+        padding: 1.2rem 3rem;
+        text-decoration: none;
+        font-weight: 700;
+        letter-spacing: 2px;
+        font-size: 0.8rem;
+        transition: all 0.4s;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(197, 160, 89, 0.3);
+    }
+
+    .cta-note {
+        font-size: 0.7rem;
+        margin-top: 2rem;
+        opacity: 0.4;
+    }
+
+    @media (max-width: 1024px) {
+        h1 { font-size: 3.5rem; }
+        .manifesto-grid { grid-template-columns: 1fr; gap: 5rem; }
+        .cta-box { padding: 3rem; }
+    }
+</style>

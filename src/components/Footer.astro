@@ -114,6 +114,10 @@ const studioAddress = footerSettings?.contact_studio_address || "Buenos Aires, A
     <span class="divider-line"></span>
   </div>
 
+  <div class="curaduria-link-container">
+    <a href="/curaduria" class="curaduria-link">Consultas para Artistas / Curaduría</a>
+  </div>
+
   <div class="footer-bottom">
     <div class="footer-bottom-inner">
       <p class="copyright">&copy; {currentYear} Javier Mix. Todos los derechos reservados.</p>
@@ -317,6 +321,27 @@ const studioAddress = footerSettings?.contact_studio_address || "Buenos Aires, A
     color: rgba(255,255,255,0.15);
     letter-spacing: 4px;
     flex-shrink: 0;
+  }
+
+  .curaduria-link-container {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+
+  .curaduria-link {
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--color-travertine-dark);
+    text-decoration: none;
+    transition: var(--transition-premium);
+    opacity: 0.5;
+  }
+
+  .curaduria-link:hover {
+    color: var(--color-accent);
+    opacity: 1;
+    letter-spacing: 4px;
   }
 
   .footer-bottom {
