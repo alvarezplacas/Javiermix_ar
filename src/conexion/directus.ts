@@ -154,6 +154,23 @@ export async function getSerieDetails(folderId: string) {
 
 export async function createOrder(data: any) { try { const client = await DirectusManager.getClient(); return await client.request(createItem('orders', data)); } catch (e) { return null; } }
 export async function updateOrder(id: string, data: any) { try { const client = await DirectusManager.getClient(); return await client.request(updateItem('orders', id, data)); } catch (e) { return null; } }
+export async function getOrder(id: string) { try { const client = await DirectusManager.getClient(); return await client.request(readItem('orders', id)); } catch (e) { return null; } }
+
+export async function createCollector(data: any) { 
+    try { 
+        const client = await DirectusManager.getClient(); 
+        const existing = await client.request(readItems('collectors', { filter: { email: { _eq: data.email } }, limit: 1 }));
+        if (existing.length > 0) return existing[0];
+        return await client.request(createItem('collectors', data)); 
+    } catch (e) { return null; } 
+}
+
+export async function createCertificate(data: any) { 
+    try { 
+        const client = await DirectusManager.getClient(); 
+        return await client.request(createItem('certificates', data)); 
+    } catch (e) { return null; } 
+}
 
 export async function getArticles() { 
     try { 

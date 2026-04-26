@@ -26,7 +26,36 @@ export const POST = async ({ request }) => {
 
                 console.log(`✅ Pago Aprobado: Orden ${orderId} | Pago MP: ${mpTransactionId}`);
 
-                // Actualizamos Directus
+                // 1. Obtener la Orden para saber qué se compró
+                const order = await getOrder(orderId);
+
+                if (order) {
+                    // 2. Crear o Actualizar Coleccionista
+                    const collector = await createCollector({
+                        name: order.customer_name || "Cliente Javier Mix",
+                        email: order.customer_email,
+                        phone: order.customer_phone
+                    });
+
+                    // 3. Generar Certificados para cada obra
+                    if (order.items && Array.isArray(order.items)) {
+                        for (const item of order.items) {
+                            if (item.id && !item.id.includes('shipping')) {
+                                const realArtworkId = item.id.split('-')[0];
+                                await createCertificate({
+                                    artwork_id: realArtworkId,
+                                    collector_id: collector.id,
+                                    sale_date: new Date().toISOString(),
+                                    order_id: orderId,
+                                    edition_number: "Edición Abierta", // O lógica de stock
+                                    dimensions: "Según Pedido"
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // 4. Actualizar estado final de la Orden
                 await updateOrder(orderId, { 
                     status: 'paid', 
                     mercadopago_id: mpTransactionId,
