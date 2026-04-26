@@ -283,6 +283,18 @@ const artworks = artworksRaw
             }
         });
 
+        // 🖱️ Rueda del ratón (Scroll Horizontal Manual)
+        gallery.addEventListener('wheel', (e) => {
+            if (autoPlayInterval) return; // Desactivar manual si está el tour activo
+            e.preventDefault();
+            
+            // Suavizado del scroll manual
+            gallery.scrollBy({
+                left: e.deltaY * 1.5,
+                behavior: 'smooth'
+            });
+        }, { passive: false });
+
         // 🔘 Atmósferas
         const atmosBtns = document.querySelectorAll('.atmos-btn');
         atmosBtns.forEach(btn => {
