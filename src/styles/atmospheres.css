@@ -146,23 +146,25 @@
   z-index: 5;
 }
 
-/* Sombra proyectada en la pared */
+/* Sombra proyectada en la pared (Plana/Realista) */
 .frame-shadow {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.5);
-  filter: blur(25px);
-  transform: translate(20px, 30px);
+  background: rgba(0,0,0,0.4);
+  filter: blur(15px);
+  transform: translateY(20px); /* Solo hacia abajo para realismo plano */
   z-index: -1;
-  opacity: 0.8;
+  opacity: 0.6;
 }
 
-/* Efecto de foco global */
+/* Efecto de foco global (Vigñeta sutil) */
 .is-atmos-night .atmos-overlay,
 .is-atmos-velvet .atmos-overlay,
-.is-atmos-blue .atmos-overlay {
-  mask-image: radial-gradient(circle at center, transparent 10%, black 90%);
-  -webkit-mask-image: radial-gradient(circle at center, transparent 10%, black 90%);
+.is-atmos-blue .atmos-overlay,
+.is-atmos-concrete .atmos-overlay {
+  background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.4) 100%);
+  mask-image: none; /* Eliminar mascara de profundidad */
+  -webkit-mask-image: none;
 }
 
 /* Controles de selector */
