@@ -15,6 +15,7 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 		<div class="nav-links">
 			<a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
 			<a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>Colección</a>
+			<a href="/laboratorio" class={currentPath.startsWith('/laboratorio') ? 'active' : ''}>Laboratorio</a>
 			<a href="/revista" class={currentPath.startsWith('/revista') ? 'active' : ''}>Revista</a>
 			<CartNavButton client:load />
 		</div>
