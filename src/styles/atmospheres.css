@@ -67,7 +67,11 @@
 
 /* 4. Velvet Red (Textura y Lujo) */
 .is-atmos-velvet {
-  background: var(--atmos-velvet-bg) !important;
+  background-color: var(--atmos-velvet-bg) !important;
+  background-image: 
+    var(--atmos-velvet-grain),
+    radial-gradient(circle at center, rgba(139,0,0,0.2) 0%, transparent 80%) !important;
+  background-blend-mode: multiply;
 }
 .is-atmos-velvet .main-artwork,
 .is-atmos-velvet .room-artwork {
@@ -77,28 +81,14 @@
   opacity: 1;
   background: var(--atmos-velvet-tint);
 }
-.is-atmos-velvet::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: var(--atmos-velvet-grain);
-  opacity: 0.1;
-  pointer-events: none;
-  z-index: 1;
-}
 
 /* 5. Velvet Blue (Profundidad Nocturna) */
 .is-atmos-blue {
-  background: oklch(0.15 0.08 250) !important;
-}
-.is-atmos-blue::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: var(--atmos-velvet-grain);
-  opacity: 0.08;
-  pointer-events: none;
-  z-index: 1;
+  background-color: oklch(0.15 0.08 250) !important;
+  background-image: 
+    var(--atmos-velvet-grain),
+    radial-gradient(circle at center, rgba(0,20,60,0.3) 0%, transparent 80%) !important;
+  background-blend-mode: multiply;
 }
 .is-atmos-blue .atmos-overlay {
   opacity: 1;
