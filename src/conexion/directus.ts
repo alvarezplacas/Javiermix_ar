@@ -32,16 +32,35 @@ export class DirectusManager {
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
-            const baseUrl = isServer ? INTERNAL_URL : PUBLIC_URL;
+            // 🔄 Estrategia Dual: Intentar Interno, si falla usar Público
+            let baseUrl = isServer ? INTERNAL_URL : PUBLIC_URL;
+            
             try {
                 const baseClient = createDirectus(baseUrl).with(rest());
-                if (STATIC_TOKEN && STATIC_TOKEN !== 'undefined' && STATIC_TOKEN !== '') {
-                    this.client = baseClient.with(staticToken(STATIC_TOKEN));
-                } else {
-                    this.client = baseClient;
+                const clientWithToken = (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') 
+                    ? baseClient.with(staticToken(STATIC_TOKEN))
+                    : baseClient;
+                
+                // Probar conexión rápida (solo en servidor)
+                if (isServer) {
+                    try {
+                        await Promise.race([
+                            clientWithToken.request(readItems('laboratorio_entornos' as any, { limit: 1 })),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2000))
+                        ]);
+                    } catch (e) {
+                        console.warn(`[DirectusManager] 🛰️ URL Interna falló o lenta, usando Pública: ${PUBLIC_URL}`);
+                        baseUrl = PUBLIC_URL;
+                    }
                 }
+
+                const finalClient = createDirectus(baseUrl).with(rest());
+                this.client = (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') 
+                    ? finalClient.with(staticToken(STATIC_TOKEN))
+                    : finalClient;
+
             } catch (error: any) {
-                console.error(`[DirectusManager] ❌ Error:`, error.message);
+                console.error(`[DirectusManager] ❌ Error crítico:`, error.message);
                 throw error;
             }
         }
