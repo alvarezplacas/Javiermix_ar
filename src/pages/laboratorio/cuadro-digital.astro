@@ -12,7 +12,7 @@ const artworks = artworksRaw
     .map((file, index) => ({
         id: file.id,
         title: file.title || `Masterpiece ${index + 1}`,
-        img: getOptimizedImageURL(file.id, { width: 1920, format: 'webp', quality: 95 }),
+        img: getOptimizedImageURL(file.id, { width: 3840, format: 'webp', quality: 100 }),
     }));
 
 const audioFiles = await getAudioFiles();
@@ -551,19 +551,26 @@ const audioFiles = await getAudioFiles();
             uniform sampler2D uTexture2;
             uniform float uProgress;
             uniform float uTime;
+            uniform vec2 uResolution;
+            uniform vec2 uTexRes1;
+            uniform vec2 uTexRes2;
 
-            // Simple Noise for Liquid Effect
-            float noise(vec2 p) {
-                return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+            vec2 getCoverUv(vec2 uv, vec2 resolution, vec2 texRes) {
+                float s = resolution.x / resolution.y;
+                float t = texRes.x / texRes.y;
+                if (s > t) return vec2(uv.x, uv.y * t / s + 0.5 * (1.0 - t / s));
+                else return vec2(uv.x * s / t + 0.5 * (1.0 - s / t), uv.y);
             }
 
             void main() {
-                vec2 uv = vUv;
+                // Aspect Ratio Correction (Object-fit: contain/cover logic)
+                vec2 uv1 = getCoverUv(vUv, uResolution, uTexRes1);
+                vec2 uv2 = getCoverUv(vUv, uResolution, uTexRes2);
                 
-                // Displacement Logic
-                float distortion = sin(uv.y * 10.0 + uTime) * 0.02 * (1.0 - uProgress);
-                vec2 distortedUv1 = uv + distortion * uProgress;
-                vec2 distortedUv2 = uv - distortion * (1.0 - uProgress);
+                // Displacement
+                float distortion = sin(vUv.y * 10.0 + uTime) * 0.02 * (1.0 - uProgress);
+                vec2 distortedUv1 = uv1 + distortion * uProgress;
+                vec2 distortedUv2 = uv2 - distortion * (1.0 - uProgress);
 
                 vec4 color1 = texture2D(uTexture1, distortedUv1);
                 vec4 color2 = texture2D(uTexture2, distortedUv2);
@@ -573,8 +580,11 @@ const audioFiles = await getAudioFiles();
         `;
 
         function initGL() {
-            gl = glCanvas.getContext('webgl');
+            gl = glCanvas.getContext('webgl', { antialias: true, alpha: false });
             if (!gl) return;
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
 
             const vs = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
             const fs = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -591,10 +601,16 @@ const audioFiles = await getAudioFiles();
             loadTextures();
             render();
             
-            // Ciclo de obras cada 8 segundos
             setInterval(() => {
-                if (!isTransitioning) startTransition();
+                if (!isTransitioning && exhibitionView.classList.contains('hidden') === false) startTransition();
             }, 8000);
+        }
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            glCanvas.width = window.innerWidth * dpr;
+            glCanvas.height = window.innerHeight * dpr;
+            if (gl) gl.viewport(0, 0, glCanvas.width, glCanvas.height);
         }
 
         function loadTextures() {
@@ -606,7 +622,11 @@ const audioFiles = await getAudioFiles();
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                textures.push(tex);
+                textures.push({
+                    tex,
+                    width: img.naturalWidth || 1920,
+                    height: img.naturalHeight || 1080
+                });
             });
         }
 
@@ -615,44 +635,45 @@ const audioFiles = await getAudioFiles();
             progress = 0;
             nextIndex = (currentIndex + 1) % textures.length;
             
-            // Actualizar Metadata
             const metaTitle = document.getElementById('meta-title');
-            const artworkImages = document.querySelectorAll('.hidden-art-data');
-            if (metaTitle && artworkImages[nextIndex]) {
-                const nextTitle = artworks[nextIndex].title;
-                metaTitle.innerText = nextTitle;
+            if (metaTitle) {
+                metaTitle.innerText = artworks[nextIndex].title;
             }
         }
 
         function render() {
-            if (!gl) return;
-            gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+            if (!gl || exhibitionView.classList.contains('hidden')) {
+                requestAnimationFrame(render);
+                return;
+            }
+
             gl.clearColor(0,0,0,1);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
             gl.useProgram(program);
 
-            const uTime = gl.getUniformLocation(program, "uTime");
-            gl.uniform1f(uTime, Date.now() * 0.001);
+            gl.uniform2f(gl.getUniformLocation(program, "uResolution"), glCanvas.width, glCanvas.height);
+            gl.uniform1f(gl.getUniformLocation(program, "uTime"), Date.now() * 0.001);
+            gl.uniform1f(gl.getUniformLocation(program, "uProgress"), progress);
 
-            const uProgress = gl.getUniformLocation(program, "uProgress");
-            gl.uniform1f(uProgress, progress);
+            const t1 = textures[currentIndex];
+            const t2 = textures[nextIndex];
 
-            const uTex1 = gl.getUniformLocation(program, "uTexture1");
-            const uTex2 = gl.getUniformLocation(program, "uTexture2");
+            gl.uniform2f(gl.getUniformLocation(program, "uTexRes1"), t1.width, t1.height);
+            gl.uniform2f(gl.getUniformLocation(program, "uTexRes2"), t2.width, t2.height);
 
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, textures[currentIndex]);
-            gl.uniform1i(uTex1, 0);
+            gl.bindTexture(gl.TEXTURE_2D, t1.tex);
+            gl.uniform1i(gl.getUniformLocation(program, "uTexture1"), 0);
 
             gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, textures[nextIndex]);
-            gl.uniform1i(uTex2, 1);
+            gl.bindTexture(gl.TEXTURE_2D, t2.tex);
+            gl.uniform1i(gl.getUniformLocation(program, "uTexture2"), 1);
 
             gl.drawArrays(gl.TRIANGLES, 0, 6);
 
             if (isTransitioning) {
-                progress += 0.01;
+                progress += 0.005; // Transición más lenta y elegante
                 if (progress >= 1.0) {
                     progress = 1.0;
                     isTransitioning = false;
