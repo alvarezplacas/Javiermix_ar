@@ -273,6 +273,21 @@ export async function getLaboratorioEntornos() {
     }
 }
 
+export async function getAudioFiles() {
+    try {
+        const client = await DirectusManager.getClient();
+        return await client.request(readFiles({
+            filter: {
+                type: { _starts_with: 'audio/' }
+            },
+            limit: -1
+        }));
+    } catch (e) {
+        console.error('[Directus] Error fetching audio files:', e);
+        return [];
+    }
+}
+
 export async function loginAdmin(email: string, password: string) {
     const res = await fetch(`${PUBLIC_URL}/auth/login`, {
         method: 'POST',

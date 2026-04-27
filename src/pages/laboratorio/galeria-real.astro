@@ -1,7 +1,7 @@
 ---
 // d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\galeria-real.astro
 import Layout from '@layouts/Layout.astro';
-import { getCatalogoFiles, getLaboratorioEntornos, getAssetUrl } from '@conexion/directus';
+import { getCatalogoFiles, getLaboratorioEntornos, getAudioFiles, getAssetUrl } from '@conexion/directus';
 import { getOptimizedImageURL } from '@utils/media';
 
 export const prerender = false;
@@ -17,6 +17,7 @@ const artworks = artworksRaw
     }));
 
 const entornos = await getLaboratorioEntornos();
+const audioFiles = await getAudioFiles();
 
 // 🔄 Mapeo de Iconos Técnicos a SVGs Monocromáticos
 const iconMap: Record<string, string> = {
@@ -60,23 +61,36 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                         <span class="icon">▶</span>
                         PLAY TOUR
                     </button>
-                    <div class="sound-toggle" id="sound-btn">
-                        <span class="icon">🔇</span>
-                        AUDIO OFF
+                    
+                    <div class="audio-selector-wrapper">
+                        <div class="sound-toggle" id="sound-btn">
+                            <span class="icon">🔇</span>
+                            AUDIO OFF
+                        </div>
+                        <select id="audio-browser" class="audio-select">
+                            <option value="">Seleccionar Paisaje Sonoro...</option>
+                            {audioFiles.map((audio: any) => (
+                                <option value={getAssetUrl(audio.id, { raw: true })}>{audio.title || audio.filename_download}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
-                <div class="atmos-controls">
-                    {entornos.map((ent: any, index: number) => (
-                        <button 
-                            class={`atmos-btn ${index === 0 ? 'active' : ''}`} 
-                            data-atmos={ent.slug} 
-                            data-label={ent.name}
-                            data-audio={ent.background_audio?.id ? getAssetUrl(ent.background_audio.id, { raw: true }) : ''}
-                        >
-                            <Fragment set:html={iconMap[ent.icon as keyof typeof iconMap] || iconMap.default} />
-                        </button>
-                    ))}
+                <div class="atmos-controls-container">
+                    <span class="ui-label">AMBIENTES</span>
+                    <div class="atmos-controls">
+                        {entornos.map((ent: any, index: number) => (
+                            <button 
+                                class={`atmos-btn ${index === 0 ? 'active' : ''}`} 
+                                data-atmos={ent.slug} 
+                                data-label={ent.name}
+                                data-audio={ent.background_audio?.id ? getAssetUrl(ent.background_audio.id, { raw: true }) : ''}
+                                title={ent.name}
+                            >
+                                <Fragment set:html={iconMap[ent.icon as keyof typeof iconMap] || iconMap.default} />
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </header>
@@ -163,7 +177,36 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         transition: 0.3s;
     }
 
-    .atmos-controls { display: flex; gap: 1.5rem; }
+    .exit-link { font-size: 0.8rem; font-weight: 900; letter-spacing: 3px; color: inherit; text-decoration: none; opacity: 0.5; transition: 0.3s; }
+    .exit-link:hover { opacity: 1; letter-spacing: 5px; }
+
+    .museum-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; letter-spacing: 5px; font-weight: 600; }
+
+    .sound-toggle { cursor: pointer; font-size: 0.7rem; font-weight: 900; letter-spacing: 2px; display: flex; align-items: center; gap: 0.8rem; opacity: 0.6; transition: 0.3s; padding: 0.5rem 1rem; background: rgba(0,0,0,0.05); border-radius: 20px; }
+    .sound-toggle:hover { opacity: 1; background: rgba(0,0,0,0.1); }
+
+    .audio-selector-wrapper { display: flex; align-items: center; gap: 1rem; pointer-events: auto; }
+    .audio-select {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0,0,0,0.1);
+        color: inherit;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        cursor: pointer;
+        outline: none;
+        transition: 0.3s;
+        max-width: 200px;
+    }
+    .audio-select:hover { background: rgba(255,255,255,0.2); }
+    .audio-select option { background: #fff; color: #000; }
+
+    .atmos-controls-container { display: flex; flex-direction: column; align-items: flex-end; gap: 0.8rem; }
+    .ui-label { font-size: 0.55rem; font-weight: 900; letter-spacing: 3px; opacity: 0.4; }
+    .atmos-controls { display: flex; gap: 1.5rem; padding: 0.5rem; background: rgba(0,0,0,0.03); border-radius: 40px; }
     .atmos-btn {
         width: 50px;
         height: 50px;
@@ -179,14 +222,6 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
     .atmos-btn.active { transform: scale(1.15); border-color: var(--color-accent); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-
-    .exit-link { font-size: 0.8rem; font-weight: 900; letter-spacing: 3px; color: inherit; text-decoration: none; opacity: 0.5; transition: 0.3s; }
-    .exit-link:hover { opacity: 1; letter-spacing: 5px; }
-
-    .museum-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; letter-spacing: 5px; font-weight: 600; }
-
-    .sound-toggle { cursor: pointer; font-size: 0.7rem; font-weight: 900; letter-spacing: 2px; display: flex; align-items: center; gap: 0.8rem; opacity: 0.6; transition: 0.3s; }
-    .sound-toggle:hover { opacity: 1; }
 
     .horizontal-wall {
         height: 100%;
@@ -313,16 +348,45 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
         // 🔊 Audio
         soundManager.init();
+        const audioBrowser = document.getElementById('audio-browser') as HTMLSelectElement;
+
+        const updateAudio = (url: string) => {
+            if (soundEnabled && url) {
+                soundManager.playMusic(url);
+                audioBrowser.value = url;
+            } else if (!url) {
+                soundManager.stopMusic();
+                audioBrowser.value = "";
+            }
+        };
+
         soundBtn?.addEventListener('click', () => {
             soundEnabled = !soundEnabled;
             if (soundEnabled) {
                 soundManager.enable();
                 soundBtn.innerHTML = '<span class="icon">🔊</span> AUDIO ON';
-                soundManager.playMusic('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
+                // Si hay algo seleccionado en el browser, usarlo. Si no, ver si la atmósfera actual tiene algo.
+                const selectedUrl = audioBrowser.value;
+                if (selectedUrl) {
+                    updateAudio(selectedUrl);
+                } else {
+                    const activeAtmosBtn = document.querySelector('.atmos-btn.active');
+                    const atmosAudio = activeAtmosBtn?.getAttribute('data-audio');
+                    if (atmosAudio) updateAudio(atmosAudio);
+                }
             } else {
                 soundManager.disable();
                 soundBtn.innerHTML = '<span class="icon">🔇</span> AUDIO OFF';
             }
+        });
+
+        audioBrowser?.addEventListener('change', () => {
+            if (!soundEnabled) {
+                soundEnabled = true;
+                soundManager.enable();
+                soundBtn!.innerHTML = '<span class="icon">🔊</span> AUDIO ON';
+            }
+            updateAudio(audioBrowser.value);
         });
 
         // 🚀 Auto-Tour
@@ -358,6 +422,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                 const atmos = btn.getAttribute('data-atmos');
                 const audioUrl = btn.getAttribute('data-audio');
                 
+                // Limpiar clases de atmósfera previas
                 gallery.className = 'royal-gallery-wrapper';
                 gallery.classList.add(`is-atmos-${atmos}`);
                 
@@ -366,8 +431,9 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
                 if (soundEnabled) {
                     soundManager.play('transition', 0.2);
+                    // Solo cambiar música si la atmósfera tiene una específica definida
                     if (audioUrl) {
-                        soundManager.playMusic(audioUrl);
+                        updateAudio(audioUrl);
                     }
                 }
             });

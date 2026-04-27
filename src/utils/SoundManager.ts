@@ -47,15 +47,53 @@ class SoundManager {
 
     playMusic(url: string) {
         if (!this.enabled) return;
-        let music = this.sounds.get('music');
-        if (music) {
-            music.pause();
+        
+        // Si ya está sonando la misma URL, no reiniciar
+        const currentMusic = this.sounds.get('music');
+        if (currentMusic && currentMusic.src === url && !currentMusic.paused) {
+            return;
         }
-        music = new Audio(url);
+
+        if (currentMusic) {
+            // Fade out sutil antes de cambiar
+            const fadeOut = setInterval(() => {
+                if (currentMusic.volume > 0.02) {
+                    currentMusic.volume -= 0.02;
+                } else {
+                    currentMusic.pause();
+                    clearInterval(fadeOut);
+                    this.startNewTrack(url);
+                }
+            }, 50);
+        } else {
+            this.startNewTrack(url);
+        }
+    }
+
+    private startNewTrack(url: string) {
+        const music = new Audio(url);
         music.loop = true;
-        music.volume = 0.15;
+        music.volume = 0; // Empezar en silencio para fade in
         this.sounds.set('music', music);
         music.play().catch(() => {});
+        
+        // Fade in
+        const fadeIn = setInterval(() => {
+            if (music.volume < 0.15) {
+                music.volume += 0.01;
+            } else {
+                music.volume = 0.15;
+                clearInterval(fadeIn);
+            }
+        }, 100);
+    }
+
+    stopMusic() {
+        const music = this.sounds.get('music');
+        if (music) {
+            music.pause();
+            music.currentTime = 0;
+        }
     }
 
     stopAll() {
