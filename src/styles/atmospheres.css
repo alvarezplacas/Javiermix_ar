@@ -1,4 +1,4 @@
-/* 🏺 JMX AMBIENT ATMOSPHERES - PREMIUM V1 🏺 */
+﻿/* ðŸº JMX AMBIENT ATMOSPHERES - PREMIUM V1 ðŸº */
 
 :root {
   --atmos-gallery-filter: none;
@@ -11,7 +11,7 @@
   --atmos-transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Velvet Red (OKLCH Realism) */
-  --atmos-velvet-bg: oklch(0.15 0.05 25); /* Fondo oscuro carmesí */
+  --atmos-velvet-bg: oklch(0.15 0.05 25); /* Fondo oscuro carmesÃ­ */
   --atmos-velvet-tint: rgba(139, 0, 0, 0.15);
   --atmos-velvet-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
@@ -34,13 +34,13 @@
 
 /* --- MODOS --- */
 
-/* 1. Galería (Default) */
+/* 1. GalerÃ­a (Default) */
 .is-atmos-gallery .main-artwork,
 .is-atmos-gallery .room-artwork {
   filter: var(--atmos-gallery-filter);
 }
 
-/* 2. Hogar (Luz Cálida) */
+/* 2. Hogar (Luz CÃ¡lida) */
 .is-atmos-home .main-artwork,
 .is-atmos-home .room-artwork {
   filter: var(--atmos-home-filter);
@@ -52,12 +52,12 @@
 
 /* 3. Urban Brick (Ladrillo Industrial) */
 .is-atmos-night {
-  background-color: #4a2a1a !important;
+  background-color: #4a2a1a;
   background-image: 
     radial-gradient(circle at center, transparent 20%, rgba(0,0,0,0.6) 100%),
-    url('https://www.transparenttextures.com/patterns/brick-wall.png') !important;
-  background-size: contain, 500px auto !important;
-  background-repeat: no-repeat, repeat !important;
+    url('https://www.transparenttextures.com/patterns/brick-wall.png');
+  background-size: contain, 500px auto;
+  background-repeat: no-repeat, repeat;
 }
 .is-atmos-night .atmos-overlay {
   opacity: 1;
@@ -67,10 +67,10 @@
 
 /* 4. Velvet Red (Textura y Lujo) */
 .is-atmos-velvet {
-  background-color: var(--atmos-velvet-bg) !important;
+  background-color: var(--atmos-velvet-bg);
   background-image: 
     var(--atmos-velvet-grain),
-    radial-gradient(circle at center, rgba(139,0,0,0.2) 0%, transparent 80%) !important;
+    radial-gradient(circle at center, rgba(139,0,0,0.2) 0%, transparent 80%);
   background-blend-mode: multiply;
 }
 .is-atmos-velvet .main-artwork,
@@ -84,10 +84,10 @@
 
 /* 5. Velvet Blue (Profundidad Nocturna) */
 .is-atmos-blue {
-  background-color: oklch(0.15 0.08 250) !important;
+  background-color: oklch(0.15 0.08 250);
   background-image: 
     var(--atmos-velvet-grain),
-    radial-gradient(circle at center, rgba(0,20,60,0.3) 0%, transparent 80%) !important;
+    radial-gradient(circle at center, rgba(0,20,60,0.3) 0%, transparent 80%);
   background-blend-mode: multiply;
 }
 .is-atmos-blue .atmos-overlay {
@@ -95,12 +95,12 @@
   background: rgba(0, 20, 60, 0.2);
 }
 
-/* 6. Exposed Concrete (Hormigón Visto Rústico) */
+/* 6. Exposed Concrete (HormigÃ³n Visto RÃºstico) */
 .is-atmos-concrete {
-  background: #2a2a2a !important;
-  background-image: url("/img/textures/concrete_wall.png") !important;
-  background-size: cover !important;
-  background-position: center !important;
+  background: #2a2a2a;
+  background-image: url("/img/textures/concrete_wall.png");
+  background-size: cover;
+  background-position: center;
 }
 .is-atmos-concrete .atmos-overlay {
   opacity: 1;
@@ -115,7 +115,7 @@
 
 /* 7. Golden Leaf (Oro Envejecido - Refinado) */
 .is-atmos-gold {
-  background: oklch(0.3 0.1 85) !important;
+  background: oklch(0.3 0.1 85);
   background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.05), transparent 70%);
 }
 .is-atmos-gold .atmos-overlay {
@@ -124,7 +124,7 @@
   mix-blend-mode: color-burn;
 }
 
-/* --- MEJORAS DE ILUMINACIÓN 3D --- */
+/* --- MEJORAS DE ILUMINACIÃ“N 3D --- */
 
 .museum-spotlight {
   position: absolute;
@@ -149,7 +149,7 @@
   opacity: 0.6;
 }
 
-/* Efecto de foco global (Vigñeta sutil) */
+/* Efecto de foco global (VigÃ±eta sutil) */
 .is-atmos-night .atmos-overlay,
 .is-atmos-velvet .atmos-overlay,
 .is-atmos-blue .atmos-overlay,
