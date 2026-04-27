@@ -12,7 +12,7 @@ const artworks = artworksRaw
     .map((file, index) => ({
         id: file.id,
         title: file.title || `Masterpiece ${index + 1}`,
-        img: getOptimizedImageURL(file.id, { width: 3840, format: 'webp', quality: 100 }),
+        img: getOptimizedImageURL(file.id, { width: 2560, format: 'webp', quality: 90 }),
     }));
 
 const audioFiles = await getAudioFiles();
@@ -58,6 +58,16 @@ const audioFiles = await getAudioFiles();
                             <div class="toggle-group">
                                 <button class="toggle-btn active" data-config="paspartu" data-val="on">ON</button>
                                 <button class="toggle-btn" data-config="paspartu" data-val="off">OFF</button>
+                            </div>
+                        </div>
+
+                        <div class="control-box mt-1">
+                            <div class="label-box">
+                                <span>Modo de Escala</span>
+                            </div>
+                            <div class="toggle-group">
+                                <button class="toggle-btn active" data-config="scale-mode" data-val="contain">FIT</button>
+                                <button class="toggle-btn" data-config="scale-mode" data-val="cover">FILL</button>
                             </div>
                         </div>
                         
@@ -114,9 +124,15 @@ const audioFiles = await getAudioFiles();
 
         <!-- 🖼️ Lienzo de Exhibición (Oculto inicialmente) -->
         <section class="exhibition-view hidden" id="exhibition-view">
+            <div id="loading-screen" class="loading-overlay">
+                <div class="loader-content">
+                    <div class="spinner"></div>
+                    <p>CALIBRANDO LIENZO 2K...</p>
+                </div>
+            </div>
+
             <canvas id="gl-canvas"></canvas>
             
-            <!-- Marco de Paspartú (Simulado con CSS) -->
             <div class="paspartu-frame" id="frame-overlay">
                 <div class="artwork-inner-shadow"></div>
             </div>
@@ -126,7 +142,6 @@ const audioFiles = await getAudioFiles();
                 <p>Javier Mix · 2026</p>
             </div>
 
-            <!-- Datos para WebGL -->
             <div class="hidden-textures" style="display: none;">
                 {artworks.map((art) => (
                     <img src={art.img} class="hidden-art-data" crossorigin="anonymous" />
@@ -137,323 +152,29 @@ const audioFiles = await getAudioFiles();
 </Layout>
 
 <style>
-    :root {
-        --dash-bg: #030303;
-        --dash-accent: #dcb14a;
-        --glass: rgba(15, 15, 15, 0.7);
-        --glass-border: rgba(255, 255, 255, 0.08);
-        --text-dim: rgba(255, 255, 255, 0.4);
-    }
-
-    .digital-frame-container {
-        min-height: 100vh;
-        background: var(--dash-bg);
-        color: #fff;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: 'Inter', sans-serif;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .digital-frame-container::before {
-        content: "";
+    /* ... (CSS anterior) ... */
+    .loading-overlay {
         position: absolute;
         inset: 0;
-        background-image: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
-        z-index: 1;
-    }
-
-    /* 🧭 Dashboard CONTROL ROOM */
-    .config-dashboard {
-        max-width: 900px;
-        width: 95%;
-        padding: 5rem;
-        background: var(--glass);
-        backdrop-filter: blur(50px);
-        border: 1px solid var(--glass-border);
-        border-radius: 1rem;
-        position: relative;
-        z-index: 10;
-        box-shadow: 0 50px 100px rgba(0,0,0,0.8);
-        animation: dashboardEntry 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes dashboardEntry { from { opacity: 0; transform: scale(0.95) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-
-    .dash-header { margin-bottom: 4rem; }
-    
-    .status-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--glass-border);
-    }
-
-    .system-id { font-family: monospace; font-size: 0.6rem; color: var(--text-dim); letter-spacing: 2px; }
-
-    .badge {
-        display: inline-block;
-        padding: 0.3rem 1rem;
-        border: 1px solid var(--dash-accent);
-        color: var(--dash-accent);
-        font-size: 0.55rem;
-        font-weight: 900;
-        letter-spacing: 3px;
-    }
-
-    .dash-header h1 { 
-        font-family: 'Cormorant Garamond', serif; 
-        font-size: 4rem; 
-        line-height: 0.9; 
-        letter-spacing: -1px; 
-    }
-    .dash-header h1 span { color: var(--dash-accent); font-style: italic; font-size: 2.5rem; display: block; margin-top: 0.5rem; }
-
-    /* 🖼️ Preview Section */
-    .content-preview-section {
-        margin-bottom: 4rem;
-        background: rgba(0,0,0,0.2);
-        padding: 1.5rem;
-        border-radius: 8px;
-        border: 1px solid var(--glass-border);
-    }
-
-    .section-title {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-title label { font-size: 0.6rem; font-weight: 900; letter-spacing: 3px; color: var(--dash-accent); white-space: nowrap; }
-    .section-title .line { flex: 1; height: 1px; background: var(--glass-border); }
-
-    .preview-carousel {
-        display: flex;
-        gap: 1rem;
-        overflow-x: auto;
-        padding-bottom: 1rem;
-        scrollbar-width: thin;
-        scrollbar-color: var(--dash-accent) transparent;
-    }
-
-    .preview-carousel::-webkit-scrollbar { height: 3px; }
-    .preview-carousel::-webkit-scrollbar-thumb { background: var(--dash-accent); }
-
-    .preview-thumb {
-        flex: 0 0 140px;
-        aspect-ratio: 1;
-        position: relative;
-        overflow: hidden;
-        border-radius: 4px;
-        border: 1px solid rgba(255,255,255,0.05);
-        background: #111;
-    }
-
-    .preview-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: 0.5s; }
-    .preview-thumb:hover img { opacity: 1; transform: scale(1.1); }
-
-    .thumb-info {
-        position: absolute;
-        bottom: 0; left: 0; right: 0;
-        padding: 0.5rem;
-        background: linear-gradient(to top, black, transparent);
-        font-size: 0.5rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        opacity: 0;
-        transition: 0.3s;
-    }
-    .preview-thumb:hover .thumb-info { opacity: 1; }
-
-    /* Config Grid */
-    .config-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-        margin-bottom: 4rem;
-    }
-
-    .config-group label {
-        display: block;
-        font-size: 0.6rem;
-        font-weight: 900;
-        letter-spacing: 2px;
-        color: var(--text-dim);
-        margin-bottom: 1rem;
-    }
-
-    .control-box {
-        background: rgba(255,255,255,0.02);
-        border: 1px solid var(--glass-border);
-        padding: 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-radius: 4px;
-    }
-
-    .mt-1 { margin-top: 0.5rem; }
-
-    .label-box span { font-size: 0.7rem; font-weight: 500; color: rgba(255,255,255,0.7); }
-
-    .toggle-group { display: flex; background: #000; padding: 3px; border-radius: 4px; }
-    .toggle-btn {
-        padding: 0.5rem 1rem;
-        border: none;
-        background: transparent;
-        color: var(--text-dim);
-        font-size: 0.55rem;
-        font-weight: 900;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .toggle-btn.active { background: #222; color: #fff; }
-
-    .color-picker { display: flex; gap: 0.8rem; }
-    .color-btn {
-        width: 24px; height: 24px;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .color-btn.active { transform: scale(1.3); box-shadow: 0 0 10px var(--dash-accent); }
-
-    .config-select {
-        background: transparent;
-        border: none;
-        color: #fff;
-        font-size: 0.65rem;
-        font-weight: 700;
-        text-align: right;
-        outline: none;
-        cursor: pointer;
-    }
-
-    /* Launch Button */
-    .dash-footer { text-align: center; }
-
-    .btn-launch {
-        position: relative;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        padding: 0;
-        transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-    }
-
-    .btn-inner {
-        position: relative;
-        z-index: 2;
-        padding: 1.5rem 4rem;
-        background: #fff;
-        color: #000;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 900;
-        letter-spacing: 4px;
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        transition: 0.4s;
-    }
-
-    .btn-glow {
-        position: absolute;
-        inset: 0;
-        background: #fff;
-        filter: blur(20px);
-        opacity: 0;
-        transition: 0.4s;
-    }
-
-    .btn-launch:hover .btn-inner { background: var(--dash-accent); color: #000; transform: translateY(-5px); }
-    .btn-launch:hover .btn-glow { opacity: 0.3; }
-
-    .hint { margin-top: 3rem; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
-
-    .back-link {
-        position: absolute;
-        bottom: -4rem;
-        left: 50%;
-        transform: translateX(-50%);
-        color: var(--text-dim);
-        text-decoration: none;
-        font-size: 0.6rem;
-        font-weight: 800;
-        letter-spacing: 3px;
-        transition: 0.3s;
-    }
-    .back-link:hover { color: #fff; letter-spacing: 4px; }
-
-    /* 🖼️ Exhibition View */
-    .exhibition-view {
-        position: fixed;
-        inset: 0;
-        z-index: 100;
         background: #000;
+        z-index: 200;
         display: flex;
         justify-content: center;
         align-items: center;
-    }
-
-    .exhibition-view.hidden { display: none; }
-
-    #gl-canvas {
-        width: 100vw;
-        height: 100vh;
-        object-fit: contain;
-    }
-
-    /* 🖼️ Paspartú Logic */
-    .paspartu-frame {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        z-index: 5;
-        border-style: solid;
-        border-color: #fdfdfd;
-        transition: all 1s ease;
-        display: none; /* Se activa por JS */
-        
-        /* Simulación de Profundidad */
-        box-shadow: 
-            inset 0 0 100px rgba(0,0,0,0.1),
-            0 0 50px rgba(0,0,0,0.5);
-    }
-
-    .paspartu-frame.active { display: block; border-width: 8vw; }
-
-    .artwork-inner-shadow {
-        position: absolute;
-        inset: 0;
-        box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
-        border: 2px solid rgba(0,0,0,0.1);
-    }
-
-    .art-metadata {
-        position: absolute;
-        bottom: 4rem;
-        left: 4rem;
-        z-index: 10;
-        opacity: 0;
         transition: 1s;
     }
-
-    .exhibition-view:hover .art-metadata { opacity: 0.6; }
-
-    .art-metadata h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 0.5rem; }
-    .art-metadata p { font-size: 0.8rem; letter-spacing: 2px; opacity: 0.7; }
-
-    @media (max-width: 768px) {
-        .config-grid { grid-template-columns: 1fr; }
-        .config-dashboard { padding: 2rem; }
+    .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    .loader-content { text-align: center; }
+    .spinner {
+        width: 40px; height: 40px;
+        border: 2px solid var(--dash-accent);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1.5rem;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-content p { font-size: 0.6rem; letter-spacing: 4px; color: var(--dash-accent); }
 </style>
 
 <script>
@@ -466,10 +187,12 @@ const audioFiles = await getAudioFiles();
         const configPanel = document.getElementById('config-panel');
         const exhibitionView = document.getElementById('exhibition-view');
         const frameOverlay = document.getElementById('frame-overlay');
+        const loadingScreen = document.getElementById('loading-screen');
         const glCanvas = document.getElementById('gl-canvas') as HTMLCanvasElement;
         
         let config = {
             paspartu: 'on',
+            scaleMode: 'contain',
             frameStyle: 'white',
             transition: 'fluid',
             audio: 'all'
@@ -493,9 +216,7 @@ const audioFiles = await getAudioFiles();
             });
         });
 
-        // 🚀 EXHIBITION ENGINE
         const startExhibition = async () => {
-            // 1. Audio
             soundManager.init();
             soundManager.enable();
             if (config.audio === 'all') {
@@ -504,7 +225,6 @@ const audioFiles = await getAudioFiles();
                 soundManager.playMusic(config.audio);
             }
 
-            // 2. Paspartú Setup
             if (config.paspartu === 'on') {
                 frameOverlay.classList.add('active');
                 const colors = { white: '#fdfdfd', black: '#111', cream: '#f5f5dc' };
@@ -513,26 +233,21 @@ const audioFiles = await getAudioFiles();
                 frameOverlay.classList.remove('active');
             }
 
-            // 3. UI Swap
             configPanel.classList.add('hidden');
             exhibitionView.classList.remove('hidden');
 
-            // 4. Fullscreen
             try {
                 if (document.documentElement.requestFullscreen) {
                     await document.documentElement.requestFullscreen();
                 }
-            } catch (err) {
-                console.warn("Fullscreen blocked");
-            }
+            } catch (err) { console.warn("FS Blocked"); }
 
-            // 5. Start WebGL Engine
             initGL();
         };
 
-        // --- 🧪 WEBGL ENGINE (Liquid Transition) ---
-        let gl, program, textures = [], currentIndex = 0, nextIndex = 1;
-        let progress = 0, isTransitioning = false;
+        // --- 🧪 WEBGL ENGINE ---
+        let gl, program, textures = [], currentIndex = 0, nextIndex = 0;
+        let progress = 1, isTransitioning = false;
 
         const vertexShaderSource = `
             attribute vec2 position;
@@ -554,26 +269,33 @@ const audioFiles = await getAudioFiles();
             uniform vec2 uResolution;
             uniform vec2 uTexRes1;
             uniform vec2 uTexRes2;
+            uniform float uScaleMode; // 0: contain, 1: cover
 
-            vec2 getCoverUv(vec2 uv, vec2 resolution, vec2 texRes) {
-                float s = resolution.x / resolution.y;
+            vec2 getUv(vec2 uv, vec2 res, vec2 texRes, float mode) {
+                float s = res.x / res.y;
                 float t = texRes.x / texRes.y;
-                if (s > t) return vec2(uv.x, uv.y * t / s + 0.5 * (1.0 - t / s));
-                else return vec2(uv.x * s / t + 0.5 * (1.0 - s / t), uv.y);
+                if (mode > 0.5) { // Cover
+                    if (s > t) return vec2(uv.x, uv.y * t / s + 0.5 * (1.0 - t / s));
+                    else return vec2(uv.x * s / t + 0.5 * (1.0 - s / t), uv.y);
+                } else { // Contain
+                    if (s > t) return vec2(uv.x * s / t + 0.5 * (1.0 - s / t), uv.y);
+                    else return vec2(uv.x, uv.y * t / s + 0.5 * (1.0 - t / s));
+                }
             }
 
             void main() {
-                // Aspect Ratio Correction (Object-fit: contain/cover logic)
-                vec2 uv1 = getCoverUv(vUv, uResolution, uTexRes1);
-                vec2 uv2 = getCoverUv(vUv, uResolution, uTexRes2);
+                vec2 uv1 = getUv(vUv, uResolution, uTexRes1, uScaleMode);
+                vec2 uv2 = getUv(vUv, uResolution, uTexRes2, uScaleMode);
                 
-                // Displacement
                 float distortion = sin(vUv.y * 10.0 + uTime) * 0.02 * (1.0 - uProgress);
-                vec2 distortedUv1 = uv1 + distortion * uProgress;
-                vec2 distortedUv2 = uv2 - distortion * (1.0 - uProgress);
+                vec4 color1 = texture2D(uTexture1, uv1 + distortion * uProgress);
+                vec4 color2 = texture2D(uTexture2, uv2 - distortion * (1.0 - uProgress));
 
-                vec4 color1 = texture2D(uTexture1, distortedUv1);
-                vec4 color2 = texture2D(uTexture2, distortedUv2);
+                // Black borders for contain mode
+                if (uScaleMode < 0.5) {
+                   if (uv1.x < 0.0 || uv1.x > 1.0 || uv1.y < 0.0 || uv1.y > 1.0) color1 = vec4(0.0,0.0,0.0,1.0);
+                   if (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0) color2 = vec4(0.0,0.0,0.0,1.0);
+                }
 
                 gl_FragColor = mix(color1, color2, smoothstep(0.0, 1.0, uProgress));
             }
@@ -598,35 +320,41 @@ const audioFiles = await getAudioFiles();
             gl.enableVertexAttribArray(positionLocation);
             gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-            loadTextures();
-            render();
-            
-            setInterval(() => {
-                if (!isTransitioning && exhibitionView.classList.contains('hidden') === false) startTransition();
-            }, 8000);
+            loadTextures().then(() => {
+                loadingScreen.classList.add('hidden');
+                render();
+                setInterval(() => {
+                    if (!isTransitioning && !exhibitionView.classList.contains('hidden')) startTransition();
+                }, 10000); // 10s por obra
+            });
         }
 
         function resizeCanvas() {
-            const dpr = window.devicePixelRatio || 1;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2); // Cap at 2 for performance
             glCanvas.width = window.innerWidth * dpr;
             glCanvas.height = window.innerHeight * dpr;
             if (gl) gl.viewport(0, 0, glCanvas.width, glCanvas.height);
         }
 
-        function loadTextures() {
+        async function loadTextures() {
             const artworkImages = Array.from(document.querySelectorAll('.hidden-art-data'));
-            artworkImages.forEach((img: any, i) => {
+            const promises = artworkImages.map((img: any) => {
+                return new Promise((resolve) => {
+                    if (img.complete) resolve(img);
+                    else img.onload = () => resolve(img);
+                });
+            });
+
+            await Promise.all(promises);
+
+            artworkImages.forEach((img: any) => {
                 const tex = gl.createTexture();
                 gl.bindTexture(gl.TEXTURE_2D, tex);
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                textures.push({
-                    tex,
-                    width: img.naturalWidth || 1920,
-                    height: img.naturalHeight || 1080
-                });
+                textures.push({ tex, width: img.naturalWidth, height: img.naturalHeight });
             });
         }
 
@@ -634,27 +362,20 @@ const audioFiles = await getAudioFiles();
             isTransitioning = true;
             progress = 0;
             nextIndex = (currentIndex + 1) % textures.length;
-            
             const metaTitle = document.getElementById('meta-title');
-            if (metaTitle) {
-                metaTitle.innerText = artworks[nextIndex].title;
-            }
+            if (metaTitle) metaTitle.innerText = artworks[nextIndex].title;
         }
 
         function render() {
-            if (!gl || exhibitionView.classList.contains('hidden')) {
-                requestAnimationFrame(render);
-                return;
-            }
+            if (exhibitionView.classList.contains('hidden')) return;
 
-            gl.clearColor(0,0,0,1);
             gl.clear(gl.COLOR_BUFFER_BIT);
-
             gl.useProgram(program);
 
             gl.uniform2f(gl.getUniformLocation(program, "uResolution"), glCanvas.width, glCanvas.height);
             gl.uniform1f(gl.getUniformLocation(program, "uTime"), Date.now() * 0.001);
             gl.uniform1f(gl.getUniformLocation(program, "uProgress"), progress);
+            gl.uniform1f(gl.getUniformLocation(program, "uScaleMode"), config.scaleMode === 'cover' ? 1.0 : 0.0);
 
             const t1 = textures[currentIndex];
             const t2 = textures[nextIndex];
@@ -673,14 +394,13 @@ const audioFiles = await getAudioFiles();
             gl.drawArrays(gl.TRIANGLES, 0, 6);
 
             if (isTransitioning) {
-                progress += 0.005; // Transición más lenta y elegante
+                progress += 0.003; // Transición aún más lenta
                 if (progress >= 1.0) {
                     progress = 1.0;
                     isTransitioning = false;
                     currentIndex = nextIndex;
                 }
             }
-
             requestAnimationFrame(render);
         }
 
@@ -688,6 +408,7 @@ const audioFiles = await getAudioFiles();
             const shader = gl.createShader(type);
             gl.shaderSource(shader, source);
             gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(shader));
             return shader;
         }
 
@@ -701,16 +422,11 @@ const audioFiles = await getAudioFiles();
 
         startBtn?.addEventListener('click', startExhibition);
 
-        // 🖱️ Exit on Mouse Move
         let lastMove = Date.now();
         window.addEventListener('mousemove', () => {
             if (exhibitionView.classList.contains('hidden')) return;
-            
-            // Umbral de tiempo para evitar micro-movimientos
             if (Date.now() - lastMove > 1000) {
-                if (document.fullscreenElement) {
-                    document.exitFullscreen();
-                }
+                if (document.fullscreenElement) document.exitFullscreen();
                 exhibitionView.classList.add('hidden');
                 configPanel.classList.remove('hidden');
                 soundManager.stopMusic();
@@ -718,7 +434,6 @@ const audioFiles = await getAudioFiles();
             }
         });
 
-        // Detectar escape de fullscreen manual
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement) {
                 exhibitionView.classList.add('hidden');
