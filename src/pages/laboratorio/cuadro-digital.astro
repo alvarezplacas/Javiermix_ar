@@ -20,67 +20,96 @@ const audioFiles = await getAudioFiles();
 
 <Layout title="Live Canvas: Digital Frame | Laboratorio JMX">
     <main class="digital-frame-container" id="main-container" data-artworks={JSON.stringify(artworks)}>
-        <!-- 🖥️ Dashboard de Configuración -->
+        <!-- 🖥️ Dashboard de Configuración (CONTROL ROOM) -->
         <section class="config-dashboard" id="config-panel">
             <div class="dashboard-content">
                 <header class="dash-header">
-                    <span class="badge">PROTOTIPO V5.0</span>
-                    <h1>Digital Canvas Config</h1>
-                    <p>Optimiza la visualización para tu monitor o Smart TV.</p>
+                    <div class="status-bar">
+                        <span class="badge">ESTÁNDAR JMX V5.0</span>
+                        <div class="system-id">ID: LIVE-CANVAS-05</div>
+                    </div>
+                    <h1>Digital Frame <br/><span>Control Room</span></h1>
                 </header>
+
+                <!-- 🖼️ Preview del Contenido (Lo que pedía el usuario) -->
+                <div class="content-preview-section">
+                    <div class="section-title">
+                        <label>CONTENIDO CARGADO ({artworks.length} OBRAS)</label>
+                        <span class="line"></span>
+                    </div>
+                    <div class="preview-carousel">
+                        {artworks.map((art) => (
+                            <div class="preview-thumb">
+                                <img src={art.img} alt={art.title} />
+                                <div class="thumb-info">{art.title}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
                 <div class="config-grid">
                     <!-- Paspartú -->
                     <div class="config-group">
-                        <label>PASPARTÚ (MARCO)</label>
-                        <div class="toggle-group">
-                            <button class="toggle-btn active" data-config="paspartu" data-val="on">ACTIVADO</button>
-                            <button class="toggle-btn" data-config="paspartu" data-val="off">DESACTIVADO</button>
+                        <label>ESTRUCTURA FÍSICA</label>
+                        <div class="control-box">
+                            <div class="label-box">
+                                <span>Paspartú (Marco)</span>
+                            </div>
+                            <div class="toggle-group">
+                                <button class="toggle-btn active" data-config="paspartu" data-val="on">ON</button>
+                                <button class="toggle-btn" data-config="paspartu" data-val="off">OFF</button>
+                            </div>
+                        </div>
+                        
+                        <div class="control-box mt-1">
+                            <div class="label-box">
+                                <span>Tono de Lino</span>
+                            </div>
+                            <div class="color-picker">
+                                <button class="color-btn active" style="background: #fdfdfd; border: 1px solid #ddd;" data-config="frame-style" data-val="white"></button>
+                                <button class="color-btn" style="background: #111;" data-config="frame-style" data-val="black"></button>
+                                <button class="color-btn" style="background: #f5f5dc; border: 1px solid #e5e5c0;" data-config="frame-style" data-val="cream"></button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Color de Marco -->
+                    <!-- Motor Cinematográfico -->
                     <div class="config-group">
-                        <label>ESTILO DE MARCO</label>
-                        <div class="color-picker">
-                            <button class="color-btn active" style="background: #fdfdfd;" data-config="frame-style" data-val="white" title="Blanco Galería"></button>
-                            <button class="color-btn" style="background: #111;" data-config="frame-style" data-val="black" title="Negro Ébano"></button>
-                            <button class="color-btn" style="background: #f5f5dc;" data-config="frame-style" data-val="cream" title="Crema Lino"></button>
+                        <label>MOTOR CINEMATOGRÁFICO</label>
+                        <div class="control-box">
+                            <div class="label-box"><span>Transición</span></div>
+                            <select id="transition-select" class="config-select">
+                                <option value="fluid">FLUID DISPLACEMENT (2026)</option>
+                                <option value="luma">LUMA MORPHING</option>
+                                <option value="fade">SOFT CROSSFADE</option>
+                            </select>
                         </div>
-                    </div>
 
-                    <!-- Transición -->
-                    <div class="config-group">
-                        <label>ALGORITMO DE TRANSICIÓN</label>
-                        <select id="transition-select" class="config-select">
-                            <option value="fluid">FLUID DISPLACEMENT (2026)</option>
-                            <option value="luma">LUMA MORPHING</option>
-                            <option value="fade">SOFT CROSSFADE</option>
-                        </select>
-                    </div>
-
-                    <!-- Audio -->
-                    <div class="config-group">
-                        <label>PAISAJE SONORO</label>
-                        <select id="audio-select" class="config-select">
-                            <option value="all">REPRODUCIR TODO (LOOP)</option>
-                            {audioFiles.map((audio: any) => (
-                                <option value={getAssetUrl(audio.id, { raw: true })}>{audio.title || audio.filename_download}</option>
-                            ))}
-                        </select>
+                        <div class="control-box mt-1">
+                            <div class="label-box"><span>Audio Atmos</span></div>
+                            <select id="audio-select" class="config-select">
+                                <option value="all">PLAYLIST: AMBIENT MIX</option>
+                                {audioFiles.map((audio: any) => (
+                                    <option value={getAssetUrl(audio.id, { raw: true })}>{audio.title || audio.filename_download}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 <footer class="dash-footer">
-                    <button id="start-btn" class="btn-play-master">
-                        <span class="icon">▶</span>
-                        INICIAR EXHIBICIÓN (F11 MODE)
+                    <button id="start-btn" class="btn-launch">
+                        <div class="btn-inner">
+                            <span class="icon">▶</span>
+                            <span>INICIAR SECUENCIA INMERSIVA</span>
+                        </div>
+                        <div class="btn-glow"></div>
                     </button>
-                    <p class="hint">Mueve el mouse para detener la reproducción en cualquier momento.</p>
+                    <p class="hint">SENSOR: La exhibición se detendrá ante cualquier movimiento del mouse.</p>
                 </footer>
             </div>
 
-            <a href="/laboratorio" class="back-link">← VOLVER AL GABINETE</a>
+            <a href="/laboratorio" class="back-link">← ABANDONAR CONTROL ROOM</a>
         </section>
 
         <!-- 🖼️ Lienzo de Exhibición (Oculto inicialmente) -->
@@ -109,10 +138,11 @@ const audioFiles = await getAudioFiles();
 
 <style>
     :root {
-        --dash-bg: #050505;
+        --dash-bg: #030303;
         --dash-accent: #dcb14a;
-        --glass: rgba(255, 255, 255, 0.03);
-        --glass-border: rgba(255, 255, 255, 0.1);
+        --glass: rgba(15, 15, 15, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --text-dim: rgba(255, 255, 255, 0.4);
     }
 
     .digital-frame-container {
@@ -124,135 +154,242 @@ const audioFiles = await getAudioFiles();
         align-items: center;
         font-family: 'Inter', sans-serif;
         overflow: hidden;
+        position: relative;
     }
 
-    /* 🧭 Dashboard */
+    .digital-frame-container::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
+        z-index: 1;
+    }
+
+    /* 🧭 Dashboard CONTROL ROOM */
     .config-dashboard {
-        max-width: 800px;
-        width: 90%;
-        padding: 4rem;
+        max-width: 900px;
+        width: 95%;
+        padding: 5rem;
         background: var(--glass);
-        backdrop-filter: blur(40px);
+        backdrop-filter: blur(50px);
         border: 1px solid var(--glass-border);
-        border-radius: 2rem;
+        border-radius: 1rem;
         position: relative;
         z-index: 10;
-        animation: fadeIn 1s ease-out;
+        box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+        animation: dashboardEntry 1.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes dashboardEntry { from { opacity: 0; transform: scale(0.95) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
-    .dash-header { text-align: center; margin-bottom: 4rem; }
-    .dash-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 3rem; letter-spacing: 2px; margin-bottom: 0.5rem; }
-    .dash-header p { color: rgba(255,255,255,0.4); font-weight: 300; }
+    .dash-header { margin-bottom: 4rem; }
+    
+    .status-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .system-id { font-family: monospace; font-size: 0.6rem; color: var(--text-dim); letter-spacing: 2px; }
 
     .badge {
         display: inline-block;
         padding: 0.3rem 1rem;
         border: 1px solid var(--dash-accent);
         color: var(--dash-accent);
-        font-size: 0.6rem;
+        font-size: 0.55rem;
         font-weight: 900;
-        letter-spacing: 2px;
+        letter-spacing: 3px;
+    }
+
+    .dash-header h1 { 
+        font-family: 'Cormorant Garamond', serif; 
+        font-size: 4rem; 
+        line-height: 0.9; 
+        letter-spacing: -1px; 
+    }
+    .dash-header h1 span { color: var(--dash-accent); font-style: italic; font-size: 2.5rem; display: block; margin-top: 0.5rem; }
+
+    /* 🖼️ Preview Section */
+    .content-preview-section {
+        margin-bottom: 4rem;
+        background: rgba(0,0,0,0.2);
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
         margin-bottom: 1.5rem;
     }
 
+    .section-title label { font-size: 0.6rem; font-weight: 900; letter-spacing: 3px; color: var(--dash-accent); white-space: nowrap; }
+    .section-title .line { flex: 1; height: 1px; background: var(--glass-border); }
+
+    .preview-carousel {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        scrollbar-width: thin;
+        scrollbar-color: var(--dash-accent) transparent;
+    }
+
+    .preview-carousel::-webkit-scrollbar { height: 3px; }
+    .preview-carousel::-webkit-scrollbar-thumb { background: var(--dash-accent); }
+
+    .preview-thumb {
+        flex: 0 0 140px;
+        aspect-ratio: 1;
+        position: relative;
+        overflow: hidden;
+        border-radius: 4px;
+        border: 1px solid rgba(255,255,255,0.05);
+        background: #111;
+    }
+
+    .preview-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: 0.5s; }
+    .preview-thumb:hover img { opacity: 1; transform: scale(1.1); }
+
+    .thumb-info {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        padding: 0.5rem;
+        background: linear-gradient(to top, black, transparent);
+        font-size: 0.5rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0;
+        transition: 0.3s;
+    }
+    .preview-thumb:hover .thumb-info { opacity: 1; }
+
+    /* Config Grid */
     .config-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 3rem;
+        gap: 2rem;
         margin-bottom: 4rem;
     }
 
     .config-group label {
         display: block;
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 900;
         letter-spacing: 2px;
-        color: rgba(255,255,255,0.3);
-        margin-bottom: 1.2rem;
+        color: var(--text-dim);
+        margin-bottom: 1rem;
     }
 
-    .toggle-group {
+    .control-box {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid var(--glass-border);
+        padding: 1rem;
         display: flex;
-        background: rgba(0,0,0,0.3);
-        padding: 4px;
-        border-radius: 10px;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 4px;
     }
 
+    .mt-1 { margin-top: 0.5rem; }
+
+    .label-box span { font-size: 0.7rem; font-weight: 500; color: rgba(255,255,255,0.7); }
+
+    .toggle-group { display: flex; background: #000; padding: 3px; border-radius: 4px; }
     .toggle-btn {
-        flex: 1;
-        padding: 0.8rem;
+        padding: 0.5rem 1rem;
         border: none;
         background: transparent;
-        color: rgba(255,255,255,0.4);
-        font-size: 0.6rem;
-        font-weight: 800;
+        color: var(--text-dim);
+        font-size: 0.55rem;
+        font-weight: 900;
         cursor: pointer;
-        border-radius: 8px;
         transition: 0.3s;
     }
+    .toggle-btn.active { background: #222; color: #fff; }
 
-    .toggle-btn.active { background: var(--dash-accent); color: #000; }
-
-    .color-picker { display: flex; gap: 1rem; }
+    .color-picker { display: flex; gap: 0.8rem; }
     .color-btn {
-        width: 40px; height: 40px;
+        width: 24px; height: 24px;
         border-radius: 50%;
-        border: 2px solid transparent;
         cursor: pointer;
         transition: 0.3s;
     }
-    .color-btn.active { border-color: var(--dash-accent); transform: scale(1.1); }
+    .color-btn.active { transform: scale(1.3); box-shadow: 0 0 10px var(--dash-accent); }
 
     .config-select {
-        width: 100%;
-        padding: 1rem;
-        background: rgba(0,0,0,0.3);
-        border: 1px solid var(--glass-border);
+        background: transparent;
+        border: none;
         color: #fff;
-        border-radius: 10px;
-        font-size: 0.75rem;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-align: right;
         outline: none;
         cursor: pointer;
     }
 
+    /* Launch Button */
     .dash-footer { text-align: center; }
 
-    .btn-play-master {
+    .btn-launch {
+        position: relative;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    .btn-inner {
+        position: relative;
+        z-index: 2;
         padding: 1.5rem 4rem;
         background: #fff;
         color: #000;
-        border: none;
-        border-radius: 50px;
-        font-size: 0.8rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
         font-weight: 900;
-        letter-spacing: 3px;
-        cursor: pointer;
-        display: inline-flex;
+        letter-spacing: 4px;
+        display: flex;
         align-items: center;
-        gap: 1.5rem;
-        transition: 0.4s var(--ease-premium, cubic-bezier(0.19, 1, 0.22, 1));
-        box-shadow: 0 20px 40px rgba(255,255,255,0.1);
+        gap: 2rem;
+        transition: 0.4s;
     }
 
-    .btn-play-master:hover { transform: scale(1.05); background: var(--dash-accent); }
+    .btn-glow {
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        filter: blur(20px);
+        opacity: 0;
+        transition: 0.4s;
+    }
 
-    .hint { margin-top: 2rem; font-size: 0.65rem; color: rgba(255,255,255,0.3); letter-spacing: 1px; }
+    .btn-launch:hover .btn-inner { background: var(--dash-accent); color: #000; transform: translateY(-5px); }
+    .btn-launch:hover .btn-glow { opacity: 0.3; }
+
+    .hint { margin-top: 3rem; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
 
     .back-link {
         position: absolute;
         bottom: -4rem;
         left: 50%;
         transform: translateX(-50%);
-        color: rgba(255,255,255,0.3);
+        color: var(--text-dim);
         text-decoration: none;
-        font-size: 0.7rem;
+        font-size: 0.6rem;
         font-weight: 800;
-        letter-spacing: 2px;
+        letter-spacing: 3px;
         transition: 0.3s;
     }
-    .back-link:hover { color: #fff; }
+    .back-link:hover { color: #fff; letter-spacing: 4px; }
 
     /* 🖼️ Exhibition View */
     .exhibition-view {
