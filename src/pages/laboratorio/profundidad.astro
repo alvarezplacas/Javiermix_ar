@@ -39,12 +39,23 @@ const artworks = artworksRaw
             <div class="horizon-light"></div>
         </div>
 
-        <div class="scroll-indicator">
+        <div class="scroll-indicator" id="scroll-hint">
             <div class="mouse"></div>
             <span>SCROLL PARA NAVEGAR</span>
         </div>
 
-        <a href="/laboratorio" class="back-btn">← SALIR</a>
+        <!-- 🕹️ Controles de Navegación -->
+        <div class="lab-controls">
+            <button id="play-btn" class="lab-btn">
+                <span class="icon">▶</span> PLAY TOUR
+            </button>
+            <button id="sound-btn" class="lab-btn">
+                <span class="icon">🔇</span> AUDIO OFF
+            </button>
+            <div class="depth-meter">DEPTH: <span id="depth-val">0</span>m</div>
+        </div>
+
+        <a href="/laboratorio" class="back-btn">← SALIR AL GABINETE</a>
     </main>
 </Layout>
 
@@ -143,27 +154,102 @@ const artworks = artworksRaw
     }
     .back-btn:hover { opacity: 1; color: var(--color-accent, #dcb14a); }
 
+    /* 🕹️ Controls UI */
+    .lab-controls {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        background: rgba(0,0,0,0.8);
+        padding: 0.8rem 2rem;
+        border: 1px solid rgba(220, 177, 74, 0.2);
+        border-radius: 50px;
+        backdrop-filter: blur(10px);
+        z-index: 100;
+    }
+
+    .lab-btn {
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        transition: 0.3s;
+        opacity: 0.6;
+    }
+
+    .lab-btn:hover, .lab-btn.active { opacity: 1; color: var(--color-accent, #dcb14a); }
+
+    .depth-meter {
+        font-family: monospace;
+        font-size: 0.6rem;
+        color: rgba(255,255,255,0.4);
+        border-left: 1px solid rgba(255,255,255,0.1);
+        padding-left: 2rem;
+        letter-spacing: 1px;
+    }
+
     @media (max-width: 768px) {
         .art-frame { width: 85vw; }
+        .lab-controls { width: 90vw; justify-content: center; gap: 1rem; }
+        .depth-meter { display: none; }
     }
 </style>
 
 <script>
+    import { soundManager } from '../../utils/SoundManager';
+
     document.addEventListener('astro:page-load', () => {
         const scene = document.getElementById('scene');
         const frames = document.querySelectorAll('.art-frame');
         const canvas = document.getElementById('dust-canvas') as HTMLCanvasElement;
+        const playBtn = document.getElementById('play-btn');
+        const soundBtn = document.getElementById('sound-btn');
+        const depthVal = document.getElementById('depth-val');
+        const scrollHint = document.getElementById('scroll-hint');
         
         if (!scene || !canvas) return;
 
-        // 🎨 Motor de Partículas (Polvo Estelar)
+        // 🔊 Audio
+        soundManager.init();
+        let soundEnabled = false;
+        let isPlaying = false;
+        let virtualScroll = 0;
+        let lastScroll = 0;
+
+        soundBtn?.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                soundManager.enable();
+                soundManager.playMusic('https://admin.javiermix.ar/assets/22503906-6608-4d38-ae0d-fe7999d25216'); // Ambient Cosmic
+                soundBtn.innerHTML = '<span class="icon">🔊</span> AUDIO ON';
+                soundBtn.classList.add('active');
+            } else {
+                soundManager.disable();
+                soundBtn.innerHTML = '<span class="icon">🔇</span> AUDIO OFF';
+                soundBtn.classList.remove('active');
+            }
+        });
+
+        playBtn?.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            playBtn.innerHTML = isPlaying ? '<span class="icon">⏸</span> PAUSE' : '<span class="icon">▶</span> PLAY TOUR';
+            playBtn.classList.toggle('active', isPlaying);
+            if (isPlaying) scrollHint?.style.setProperty('opacity', '0');
+        });
+
+        // 🎨 Partículas
         const ctx = canvas.getContext('2d');
         let particles: any[] = [];
-        
-        const resize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
+        const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
         window.addEventListener('resize', resize);
         resize();
 
@@ -176,43 +262,67 @@ const artworks = artworksRaw
             });
         }
 
-        function animateParticles() {
+        function animate() {
             if (!ctx) return;
+            
+            // Auto-Tour Logic
+            if (isPlaying) {
+                virtualScroll += 1.5;
+            }
+
+            const currentScroll = window.scrollY + virtualScroll;
+            if (depthVal) depthVal.innerText = Math.floor(currentScroll / 10).toString();
+
+            // Render Partículas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = '#fff';
             particles.forEach(p => {
-                p.y -= p.speed;
+                p.y -= (p.speed + (isPlaying ? 0.5 : 0));
                 if (p.y < 0) p.y = canvas.height;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fill();
             });
-            requestAnimationFrame(animateParticles);
-        }
-        animateParticles();
 
-        // 🚀 Motor de Scroll 3D
-        window.addEventListener('scroll', () => {
-            const scroll = window.scrollY;
-            
+            // Update Frames
             frames.forEach((frame: any, i) => {
                 const baseZ = parseInt(frame.style.getPropertyValue('--z'));
-                const currentZ = baseZ + scroll * 1.2;
-                const opacity = currentZ > 500 ? 0 : (currentZ < -2000 ? 0 : 1);
+                const baseY = parseInt(frame.style.getPropertyValue('--y'));
                 
-                // Efecto de escape periférico (Desvío lateral al acercarse)
+                const currentZ = baseZ + currentScroll * 1.2;
+                
+                // Efecto de flotación hacia el cielo (Y disminuye)
+                const floatY = baseY - (currentScroll * 0.1) + Math.sin(Date.now() * 0.001 + i) * 10;
+                
+                const opacity = currentZ > 600 ? 0 : (currentZ < -3000 ? 0 : 1);
+                
                 let xOffset = 0;
                 let rotateY = 0;
                 if (currentZ > -300) {
-                    const factor = (currentZ + 300) / 800; // 0 to 1
-                    xOffset = factor * 1000; // Se desvía a 1000px
-                    rotateY = factor * 25; // Se inclina
+                    const factor = (currentZ + 300) / 900;
+                    xOffset = factor * 1200;
+                    rotateY = factor * 30;
                 }
 
-                frame.style.transform = `translate3d(calc(var(--x) + ${xOffset}px), var(--y), ${currentZ}px) rotateY(${-rotateY}deg)`;
+                frame.style.transform = `translate3d(calc(var(--x) + ${xOffset}px), ${floatY}px, ${currentZ}px) rotateY(${-rotateY}deg)`;
                 frame.style.opacity = opacity.toString();
-                frame.style.pointerEvents = currentZ > -200 && currentZ < 100 ? 'auto' : 'none';
             });
+
+            requestAnimationFrame(animate);
+        }
+
+        // Detectar Scroll Manual para apagar Auto-Play
+        window.addEventListener('scroll', () => {
+            if (Math.abs(window.scrollY - lastScroll) > 10) {
+                if (isPlaying) {
+                    isPlaying = false;
+                    playBtn!.innerHTML = '<span class="icon">▶</span> PLAY TOUR';
+                    playBtn!.classList.remove('active');
+                }
+                lastScroll = window.scrollY;
+            }
         });
+
+        animate();
     });
 </script>
