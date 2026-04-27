@@ -99,7 +99,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
         <div class="horizontal-wall" id="wall">
             {artworks.map((art, index) => (
-                <div class="artwork-station" style={`--station-index: ${index}`} id={`artwork-${art.id}`}>
+                <div class="artwork-station" style={`--station-index: ${index}; view-timeline-name: --artwork-${index}; view-timeline-axis: inline;`} id={`artwork-${art.id}`}>
                     <div class="frame-wrapper">
                         <div class="frame-container">
                             <div class="museum-spotlight"></div>
@@ -110,11 +110,9 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                                 onerror="this.src='/img/placeholder.jpg'; this.classList.add('error');"
                             />
                             <div class="frame-shadow"></div>
-                            <!-- Punto Rojo de Vendido -->
                             <div class="sold-dot" id={`dot-${art.id}`}></div>
                         </div>
 
-                        <!-- Etiqueta de Museo Lateral -->
                         <div class="museum-label">
                             <span class="serial">INV-2026-{index + 100}</span>
                             <h3>{art.title}</h3>
@@ -127,8 +125,8 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
             ))}
         </div>
 
-        <div class="scroll-progress">
-            <div class="bar" id="progress-bar"></div>
+        <div class="scroll-progress-container">
+            <div class="scroll-progress-bar" id="progress-bar"></div>
         </div>
     </main>
 </Layout>
@@ -136,213 +134,305 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 <style>
     @import "../../styles/atmospheres.css";
 
+    :root {
+        --color-accent: oklch(0.75 0.15 85); /* Luxury Gold */
+        --color-accent-dark: oklch(0.6 0.12 85);
+        --bg-museum: oklch(0.95 0.01 80);
+        --bg-ui: oklch(1 0 0 / 0.1);
+        --glass-blur: blur(25px);
+        --ease-premium: cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
     .royal-gallery-wrapper {
         height: 100vh;
         width: 100vw;
         overflow-x: auto;
         overflow-y: hidden;
-        background: #f5f5f5;
-        color: #000;
+        background: var(--bg-museum);
+        color: oklch(0.1 0 0);
         position: relative;
-        transition: background 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: background 1.5s var(--ease-premium), color 1s linear;
         scrollbar-width: none;
+        scroll-timeline: --gallery-scroll inline;
+
+        &::-webkit-scrollbar { display: none; }
+
+        &.is-atmos-night, &.is-atmos-velvet, &.is-atmos-blue, &.is-atmos-concrete {
+            color: oklch(0.95 0 0);
+        }
     }
-    .royal-gallery-wrapper::-webkit-scrollbar { display: none; }
 
     .gallery-ui {
         position: fixed;
         inset: 0;
         z-index: 100;
         pointer-events: none;
-        padding: 3rem;
+        padding: 4rem;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+
+        .ui-top, .ui-bottom { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            pointer-events: auto; 
+        }
+
+        .museum-logo { 
+            font-family: 'Cormorant Garamond', serif; 
+            font-size: 1.4rem; 
+            letter-spacing: 0.4em; 
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .exit-link { 
+            font-size: 0.7rem; 
+            font-weight: 900; 
+            letter-spacing: 0.3em; 
+            color: inherit; 
+            text-decoration: none; 
+            opacity: 0.4; 
+            transition: 0.4s var(--ease-premium);
+            &:hover { opacity: 1; letter-spacing: 0.4em; }
+        }
     }
 
-    .ui-top, .ui-bottom { display: flex; justify-content: space-between; align-items: center; pointer-events: auto; }
-
-    .playback-controls { display: flex; align-items: center; gap: 2.5rem; }
-    .control-btn {
-        background: rgba(0,0,0,0.1);
-        border: 1px solid rgba(0,0,0,0.1);
-        color: inherit;
-        padding: 0.8rem 1.8rem;
-        border-radius: 35px;
-        font-size: 0.8rem;
-        font-weight: 900;
-        letter-spacing: 2px;
-        cursor: pointer;
+    .playback-controls {
         display: flex;
         align-items: center;
-        gap: 0.8rem;
-        transition: 0.3s;
+        gap: 2rem;
+        background: var(--bg-ui);
+        backdrop-filter: var(--glass-blur);
+        padding: 0.5rem;
+        border-radius: 50px;
+        border: 1px solid oklch(0 0 0 / 0.05);
+
+        .control-btn {
+            background: oklch(0 0 0 / 0.05);
+            border: none;
+            color: inherit;
+            padding: 0.8rem 1.8rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            transition: 0.3s;
+            &:hover { background: oklch(0 0 0 / 0.1); }
+            &.active { background: var(--color-accent); color: #000; }
+        }
     }
 
-    .exit-link { font-size: 0.8rem; font-weight: 900; letter-spacing: 3px; color: inherit; text-decoration: none; opacity: 0.5; transition: 0.3s; }
-    .exit-link:hover { opacity: 1; letter-spacing: 5px; }
-
-    .museum-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; letter-spacing: 5px; font-weight: 600; }
-
-    .sound-toggle { cursor: pointer; font-size: 0.7rem; font-weight: 900; letter-spacing: 2px; display: flex; align-items: center; gap: 0.8rem; opacity: 0.6; transition: 0.3s; padding: 0.5rem 1rem; background: rgba(0,0,0,0.05); border-radius: 20px; }
-    .sound-toggle:hover { opacity: 1; background: rgba(0,0,0,0.1); }
-
-    .audio-selector-wrapper { display: flex; align-items: center; gap: 1rem; pointer-events: auto; }
-    .audio-select {
-        background: rgba(255,255,255,0.1);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(0,0,0,0.1);
-        color: inherit;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 1px;
-        cursor: pointer;
-        outline: none;
-        transition: 0.3s;
-        max-width: 200px;
-    }
-    .audio-select:hover { background: rgba(255,255,255,0.2); }
-    .audio-select option { background: #fff; color: #000; }
-
-    .atmos-controls-container { display: flex; flex-direction: column; align-items: flex-end; gap: 0.8rem; }
-    .ui-label { font-size: 0.55rem; font-weight: 900; letter-spacing: 3px; opacity: 0.4; }
-    .atmos-controls { display: flex; gap: 1.5rem; padding: 0.5rem; background: rgba(0,0,0,0.03); border-radius: 40px; }
-    .atmos-btn {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        border: 1px solid rgba(0,0,0,0.1);
-        background: rgba(255,255,255,0.9);
-        color: #000; /* Forzar color de icono negro en estado inactivo */
-        cursor: pointer;
-        font-size: 1.4rem;
+    .audio-selector-wrapper {
         display: flex;
         align-items: center;
-        justify-content: center;
-        transition: 0.3s;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        pointer-events: auto;
+        gap: 1rem;
+
+        .sound-toggle {
+            cursor: pointer;
+            font-size: 0.65rem;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            opacity: 0.6;
+            transition: 0.3s;
+            padding: 0.6rem 1.2rem;
+            &:hover { opacity: 1; }
+        }
+
+        .audio-select {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            opacity: 0.6;
+            outline: none;
+            border-left: 1px solid oklch(0 0 0 / 0.1);
+            padding-left: 1rem;
+            &:hover { opacity: 1; }
+        }
     }
-    .atmos-btn svg { width: 24px; height: 24px; }
-    .atmos-btn.active { 
-        transform: scale(1.15); 
-        border-color: var(--color-accent, #dcb14a); 
-        background: var(--color-accent, #dcb14a);
-        color: #000;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+
+    .atmos-controls-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 1rem;
+
+        .ui-label { font-size: 0.55rem; font-weight: 900; letter-spacing: 0.4em; opacity: 0.3; }
+        
+        .atmos-controls {
+            display: flex;
+            gap: 1.2rem;
+            padding: 0.6rem;
+            background: var(--bg-ui);
+            backdrop-filter: var(--glass-blur);
+            border-radius: 50px;
+            border: 1px solid oklch(0 0 0 / 0.05);
+        }
+
+        .atmos-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid oklch(0 0 0 / 0.05);
+            background: oklch(1 0 0 / 0.8);
+            color: #000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.4s var(--ease-premium);
+            
+            svg { width: 22px; height: 22px; }
+
+            &:hover { transform: translateY(-3px); box-shadow: 0 10px 20px oklch(0 0 0 / 0.1); }
+            
+            &.active {
+                background: var(--color-accent);
+                border-color: var(--color-accent);
+                transform: scale(1.15);
+                box-shadow: 0 15px 30px oklch(0.75 0.15 85 / 0.3);
+            }
+        }
     }
 
     .horizontal-wall {
         height: 100%;
         display: flex;
         align-items: center;
-        padding: 0 35vw;
-        gap: 30vw;
+        padding: 0 40vw;
+        gap: 35vw;
         will-change: transform;
     }
 
     .artwork-station {
         flex: 0 0 auto;
-        display: flex;
-        align-items: center;
-        transform: translateY(2vh);
+        animation: reveal-artwork linear both;
+        animation-timeline: view(inline);
+        animation-range: entry 10% cover 40%;
+        
+        .frame-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6rem;
+        }
     }
 
-    .frame-wrapper {
-        display: flex;
-        align-items: flex-end;
-        gap: 4rem;
+    @keyframes reveal-artwork {
+        from { opacity: 0; transform: translateX(100px) scale(0.9); filter: blur(10px); }
+        to { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
     }
 
     .frame-container {
         position: relative;
-        padding: 40px; /* Paspartú / Mat */
-        background-color: #f5f2ed; /* Blanco Museo */
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
-        border: 20px solid #111; /* Marco Negro Matte */
+        padding: 45px;
+        background-color: oklch(0.95 0.01 85);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+        border: 20px solid oklch(0.1 0 0);
         box-shadow: 
-            inset 0 0 10px rgba(0,0,0,0.1),
-            0 20px 50px rgba(0,0,0,0.5);
+            inset 0 0 15px oklch(0 0 0 / 0.1),
+            0 40px 100px oklch(0 0 0 / 0.4);
         transform-style: preserve-3d;
-        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: 0.6s var(--ease-premium);
+
+        &::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(165deg, oklch(1 0 0 / 0.05), transparent);
+            backdrop-filter: contrast(1.02) brightness(1.02);
+            pointer-events: none;
+        }
+
+        .main-artwork {
+            max-height: 45vh;
+            width: auto;
+            display: block;
+            box-shadow: 0 0 5px oklch(0 0 0 / 0.2);
+        }
     }
 
-    /* Efecto Vidrio Museo (Antirreflejo) */
-    .frame-container::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(160deg, oklch(0.3 0.05 300 / 0.03) 0%, transparent 100%);
-        backdrop-filter: contrast(1.05) brightness(1.02);
-        pointer-events: none;
-        z-index: 5;
-    }
-
-    .main-artwork {
-        max-height: 42vh;
-        width: auto;
-        display: block;
-        position: relative;
-        z-index: 2;
-        box-shadow: 0 0 5px rgba(0,0,0,0.2);
-    }
-
-    /* Etiqueta de Museo */
     .museum-label {
-        width: 180px;
-        text-align: left;
-        border-left: 1px solid rgba(0,0,0,0.1);
-        padding-left: 1.5rem;
-        opacity: 0.6;
-        transition: 0.5s;
+        width: 220px;
+        border-left: 2px solid oklch(0 0 0 / 0.05);
+        padding-left: 2rem;
+        opacity: 0.4;
+        transition: 0.6s var(--ease-premium);
+
+        .artwork-station:hover & { opacity: 1; border-color: var(--color-accent); }
+
+        h3 { 
+            font-family: 'Cormorant Garamond', serif; 
+            font-size: 1.5rem; 
+            margin: 0.8rem 0; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em; 
+        }
+        
+        p { font-size: 0.8rem; color: oklch(0 0 0 / 0.5); margin: 0.2rem 0; }
+        .specs { font-style: italic; opacity: 0.7; font-size: 0.7rem; }
+        .serial { font-size: 0.6rem; letter-spacing: 0.2em; font-weight: 900; color: var(--color-accent); }
+
+        .buy-btn {
+            margin-top: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: oklch(0.1 0 0);
+            color: oklch(1 0 0);
+            border: none;
+            font-size: 0.65rem;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: 0.4s;
+            &:hover { background: var(--color-accent); color: #000; }
+        }
     }
-    .artwork-station:hover .museum-label { opacity: 1; border-color: var(--color-accent); }
 
-    .museum-label h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; margin: 0.5rem 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-    .museum-label p { font-size: 0.7rem; color: rgba(0,0,0,0.5); font-weight: 400; margin: 0; }
-    .museum-label .specs { font-style: italic; margin-top: 0.3rem; opacity: 0.7; }
-    .serial { font-size: 0.55rem; letter-spacing: 2px; font-weight: 900; color: var(--color-accent, #dcb14a); }
+    .scroll-progress-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100vw;
+        height: 4px;
+        background: oklch(0 0 0 / 0.05);
+        z-index: 200;
 
-    /* Punto Rojo */
-    .sold-dot {
-        position: absolute;
-        bottom: -20px;
-        right: -20px;
-        width: 12px;
-        height: 12px;
-        background: #ff0000;
-        border-radius: 50%;
-        box-shadow: 0 0 15px rgba(255,0,0,0.8);
-        opacity: 0;
-        transform: scale(0);
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        z-index: 10;
+        .scroll-progress-bar {
+            height: 100%;
+            width: 100%;
+            background: var(--color-accent);
+            transform-origin: left;
+            scale: 0 1;
+            animation: progress-grow linear;
+            animation-timeline: --gallery-scroll;
+        }
     }
-    .sold-dot.active { opacity: 1; transform: scale(1); }
 
-    .buy-btn {
-        margin-top: 1.5rem;
-        padding: 0.6rem 1.2rem;
-        background: #000;
-        color: #fff;
-        border: none;
-        font-size: 0.6rem;
-        font-weight: 900;
-        letter-spacing: 2px;
-        cursor: pointer;
-        transition: 0.3s;
+    @keyframes progress-grow {
+        from { scale: 0 1; }
+        to { scale: 1 1; }
     }
-    .buy-btn:hover { background: var(--color-accent, #dcb14a); color: #000; }
 
-    /* Adaptaciones para fondos oscuros */
-    .is-atmos-night .museum-label, .is-atmos-velvet .museum-label, .is-atmos-blue .museum-label, .is-atmos-concrete .museum-label, .is-atmos-gold .museum-label { 
-        border-color: rgba(255,255,255,0.1); color: #fff; 
+    /* Adaptaciones Atmosferas Oscuras */
+    .is-atmos-night, .is-atmos-velvet, .is-atmos-blue, .is-atmos-concrete {
+        .museum-label { 
+            border-color: oklch(1 0 0 / 0.1); 
+            p { color: oklch(1 0 0 / 0.5); }
+            h3 { color: oklch(1 0 0); }
+        }
+        .buy-btn { background: oklch(1 0 0); color: oklch(0.1 0 0); }
     }
-    .is-atmos-night .museum-label p, .is-atmos-velvet .museum-label p, .is-atmos-blue .museum-label p, .is-atmos-concrete .museum-label p, .is-atmos-gold .museum-label p { color: rgba(255,255,255,0.5); }
-    .is-atmos-night .buy-btn, .is-atmos-velvet .buy-btn, .is-atmos-blue .buy-btn, .is-atmos-concrete .buy-btn, .is-atmos-gold .buy-btn { background: #fff; color: #000; }
-
 </style>
 
 <script>
@@ -352,14 +442,15 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         const gallery = document.getElementById('gallery-container');
         const soundBtn = document.getElementById('sound-btn');
         const playBtn = document.getElementById('play-btn');
+        const audioBrowser = document.getElementById('audio-browser') as HTMLSelectElement;
+        
         let soundEnabled = false;
         let autoPlayInterval: any = null;
 
         if (!gallery) return;
 
-        // 🔊 Audio
+        // 🔊 Audio Engine
         soundManager.init();
-        const audioBrowser = document.getElementById('audio-browser') as HTMLSelectElement;
 
         const updateAudio = (url: string) => {
             if (soundEnabled && url) {
@@ -371,69 +462,63 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
             }
         };
 
-        soundBtn?.addEventListener('click', () => {
+        const toggleSound = () => {
             soundEnabled = !soundEnabled;
+            soundBtn!.classList.toggle('active', soundEnabled);
+            
             if (soundEnabled) {
                 soundManager.enable();
-                soundBtn.innerHTML = '<span class="icon">🔊</span> AUDIO ON';
-                // Si hay algo seleccionado en el browser, usarlo. Si no, ver si la atmósfera actual tiene algo.
-                const selectedUrl = audioBrowser.value;
-                if (selectedUrl) {
-                    updateAudio(selectedUrl);
-                } else {
-                    const activeAtmosBtn = document.querySelector('.atmos-btn.active');
-                    const atmosAudio = activeAtmosBtn?.getAttribute('data-audio');
-                    if (atmosAudio) updateAudio(atmosAudio);
-                }
+                soundBtn!.innerHTML = '<span class="icon">🔊</span> AUDIO ON';
+                const currentTrack = audioBrowser.value || document.querySelector('.atmos-btn.active')?.getAttribute('data-audio');
+                if (currentTrack) updateAudio(currentTrack);
             } else {
                 soundManager.disable();
-                soundBtn.innerHTML = '<span class="icon">🔇</span> AUDIO OFF';
+                soundBtn!.innerHTML = '<span class="icon">🔇</span> AUDIO OFF';
             }
-        });
+        };
 
+        soundBtn?.addEventListener('click', toggleSound);
+        
         audioBrowser?.addEventListener('change', () => {
-            if (!soundEnabled) {
-                soundEnabled = true;
-                soundManager.enable();
-                soundBtn!.innerHTML = '<span class="icon">🔊</span> AUDIO ON';
-            }
+            if (!soundEnabled) toggleSound();
             updateAudio(audioBrowser.value);
         });
 
-        // 🚀 Auto-Tour
-        playBtn?.addEventListener('click', () => {
+        // 🚀 Auto-Tour Logic
+        const toggleTour = () => {
             if (autoPlayInterval) {
                 clearInterval(autoPlayInterval);
                 autoPlayInterval = null;
-                playBtn.innerHTML = '<span class="icon">▶</span> PLAY TOUR';
-                playBtn.classList.remove('active');
+                playBtn!.innerHTML = '<span class="icon">▶</span> PLAY TOUR';
+                playBtn!.classList.remove('active');
             } else {
-                playBtn.classList.add('active');
-                playBtn.innerHTML = '<span class="icon">⏸</span> STOP TOUR';
+                playBtn!.classList.add('active');
+                playBtn!.innerHTML = '<span class="icon">⏸</span> STOP TOUR';
                 autoPlayInterval = setInterval(() => {
-                    gallery.scrollLeft += 1;
+                    gallery.scrollLeft += 1.5;
                     if (gallery.scrollLeft >= gallery.scrollWidth - window.innerWidth) {
                         gallery.scrollLeft = 0;
                     }
-                }, 25);
+                }, 30);
             }
-        });
+        };
 
-        // 🖱️ Rueda del ratón
+        playBtn?.addEventListener('click', toggleTour);
+
+        // 🖱️ Smooth Scroll Hijacking
         gallery.addEventListener('wheel', (e) => {
             if (autoPlayInterval) return;
             e.preventDefault();
-            gallery.scrollBy({ left: e.deltaY * 1.5, behavior: 'smooth' });
+            gallery.scrollBy({ left: e.deltaY * 2, behavior: 'auto' });
         }, { passive: false });
 
-        // 🔘 Atmósferas Dinámicas
+        // 🔘 Dynamic Atmospheres
         const atmosBtns = document.querySelectorAll('.atmos-btn');
         atmosBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const atmos = btn.getAttribute('data-atmos');
                 const audioUrl = btn.getAttribute('data-audio');
                 
-                // Limpiar clases de atmósfera previas
                 gallery.className = 'royal-gallery-wrapper';
                 gallery.classList.add(`is-atmos-${atmos}`);
                 
@@ -442,17 +527,13 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
                 if (soundEnabled) {
                     soundManager.play('transition', 0.2);
-                    // Solo cambiar música si la atmósfera tiene una específica definida
-                    if (audioUrl) {
-                        updateAudio(audioUrl);
-                    }
+                    if (audioUrl) updateAudio(audioUrl);
                 }
             });
         });
 
-        // 🛒 Colección + Punto Rojo
-        const buyBtns = document.querySelectorAll('.buy-btn');
-        buyBtns.forEach(btn => {
+        // 🛒 Collection System
+        document.querySelectorAll('.buy-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-id');
                 const dot = document.getElementById(`dot-${id}`);
@@ -460,13 +541,12 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                 if (dot) {
                     dot.classList.add('active');
                     if (soundEnabled) soundManager.play('hover', 0.4);
-                    btn.innerHTML = 'COLECCIONADA';
-                    btn.style.opacity = '0.5';
-                    btn.style.pointerEvents = 'none';
+                    (btn as HTMLElement).innerText = 'COLECCIONADA';
+                    (btn as HTMLElement).style.opacity = '0.5';
+                    (btn as HTMLElement).style.pointerEvents = 'none';
                     
-                    // Efecto sutil en la etiqueta
                     const label = btn.closest('.museum-label') as HTMLElement;
-                    if (label) label.style.borderColor = '#ff0000';
+                    if (label) label.style.borderColor = 'oklch(0.6 0.2 25)';
                 }
             });
         });
