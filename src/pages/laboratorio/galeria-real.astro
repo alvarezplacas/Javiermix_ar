@@ -16,7 +16,25 @@ const artworks = artworksRaw
         img: getOptimizedImageURL(file.id, { width: 1200, format: 'webp', quality: 90 }),
     }));
 
-const entornos = await getLaboratorioEntornos();
+const entornosData = await getLaboratorioEntornos();
+
+// 💡 Mezclamos con Defaults para asegurar al menos 5 y que Directus mande
+const defaultEntornos = [
+    { name: 'Museum Hall', slug: 'gallery', icon: 'museum' },
+    { name: 'Velvet Red', slug: 'velvet', icon: 'wine' },
+    { name: 'Urban Night', slug: 'night', icon: 'brick' },
+    { name: 'Minimalist Blue', slug: 'blue', icon: 'blue' },
+    { name: 'Golden Gallery', slug: 'gold', icon: 'gold' }
+];
+
+// Unimos quitando duplicados por slug
+const entornos = [...entornosData];
+defaultEntornos.forEach(def => {
+    if (!entornos.find(e => e.slug === def.slug)) {
+        entornos.push(def);
+    }
+});
+
 const audioFiles = await getAudioFiles();
 
 // 🔄 Mapeo de Iconos Técnicos a SVGs Monocromáticos
@@ -157,8 +175,24 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
         &::-webkit-scrollbar { display: none; }
 
-        &.is-atmos-night, &.is-atmos-velvet, &.is-atmos-blue, &.is-atmos-concrete {
+        /* Iluminación Dinámica Avanzada */
+        &::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 50% 20%, oklch(1 0 0 / 0.1) 0%, transparent 80%);
+            pointer-events: none;
+            z-index: 1;
+            transition: 1.5s var(--ease-premium);
+        }
+
+        &.is-atmos-night, &.is-atmos-velvet, &.is-atmos-blue, &.is-atmos-concrete, &.is-atmos-muro, &.is-atmos-cemento, &.is-atmos-ladrillo {
             color: oklch(0.95 0 0);
+            &::before { background: radial-gradient(circle at 50% 10%, oklch(0.8 0.1 200 / 0.15) 0%, transparent 70%); }
+        }
+
+        &.is-atmos-gold {
+            &::before { background: radial-gradient(circle at 50% 10%, oklch(0.8 0.2 80 / 0.2) 0%, transparent 70%); }
         }
     }
 
@@ -329,7 +363,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
     }
 
     @keyframes reveal-artwork {
-        from { opacity: 0; transform: translateX(100px) scale(0.9); filter: blur(10px); }
+        from { opacity: 0; transform: translateX(60px) scale(0.98); filter: blur(2px); }
         to { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
     }
 
