@@ -57,18 +57,6 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
     <main class="royal-gallery-wrapper is-atmos-gallery" id="gallery-container">
         <div class="atmos-overlay"></div>
 
-        <!-- Inyectar Estilos Dinámicos para Fondos de Directus -->
-        {entornos.map((ent: any) => ent.background_image && (
-            <style is:global define:vars={{ [`bg-${ent.slug}`]: `url(${getAssetUrl(ent.background_image.id, { format: 'avif', quality: 90, width: 2560 })})` }}>
-                .is-atmos-{ent.slug} {
-                    background-image: var(--bg-{ent.slug}) !important;
-                    background-size: cover !important;
-                    background-position: center !important;
-                    background-attachment: fixed !important;
-                }
-            </style>
-        ))}
-
         <header class="gallery-ui">
             <div class="ui-top">
                 <a href="/laboratorio" class="exit-link">SALIR DE LA EXHIBICIÓN</a>
@@ -99,17 +87,22 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                 <div class="atmos-controls-container">
                     <span class="ui-label">AMBIENTES</span>
                     <div class="atmos-controls">
-                        {entornos.map((ent: any, index: number) => (
-                            <button 
-                                class={`atmos-btn ${index === 0 ? 'active' : ''}`} 
-                                data-atmos={ent.slug} 
-                                data-label={ent.name}
-                                data-audio={ent.background_audio?.id ? getAssetUrl(ent.background_audio.id, { raw: true }) : ''}
-                                title={ent.name}
-                            >
-                                <Fragment set:html={iconMap[ent.icon as keyof typeof iconMap] || iconMap.default} />
-                            </button>
-                        ))}
+                        {entornos.map((ent: any, index: number) => {
+                            const bgId = ent.background_image?.id || ent.background_image;
+                            const audioId = ent.background_audio?.id || ent.background_audio;
+                            return (
+                                <button 
+                                    class={`atmos-btn ${index === 0 ? 'active' : ''}`} 
+                                    data-atmos={ent.slug} 
+                                    data-label={ent.name}
+                                    data-bg={bgId ? getAssetUrl(bgId, { format: 'avif', quality: 90, width: 2560 }) : ''}
+                                    data-audio={audioId ? getAssetUrl(audioId, { raw: true }) : ''}
+                                    title={ent.name}
+                                >
+                                    <Fragment set:html={iconMap[ent.icon as keyof typeof iconMap] || iconMap.default} />
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
@@ -166,21 +159,26 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         width: 100vw;
         overflow-x: auto;
         overflow-y: hidden;
-        background: var(--bg-museum);
+        background-color: var(--bg-museum);
+        background-image: var(--current-bg, none);
+        background-attachment: fixed;
+        background-size: cover;
+        background-position: center;
         color: oklch(0.1 0 0);
         position: relative;
-        transition: background 1.5s var(--ease-premium), color 1s linear;
+        transition: background 1.2s var(--ease-premium), color 1s linear;
         scrollbar-width: none;
         scroll-timeline: --gallery-scroll inline;
 
         &::-webkit-scrollbar { display: none; }
 
-        /* Iluminación Dinámica Avanzada */
+        /* Iluminación Dinámica Avanzada (Evita divisiones) */
         &::before {
             content: "";
             position: fixed;
             inset: 0;
-            background: radial-gradient(circle at 50% 20%, oklch(1 0 0 / 0.1) 0%, transparent 80%);
+            background: radial-gradient(ellipse at 50% -10%, oklch(1 0 0 / 0.15) 0%, transparent 60%),
+                        radial-gradient(circle at 50% 50%, transparent 40%, oklch(0 0 0 / 0.1) 100%);
             pointer-events: none;
             z-index: 1;
             transition: 1.5s var(--ease-premium);
@@ -347,6 +345,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         padding: 0 40vw;
         gap: 35vw;
         will-change: transform;
+        background: transparent !important;
     }
 
     .artwork-station {
@@ -486,6 +485,16 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         // 🔊 Audio Engine
         soundManager.init();
 
+        // 🖼️ Inicializar Fondo
+        const initialAtmosBtn = document.querySelector('.atmos-btn.active');
+        if (initialAtmosBtn) {
+            const initialBg = initialAtmosBtn.getAttribute('data-bg');
+            if (initialBg) {
+                gallery.style.setProperty('--current-bg', `url(${initialBg})`);
+                gallery.style.backgroundImage = 'var(--current-bg)';
+            }
+        }
+
         const updateAudio = (url: string) => {
             if (soundEnabled && url) {
                 soundManager.playMusic(url);
@@ -552,9 +561,18 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
             btn.addEventListener('click', () => {
                 const atmos = btn.getAttribute('data-atmos');
                 const audioUrl = btn.getAttribute('data-audio');
+                const bgUrl = btn.getAttribute('data-bg');
                 
                 gallery.className = 'royal-gallery-wrapper';
                 gallery.classList.add(`is-atmos-${atmos}`);
+                
+                // Aplicar fondo dinámico si existe
+                if (bgUrl) {
+                    gallery.style.setProperty('--current-bg', `url(${bgUrl})`);
+                    gallery.style.backgroundImage = 'var(--current-bg)';
+                } else {
+                    gallery.style.backgroundImage = '';
+                }
                 
                 atmosBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
