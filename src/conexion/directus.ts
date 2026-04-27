@@ -32,25 +32,31 @@ export class DirectusManager {
     public static async getClient() {
         if (!this.client) {
             const isServer = typeof window === 'undefined';
-            // 🔄 Estrategia Dual: Intentar Interno, si falla usar Público
             let baseUrl = isServer ? INTERNAL_URL : PUBLIC_URL;
             
             try {
-                const baseClient = createDirectus(baseUrl).with(rest());
-                const clientWithToken = (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') 
-                    ? baseClient.with(staticToken(STATIC_TOKEN))
-                    : baseClient;
-                
-                // Probar conexión rápida (solo en servidor)
-                if (isServer) {
+                // Configuración inicial con timeout para validación de red
+                const checkConnection = async (url: string) => {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 3000);
                     try {
-                        await Promise.race([
-                            clientWithToken.request(readItems('laboratorio_entornos' as any, { limit: 1 })),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2000))
-                        ]);
-                    } catch (e) {
-                        console.warn(`[DirectusManager] 🛰️ URL Interna falló o lenta, usando Pública: ${PUBLIC_URL}`);
+                        const res = await fetch(`${url}/items/laboratorio_entornos?limit=1`, { 
+                            signal: controller.signal,
+                            headers: { 'Authorization': `Bearer ${STATIC_TOKEN}` }
+                        });
+                        return res.ok;
+                    } catch (e) { return false; }
+                    finally { clearTimeout(timeout); }
+                };
+
+                if (isServer) {
+                    console.log(`[DirectusManager] 🔍 Probando conectividad interna: ${INTERNAL_URL}`);
+                    const isInternalUp = await checkConnection(INTERNAL_URL);
+                    if (!isInternalUp) {
+                        console.warn(`[DirectusManager] ⚠️ URL Interna inalcanzable, conmutando a Pública: ${PUBLIC_URL}`);
                         baseUrl = PUBLIC_URL;
+                    } else {
+                        console.log(`[DirectusManager] ✅ Conexión interna exitosa.`);
                     }
                 }
 
@@ -59,9 +65,15 @@ export class DirectusManager {
                     ? finalClient.with(staticToken(STATIC_TOKEN))
                     : finalClient;
 
+                console.log(`[DirectusManager] 🚀 Cliente inicializado en: ${baseUrl}`);
+
             } catch (error: any) {
-                console.error(`[DirectusManager] ❌ Error crítico:`, error.message);
-                throw error;
+                console.error(`[DirectusManager] ❌ Error fatal al inicializar cliente:`, error.message);
+                // Fallback de emergencia a la URL pública si todo lo demás falla
+                const fallbackClient = createDirectus(PUBLIC_URL).with(rest());
+                this.client = (STATIC_TOKEN && STATIC_TOKEN !== 'undefined') 
+                    ? fallbackClient.with(staticToken(STATIC_TOKEN))
+                    : fallbackClient;
             }
         }
         return this.client;
@@ -249,8 +261,33 @@ export async function getArtworkById(id: string) {
 export async function getArtworks() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('artworks' as any, { limit: -1 })); } catch (e) { return []; } }
 export async function getCertificates() { try { const client = await DirectusManager.getClient(); return await client.request(readItems('certificates' as any, { fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: -1 })); } catch (e) { return []; } }
 export async function getCertificateByUuid(uuid: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('certificates', { filter: { id: { _eq: uuid } }, fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
-export async function getHomeSettings() { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('home_settings' as any, { limit: 1 })); return results[0] || null; } catch (e) { return null; } }
-export async function getFooterSettings() { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('footer_settings' as any, { limit: 1 })); return results[0] || null; } catch (e) { return null; } }
+export async function getHomeSettings() { 
+    try { 
+        const res = await fetchFromDirectus('/items/home_settings?limit=1');
+        const json = await res.json();
+        const data = json.data;
+        return Array.isArray(data) ? data[0] : data;
+    } catch (e) { return null; } 
+}
+
+export async function getFooterSettings() { 
+    try { 
+        const res = await fetchFromDirectus('/items/footer_settings');
+        const json = await res.json();
+        const data = json.data;
+        
+        if (!data) {
+            console.warn('[Directus] getFooterSettings: No se encontraron datos vía Shim.');
+            return null;
+        }
+
+        console.log('[Directus] ✅ Footer Settings (Ruth Bernhard) detectados.');
+        return Array.isArray(data) ? data[0] : data; 
+    } catch (e: any) { 
+        console.error('[Directus] Error en getFooterSettings (Shim):', e.message);
+        return null; 
+    } 
+}
 
 export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Coleccion'] } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }
 
