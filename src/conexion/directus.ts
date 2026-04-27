@@ -243,11 +243,13 @@ export async function getLaboratorioEntornos() {
             sort: ['sort']
         }));
     } catch (e) {
+        console.error('[Directus] Error fetching laboratorio_entornos:', e.message);
+        if (e.errors) console.error('[Directus] Details:', JSON.stringify(e.errors));
         // Fallback si la colección no existe aún
         return [
-            { name: 'Mármol Carrara', slug: 'gallery', icon: '🏛️' },
-            { name: 'Urban Brick', slug: 'night', icon: '🧱' },
-            { name: 'Velvet Red', slug: 'velvet', icon: '🍷' }
+            { name: 'Mármol Carrara', slug: 'gallery', icon: 'museum' },
+            { name: 'Urban Brick', slug: 'night', icon: 'brick' },
+            { name: 'Velvet Red', slug: 'velvet', icon: 'wine' }
         ];
     }
 }
