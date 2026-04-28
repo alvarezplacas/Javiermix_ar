@@ -331,7 +331,8 @@ const audioFiles = await getAudioFiles();
             vec2 getMuseumUv(vec2 uv, vec2 res, vec2 texRes, float mode) {
                 float screenAspect = res.x / res.y;
                 float texAspect = texRes.x / texRes.y;
-                float margin = 0.12;
+                float artworkMargin = 0.06; // Paspartú pequeño
+                float bezelMargin = 0.04;   // Espacio negro exterior (Monitor Bezel)
 
                 if (mode > 1.5) { // MODO TOP-ANCHOR
                     float scale = screenAspect / texAspect;
@@ -348,8 +349,10 @@ const audioFiles = await getAudioFiles();
                     }
                     return targetUv;
                 } else { // MODO MUSEO
-                    vec2 centeredUv = (uv - 0.5) / (1.0 - margin * 2.0) + 0.5;
-                    centeredUv.y -= 0.03; 
+                    // Ajustamos el UV para que el arte esté contenido con márgenes
+                    float totalMargin = artworkMargin + bezelMargin;
+                    vec2 centeredUv = (uv - 0.5) / (1.0 - totalMargin * 2.0) + 0.5;
+                    
                     if (screenAspect > texAspect) {
                         centeredUv.x = (centeredUv.x - 0.5) * (screenAspect / texAspect) + 0.5;
                     } else {
@@ -381,11 +384,29 @@ const audioFiles = await getAudioFiles();
                     c2 = texture2D(uTexture2, uv2);
                 }
                 
-                // Paspartú Logic
+                // Paspartú & Bezel Logic
                 bool isBg1 = (uv1.x < 0.0 || uv1.x > 1.0 || uv1.y < 0.0 || uv1.y > 1.0);
                 bool isBg2 = (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0);
                 
-                if (uScaleMode < 0.5 || uScaleMode > 1.5) {
+                if (uScaleMode < 0.5) { // MODO MUSEO ONLY
+                    float noise = rand(vUv) * 0.03;
+                    
+                    // Definimos el área del paspartú (un poco más grande que el artwork)
+                    float frameSize = 0.04; // Grosor del paspartú visible
+                    
+                    // Calculamos si estamos en la zona del bisel negro
+                    // Usamos la distancia al centro para determinar el borde del "monitor"
+                    float bezel = 0.03;
+                    bool isBezel = (vUv.x < bezel || vUv.x > 1.0 - bezel || vUv.y < bezel || vUv.y > 1.0 - bezel);
+                    
+                    if (isBezel) {
+                        c1 = vec4(0.0, 0.0, 0.0, 1.0);
+                        c2 = vec4(0.0, 0.0, 0.0, 1.0);
+                    } else {
+                        if (isBg1) c1 = vec4(uMatColor + noise, 1.0);
+                        if (isBg2) c2 = vec4(uMatColor + noise, 1.0);
+                    }
+                } else if (uScaleMode > 1.5) { // TOP-ANCHOR (Paspartú simple)
                     float noise = rand(vUv) * 0.03;
                     if (isBg1) c1 = vec4(uMatColor + noise, 1.0);
                     if (isBg2) c2 = vec4(uMatColor + noise, 1.0);
