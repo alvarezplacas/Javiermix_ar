@@ -172,14 +172,16 @@ const audioFiles = await getAudioFiles();
         const loadingScreen = document.getElementById('loading-screen');
         const glCanvas = document.getElementById('gl-canvas') as HTMLCanvasElement;
         
-        let config = { scaleMode: 'contain', frameStyle: 'white', transition: 'fluid' };
+        let config = { scaleMode: 'contain', frameStyle: 'white' };
 
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const group = btn.getAttribute('data-config');
                 document.querySelectorAll(`.toggle-btn[data-config="${group}"]`).forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                config[group] = btn.getAttribute('data-val');
+                // Normalizamos a camelCase para que coincida con el resto del script
+                const configKey = group.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+                config[configKey] = btn.getAttribute('data-val');
             });
         });
 
