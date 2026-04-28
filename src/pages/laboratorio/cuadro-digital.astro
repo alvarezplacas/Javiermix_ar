@@ -11,36 +11,34 @@ const artworks = artworksRaw
     .filter(file => !file.filename_download.toLowerCase().includes('_2'))
     .map((file, index) => ({
         id: file.id,
-        title: file.title || `Masterpiece ${index + 1}`,
+        title: file.title || `Obra ${index + 1}`,
         img: getOptimizedImageURL(file.id, { width: 2560, format: 'webp', quality: 90 }),
     }));
 
 const audioFiles = await getAudioFiles();
 ---
 
-<Layout title="Live Canvas: Digital Frame | Laboratorio JMX">
+<Layout title="Live Canvas: Control Room | JMX 2026">
     <main class="digital-frame-container" id="main-container" data-artworks={JSON.stringify(artworks)}>
-        <!-- 🖥️ Dashboard de Configuración (CONTROL ROOM) -->
         <section class="config-dashboard" id="config-panel">
             <div class="dashboard-content">
                 <header class="dash-header">
                     <div class="status-bar">
-                        <span class="badge">ESTÁNDAR JMX V5.0</span>
-                        <div class="system-id">ID: LIVE-CANVAS-05</div>
+                        <span class="badge">CURADURÍA MATEMÁTICA</span>
+                        <div class="system-id">MUSEUM-STD-2026</div>
                     </div>
                     <h1>Digital Frame <br/><span>Control Room</span></h1>
                 </header>
 
-                <!-- 🖼️ Preview del Contenido (Lo que pedía el usuario) -->
                 <div class="content-preview-section">
                     <div class="section-title">
-                        <label>CONTENIDO CARGADO ({artworks.length} OBRAS)</label>
+                        <label>OBRAS EN COLA ({artworks.length})</label>
                         <span class="line"></span>
                     </div>
                     <div class="preview-carousel">
                         {artworks.map((art) => (
                             <div class="preview-thumb">
-                                <img src={art.img} alt={art.title} />
+                                <img src={art.img} alt={art.title} loading="lazy" />
                                 <div class="thumb-info">{art.title}</div>
                             </div>
                         ))}
@@ -48,59 +46,40 @@ const audioFiles = await getAudioFiles();
                 </div>
 
                 <div class="config-grid">
-                    <!-- Paspartú -->
                     <div class="config-group">
-                        <label>ESTRUCTURA FÍSICA</label>
+                        <label>CONFIGURACIÓN DE LIENZO</label>
                         <div class="control-box">
-                            <div class="label-box">
-                                <span>Paspartú (Marco)</span>
-                            </div>
+                            <div class="label-box"><span>Modo de Encuadre</span></div>
                             <div class="toggle-group">
-                                <button class="toggle-btn active" data-config="paspartu" data-val="on">ON</button>
-                                <button class="toggle-btn" data-config="paspartu" data-val="off">OFF</button>
+                                <button class="toggle-btn active" data-config="scale-mode" data-val="contain">MUSEO (FIT)</button>
+                                <button class="toggle-btn" data-config="scale-mode" data-val="cover">LLENO (FILL)</button>
                             </div>
                         </div>
-
                         <div class="control-box mt-1">
-                            <div class="label-box">
-                                <span>Modo de Escala</span>
-                            </div>
-                            <div class="toggle-group">
-                                <button class="toggle-btn active" data-config="scale-mode" data-val="contain">FIT</button>
-                                <button class="toggle-btn" data-config="scale-mode" data-val="cover">FILL</button>
-                            </div>
-                        </div>
-                        
-                        <div class="control-box mt-1">
-                            <div class="label-box">
-                                <span>Tono de Lino</span>
-                            </div>
+                            <div class="label-box"><span>Tono Paspartú</span></div>
                             <div class="color-picker">
-                                <button class="color-btn active" style="background: #fdfdfd; border: 1px solid #ddd;" data-config="frame-style" data-val="white"></button>
-                                <button class="color-btn" style="background: #111;" data-config="frame-style" data-val="black"></button>
-                                <button class="color-btn" style="background: #f5f5dc; border: 1px solid #e5e5c0;" data-config="frame-style" data-val="cream"></button>
+                                <button class="color-btn active" style="background: #f4f4f4;" data-config="frame-style" data-val="white"></button>
+                                <button class="color-btn" style="background: #1a1a1a;" data-config="frame-style" data-val="black"></button>
+                                <button class="color-btn" style="background: #e8e3d5;" data-config="frame-style" data-val="cream"></button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Motor Cinematográfico -->
                     <div class="config-group">
-                        <label>MOTOR CINEMATOGRÁFICO</label>
+                        <label>MOTOR DE EXHIBICIÓN</label>
                         <div class="control-box">
-                            <div class="label-box"><span>Transición</span></div>
+                            <div class="label-box"><span>Algoritmo</span></div>
                             <select id="transition-select" class="config-select">
-                                <option value="fluid">FLUID DISPLACEMENT (2026)</option>
-                                <option value="luma">LUMA MORPHING</option>
-                                <option value="fade">SOFT CROSSFADE</option>
+                                <option value="fluid">LIQUID DISPLACEMENT</option>
+                                <option value="luma">LUMA TRANSITION</option>
                             </select>
                         </div>
-
                         <div class="control-box mt-1">
-                            <div class="label-box"><span>Audio Atmos</span></div>
+                            <div class="label-box"><span>Audio Inmersivo</span></div>
                             <select id="audio-select" class="config-select">
-                                <option value="all">PLAYLIST: AMBIENT MIX</option>
+                                <option value="all">AMBIENT PLAYLIST</option>
                                 {audioFiles.map((audio: any) => (
-                                    <option value={getAssetUrl(audio.id, { raw: true })}>{audio.title || audio.filename_download}</option>
+                                    <option value={getAssetUrl(audio.id, { raw: true })}>{audio.title || "Paisaje Sonoro"}</option>
                                 ))}
                             </select>
                         </div>
@@ -109,39 +88,25 @@ const audioFiles = await getAudioFiles();
 
                 <footer class="dash-footer">
                     <button id="start-btn" class="btn-launch">
-                        <div class="btn-inner">
-                            <span class="icon">▶</span>
-                            <span>INICIAR SECUENCIA INMERSIVA</span>
-                        </div>
-                        <div class="btn-glow"></div>
+                        <div class="btn-inner"><span>INICIAR SECUENCIA</span></div>
                     </button>
-                    <p class="hint">SENSOR: La exhibición se detendrá ante cualquier movimiento del mouse.</p>
                 </footer>
             </div>
-
-            <a href="/laboratorio" class="back-link">← ABANDONAR CONTROL ROOM</a>
+            <a href="/laboratorio" class="back-link">← SALIR</a>
         </section>
 
-        <!-- 🖼️ Lienzo de Exhibición (Oculto inicialmente) -->
         <section class="exhibition-view hidden" id="exhibition-view">
             <div id="loading-screen" class="loading-overlay">
                 <div class="loader-content">
                     <div class="spinner"></div>
-                    <p>CALIBRANDO LIENZO 2K...</p>
+                    <p>CALIBRANDO PROPORCIONES...</p>
                 </div>
             </div>
-
             <canvas id="gl-canvas"></canvas>
-            
-            <div class="paspartu-frame" id="frame-overlay">
-                <div class="artwork-inner-shadow"></div>
-            </div>
-
             <div class="art-metadata" id="art-meta">
-                <h2 id="meta-title">Título de la Obra</h2>
+                <h2 id="meta-title"></h2>
                 <p>Javier Mix · 2026</p>
             </div>
-
             <div class="hidden-textures" style="display: none;">
                 {artworks.map((art) => (
                     <img src={art.img} class="hidden-art-data" crossorigin="anonymous" />
@@ -152,29 +117,45 @@ const audioFiles = await getAudioFiles();
 </Layout>
 
 <style>
-    /* ... (CSS anterior) ... */
-    .loading-overlay {
-        position: absolute;
-        inset: 0;
-        background: #000;
-        z-index: 200;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        transition: 1s;
-    }
+    :root { --dash-accent: #dcb14a; --glass: rgba(15, 15, 15, 0.75); }
+    .digital-frame-container { min-height: 100vh; background: #000; display: flex; justify-content: center; align-items: center; overflow: hidden; font-family: 'Inter', sans-serif; }
+    .config-dashboard { max-width: 900px; width: 95%; padding: 4rem; background: var(--glass); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 10; border-radius: 4px; }
+    .status-bar { display: flex; justify-content: space-between; font-size: 0.5rem; letter-spacing: 2px; margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+    .badge { color: var(--dash-accent); border: 1px solid var(--dash-accent); padding: 2px 8px; font-weight: 900; }
+    h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; color: #fff; line-height: 0.9; margin: 0; }
+    h1 span { color: var(--dash-accent); display: block; font-size: 2rem; margin-top: 0.5rem; font-style: italic; }
+    .content-preview-section { margin: 3rem 0; }
+    .section-title { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .section-title label { font-size: 0.6rem; font-weight: 900; color: var(--dash-accent); letter-spacing: 2px; }
+    .section-title .line { flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+    .preview-carousel { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; }
+    .preview-thumb { flex: 0 0 120px; aspect-ratio: 1; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; position: relative; border-radius: 2px; }
+    .preview-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: 0.3s; }
+    .preview-thumb:hover img { opacity: 1; transform: scale(1.1); }
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem; }
+    .control-box { background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+    .label-box span { font-size: 0.65rem; font-weight: 800; color: #999; }
+    .toggle-group { display: flex; gap: 5px; background: #000; padding: 2px; border-radius: 4px; }
+    .toggle-btn { background: transparent; border: none; color: #555; font-size: 0.55rem; font-weight: 900; padding: 6px 12px; cursor: pointer; border-radius: 3px; transition: 0.2s; }
+    .toggle-btn.active { background: #333; color: #fff; }
+    .color-picker { display: flex; gap: 8px; }
+    .color-btn { width: 20px; height: 20px; border-radius: 50%; border: none; cursor: pointer; transition: 0.2s; }
+    .color-btn.active { transform: scale(1.3); box-shadow: 0 0 10px var(--dash-accent); }
+    .config-select { background: transparent; border: none; color: #fff; font-size: 0.7rem; outline: none; font-weight: 800; text-align: right; cursor: pointer; }
+    .btn-launch { width: 100%; background: #fff; padding: 1.5rem; border: none; cursor: pointer; transition: 0.3s; border-radius: 4px; }
+    .btn-inner { font-size: 0.8rem; font-weight: 900; letter-spacing: 5px; color: #000; }
+    .btn-launch:hover { background: var(--dash-accent); transform: translateY(-2px); }
+    .exhibition-view { position: fixed; inset: 0; z-index: 100; background: #000; }
+    .exhibition-view.hidden { display: none; }
+    .loading-overlay { position: absolute; inset: 0; background: #000; z-index: 200; display: flex; justify-content: center; align-items: center; transition: 1s; }
     .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-    .loader-content { text-align: center; }
-    .spinner {
-        width: 40px; height: 40px;
-        border: 2px solid var(--dash-accent);
-        border-top-color: transparent;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 1.5rem;
-    }
+    .spinner { width: 40px; height: 40px; border: 2px solid var(--dash-accent); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loader-content p { font-size: 0.6rem; letter-spacing: 4px; color: var(--dash-accent); }
+    .loader-content p { font-size: 0.6rem; letter-spacing: 4px; color: var(--dash-accent); text-align: center; }
+    .art-metadata { position: absolute; bottom: 4rem; left: 4rem; opacity: 0; transition: 1s; color: #fff; z-index: 10; }
+    .exhibition-view:hover .art-metadata { opacity: 0.7; }
+    .back-link { position: absolute; bottom: -4rem; left: 50%; transform: translateX(-50%); color: #444; text-decoration: none; font-size: 0.6rem; font-weight: 800; letter-spacing: 3px; transition: 0.3s; }
+    .back-link:hover { color: #fff; }
 </style>
 
 <script>
@@ -182,23 +163,15 @@ const audioFiles = await getAudioFiles();
 
     document.addEventListener('astro:page-load', () => {
         const container = document.getElementById('main-container');
-        const artworks = JSON.parse(container?.getAttribute('data-artworks') || '[]');
-        const startBtn = document.getElementById('start-btn');
-        const configPanel = document.getElementById('config-panel');
+        if (!container) return;
+        const artworks = JSON.parse(container.getAttribute('data-artworks') || '[]');
         const exhibitionView = document.getElementById('exhibition-view');
-        const frameOverlay = document.getElementById('frame-overlay');
+        const configPanel = document.getElementById('config-panel');
         const loadingScreen = document.getElementById('loading-screen');
         const glCanvas = document.getElementById('gl-canvas') as HTMLCanvasElement;
         
-        let config = {
-            paspartu: 'on',
-            scaleMode: 'contain',
-            frameStyle: 'white',
-            transition: 'fluid',
-            audio: 'all'
-        };
+        let config = { scaleMode: 'contain', frameStyle: 'white', transition: 'fluid' };
 
-        // 🔘 Config Interaction
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const group = btn.getAttribute('data-config');
@@ -216,138 +189,91 @@ const audioFiles = await getAudioFiles();
             });
         });
 
-        const startExhibition = async () => {
-            soundManager.init();
-            soundManager.enable();
-            if (config.audio === 'all') {
-                soundManager.playMusic('https://admin.javiermix.ar/assets/22503906-6608-4d38-ae0d-fe7999d25216');
-            } else if (config.audio) {
-                soundManager.playMusic(config.audio);
-            }
-
-            if (config.paspartu === 'on') {
-                frameOverlay.classList.add('active');
-                const colors = { white: '#fdfdfd', black: '#111', cream: '#f5f5dc' };
-                frameOverlay.style.borderColor = colors[config.frameStyle];
-            } else {
-                frameOverlay.classList.remove('active');
-            }
-
-            configPanel.classList.add('hidden');
-            exhibitionView.classList.remove('hidden');
-
-            try {
-                if (document.documentElement.requestFullscreen) {
-                    await document.documentElement.requestFullscreen();
-                }
-            } catch (err) { console.warn("FS Blocked"); }
-
+        document.getElementById('start-btn')?.addEventListener('click', async () => {
+            soundManager.init(); soundManager.enable();
+            soundManager.playMusic('https://admin.javiermix.ar/assets/22503906-6608-4d38-ae0d-fe7999d25216');
+            configPanel?.classList.add('hidden');
+            exhibitionView?.classList.remove('hidden');
+            try { if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch(e){}
             initGL();
-        };
+        });
 
-        // --- 🧪 WEBGL ENGINE ---
-        let gl, program, textures = [], currentIndex = 0, nextIndex = 0;
-        let progress = 1, isTransitioning = false;
+        let gl, program, textures = [], currentIndex = 0, nextIndex = 0, progress = 1, isTransitioning = false;
 
-        const vertexShaderSource = `
-            attribute vec2 position;
-            varying vec2 vUv;
-            void main() {
-                vUv = position * 0.5 + 0.5;
-                vUv.y = 1.0 - vUv.y;
-                gl_Position = vec4(position, 0.0, 1.0);
-            }
-        `;
-
+        const vertexShaderSource = `attribute vec2 position; varying vec2 vUv; void main() { vUv = position * 0.5 + 0.5; vUv.y = 1.0 - vUv.y; gl_Position = vec4(position, 0.0, 1.0); }`;
         const fragmentShaderSource = `
             precision highp float;
             varying vec2 vUv;
-            uniform sampler2D uTexture1;
-            uniform sampler2D uTexture2;
-            uniform float uProgress;
-            uniform float uTime;
-            uniform vec2 uResolution;
-            uniform vec2 uTexRes1;
-            uniform vec2 uTexRes2;
-            uniform float uScaleMode; // 0: contain, 1: cover
+            uniform sampler2D uTexture1, uTexture2;
+            uniform float uProgress, uTime, uScaleMode;
+            uniform vec2 uResolution, uTexRes1, uTexRes2;
+            uniform vec3 uMatColor;
 
-            vec2 getUv(vec2 uv, vec2 res, vec2 texRes, float mode) {
+            vec2 getMuseumUv(vec2 uv, vec2 res, vec2 texRes, float mode) {
                 float s = res.x / res.y;
                 float t = texRes.x / texRes.y;
-                if (mode > 0.5) { // Cover
+                float margin = 0.15;
+                if (mode > 0.5) { // FILL
                     if (s > t) return vec2(uv.x, uv.y * t / s + 0.5 * (1.0 - t / s));
                     else return vec2(uv.x * s / t + 0.5 * (1.0 - s / t), uv.y);
-                } else { // Contain
-                    if (s > t) return vec2(uv.x * s / t + 0.5 * (1.0 - s / t), uv.y);
-                    else return vec2(uv.x, uv.y * t / s + 0.5 * (1.0 - t / s));
+                } else { // MUSEO (FIT)
+                    if (s > t) {
+                        float scale = (1.0 - margin * 2.0) * (t / s);
+                        float offY = margin * 0.4; // Weighted bottom
+                        return vec2((uv.x - 0.5) / (1.0 - margin * 2.0) + 0.5, (uv.y - 0.5 - offY) / scale + 0.5);
+                    } else {
+                        float scale = (1.0 - margin * 2.0);
+                        return vec2((uv.x - 0.5) / (scale * s / t) + 0.5, (uv.y - 0.5) / scale + 0.5);
+                    }
                 }
             }
 
             void main() {
-                vec2 uv1 = getUv(vUv, uResolution, uTexRes1, uScaleMode);
-                vec2 uv2 = getUv(vUv, uResolution, uTexRes2, uScaleMode);
-                
-                float distortion = sin(vUv.y * 10.0 + uTime) * 0.02 * (1.0 - uProgress);
-                vec4 color1 = texture2D(uTexture1, uv1 + distortion * uProgress);
-                vec4 color2 = texture2D(uTexture2, uv2 - distortion * (1.0 - uProgress));
-
-                // Black borders for contain mode
+                vec2 uv1 = getMuseumUv(vUv, uResolution, uTexRes1, uScaleMode);
+                vec2 uv2 = getMuseumUv(vUv, uResolution, uTexRes2, uScaleMode);
+                float d = sin(vUv.y * 15.0 + uTime) * 0.01 * (1.0 - uProgress);
+                vec4 c1 = texture2D(uTexture1, uv1 + d * uProgress);
+                vec4 c2 = texture2D(uTexture2, uv2 - d * (1.0 - uProgress));
                 if (uScaleMode < 0.5) {
-                   if (uv1.x < 0.0 || uv1.x > 1.0 || uv1.y < 0.0 || uv1.y > 1.0) color1 = vec4(0.0,0.0,0.0,1.0);
-                   if (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0) color2 = vec4(0.0,0.0,0.0,1.0);
+                    float noise = fract(sin(dot(vUv, vec2(12.9898,78.233))) * 43758.5453) * 0.03;
+                    if (uv1.x < 0.0 || uv1.x > 1.0 || uv1.y < 0.0 || uv1.y > 1.0) c1 = vec4(uMatColor + noise, 1.0);
+                    if (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0) c2 = vec4(uMatColor + noise, 1.0);
                 }
-
-                gl_FragColor = mix(color1, color2, smoothstep(0.0, 1.0, uProgress));
+                gl_FragColor = mix(c1, c2, smoothstep(0.0, 1.0, uProgress));
             }
         `;
 
         function initGL() {
-            gl = glCanvas.getContext('webgl', { antialias: true, alpha: false });
-            if (!gl) return;
-
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-
+            gl = glCanvas.getContext('webgl', { antialias: true }); if (!gl) return;
+            resize();
+            window.addEventListener('resize', resize);
             const vs = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
             const fs = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
             program = createProgram(gl, vs, fs);
-
-            const positionBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            const posBuf = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
-
-            const positionLocation = gl.getAttribLocation(program, "position");
-            gl.enableVertexAttribArray(positionLocation);
-            gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
+            const posLoc = gl.getAttribLocation(program, "position");
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
             loadTextures().then(() => {
-                loadingScreen.classList.add('hidden');
+                loadingScreen?.classList.add('hidden');
                 render();
-                setInterval(() => {
-                    if (!isTransitioning && !exhibitionView.classList.contains('hidden')) startTransition();
-                }, 10000); // 10s por obra
+                setInterval(() => { if(!isTransitioning && !exhibitionView?.classList.contains('hidden')) startTransition(); }, 12000);
             });
         }
 
-        function resizeCanvas() {
-            const dpr = Math.min(window.devicePixelRatio || 1, 2); // Cap at 2 for performance
-            glCanvas.width = window.innerWidth * dpr;
-            glCanvas.height = window.innerHeight * dpr;
-            if (gl) gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            glCanvas.width = window.innerWidth * dpr; glCanvas.height = window.innerHeight * dpr;
+            if(gl) gl.viewport(0,0, glCanvas.width, glCanvas.height);
         }
 
         async function loadTextures() {
-            const artworkImages = Array.from(document.querySelectorAll('.hidden-art-data'));
-            const promises = artworkImages.map((img: any) => {
-                return new Promise((resolve) => {
-                    if (img.complete) resolve(img);
-                    else img.onload = () => resolve(img);
-                });
-            });
-
+            const imgs = Array.from(document.querySelectorAll('.hidden-art-data'));
+            const promises = imgs.map((img: any) => new Promise(res => { if(img.complete) res(img); else img.onload = () => res(img); }));
             await Promise.all(promises);
-
-            artworkImages.forEach((img: any) => {
+            imgs.forEach((img: any) => {
                 const tex = gl.createTexture();
                 gl.bindTexture(gl.TEXTURE_2D, tex);
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
@@ -359,86 +285,41 @@ const audioFiles = await getAudioFiles();
         }
 
         function startTransition() {
-            isTransitioning = true;
-            progress = 0;
+            isTransitioning = true; progress = 0;
             nextIndex = (currentIndex + 1) % textures.length;
-            const metaTitle = document.getElementById('meta-title');
-            if (metaTitle) metaTitle.innerText = artworks[nextIndex].title;
+            const mt = document.getElementById('meta-title');
+            if(mt) mt.innerText = artworks[nextIndex].title;
         }
 
         function render() {
-            if (exhibitionView.classList.contains('hidden')) return;
-
-            gl.clear(gl.COLOR_BUFFER_BIT);
+            if(exhibitionView?.classList.contains('hidden')) return;
             gl.useProgram(program);
-
             gl.uniform2f(gl.getUniformLocation(program, "uResolution"), glCanvas.width, glCanvas.height);
             gl.uniform1f(gl.getUniformLocation(program, "uTime"), Date.now() * 0.001);
             gl.uniform1f(gl.getUniformLocation(program, "uProgress"), progress);
             gl.uniform1f(gl.getUniformLocation(program, "uScaleMode"), config.scaleMode === 'cover' ? 1.0 : 0.0);
-
-            const t1 = textures[currentIndex];
-            const t2 = textures[nextIndex];
-
+            const colors = { white: [0.95, 0.95, 0.95], black: [0.1, 0.1, 0.1], cream: [0.9, 0.88, 0.83] };
+            const c = colors[config.frameStyle];
+            gl.uniform3f(gl.getUniformLocation(program, "uMatColor"), c[0], c[1], c[2]);
+            const t1 = textures[currentIndex], t2 = textures[nextIndex];
             gl.uniform2f(gl.getUniformLocation(program, "uTexRes1"), t1.width, t1.height);
             gl.uniform2f(gl.getUniformLocation(program, "uTexRes2"), t2.width, t2.height);
-
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, t1.tex);
-            gl.uniform1i(gl.getUniformLocation(program, "uTexture1"), 0);
-
-            gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, t2.tex);
-            gl.uniform1i(gl.getUniformLocation(program, "uTexture2"), 1);
-
+            gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t1.tex); gl.uniform1i(gl.getUniformLocation(program, "uTexture1"), 0);
+            gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, t2.tex); gl.uniform1i(gl.getUniformLocation(program, "uTexture2"), 1);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-            if (isTransitioning) {
-                progress += 0.003; // Transición aún más lenta
-                if (progress >= 1.0) {
-                    progress = 1.0;
-                    isTransitioning = false;
-                    currentIndex = nextIndex;
-                }
-            }
+            if (isTransitioning) { progress += 0.002; if(progress >= 1.0){ progress = 1.0; isTransitioning = false; currentIndex = nextIndex; } }
             requestAnimationFrame(render);
         }
 
-        function createShader(gl, type, source) {
-            const shader = gl.createShader(type);
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(shader));
-            return shader;
-        }
-
-        function createProgram(gl, vs, fs) {
-            const program = gl.createProgram();
-            gl.attachShader(program, vs);
-            gl.attachShader(program, fs);
-            gl.linkProgram(program);
-            return program;
-        }
-
-        startBtn?.addEventListener('click', startExhibition);
+        function createShader(gl, type, source) { const s = gl.createShader(type); gl.shaderSource(s, source); gl.compileShader(s); return s; }
+        function createProgram(gl, vs, fs) { const p = gl.createProgram(); gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p); return p; }
 
         let lastMove = Date.now();
         window.addEventListener('mousemove', () => {
-            if (exhibitionView.classList.contains('hidden')) return;
-            if (Date.now() - lastMove > 1000) {
-                if (document.fullscreenElement) document.exitFullscreen();
-                exhibitionView.classList.add('hidden');
-                configPanel.classList.remove('hidden');
-                soundManager.stopMusic();
-                lastMove = Date.now();
-            }
-        });
-
-        document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement) {
-                exhibitionView.classList.add('hidden');
-                configPanel.classList.remove('hidden');
-                soundManager.stopMusic();
+            if(exhibitionView?.classList.contains('hidden')) return;
+            if(Date.now() - lastMove > 1000){
+                if(document.fullscreenElement) document.exitFullscreen();
+                exhibitionView?.classList.add('hidden'); configPanel?.classList.remove('hidden'); soundManager.stopMusic(); lastMove = Date.now();
             }
         });
     });
