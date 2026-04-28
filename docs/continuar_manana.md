@@ -1,46 +1,47 @@
-# 🚀 Gabinete de Experimentación: Informe de Cierre (2026-04-24)
+# 🚀 Gabinete de Experimentación: Informe de Cierre (2026-04-27)
 
-Hoy hemos transformado el Laboratorio de JavierMix en una suite de experiencias inmersivas de alta gama.
+Hoy hemos elevado el **Experimento 05: Digital Frame (Control Room)** a un estándar de exhibición profesional.
 
 ## ✅ Logros de Hoy
 
-### 1. Experimento 01: Infinity Gallery 3D (`profundidad.astro`)
-- **Efecto de Profundidad Real**: Navegación en el eje Z controlada por scroll.
-- **Atmósfera Lumínica**: Horizonte de luz amarilla difusa y motor de partículas (polvo estelar) en Canvas.
-- **Escape Periférico**: Calibrado el desvío lateral a 100vw con inclinación de 15° para evitar colisiones visuales.
-- **Proximidad Fine-Art**: Umbral de 250px para permitir observar detalles antes del desvanecimiento.
+### 1. Motor de Exhibición Pro (`cuadro-digital.astro`)
+- **Algoritmos de Transición**: Implementado sistema dinámico con 4 efectos:
+    - *Luma Wipe*: Transición basada en brillo.
+    - *Liquid Displacement*: Fluidez orgánica.
+    - *Soft Crossfade*: Disolvencia clásica.
+    - *Glitch Reveal*: Estética técnica/digital.
+- **Control de Tiempo**: Añadido temporizador dual (Slider + Input Numérico) para exposiciones precisas de hasta 300s.
+- **Modos de Lienzo Pro**: Refinado el "Modo Museo" con un **bisel negro (Monitor Bezel)** y paspartú ajustable para simular la profundidad de una pantalla física.
 
-### 2. Experimento 02: Sincronía de Espacios (`contexto.astro`)
-- **Migración Modular**: Se movió el experimento de "Obra vs Ambiente" a su propia página para limpiar el portal.
-- **Preservación**: Mantiene la lógica de hover comparativo (Obra/Habitación) con assets optimizados de Directus.
+### 2. Capas de Información (Overlay)
+- **Reloj Dual**: Implementación de relojes Digital y Analógico (Canvas) con renderizado en tiempo real.
+- **Calendario Integrado**: Opción de mostrar la fecha actual en formato elegante ("lunes, 27 de abril").
+- **Visibilidad Fine-Art**: Optimización de `z-index` y `text-shadow` para asegurar legibilidad sobre cualquier obra.
 
-### 3. Experimento 03: Royal Gallery (`galeria-real.astro`)
-- **Pared Infinita**: Desplazamiento horizontal (Traveling) de alta fluidez.
-- **Iluminación de Museo**: Focos cenitales con sombras proyectadas y rebote de luz dinámico.
-- **Hiper-Realismo de Texturas**: Implementado motor de ruido fractal para simular Mármol Carrara y Ladrillo Urban HD.
-- **Integración Comercial**: Añadido sistema de botones "COLECCIONAR" vinculados directamente a la tienda.
-- **Optimización PRO**: Reducción de carga mediante dibujo de Canvas on-demand y assets WebP de 900px.
+### 3. Paleta de Paspartú
+- **Nuevos Tonos**: Incorporación de "Azul Profundo" (Midnight) y "Bordó Oscuro" (Deep Wine).
+- **Texturizado Fractal**: Mejora en el motor de ruido para simular la porosidad del papel de alta gama.
 
 ---
 
 ## 📅 Hoja de Ruta para Mañana
 
-### 1. Refinamiento de la Royal Gallery
-- **Texturas Extra**: Explorar estilos como "Velvet Red" (Terciopelo) o "Exposed Concrete" (Hormigón Visto).
-- **Interacción Sonora**: Evaluar la adición de sonidos ambientales tenues (pasos en galería, eco sutil).
+### 1. Interacción Avanzada
+- **Control Remoto**: Evaluar el uso de las flechas del teclado o clics laterales para forzar la transición manual sin salir de la exhibición.
+- **Info Modal**: Botón discreto para ver la ficha técnica completa de la obra actual sin romper la inmersión.
 
-### 2. Flujo de Conversión
-- **Checkout Express**: Asegurar que el botón "Coleccionar" de los experimentos abra un modal de compra rápida sin salir de la experiencia inmersiva.
-
-### 3. Experimento 04 (Brainstorming)
-- **Concepto "Fluidez"**: Una galería donde las obras floten como en un fluido líquido, reaccionando al movimiento del ratón con distorsión tipo lente.
+### 2. Audio Inmersivo
+- **Sincronía**: Ajustar el volumen dinámico según el tipo de transición seleccionada.
 
 ---
 
 ## 🛠️ Comando de Inicio Rápido (Mañana)
-Para verificar el estado actual en el VPS:
+Para desplegar los últimos ajustes en el VPS:
 ```bash
-cd /opt/javiermix/web_0504
-git pull origin master
-docker compose up -d --build web_javiermix
+git add .
+git commit -m "Cierre de jornada: Digital Frame Pro Suite"
+git push origin master
+
+# En el VPS:
+cd /opt/javiermix/web_0504 && git pull origin master && docker compose up -d --build web_javiermix
 ```
