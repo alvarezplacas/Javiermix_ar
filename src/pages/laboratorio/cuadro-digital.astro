@@ -92,19 +92,22 @@ const audioFiles = await getAudioFiles();
                     <div class="config-group">
                         <label>TIEMPO Y ELEMENTOS</label>
                         <div class="control-box">
-                            <div class="label-box"><span>Exposición</span></div>
-                            <div class="range-container">
-                                <input type="range" id="exposure-slider" min="5" max="60" value="12" class="config-range" />
-                                <span id="exposure-val" class="val-display">12s</span>
+                            <div class="label-box"><span>Exposición (seg)</span></div>
+                            <div class="input-sync-group">
+                                <input type="range" id="exposure-slider" min="5" max="300" value="12" class="config-range" />
+                                <input type="number" id="exposure-num" min="5" max="300" value="12" class="config-num-input" />
                             </div>
                         </div>
                         <div class="control-box mt-1">
-                            <div class="label-box"><span>Reloj</span></div>
-                            <select id="clock-select" class="config-select">
-                                <option value="none">OCULTO</option>
-                                <option value="digital">DIGITAL</option>
-                                <option value="analog">ANALÓGICO</option>
-                            </select>
+                            <div class="label-box"><span>Reloj / Fecha</span></div>
+                            <div class="multi-toggle">
+                                <select id="clock-select" class="config-select">
+                                    <option value="none">SIN RELOJ</option>
+                                    <option value="digital">DIGITAL</option>
+                                    <option value="analog">ANALÓGICO</option>
+                                </select>
+                                <button id="date-toggle" class="mini-toggle" data-val="false">FECHA OFF</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -133,7 +136,8 @@ const audioFiles = await getAudioFiles();
             
             <div id="clock-overlay" class="clock-overlay hidden">
                 <div id="digital-clock" class="digital-clock"></div>
-                <canvas id="analog-clock" class="analog-clock" width="200" height="200"></canvas>
+                <div id="date-display" class="date-display"></div>
+                <canvas id="analog-clock" class="analog-clock" width="220" height="220"></canvas>
             </div>
             <div class="hidden-textures" style="display: none;">
                 {artworks.map((art) => (
@@ -147,7 +151,7 @@ const audioFiles = await getAudioFiles();
 <style>
     :root { --dash-accent: #dcb14a; --glass: rgba(15, 15, 15, 0.75); }
     .digital-frame-container { min-height: 100vh; background: #000; display: flex; justify-content: center; align-items: center; overflow: hidden; font-family: 'Inter', sans-serif; }
-    .config-dashboard { max-width: 900px; width: 95%; padding: 4rem; background: var(--glass); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 10; border-radius: 4px; }
+    .config-dashboard { max-width: 1200px; width: 92%; padding: 4rem; background: var(--glass); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 10; border-radius: 4px; }
     .status-bar { display: flex; justify-content: space-between; font-size: 0.5rem; letter-spacing: 2px; margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
     .badge { color: var(--dash-accent); border: 1px solid var(--dash-accent); padding: 2px 8px; font-weight: 900; }
     h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; color: #fff; line-height: 0.9; margin: 0; }
@@ -160,7 +164,7 @@ const audioFiles = await getAudioFiles();
     .preview-thumb { flex: 0 0 120px; aspect-ratio: 1; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; position: relative; border-radius: 2px; }
     .preview-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: 0.3s; }
     .preview-thumb:hover img { opacity: 1; transform: scale(1.1); }
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem; }
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; margin-bottom: 3rem; }
     .control-box { background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
     .label-box span { font-size: 0.65rem; font-weight: 800; color: #999; }
     .toggle-group { display: flex; gap: 5px; background: #000; padding: 2px; border-radius: 4px; }
@@ -186,15 +190,18 @@ const audioFiles = await getAudioFiles();
     .back-link:hover { color: #fff; }
 
     /* New UI Styles */
-    .range-container { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end; }
-    .config-range { -webkit-appearance: none; width: 80px; height: 2px; background: #333; outline: none; }
-    .config-range::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--dash-accent); border-radius: 50%; cursor: pointer; }
-    .val-display { font-size: 0.6rem; color: #fff; font-weight: 900; min-width: 25px; text-align: right; }
+    .input-sync-group { display: flex; align-items: center; gap: 15px; }
+    .config-num-input { background: #000; border: 1px solid #333; color: var(--dash-accent); font-size: 0.7rem; font-weight: 900; width: 50px; padding: 4px; text-align: center; border-radius: 2px; outline: none; }
+    .config-num-input:focus { border-color: var(--dash-accent); }
+    .multi-toggle { display: flex; align-items: center; gap: 10px; }
+    .mini-toggle { background: #222; border: 1px solid #333; color: #666; font-size: 0.5rem; font-weight: 900; padding: 4px 8px; cursor: pointer; border-radius: 2px; transition: 0.2s; }
+    .mini-toggle.active { background: var(--dash-accent); color: #000; border-color: var(--dash-accent); }
     
-    .clock-overlay { position: absolute; top: 4rem; right: 4rem; color: #fff; z-index: 20; pointer-events: none; opacity: 0.8; }
+    .clock-overlay { position: absolute; top: 4rem; right: 4rem; color: #fff; z-index: 500; pointer-events: none; opacity: 1; display: flex; flex-direction: column; align-items: flex-end; }
     .clock-overlay.hidden { display: none; }
-    .digital-clock { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 200; letter-spacing: 2px; }
-    .analog-clock { display: none; width: 150px; height: 150px; }
+    .digital-clock { font-family: 'Inter', sans-serif; font-size: 4rem; font-weight: 200; letter-spacing: 6px; text-shadow: 0 0 30px rgba(220, 177, 74, 0.4); color: #fff; line-height: 1; }
+    .date-display { font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 400; letter-spacing: 4px; color: var(--dash-accent); margin-top: 0.5rem; text-transform: uppercase; }
+    .analog-clock { display: none; width: 220px; height: 220px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
     .analog-clock.active { display: block; }
     .digital-clock.hidden { display: none; }
 </style>
@@ -221,10 +228,23 @@ const audioFiles = await getAudioFiles();
             frameStyle: 'white', 
             transitionType: 0, 
             exposureTime: 12,
-            clockMode: 'none'
+            clockMode: 'none',
+            showDate: false
         };
 
         // UI Event Listeners
+        const exposureSlider = document.getElementById('exposure-slider') as HTMLInputElement;
+        const exposureNum = document.getElementById('exposure-num') as HTMLInputElement;
+        
+        const syncExposure = (val) => {
+            config.exposureTime = parseInt(val);
+            if (exposureSlider) exposureSlider.value = val;
+            if (exposureNum) exposureNum.value = val;
+        };
+
+        exposureSlider?.addEventListener('input', (e) => syncExposure((e.target as HTMLInputElement).value));
+        exposureNum?.addEventListener('input', (e) => syncExposure((e.target as HTMLInputElement).value));
+
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const group = btn.getAttribute('data-config');
@@ -243,12 +263,11 @@ const audioFiles = await getAudioFiles();
             });
         });
 
-        const exposureSlider = document.getElementById('exposure-slider') as HTMLInputElement;
-        const exposureVal = document.getElementById('exposure-val');
-        exposureSlider?.addEventListener('input', (e) => {
-            const val = (e.target as HTMLInputElement).value;
-            config.exposureTime = parseInt(val);
-            if(exposureVal) exposureVal.innerText = val + 's';
+        const dateToggle = document.getElementById('date-toggle');
+        dateToggle?.addEventListener('click', () => {
+            config.showDate = !config.showDate;
+            dateToggle.classList.toggle('active');
+            dateToggle.innerText = config.showDate ? 'FECHA ON' : 'FECHA OFF';
         });
 
         const transitionSelect = document.getElementById('transition-select') as HTMLSelectElement;
@@ -275,9 +294,11 @@ const audioFiles = await getAudioFiles();
                 if (config.clockMode === 'digital') {
                     digitalClock?.classList.remove('hidden');
                     analogCanvas?.classList.remove('active');
+                    analogCanvas?.style.setProperty('display', 'none');
                 } else {
                     digitalClock?.classList.add('hidden');
                     analogCanvas?.classList.add('active');
+                    analogCanvas?.style.setProperty('display', 'block');
                 }
             } else {
                 clockOverlay?.classList.add('hidden');
@@ -428,6 +449,16 @@ const audioFiles = await getAudioFiles();
 
         function updateClock() {
             const now = new Date();
+            const clockOverlay = document.getElementById('clock-overlay');
+            const dateDisplay = document.getElementById('date-display');
+
+            if (config.showDate && dateDisplay) {
+                dateDisplay.innerText = now.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+                dateDisplay.style.display = 'block';
+            } else if (dateDisplay) {
+                dateDisplay.style.display = 'none';
+            }
+
             if (config.clockMode === 'digital' && digitalClock) {
                 digitalClock.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             } else if (config.clockMode === 'analog' && analogCanvas) {
