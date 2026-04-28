@@ -51,16 +51,18 @@ const audioFiles = await getAudioFiles();
                         <div class="control-box">
                             <div class="label-box"><span>Modo de Encuadre</span></div>
                             <div class="toggle-group">
-                                <button class="toggle-btn active" data-config="scale-mode" data-val="contain">MUSEO (FIT)</button>
-                                <button class="toggle-btn" data-config="scale-mode" data-val="cover">LLENO (FILL)</button>
+                                <button class="toggle-btn active" data-config="scale-mode" data-val="contain">MUSEO</button>
+                                <button class="toggle-btn" data-config="scale-mode" data-val="cover">LLENO</button>
+                                <button class="toggle-btn" data-config="scale-mode" data-val="top">TOP-ANCHOR</button>
                             </div>
                         </div>
                         <div class="control-box mt-1">
                             <div class="label-box"><span>Tono Paspartú</span></div>
                             <div class="color-picker">
-                                <button class="color-btn active" style="background: #f4f4f4;" data-config="frame-style" data-val="white"></button>
-                                <button class="color-btn" style="background: #1a1a1a;" data-config="frame-style" data-val="black"></button>
-                                <button class="color-btn" style="background: #e8e3d5;" data-config="frame-style" data-val="cream"></button>
+                                <button class="color-btn active" style="background: #f4f4f4;" data-config="frame-style" data-val="white" title="Blanco Galería"></button>
+                                <button class="color-btn" style="background: #1a1a1a;" data-config="frame-style" data-val="black" title="Negro Absoluto"></button>
+                                <button class="color-btn" style="background: #e8e3d5;" data-config="frame-style" data-val="cream" title="Crema Lino"></button>
+                                <button class="color-btn" style="background: #a45a4a;" data-config="frame-style" data-val="terracota" title="Terracota Museo"></button>
                             </div>
                         </div>
                     </div>
@@ -212,24 +214,26 @@ const audioFiles = await getAudioFiles();
             vec2 getMuseumUv(vec2 uv, vec2 res, vec2 texRes, float mode) {
                 float screenAspect = res.x / res.y;
                 float texAspect = texRes.x / texRes.y;
-                float margin = 0.12; // Margen de seguridad para museo
+                float margin = 0.12;
 
-                if (mode > 0.5) { // MODO COVER (Llenado)
+                if (mode > 1.5) { // MODO TOP-ANCHOR
+                    float scale = screenAspect / texAspect;
+                    vec2 topUv = uv;
+                    // Ajustamos para que siempre llene el ancho
+                    topUv.x = (uv.x - 0.5) * (screenAspect / texAspect) + 0.5;
+                    topUv.y = uv.y * (screenAspect / texAspect); 
+                    return topUv;
+                } else if (mode > 0.5) { // MODO COVER (Llenado Centrado)
                     vec2 targetUv = uv;
                     if (screenAspect > texAspect) {
-                        float scale = texAspect / screenAspect;
-                        targetUv.y = (uv.y - 0.5) * scale + 0.5;
+                        targetUv.y = (uv.y - 0.5) * (texAspect / screenAspect) + 0.5;
                     } else {
-                        float scale = screenAspect / texAspect;
-                        targetUv.x = (uv.x - 0.5) * scale + 0.5;
+                        targetUv.x = (uv.x - 0.5) * (screenAspect / texAspect) + 0.5;
                     }
                     return targetUv;
-                } else { // MODO CONTAIN (Museo con Paspartú)
-                    // 1. Aplicamos margen y corregimos el centro óptico (un poco hacia arriba)
+                } else { // MODO MUSEO (Contain)
                     vec2 centeredUv = (uv - 0.5) / (1.0 - margin * 2.0) + 0.5;
-                    centeredUv.y -= 0.03; // Peso visual inferior (Museum weighting)
-
-                    // 2. Calculamos el ajuste de proporción sin deformar
+                    centeredUv.y -= 0.03; 
                     if (screenAspect > texAspect) {
                         centeredUv.x = (centeredUv.x - 0.5) * (screenAspect / texAspect) + 0.5;
                     } else {
@@ -245,10 +249,15 @@ const audioFiles = await getAudioFiles();
                 float d = sin(vUv.y * 15.0 + uTime) * 0.01 * (1.0 - uProgress);
                 vec4 c1 = texture2D(uTexture1, uv1 + d * uProgress);
                 vec4 c2 = texture2D(uTexture2, uv2 - d * (1.0 - uProgress));
-                if (uScaleMode < 0.5) {
+                
+                // Paspartú Logic
+                bool isBg1 = (uv1.x < 0.0 || uv1.x > 1.0 || uv1.y < 0.0 || uv1.y > 1.0);
+                bool isBg2 = (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0);
+                
+                if (uScaleMode < 0.5 || uScaleMode > 1.5) {
                     float noise = fract(sin(dot(vUv, vec2(12.9898,78.233))) * 43758.5453) * 0.03;
-                    if (uv1.x < 0.0 || uv1.x > 1.0 || uv1.y < 0.0 || uv1.y > 1.0) c1 = vec4(uMatColor + noise, 1.0);
-                    if (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0) c2 = vec4(uMatColor + noise, 1.0);
+                    if (isBg1) c1 = vec4(uMatColor + noise, 1.0);
+                    if (isBg2) c2 = vec4(uMatColor + noise, 1.0);
                 }
                 gl_FragColor = mix(c1, c2, smoothstep(0.0, 1.0, uProgress));
             }
@@ -308,10 +317,21 @@ const audioFiles = await getAudioFiles();
             gl.uniform2f(gl.getUniformLocation(program, "uResolution"), glCanvas.width, glCanvas.height);
             gl.uniform1f(gl.getUniformLocation(program, "uTime"), Date.now() * 0.001);
             gl.uniform1f(gl.getUniformLocation(program, "uProgress"), progress);
-            gl.uniform1f(gl.getUniformLocation(program, "uScaleMode"), config.scaleMode === 'cover' ? 1.0 : 0.0);
-            const colors = { white: [0.95, 0.95, 0.95], black: [0.1, 0.1, 0.1], cream: [0.9, 0.88, 0.83] };
+            
+            let scaleVal = 0.0;
+            if (config.scaleMode === 'cover') scaleVal = 1.0;
+            if (config.scaleMode === 'top') scaleVal = 2.0;
+            gl.uniform1f(gl.getUniformLocation(program, "uScaleMode"), scaleVal);
+
+            const colors = { 
+                white: [0.95, 0.95, 0.95], 
+                black: [0.08, 0.08, 0.08], 
+                cream: [0.91, 0.89, 0.83],
+                terracota: [0.64, 0.35, 0.29]
+            };
             const c = colors[config.frameStyle];
             gl.uniform3f(gl.getUniformLocation(program, "uMatColor"), c[0], c[1], c[2]);
+            
             const t1 = textures[currentIndex], t2 = textures[nextIndex];
             gl.uniform2f(gl.getUniformLocation(program, "uTexRes1"), t1.width, t1.height);
             gl.uniform2f(gl.getUniformLocation(program, "uTexRes2"), t2.width, t2.height);
