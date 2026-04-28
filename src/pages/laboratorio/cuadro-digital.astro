@@ -63,6 +63,8 @@ const audioFiles = await getAudioFiles();
                                 <button class="color-btn" style="background: #1a1a1a;" data-config="frame-style" data-val="black" title="Negro Absoluto"></button>
                                 <button class="color-btn" style="background: #e8e3d5;" data-config="frame-style" data-val="cream" title="Crema Lino"></button>
                                 <button class="color-btn" style="background: #a45a4a;" data-config="frame-style" data-val="terracota" title="Terracota Museo"></button>
+                                <button class="color-btn" style="background: #0a1a2f;" data-config="frame-style" data-val="deepblue" title="Azul Profundo"></button>
+                                <button class="color-btn" style="background: #3d0c11;" data-config="frame-style" data-val="burgundy" title="Bordó Oscuro"></button>
                             </div>
                         </div>
                     </div>
@@ -513,7 +515,14 @@ const audioFiles = await getAudioFiles();
             if (config.scaleMode === 'top') scaleVal = 2.0;
             gl.uniform1f(gl.getUniformLocation(program, "uScaleMode"), scaleVal);
 
-            const colors = { white: [0.95,0.95,0.95], black: [0.08,0.08,0.08], cream: [0.91,0.89,0.83], terracota: [0.64,0.35,0.29] };
+            const colors = { 
+                white: [0.95,0.95,0.95], 
+                black: [0.08,0.08,0.08], 
+                cream: [0.91,0.89,0.83], 
+                terracota: [0.64,0.35,0.29],
+                deepblue: [0.04, 0.10, 0.18],
+                burgundy: [0.24, 0.05, 0.07]
+            };
             const c = colors[config.frameStyle];
             gl.uniform3f(gl.getUniformLocation(program, "uMatColor"), c[0], c[1], c[2]);
             
