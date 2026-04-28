@@ -210,21 +210,32 @@ const audioFiles = await getAudioFiles();
             uniform vec3 uMatColor;
 
             vec2 getMuseumUv(vec2 uv, vec2 res, vec2 texRes, float mode) {
-                float s = res.x / res.y;
-                float t = texRes.x / texRes.y;
-                float margin = 0.15;
-                if (mode > 0.5) { // FILL
-                    if (s > t) return vec2(uv.x, uv.y * t / s + 0.5 * (1.0 - t / s));
-                    else return vec2(uv.x * s / t + 0.5 * (1.0 - s / t), uv.y);
-                } else { // MUSEO (FIT)
-                    if (s > t) {
-                        float scale = (1.0 - margin * 2.0) * (t / s);
-                        float offY = margin * 0.4; // Weighted bottom
-                        return vec2((uv.x - 0.5) / (1.0 - margin * 2.0) + 0.5, (uv.y - 0.5 - offY) / scale + 0.5);
+                float screenAspect = res.x / res.y;
+                float texAspect = texRes.x / texRes.y;
+                float margin = 0.12; // Margen de seguridad para museo
+
+                if (mode > 0.5) { // MODO COVER (Llenado)
+                    vec2 targetUv = uv;
+                    if (screenAspect > texAspect) {
+                        float scale = texAspect / screenAspect;
+                        targetUv.y = (uv.y - 0.5) * scale + 0.5;
                     } else {
-                        float scale = (1.0 - margin * 2.0);
-                        return vec2((uv.x - 0.5) / (scale * s / t) + 0.5, (uv.y - 0.5) / scale + 0.5);
+                        float scale = screenAspect / texAspect;
+                        targetUv.x = (uv.x - 0.5) * scale + 0.5;
                     }
+                    return targetUv;
+                } else { // MODO CONTAIN (Museo con Paspartú)
+                    // 1. Aplicamos margen y corregimos el centro óptico (un poco hacia arriba)
+                    vec2 centeredUv = (uv - 0.5) / (1.0 - margin * 2.0) + 0.5;
+                    centeredUv.y -= 0.03; // Peso visual inferior (Museum weighting)
+
+                    // 2. Calculamos el ajuste de proporción sin deformar
+                    if (screenAspect > texAspect) {
+                        centeredUv.x = (centeredUv.x - 0.5) * (screenAspect / texAspect) + 0.5;
+                    } else {
+                        centeredUv.y = (centeredUv.y - 0.5) * (texAspect / screenAspect) + 0.5;
+                    }
+                    return centeredUv;
                 }
             }
 
