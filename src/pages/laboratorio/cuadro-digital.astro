@@ -72,8 +72,10 @@ const audioFiles = await getAudioFiles();
                         <div class="control-box">
                             <div class="label-box"><span>Algoritmo</span></div>
                             <select id="transition-select" class="config-select">
-                                <option value="fluid">LIQUID DISPLACEMENT</option>
-                                <option value="luma">LUMA TRANSITION</option>
+                                <option value="0">LUMA TRANSITION</option>
+                                <option value="1">LIQUID DISPLACEMENT</option>
+                                <option value="2">SOFT CROSSFADE</option>
+                                <option value="3">GLITCH REVEAL</option>
                             </select>
                         </div>
                         <div class="control-box mt-1">
@@ -83,6 +85,25 @@ const audioFiles = await getAudioFiles();
                                 {audioFiles.map((audio: any) => (
                                     <option value={getAssetUrl(audio.id, { raw: true })}>{audio.title || "Paisaje Sonoro"}</option>
                                 ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="config-group">
+                        <label>TIEMPO Y ELEMENTOS</label>
+                        <div class="control-box">
+                            <div class="label-box"><span>Exposición</span></div>
+                            <div class="range-container">
+                                <input type="range" id="exposure-slider" min="5" max="60" value="12" class="config-range" />
+                                <span id="exposure-val" class="val-display">12s</span>
+                            </div>
+                        </div>
+                        <div class="control-box mt-1">
+                            <div class="label-box"><span>Reloj</span></div>
+                            <select id="clock-select" class="config-select">
+                                <option value="none">OCULTO</option>
+                                <option value="digital">DIGITAL</option>
+                                <option value="analog">ANALÓGICO</option>
                             </select>
                         </div>
                     </div>
@@ -108,6 +129,11 @@ const audioFiles = await getAudioFiles();
             <div class="art-metadata" id="art-meta">
                 <h2 id="meta-title"></h2>
                 <p>Javier Mix · 2026</p>
+            </div>
+            
+            <div id="clock-overlay" class="clock-overlay hidden">
+                <div id="digital-clock" class="digital-clock"></div>
+                <canvas id="analog-clock" class="analog-clock" width="200" height="200"></canvas>
             </div>
             <div class="hidden-textures" style="display: none;">
                 {artworks.map((art) => (
@@ -158,6 +184,19 @@ const audioFiles = await getAudioFiles();
     .exhibition-view:hover .art-metadata { opacity: 0.7; }
     .back-link { position: absolute; bottom: -4rem; left: 50%; transform: translateX(-50%); color: #444; text-decoration: none; font-size: 0.6rem; font-weight: 800; letter-spacing: 3px; transition: 0.3s; }
     .back-link:hover { color: #fff; }
+
+    /* New UI Styles */
+    .range-container { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end; }
+    .config-range { -webkit-appearance: none; width: 80px; height: 2px; background: #333; outline: none; }
+    .config-range::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--dash-accent); border-radius: 50%; cursor: pointer; }
+    .val-display { font-size: 0.6rem; color: #fff; font-weight: 900; min-width: 25px; text-align: right; }
+    
+    .clock-overlay { position: absolute; top: 4rem; right: 4rem; color: #fff; z-index: 20; pointer-events: none; opacity: 0.8; }
+    .clock-overlay.hidden { display: none; }
+    .digital-clock { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 200; letter-spacing: 2px; }
+    .analog-clock { display: none; width: 150px; height: 150px; }
+    .analog-clock.active { display: block; }
+    .digital-clock.hidden { display: none; }
 </style>
 
 <script>
@@ -172,14 +211,25 @@ const audioFiles = await getAudioFiles();
         const loadingScreen = document.getElementById('loading-screen');
         const glCanvas = document.getElementById('gl-canvas') as HTMLCanvasElement;
         
-        let config = { scaleMode: 'contain', frameStyle: 'white' };
+        // Clock Elements
+        const clockOverlay = document.getElementById('clock-overlay');
+        const digitalClock = document.getElementById('digital-clock');
+        const analogCanvas = document.getElementById('analog-clock') as HTMLCanvasElement;
+        
+        let config = { 
+            scaleMode: 'contain', 
+            frameStyle: 'white', 
+            transitionType: 0, 
+            exposureTime: 12,
+            clockMode: 'none'
+        };
 
+        // UI Event Listeners
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const group = btn.getAttribute('data-config');
                 document.querySelectorAll(`.toggle-btn[data-config="${group}"]`).forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                // Normalizamos a camelCase para que coincida con el resto del script
                 const configKey = group.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
                 config[configKey] = btn.getAttribute('data-val');
             });
@@ -193,13 +243,54 @@ const audioFiles = await getAudioFiles();
             });
         });
 
+        const exposureSlider = document.getElementById('exposure-slider') as HTMLInputElement;
+        const exposureVal = document.getElementById('exposure-val');
+        exposureSlider?.addEventListener('input', (e) => {
+            const val = (e.target as HTMLInputElement).value;
+            config.exposureTime = parseInt(val);
+            if(exposureVal) exposureVal.innerText = val + 's';
+        });
+
+        const transitionSelect = document.getElementById('transition-select') as HTMLSelectElement;
+        transitionSelect?.addEventListener('change', (e) => {
+            config.transitionType = parseInt((e.target as HTMLSelectElement).value);
+        });
+
+        const clockSelect = document.getElementById('clock-select') as HTMLSelectElement;
+        clockSelect?.addEventListener('change', (e) => {
+            config.clockMode = (e.target as HTMLSelectElement).value;
+        });
+
+        let transitionInterval;
+
         document.getElementById('start-btn')?.addEventListener('click', async () => {
             soundManager.init(); soundManager.enable();
             soundManager.playMusic('https://admin.javiermix.ar/assets/22503906-6608-4d38-ae0d-fe7999d25216');
             configPanel?.classList.add('hidden');
             exhibitionView?.classList.remove('hidden');
+            
+            // Setup Clock
+            if (config.clockMode !== 'none') {
+                clockOverlay?.classList.remove('hidden');
+                if (config.clockMode === 'digital') {
+                    digitalClock?.classList.remove('hidden');
+                    analogCanvas?.classList.remove('active');
+                } else {
+                    digitalClock?.classList.add('hidden');
+                    analogCanvas?.classList.add('active');
+                }
+            } else {
+                clockOverlay?.classList.add('hidden');
+            }
+
             try { if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch(e){}
             initGL();
+
+            // Dynamic Interval
+            if(transitionInterval) clearInterval(transitionInterval);
+            transitionInterval = setInterval(() => { 
+                if(!isTransitioning && !exhibitionView?.classList.contains('hidden')) startTransition(); 
+            }, config.exposureTime * 1000);
         });
 
         let gl, program, textures = [], currentIndex = 0, nextIndex = 0, progress = 1, isTransitioning = false;
@@ -210,6 +301,7 @@ const audioFiles = await getAudioFiles();
             varying vec2 vUv;
             uniform sampler2D uTexture1, uTexture2;
             uniform float uProgress, uTime, uScaleMode;
+            uniform int uTransitionType;
             uniform vec2 uResolution, uTexRes1, uTexRes2;
             uniform vec3 uMatColor;
 
@@ -221,11 +313,10 @@ const audioFiles = await getAudioFiles();
                 if (mode > 1.5) { // MODO TOP-ANCHOR
                     float scale = screenAspect / texAspect;
                     vec2 topUv = uv;
-                    // Ajustamos para que siempre llene el ancho
                     topUv.x = (uv.x - 0.5) * (screenAspect / texAspect) + 0.5;
                     topUv.y = uv.y * (screenAspect / texAspect); 
                     return topUv;
-                } else if (mode > 0.5) { // MODO COVER (Llenado Centrado)
+                } else if (mode > 0.5) { // MODO COVER
                     vec2 targetUv = uv;
                     if (screenAspect > texAspect) {
                         targetUv.y = (uv.y - 0.5) * (texAspect / screenAspect) + 0.5;
@@ -233,7 +324,7 @@ const audioFiles = await getAudioFiles();
                         targetUv.x = (uv.x - 0.5) * (screenAspect / texAspect) + 0.5;
                     }
                     return targetUv;
-                } else { // MODO MUSEO (Contain)
+                } else { // MODO MUSEO
                     vec2 centeredUv = (uv - 0.5) / (1.0 - margin * 2.0) + 0.5;
                     centeredUv.y -= 0.03; 
                     if (screenAspect > texAspect) {
@@ -245,23 +336,45 @@ const audioFiles = await getAudioFiles();
                 }
             }
 
+            float rand(vec2 co){ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453); }
+
             void main() {
                 vec2 uv1 = getMuseumUv(vUv, uResolution, uTexRes1, uScaleMode);
                 vec2 uv2 = getMuseumUv(vUv, uResolution, uTexRes2, uScaleMode);
-                float d = sin(vUv.y * 15.0 + uTime) * 0.01 * (1.0 - uProgress);
-                vec4 c1 = texture2D(uTexture1, uv1 + d * uProgress);
-                vec4 c2 = texture2D(uTexture2, uv2 - d * (1.0 - uProgress));
+                
+                vec4 c1, c2;
+                float p = smoothstep(0.0, 1.0, uProgress);
+
+                if (uTransitionType == 1) { // LIQUID
+                    float d = sin(vUv.y * 10.0 + uTime) * 0.02 * (1.0 - uProgress);
+                    c1 = texture2D(uTexture1, uv1 + d * uProgress);
+                    c2 = texture2D(uTexture2, uv2 - d * (1.0 - uProgress));
+                } else if (uTransitionType == 3) { // GLITCH
+                    float g = rand(vec2(floor(vUv.y * 20.0), uTime)) * 0.1 * sin(uProgress * 3.14);
+                    c1 = texture2D(uTexture1, uv1 + vec2(g, 0.0));
+                    c2 = texture2D(uTexture2, uv2 - vec2(g, 0.0));
+                } else {
+                    c1 = texture2D(uTexture1, uv1);
+                    c2 = texture2D(uTexture2, uv2);
+                }
                 
                 // Paspartú Logic
                 bool isBg1 = (uv1.x < 0.0 || uv1.x > 1.0 || uv1.y < 0.0 || uv1.y > 1.0);
                 bool isBg2 = (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0);
                 
                 if (uScaleMode < 0.5 || uScaleMode > 1.5) {
-                    float noise = fract(sin(dot(vUv, vec2(12.9898,78.233))) * 43758.5453) * 0.03;
+                    float noise = rand(vUv) * 0.03;
                     if (isBg1) c1 = vec4(uMatColor + noise, 1.0);
                     if (isBg2) c2 = vec4(uMatColor + noise, 1.0);
                 }
-                gl_FragColor = mix(c1, c2, smoothstep(0.0, 1.0, uProgress));
+
+                if (uTransitionType == 0) { // LUMA WIPE
+                    float luma = (c1.r + c1.g + c1.b) / 3.0;
+                    float thresh = uProgress * 1.2;
+                    gl_FragColor = mix(c1, c2, step(luma, thresh));
+                } else {
+                    gl_FragColor = mix(c1, c2, p);
+                }
             }
         `;
 
@@ -281,7 +394,6 @@ const audioFiles = await getAudioFiles();
             loadTextures().then(() => {
                 loadingScreen?.classList.add('hidden');
                 render();
-                setInterval(() => { if(!isTransitioning && !exhibitionView?.classList.contains('hidden')) startTransition(); }, 12000);
             });
         }
 
@@ -292,6 +404,7 @@ const audioFiles = await getAudioFiles();
         }
 
         async function loadTextures() {
+            textures = [];
             const imgs = Array.from(document.querySelectorAll('.hidden-art-data'));
             const promises = imgs.map((img: any) => new Promise(res => { if(img.complete) res(img); else img.onload = () => res(img); }));
             await Promise.all(promises);
@@ -313,34 +426,79 @@ const audioFiles = await getAudioFiles();
             if(mt) mt.innerText = artworks[nextIndex].title;
         }
 
+        function updateClock() {
+            const now = new Date();
+            if (config.clockMode === 'digital' && digitalClock) {
+                digitalClock.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            } else if (config.clockMode === 'analog' && analogCanvas) {
+                const ctx = analogCanvas.getContext('2d');
+                if (!ctx) return;
+                const radius = analogCanvas.width / 2;
+                ctx.clearRect(0, 0, analogCanvas.width, analogCanvas.height);
+                ctx.save();
+                ctx.translate(radius, radius);
+                
+                // Dial
+                ctx.beginPath();
+                ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Hands
+                const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+                drawHand(ctx, (h % 12 + m / 60) * 30, radius * 0.5, 4, '#fff'); // Hour
+                drawHand(ctx, (m + s / 60) * 6, radius * 0.7, 3, '#fff'); // Min
+                drawHand(ctx, s * 6, radius * 0.8, 1, varColor('--dash-accent')); // Sec
+                ctx.restore();
+            }
+        }
+
+        function drawHand(ctx, deg, len, width, color) {
+            ctx.save();
+            ctx.rotate(deg * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, 10);
+            ctx.lineTo(0, -len);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#dcb14a'; }
+
         function render() {
             if(exhibitionView?.classList.contains('hidden')) return;
             gl.useProgram(program);
             gl.uniform2f(gl.getUniformLocation(program, "uResolution"), glCanvas.width, glCanvas.height);
             gl.uniform1f(gl.getUniformLocation(program, "uTime"), Date.now() * 0.001);
             gl.uniform1f(gl.getUniformLocation(program, "uProgress"), progress);
+            gl.uniform1i(gl.getUniformLocation(program, "uTransitionType"), config.transitionType);
             
             let scaleVal = 0.0;
             if (config.scaleMode === 'cover') scaleVal = 1.0;
             if (config.scaleMode === 'top') scaleVal = 2.0;
             gl.uniform1f(gl.getUniformLocation(program, "uScaleMode"), scaleVal);
 
-            const colors = { 
-                white: [0.95, 0.95, 0.95], 
-                black: [0.08, 0.08, 0.08], 
-                cream: [0.91, 0.89, 0.83],
-                terracota: [0.64, 0.35, 0.29]
-            };
+            const colors = { white: [0.95,0.95,0.95], black: [0.08,0.08,0.08], cream: [0.91,0.89,0.83], terracota: [0.64,0.35,0.29] };
             const c = colors[config.frameStyle];
             gl.uniform3f(gl.getUniformLocation(program, "uMatColor"), c[0], c[1], c[2]);
             
-            const t1 = textures[currentIndex], t2 = textures[nextIndex];
+            const t1 = textures[currentIndex], t2 = textures[nextIndex] || t1;
             gl.uniform2f(gl.getUniformLocation(program, "uTexRes1"), t1.width, t1.height);
             gl.uniform2f(gl.getUniformLocation(program, "uTexRes2"), t2.width, t2.height);
             gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t1.tex); gl.uniform1i(gl.getUniformLocation(program, "uTexture1"), 0);
             gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, t2.tex); gl.uniform1i(gl.getUniformLocation(program, "uTexture2"), 1);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
-            if (isTransitioning) { progress += 0.002; if(progress >= 1.0){ progress = 1.0; isTransitioning = false; currentIndex = nextIndex; } }
+            
+            if (isTransitioning) { 
+                progress += 0.005; 
+                if(progress >= 1.0){ progress = 1.0; isTransitioning = false; currentIndex = nextIndex; } 
+            }
+            
+            updateClock();
             requestAnimationFrame(render);
         }
 
@@ -352,7 +510,9 @@ const audioFiles = await getAudioFiles();
             if(exhibitionView?.classList.contains('hidden')) return;
             if(Date.now() - lastMove > 1000){
                 if(document.fullscreenElement) document.exitFullscreen();
-                exhibitionView?.classList.add('hidden'); configPanel?.classList.remove('hidden'); soundManager.stopMusic(); lastMove = Date.now();
+                exhibitionView?.classList.add('hidden'); configPanel?.classList.remove('hidden'); soundManager.stopMusic(); 
+                if(transitionInterval) clearInterval(transitionInterval);
+                lastMove = Date.now();
             }
         });
     });
