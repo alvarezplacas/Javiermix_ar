@@ -140,6 +140,29 @@ import Layout from '../layouts/Layout.astro';
                 </a>
             </div>
         </div>
+
+        <!-- Experimento 06: Photography Studio -->
+        <div class="experiment-card featured">
+            <div class="card-header">
+                <span class="exp-number">06</span>
+                <div class="meta-tags">
+                    <span class="tag">Studio</span>
+                    <span class="tag">Hurlingham</span>
+                </div>
+            </div>
+            <div class="exp-content">
+                <h2>Fotografía en Estudio: Talleres Hurlingham</h2>
+                <p>Archivo visual y técnico de las capturas realizadas en los talleres municipales. Curaduría colectiva y técnica de iluminación.</p>
+                <div class="tech-specs">
+                    <div class="spec"><span>SECTOR:</span> ESTUDIO</div>
+                    <div class="spec"><span>ESTADO:</span> NUEVO</div>
+                </div>
+                <a href="/laboratorio/estudio-hurlingham" class="btn-lab-new gold">
+                    <span class="pulse"></span>
+                    EXPLORAR ARCHIVO
+                </a>
+            </div>
+        </div>
       </div>
     </header>
   </main>
@@ -221,7 +244,7 @@ import Layout from '../layouts/Layout.astro';
   }
 
   .lab-header {
-    max-width: 1000px;
+    max-width: 1400px;
     width: 100%;
     text-align: center;
     position: relative;
@@ -262,8 +285,8 @@ import Layout from '../layouts/Layout.astro';
   /* 🧪 Experiment List */
   .experiment-list {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 2rem;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
       width: 100%;
   }
 
@@ -407,9 +430,12 @@ import Layout from '../layouts/Layout.astro';
       100% { transform: scale(3); opacity: 0; }
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1100px) {
+      .experiment-list { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 768px) {
       .experiment-list { grid-template-columns: 1fr; }
       .lab-nav { padding: 2rem; }
   }
-</style>
 </style>

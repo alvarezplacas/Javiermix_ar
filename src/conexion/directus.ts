@@ -139,6 +139,16 @@ export async function getLaboratorioFiles() {
     } catch (e) { return []; }
 }
 
+export async function getHurlinghamFiles() {
+    try {
+        const client = await DirectusManager.getClient();
+        const folders = await client.request(readFolders({ filter: { name: { _eq: 'Estudio Hurlingham' } }, limit: 1 }));
+        const folderId = folders[0]?.id;
+        if (!folderId) return [];
+        return await client.request(readFiles({ filter: { folder: { _eq: folderId } }, sort: ['-filename_download'], limit: -1 }));
+    } catch (e) { return []; }
+}
+
 export async function getSeries() {
     try {
         const client = await DirectusManager.getClient();
