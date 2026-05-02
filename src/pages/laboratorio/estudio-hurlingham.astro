@@ -4,6 +4,8 @@ import { getHurlinghamFiles, getAssetUrl } from '../../conexion/directus';
 
 const photos = await getHurlinghamFiles();
 
+const uniqueSeries = [...new Set(photos.map((f: any) => f.serie_name))].filter(Boolean);
+
 // Formateo de datos para la galería
 const galleryItems = photos.map((file: any) => ({
     id: file.id,
@@ -29,6 +31,22 @@ const galleryItems = photos.map((file: any) => ({
 
         <header class="studio-header">
             <h1>Hoja de Contactos: Estudio Hurlingham</h1>
+            
+            <div class="studio-controls">
+                <div class="filter-group">
+                    <span class="label">Filtrar por Sesión:</span>
+                    <div class="filter-btns">
+                        <button class="filter-btn active" data-filter="all">Todas</button>
+                        {uniqueSeries.map(s => (
+                            <button class="filter-btn" data-filter={s}>{s}</button>
+                        ))}
+                    </div>
+                </div>
+                <button id="play-tour" class="play-btn">
+                    <span class="icon">▶</span> REPRODUCIR (5s)
+                </button>
+            </div>
+
             <p>Exploración técnica y archivo visual de las capturas realizadas en los talleres municipales. Enfoque en iluminación y composición de estudio.</p>
         </header>
 
@@ -266,6 +284,79 @@ const galleryItems = photos.map((file: any) => ({
         color: var(--studio-accent);
     }
 
+    .studio-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 2rem 0 3rem;
+        padding: 1.5rem 0;
+        border-top: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .filter-group .label {
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: var(--studio-text);
+        text-transform: uppercase;
+    }
+
+    .filter-btns {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: var(--studio-text);
+        padding: 0.5rem 1rem;
+        font-size: 0.65rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+        background: var(--studio-accent);
+        color: #000;
+        border-color: var(--studio-accent);
+    }
+
+    .play-btn {
+        background: transparent;
+        border: 1px solid var(--studio-accent);
+        color: var(--studio-accent);
+        padding: 0.8rem 1.5rem;
+        font-size: 0.7rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        transition: 0.3s;
+    }
+
+    .play-btn.active {
+        background: var(--studio-accent);
+        color: #000;
+    }
+
+    .play-btn:hover {
+        box-shadow: 0 0 20px rgba(220, 177, 74, 0.3);
+    }
+
     .close-btn {
         position: absolute;
         top: 2rem;
@@ -276,6 +367,11 @@ const galleryItems = photos.map((file: any) => ({
         font-size: 3rem;
         cursor: pointer;
         line-height: 1;
+    }
+
+    @media (max-width: 900px) {
+        .studio-controls { flex-direction: column; align-items: flex-start; }
+        .play-btn { width: 100%; justify-content: center; }
     }
 
     @media (max-width: 768px) {
@@ -311,11 +407,75 @@ const galleryItems = photos.map((file: any) => ({
         document.body.style.overflow = 'auto';
     });
 
+    // --- Lógica de Filtrado ---
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const photoCells = document.querySelectorAll('.photo-cell');
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const filter = btn.getAttribute('data-filter');
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            photoCells.forEach(cell => {
+                const serie = (cell as HTMLElement).querySelector('.file-serie')?.textContent;
+                if (filter === 'all' || serie === filter) {
+                    (cell as HTMLElement).style.display = 'flex';
+                } else {
+                    (cell as HTMLElement).style.display = 'none';
+                }
+            });
+            // Si el tour está activo al filtrar, reiniciamos el tour con el nuevo set visible
+            if (tourInterval) { stopTour(); startTour(); }
+        });
+    });
+
+    // --- Lógica de Tour (Slideshow) ---
+    const playTourBtn = document.getElementById('play-tour');
+    let tourInterval: any = null;
+    let currentTourIndex = 0;
+
+    function startTour() {
+        const visiblePhotos = Array.from(photoCells).filter(p => (p as HTMLElement).style.display !== 'none');
+        if (visiblePhotos.length === 0) return;
+
+        playTourBtn?.classList.add('active');
+        playTourBtn!.innerHTML = '<span class="icon">⏹</span> DETENER TOUR';
+
+        tourInterval = setInterval(() => {
+            const photo = visiblePhotos[currentTourIndex];
+            const viewBtn = photo.querySelector('.view-btn') as HTMLElement;
+            viewBtn?.click();
+
+            currentTourIndex = (currentTourIndex + 1) % visiblePhotos.length;
+        }, 5000);
+    }
+
+    function stopTour() {
+        if (tourInterval) clearInterval(tourInterval);
+        tourInterval = null;
+        playTourBtn?.classList.remove('active');
+        playTourBtn!.innerHTML = '<span class="icon">▶</span> REPRODUCIR (5s)';
+        viewer?.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+
+    playTourBtn?.addEventListener('click', () => {
+        if (tourInterval) stopTour();
+        else {
+            currentTourIndex = 0;
+            startTour();
+        }
+    });
+
     // Cerrar con Escape
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            viewer?.classList.remove('active');
-            document.body.style.overflow = 'auto';
+            if (tourInterval) stopTour();
+            else {
+                viewer?.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
         }
     });
 </script>
