@@ -30,24 +30,24 @@ const galleryItems = photos.map((file: any) => ({
         </nav>
 
         <header class="studio-header">
-            <h1>Hoja de Contactos: Estudio Hurlingham</h1>
+            <h1>Talleres Fotográficos</h1>
             
             <div class="studio-controls">
                 <div class="filter-group">
                     <span class="label">Filtrar por Sesión:</span>
-                    <div class="filter-btns">
-                        <button class="filter-btn active" data-filter="all">Todas</button>
+                    <select id="session-filter" class="studio-select">
+                        <option value="all">Todas las Sesiones</option>
                         {uniqueSeries.map(s => (
-                            <button class="filter-btn" data-filter={s}>{s}</button>
+                            <option value={s}>{s}</option>
                         ))}
-                    </div>
+                    </select>
                 </div>
                 <button id="play-tour" class="play-btn">
                     <span class="icon">▶</span> REPRODUCIR (5s)
                 </button>
             </div>
 
-            <p>Exploración técnica y archivo visual de las capturas realizadas en los talleres municipales. Enfoque en iluminación y composición de estudio.</p>
+            <p>Exploración técnica y archivo visual de las capturas realizadas en los talleres del Municipio de Hurlingham.</p>
         </header>
 
         {galleryItems.length === 0 ? (
@@ -77,9 +77,14 @@ const galleryItems = photos.map((file: any) => ({
 
         <!-- Visor de Alta Fidelidad -->
         <div id="viewer" class="studio-viewer">
-            <button id="close-viewer" class="close-btn">×</button>
+            <div class="viewer-nav">
+                <span class="f11-hint">Sugerencia: Presiona <b>F11</b> para pantalla completa</span>
+                <button id="close-viewer" class="close-btn">×</button>
+            </div>
             <div class="viewer-content">
-                <img id="viewer-img" src="" alt="" />
+                <div class="slide-container">
+                    <img id="viewer-img" src="" alt="" />
+                </div>
                 <h2 id="viewer-title"></h2>
             </div>
         </div>
@@ -310,27 +315,29 @@ const galleryItems = photos.map((file: any) => ({
         text-transform: uppercase;
     }
 
-    .filter-btns {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .filter-btn {
+    .studio-select {
         background: rgba(255,255,255,0.03);
         border: 1px solid rgba(255,255,255,0.1);
-        color: var(--studio-text);
-        padding: 0.5rem 1rem;
-        font-size: 0.65rem;
+        color: #fff;
+        padding: 0.8rem 1.5rem;
+        font-size: 0.75rem;
         font-weight: 600;
         cursor: pointer;
+        min-width: 250px;
+        outline: none;
         transition: 0.3s;
+        font-family: inherit;
     }
 
-    .filter-btn.active, .filter-btn:hover {
-        background: var(--studio-accent);
-        color: #000;
+    .studio-select:hover {
         border-color: var(--studio-accent);
+        background: rgba(255,255,255,0.05);
+    }
+
+    .studio-select option {
+        background: #111;
+        color: #fff;
+        padding: 10px;
     }
 
     .play-btn {
@@ -357,10 +364,52 @@ const galleryItems = photos.map((file: any) => ({
         box-shadow: 0 0 20px rgba(220, 177, 74, 0.3);
     }
 
-    .close-btn {
+    .viewer-nav {
         position: absolute;
         top: 2rem;
+        left: 2rem;
         right: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1001;
+    }
+
+    .f11-hint {
+        font-size: 0.65rem;
+        letter-spacing: 1px;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+    }
+
+    .f11-hint b { color: var(--studio-accent); }
+
+    .slide-container {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    #viewer-img {
+        max-width: 100%;
+        max-height: 85vh;
+        object-fit: contain;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
+
+    /* Animación de entrada horizontal */
+    .slide-in {
+        animation: slideFromRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideFromRight {
+        from { transform: translateX(100px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    .close-btn {
         background: none;
         border: none;
         color: #fff;
@@ -407,27 +456,23 @@ const galleryItems = photos.map((file: any) => ({
         document.body.style.overflow = 'auto';
     });
 
-    // --- Lógica de Filtrado ---
-    const filterBtns = document.querySelectorAll('.filter-btn');
+    // --- Lógica de Filtrado (Menú Desplegable) ---
+    const sessionFilter = document.getElementById('session-filter') as HTMLSelectElement;
     const photoCells = document.querySelectorAll('.photo-cell');
 
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const filter = btn.getAttribute('data-filter');
-            filterBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+    sessionFilter?.addEventListener('change', () => {
+        const filter = sessionFilter.value;
 
-            photoCells.forEach(cell => {
-                const serie = (cell as HTMLElement).querySelector('.file-serie')?.textContent;
-                if (filter === 'all' || serie === filter) {
-                    (cell as HTMLElement).style.display = 'flex';
-                } else {
-                    (cell as HTMLElement).style.display = 'none';
-                }
-            });
-            // Si el tour está activo al filtrar, reiniciamos el tour con el nuevo set visible
-            if (tourInterval) { stopTour(); startTour(); }
+        photoCells.forEach(cell => {
+            const serie = (cell as HTMLElement).querySelector('.file-serie')?.textContent;
+            if (filter === 'all' || serie === filter) {
+                (cell as HTMLElement).style.display = 'flex';
+            } else {
+                (cell as HTMLElement).style.display = 'none';
+            }
         });
+        
+        if (tourInterval) { stopTour(); startTour(); }
     });
 
     // --- Lógica de Tour (Slideshow) ---
@@ -445,7 +490,13 @@ const galleryItems = photos.map((file: any) => ({
         tourInterval = setInterval(() => {
             const photo = visiblePhotos[currentTourIndex];
             const viewBtn = photo.querySelector('.view-btn') as HTMLElement;
+            
+            // Efecto de slide-out antes de cargar la siguiente
+            viewerImg?.classList.remove('slide-in');
+            void viewerImg?.offsetWidth; // Trigger reflow
+            
             viewBtn?.click();
+            viewerImg?.classList.add('slide-in');
 
             currentTourIndex = (currentTourIndex + 1) % visiblePhotos.length;
         }, 5000);
