@@ -16,7 +16,8 @@ const galleryItems = photos.map((file: any) => ({
     metadata: {
         type: file.type,
         size: (file.filesize / 1024 / 1024).toFixed(2) + ' MB',
-        dim: `${file.width} x ${file.height}px`
+        dim: `${file.width} x ${file.height}px`,
+        date: file.uploaded_on ? new Date(file.uploaded_on).toLocaleDateString('es-AR') : ''
     }
 }));
 ---
@@ -62,7 +63,7 @@ const galleryItems = photos.map((file: any) => ({
                         <div class="image-box">
                             <img src={item.thumb} alt={item.title} loading="lazy" />
                             <div class="overlay">
-                                <button class="view-btn" data-src={item.src} data-title={item.title}>EXPANDIR</button>
+                                <button class="view-btn" data-src={item.src} data-title={item.title} data-date={item.metadata.date}>EXPANDIR</button>
                             </div>
                         </div>
                         <div class="photo-info">
@@ -85,7 +86,10 @@ const galleryItems = photos.map((file: any) => ({
                 <div class="slide-container">
                     <img id="viewer-img" src="" alt="" />
                 </div>
-                <h2 id="viewer-title"></h2>
+                <div class="viewer-meta-box">
+                    <span id="viewer-title"></span>
+                    <span id="viewer-date"></span>
+                </div>
             </div>
         </div>
     </main>
@@ -284,9 +288,30 @@ const galleryItems = photos.map((file: any) => ({
     }
 
     #viewer-title {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.5rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.7rem;
         color: var(--studio-accent);
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin: 0;
+    }
+
+    #viewer-date {
+        font-size: 0.55rem;
+        color: rgba(255,255,255,0.4);
+        font-family: monospace;
+    }
+
+    .viewer-meta-box {
+        position: absolute;
+        bottom: 2rem;
+        right: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.2rem;
+        text-align: right;
+        pointer-events: none;
     }
 
     .studio-controls {
@@ -442,9 +467,17 @@ const galleryItems = photos.map((file: any) => ({
             const src = btn.getAttribute('data-src');
             const title = btn.getAttribute('data-title');
             
+            // Buscar metadata en el array local si es posible, o usar dataset
+            // Para simplicidad, buscaremos el elemento padre para obtener la fecha si la guardamos ahí
+            // O mejor: guardamos la fecha en un data-attribute del botón
+            const date = btn.getAttribute('data-date');
+            
             if (viewerImg && src) {
                 viewerImg.src = src;
                 if (viewerTitle) viewerTitle.textContent = title;
+                const viewerDate = document.getElementById('viewer-date');
+                if (viewerDate) viewerDate.textContent = date || '';
+
                 viewer?.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
