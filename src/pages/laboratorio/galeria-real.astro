@@ -9,7 +9,7 @@ export const prerender = false;
 const artworksRaw = await getCatalogoFiles();
 const artworks = artworksRaw
     .filter(file => !file.filename_download.toLowerCase().includes('_2'))
-    .slice(0, 15)
+    .slice(0, 100) // Aumentamos el límite para cubrir múltiples series
     .map((file, index) => ({
         id: file.id,
         title: file.title || `Masterpiece ${index + 1}`,

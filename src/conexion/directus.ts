@@ -142,11 +142,36 @@ export async function getLaboratorioFiles() {
 export async function getHurlinghamFiles() {
     try {
         const client = await DirectusManager.getClient();
-        const folders = await client.request(readFolders({ filter: { name: { _eq: 'Estudio Hurlingham' } }, limit: 1 }));
-        const folderId = folders[0]?.id;
-        if (!folderId) return [];
-        return await client.request(readFiles({ filter: { folder: { _eq: folderId } }, sort: ['-filename_download'], limit: -1 }));
-    } catch (e) { return []; }
+        // 1. Encontrar la carpeta raíz
+        const rootFolders = await client.request(readFolders({ filter: { name: { _eq: 'Estudio Hurlingham' } }, limit: 1 }));
+        const rootId = rootFolders[0]?.id;
+        if (!rootId) return [];
+
+        // 2. Encontrar todas las subcarpetas (series/sesiones)
+        const subFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } }, limit: -1 }));
+        const folderIds = [rootId, ...subFolders.map((f: any) => f.id)];
+        
+        // Crear un mapa de nombres de carpetas para categorizar
+        const folderMap = new Map();
+        folderMap.set(rootId, "General");
+        subFolders.forEach((f: any) => folderMap.set(f.id, f.name));
+
+        // 3. Obtener todos los archivos de todas esas carpetas
+        const files = await client.request(readFiles({ 
+            filter: { folder: { _in: folderIds } }, 
+            sort: ['-filename_download'], 
+            limit: -1 
+        }));
+
+        // 4. Mapear archivos con el nombre de su serie
+        return (files as any[]).map((file: any) => ({
+            ...file,
+            serie_name: folderMap.get(file.folder) || "Sesión Desconocida"
+        }));
+    } catch (e) { 
+        console.error("[getHurlinghamFiles] Error:", e);
+        return []; 
+    }
 }
 
 export async function getSeries() {

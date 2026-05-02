@@ -8,6 +8,7 @@ const photos = await getHurlinghamFiles();
 const galleryItems = photos.map((file: any) => ({
     id: file.id,
     title: file.title || file.filename_download,
+    serie: file.serie_name,
     src: getAssetUrl(file.id, { width: 1600, format: 'webp', quality: 90 }),
     thumb: getAssetUrl(file.id, { width: 600, format: 'webp', quality: 70 }),
     metadata: {
@@ -47,6 +48,7 @@ const galleryItems = photos.map((file: any) => ({
                             </div>
                         </div>
                         <div class="photo-info">
+                            <span class="file-serie">{item.serie}</span>
                             <span class="file-name">{item.title}</span>
                             <span class="file-meta">{item.metadata.dim} | {item.metadata.size}</span>
                         </div>
@@ -193,6 +195,14 @@ const galleryItems = photos.map((file: any) => ({
         display: flex;
         flex-direction: column;
         gap: 0.3rem;
+    }
+
+    .file-serie {
+        font-size: 0.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        color: var(--studio-accent);
+        letter-spacing: 1px;
     }
 
     .file-name {
