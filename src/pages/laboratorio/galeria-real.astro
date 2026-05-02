@@ -14,7 +14,10 @@ const artworks = artworksRaw
         id: file.id,
         title: file.title || `Masterpiece ${index + 1}`,
         img: getOptimizedImageURL(file.id, { width: 1200, format: 'webp', quality: 90 }),
+        serie: file.serie_name || 'Sin Serie',
     }));
+
+const uniqueSeries = [...new Set(artworksRaw.map(f => f.serie_name))].filter(Boolean);
 
 const entornosData = await getLaboratorioEntornos();
 
@@ -64,23 +67,35 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
             </div>
 
             <div class="ui-bottom">
-                <div class="playback-controls">
-                    <button id="play-btn" class="control-btn" title="Auto-Tour">
-                        <span class="icon">▶</span>
-                        PLAY TOUR
-                    </button>
-                    
-                    <div class="audio-selector-wrapper">
-                        <div class="sound-toggle" id="sound-btn">
-                            <span class="icon">🔇</span>
-                            AUDIO OFF
+                <div class="controls-column">
+                    <div class="playback-controls">
+                        <button id="play-btn" class="control-btn" title="Auto-Tour">
+                            <span class="icon">▶</span>
+                            PLAY TOUR
+                        </button>
+                        
+                        <div class="audio-selector-wrapper">
+                            <div class="sound-toggle" id="sound-btn">
+                                <span class="icon">🔇</span>
+                                AUDIO OFF
+                            </div>
+                            <select id="audio-browser" class="audio-select">
+                                <option value="">Seleccionar Paisaje Sonoro...</option>
+                                {audioFiles.map((audio: any) => (
+                                    <option value={getAssetUrl(audio.id, { raw: true })}>{audio.title || audio.filename_download}</option>
+                                ))}
+                            </select>
                         </div>
-                        <select id="audio-browser" class="audio-select">
-                            <option value="">Seleccionar Paisaje Sonoro...</option>
-                            {audioFiles.map((audio: any) => (
-                                <option value={getAssetUrl(audio.id, { raw: true })}>{audio.title || audio.filename_download}</option>
+                    </div>
+
+                    <div class="series-selector-wrapper">
+                        <span class="selector-label">SELECCIONE SU SERIE PREFERIDA:</span>
+                        <div class="series-buttons">
+                            <button class="series-btn active" data-serie="all">TODOS</button>
+                            {uniqueSeries.map(serie => (
+                                <button class="series-btn" data-serie={serie}>{serie}</button>
                             ))}
-                        </select>
+                        </div>
                     </div>
                 </div>
 
@@ -110,7 +125,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
         <div class="horizontal-wall" id="wall">
             {artworks.map((art, index) => (
-                <div class="artwork-station" style={`--station-index: ${index}; view-timeline-name: --artwork-${index}; view-timeline-axis: inline;`} id={`artwork-${art.id}`}>
+                <div class="artwork-station" data-serie={art.serie} style={`--station-index: ${index}; view-timeline-name: --artwork-${index}; view-timeline-axis: inline;`} id={`artwork-${art.id}`}>
                     <div class="frame-wrapper">
                         <div class="frame-container">
                             <div class="museum-spotlight"></div>
@@ -178,25 +193,34 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
             position: fixed;
             inset: 0;
             background: 
-                /* Foco Cenital (Spotlight principal) */
-                radial-gradient(circle at 50% 10%, oklch(1 0.1 80 / 0.15) 0%, transparent 60%),
-                /* Luz de ambiente/suelo */
-                linear-gradient(to bottom, transparent 60%, oklch(0 0 0 / 0.1) 100%);
+                /* Foco Cenital (Spotlight principal con haz volumétrico) */
+                radial-gradient(ellipse at 50% -10%, oklch(1 0.1 85 / 0.25) 0%, oklch(1 0.1 85 / 0.05) 30%, transparent 70%),
+                /* Luz de rebote en el suelo */
+                radial-gradient(ellipse at 50% 110%, oklch(1 0.05 85 / 0.1) 0%, transparent 60%),
+                /* Sombra ambiental profunda */
+                linear-gradient(to bottom, transparent 40%, oklch(0 0 0 / 0.15) 100%);
             pointer-events: none;
             z-index: 5;
-            transition: 1.5s var(--ease-premium);
+            transition: 2s var(--ease-premium);
         }
+    }
 
-        &::after {
-            content: "";
-            position: fixed;
-            inset: 0;
-            /* Textura de Pared (Plaster/Grano sutil) */
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-            opacity: 0.03;
+    /* 🌙 Estado Oculto (Idle) */
+    .gallery-ui {
+        transition: opacity 1.2s var(--ease-premium), transform 1.2s var(--ease-premium);
+        &.is-idle {
+            opacity: 0;
+            transform: translateY(10px);
             pointer-events: none;
-            z-index: 2;
-            mix-blend-mode: overlay;
+        }
+    }
+
+    .controls-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+: overlay;
         }
 
         /* Ambientes Específicos con Texturas Materiales */
@@ -330,6 +354,43 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         }
     }
 
+    .series-selector-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        padding-left: 1rem;
+
+        .selector-label {
+            font-size: 0.5rem;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            color: inherit;
+            opacity: 0.4;
+        }
+
+        .series-buttons {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .series-btn {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font-size: 0.6rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: 0.3s;
+            padding: 0.2rem 0;
+            border-bottom: 1px solid transparent;
+
+            &:hover { opacity: 1; }
+            &.active { opacity: 1; color: var(--color-accent); border-bottom-color: var(--color-accent); }
+        }
+    }
+
     .atmos-controls-container {
         display: flex;
         flex-direction: column;
@@ -382,6 +443,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         gap: 35vw;
         will-change: transform;
         background: transparent !important;
+        transition: transform 0.8s var(--ease-premium);
     }
 
     .artwork-station {
@@ -389,8 +451,14 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         animation: reveal-artwork linear both;
         animation-timeline: view(inline);
         animation-range: entry 10% cover 40%;
+        transition: opacity 0.8s var(--ease-premium), transform 0.8s var(--ease-premium);
         
-        .frame-wrapper {
+        &.is-hidden {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+            position: absolute; /* Evitar que ocupen espacio en el scroll */
+        }
             display: flex;
             align-items: center;
             gap: 6rem;
@@ -430,11 +498,14 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         }
 
         .main-artwork {
-            max-height: 45vh;
+            max-height: 48vh;
             width: auto;
             display: block;
-            box-shadow: 0 0 5px oklch(0 0 0 / 0.2);
+            box-shadow: 0 0 10px oklch(0 0 0 / 0.3);
+            transition: transform 0.6s var(--ease-premium);
         }
+
+        &:hover .main-artwork { transform: scale(1.02); }
     }
 
     .museum-label {
@@ -519,8 +590,30 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         const playBtn = document.getElementById('play-btn');
         const audioBrowser = document.getElementById('audio-browser') as HTMLSelectElement;
         
+        const ui = document.querySelectorAll('.gallery-ui');
+        const wall = document.getElementById('wall');
+        const stations = document.querySelectorAll('.artwork-station');
+        const seriesBtns = document.querySelectorAll('.series-btn');
+
         let soundEnabled = false;
         let autoPlayInterval: any = null;
+        let idleTimer: any = null;
+
+        // 🌙 Idle Management
+        const resetIdleTimer = () => {
+            ui.forEach(el => el.classList.remove('is-idle'));
+            document.body.style.cursor = 'default';
+            if (idleTimer) clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                ui.forEach(el => el.classList.add('is-idle'));
+                document.body.style.cursor = 'none';
+            }, 3000);
+        };
+
+        window.addEventListener('mousemove', resetIdleTimer);
+        window.addEventListener('keydown', resetIdleTimer);
+        window.addEventListener('touchstart', resetIdleTimer);
+        resetIdleTimer();
 
         if (!gallery) return;
 
@@ -622,6 +715,28 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                     soundManager.play('transition', 0.2);
                     if (audioUrl) updateAudio(audioUrl);
                 }
+            });
+        });
+        
+        // 🏛️ Series Filtering Logic
+        seriesBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetSerie = btn.getAttribute('data-serie');
+                
+                seriesBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                stations.forEach(station => {
+                    const serie = station.getAttribute('data-serie');
+                    if (targetSerie === 'all' || serie === targetSerie) {
+                        station.classList.remove('is-hidden');
+                    } else {
+                        station.classList.add('is-hidden');
+                    }
+                });
+
+                // Reset scroll position when filtering
+                if (gallery) gallery.scrollLeft = 0;
             });
         });
 

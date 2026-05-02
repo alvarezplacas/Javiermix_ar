@@ -13,6 +13,10 @@ const artworks = artworksRaw
         id: file.id,
         title: file.title || `Obra ${index + 1}`,
         img: getOptimizedImageURL(file.id, { width: 2560, format: 'webp', quality: 90 }),
+        serie: file.serie_name || 'Sin Serie',
+        description: file.description || '',
+        width: file.width,
+        height: file.height,
     }));
 
 const audioFiles = await getAudioFiles();
@@ -141,6 +145,30 @@ const audioFiles = await getAudioFiles();
                 <div id="date-display" class="date-display"></div>
                 <canvas id="analog-clock" class="analog-clock" width="220" height="220"></canvas>
             </div>
+
+            <!-- Botón de Info Discreto -->
+            <button id="info-trigger" class="info-trigger-btn" title="Ficha Técnica">
+                <span class="info-icon">i</span>
+            </button>
+
+            <!-- Modal de Ficha Técnica (Ultra Minimalista) -->
+            <div id="info-modal" class="info-modal hidden">
+                <div class="info-modal-content">
+                    <div class="info-header">
+                        <span class="info-label">FICHA TÉCNICA</span>
+                        <div class="info-divider"></div>
+                    </div>
+                    <h3 id="info-title"></h3>
+                    <p id="info-serie" class="info-serie"></p>
+                    <div class="info-specs">
+                        <span id="info-dim"></span>
+                        <span class="spec-dot">•</span>
+                        <span>FIN-ART ARCHIVAL</span>
+                    </div>
+                    <p id="info-desc" class="info-desc"></p>
+                </div>
+            </div>
+
             <div class="hidden-textures" style="display: none;">
                 {artworks.map((art) => (
                     <img src={art.img} class="hidden-art-data" crossorigin="anonymous" />
@@ -206,6 +234,23 @@ const audioFiles = await getAudioFiles();
     .analog-clock { display: none; width: 220px; height: 220px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
     .analog-clock.active { display: block; }
     .digital-clock.hidden { display: none; }
+
+    /* Info Trigger & Modal Styles */
+    .info-trigger-btn { position: absolute; bottom: 4rem; right: 4rem; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.3s; z-index: 600; opacity: 0; pointer-events: none; }
+    .exhibition-view:hover .info-trigger-btn { opacity: 0.5; pointer-events: auto; }
+    .info-trigger-btn:hover { opacity: 1 !important; border-color: var(--dash-accent); color: var(--dash-accent); }
+    .info-icon { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 900; font-size: 0.8rem; }
+
+    .info-modal { position: absolute; bottom: 7rem; right: 4rem; width: 300px; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 2px; z-index: 610; transition: 0.5s; transform: translateY(10px); }
+    .info-modal.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+    .info-label { font-size: 0.5rem; letter-spacing: 2px; color: var(--dash-accent); font-weight: 900; }
+    .info-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+    .info-divider { flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+    #info-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: #fff; margin: 0 0 0.2rem 0; line-height: 1; }
+    .info-serie { font-size: 0.6rem; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; }
+    .info-specs { display: flex; align-items: center; gap: 8px; font-size: 0.55rem; color: #666; font-weight: 800; margin-bottom: 0.8rem; }
+    .spec-dot { color: var(--dash-accent); }
+    .info-desc { font-size: 0.7rem; color: #ccc; line-height: 1.5; font-weight: 300; }
 </style>
 
 <script>
@@ -282,7 +327,40 @@ const audioFiles = await getAudioFiles();
             config.clockMode = (e.target as HTMLSelectElement).value;
         });
 
+        const infoModal = document.getElementById('info-modal');
+        const infoTrigger = document.getElementById('info-trigger');
+
         let transitionInterval;
+        let autoTransitionEnabled = true;
+
+        const resetAutoTransition = () => {
+            if (transitionInterval) clearInterval(transitionInterval);
+            transitionInterval = setInterval(() => { 
+                if(!isTransitioning && !exhibitionView?.classList.contains('hidden')) startTransition(); 
+            }, config.exposureTime * 1000);
+        };
+
+        const updateInfoModal = (idx) => {
+            const art = artworks[idx];
+            const title = document.getElementById('info-title');
+            const serie = document.getElementById('info-serie');
+            const dim = document.getElementById('info-dim');
+            const desc = document.getElementById('info-desc');
+
+            if(title) title.innerText = art.title;
+            if(serie) serie.innerText = art.serie;
+            if(dim) dim.innerText = `${art.width} × ${art.height} PX`;
+            if(desc) desc.innerText = art.description;
+        };
+
+        const toggleInfo = () => {
+            infoModal?.classList.toggle('hidden');
+        };
+
+        infoTrigger?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleInfo();
+        });
 
         document.getElementById('start-btn')?.addEventListener('click', async () => {
             soundManager.init(); soundManager.enable();
@@ -308,12 +386,10 @@ const audioFiles = await getAudioFiles();
 
             try { if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch(e){}
             initGL();
+            updateInfoModal(currentIndex);
 
             // Dynamic Interval
-            if(transitionInterval) clearInterval(transitionInterval);
-            transitionInterval = setInterval(() => { 
-                if(!isTransitioning && !exhibitionView?.classList.contains('hidden')) startTransition(); 
-            }, config.exposureTime * 1000);
+            resetAutoTransition();
         });
 
         let gl, program, textures = [], currentIndex = 0, nextIndex = 0, progress = 1, isTransitioning = false;
@@ -463,12 +539,48 @@ const audioFiles = await getAudioFiles();
             });
         }
 
-        function startTransition() {
+        function startTransition(targetIdx = -1) {
+            if (isTransitioning) return;
             isTransitioning = true; progress = 0;
-            nextIndex = (currentIndex + 1) % textures.length;
+            
+            if (targetIdx !== -1) {
+                nextIndex = targetIdx;
+            } else {
+                nextIndex = (currentIndex + 1) % textures.length;
+            }
+
             const mt = document.getElementById('meta-title');
             if(mt) mt.innerText = artworks[nextIndex].title;
+            updateInfoModal(nextIndex);
         }
+
+        function navigate(direction) {
+            if (isTransitioning) return;
+            let target;
+            if (direction === 'next') target = (currentIndex + 1) % textures.length;
+            else target = (currentIndex - 1 + textures.length) % textures.length;
+            
+            startTransition(target);
+            resetAutoTransition();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (exhibitionView?.classList.contains('hidden')) return;
+            if (e.key === 'ArrowRight') navigate('next');
+            if (e.key === 'ArrowLeft') navigate('prev');
+            if (e.key.toLowerCase() === 'i') toggleInfo();
+            if (e.key === 'Escape') exitExhibition();
+        });
+
+        exhibitionView?.addEventListener('click', (e) => {
+            if (infoModal && !infoModal.classList.contains('hidden')) {
+                infoModal.classList.add('hidden');
+                return;
+            }
+            const x = e.clientX / window.innerWidth;
+            if (x > 0.8) navigate('next');
+            else if (x < 0.2) navigate('prev');
+        });
 
         function updateClock() {
             const now = new Date();
@@ -556,7 +668,18 @@ const audioFiles = await getAudioFiles();
             
             if (isTransitioning) { 
                 progress += 0.005; 
-                if(progress >= 1.0){ progress = 1.0; isTransitioning = false; currentIndex = nextIndex; } 
+                
+                // Audio Volume Sync
+                const volPeak = 0.5; // Reducción máxima del 50%
+                const currentVol = 1.0 - (Math.sin(progress * Math.PI) * volPeak);
+                soundManager.setVolume(currentVol);
+
+                if(progress >= 1.0){ 
+                    progress = 1.0; 
+                    isTransitioning = false; 
+                    currentIndex = nextIndex; 
+                    soundManager.setVolume(1.0);
+                } 
             }
             
             updateClock();
@@ -566,13 +689,20 @@ const audioFiles = await getAudioFiles();
         function createShader(gl, type, source) { const s = gl.createShader(type); gl.shaderSource(s, source); gl.compileShader(s); return s; }
         function createProgram(gl, vs, fs) { const p = gl.createProgram(); gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p); return p; }
 
+        function exitExhibition() {
+            if(document.fullscreenElement) document.exitFullscreen();
+            exhibitionView?.classList.add('hidden'); 
+            configPanel?.classList.remove('hidden'); 
+            infoModal?.classList.add('hidden');
+            soundManager.stopMusic(); 
+            if(transitionInterval) clearInterval(transitionInterval);
+        }
+
         let lastMove = Date.now();
         window.addEventListener('mousemove', () => {
             if(exhibitionView?.classList.contains('hidden')) return;
             if(Date.now() - lastMove > 1000){
-                if(document.fullscreenElement) document.exitFullscreen();
-                exhibitionView?.classList.add('hidden'); configPanel?.classList.remove('hidden'); soundManager.stopMusic(); 
-                if(transitionInterval) clearInterval(transitionInterval);
+                exitExhibition();
                 lastMove = Date.now();
             }
         });
