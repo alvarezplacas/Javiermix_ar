@@ -316,12 +316,23 @@ export async function getFooterSettings() {
             return null;
         }
 
-        console.log('[Directus] ✅ Footer Settings (Ruth Bernhard) detectados.');
+        console.log('[Directus] ✅ Footer Settings detectados.');
         return Array.isArray(data) ? data[0] : data; 
     } catch (e: any) { 
         console.error('[Directus] Error en getFooterSettings (Shim):', e.message);
         return null; 
     } 
+}
+
+export async function getFooterColumns() {
+    try {
+        const res = await fetchFromDirectus('/items/footer_columns?sort=sort');
+        const json = await res.json();
+        return json.data || [];
+    } catch (e) {
+        console.error('[Directus] Error en getFooterColumns:', e);
+        return [];
+    }
 }
 
 export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Coleccion'] } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }

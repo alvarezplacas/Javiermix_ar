@@ -1,10 +1,11 @@
 ---
-import { getFooterSettings, getSeries, getArticles } from '@conexion/directus';
+import { getFooterSettings, getSeries, getArticles, getFooterColumns } from '@conexion/directus';
 
 const currentYear = new Date().getFullYear();
 const footerSettings = await getFooterSettings();
 const allSeries = await getSeries();
 const latestArticles = await getArticles();
+const dynamicColumns = await getFooterColumns();
 
 // Limitar a los que necesitamos
 const footerSeries = allSeries.slice(0, 5);
@@ -22,93 +23,107 @@ const studioAddress = footerSettings?.contact_studio_address || "Buenos Aires, A
 ---
 
 <footer class="site-footer">
-  <div class="footer-sitemap">
-    <div class="sitemap-inner">      <div class="footer-brand">
-        <p class="brand-signature">Javier Mix</p>
-        <p class="brand-tagline">Fotografía Fine Art · Buenos Aires</p>
-        <p class="brand-desc">
-          {brandText}
-        </p>
-        <div class="footer-socials">
-          <a href={instagram} target="_blank" aria-label="Instagram" class="social-link">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-            Instagram
-          </a>
-          <a href={whatsapp} target="_blank" aria-label="WhatsApp" class="social-link">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            WhatsApp
-          </a>
-          <a href={behance} target="_blank" aria-label="Behance" class="social-link">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12C1 5.9 5.9 1 12 1s11 5 11 11-5 11-11 11S1 18.1 1 12z"/><path d="M10 8H6v8h4.5a2.5 2.5 0 0 0 0-5H6"/><line x1="14" y1="9" x2="18" y2="9"/><path d="M18 13h-4c0 1.1.9 2 2 2s2-.5 2-2z"/></svg>
-            Behance
-          </a>
-        </div>
-      </div>
-
-      <nav class="footer-nav-col" aria-label="Colecciones de obras">
-        <h4 class="footer-nav-title">
-          <span class="nav-title-line"></span>
-          Colecciones
-        </h4>
-        <ul>
-          <li><a href="/galeria">Ver Portfolio Completo</a></li>
-          {footerSeries.map((serie: any) => (
-             <li><a href={`/galeria/${serie.name.replace(/ /g, '_')}`}>{serie.name}</a></li>
-          ))}
-          <li><a href="/galeria" class="link-all">→ Ver todas las series</a></li>
-        </ul>
-      </nav>
-
-      <nav class="footer-nav-col" aria-label="Servicios">
-        <h4 class="footer-nav-title">
-          <span class="nav-title-line"></span>
-          Servicios
-        </h4>
-        <ul>
-          {services.map((service: string) => (
-            <li>
-              <a href={service.includes('Laboratorio') ? '/laboratorio' : '#'}>
-                {service}
+  <div class="footer-sitemap">    <div class="sitemap-inner">
+      {dynamicColumns && dynamicColumns.length > 0 ? (
+        dynamicColumns.map((col: any) => (
+          <div class="footer-nav-col dynamic-col">
+            <h4 class="footer-nav-title">
+              <span class="nav-title-line"></span>
+              {col.title}
+            </h4>
+            <div class="col-content" set:html={col.content}></div>
+          </div>
+        ))
+      ) : (
+        <>
+          <div class="footer-brand">
+            <p class="brand-signature">Javier Mix</p>
+            <p class="brand-tagline">Fotografía Fine Art · Buenos Aires</p>
+            <p class="brand-desc">
+              {brandText}
+            </p>
+            <div class="footer-socials">
+              <a href={instagram} target="_blank" aria-label="Instagram" class="social-link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                Instagram
               </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+              <a href={whatsapp} target="_blank" aria-label="WhatsApp" class="social-link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                WhatsApp
+              </a>
+              <a href={behance} target="_blank" aria-label="Behance" class="social-link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12C1 5.9 5.9 1 12 1s11 5 11 11-5 11-11 11S1 18.1 1 12z"/><path d="M10 8H6v8h4.5a2.5 2.5 0 0 0 0-5H6"/><line x1="14" y1="9" x2="18" y2="9"/><path d="M18 13h-4c0 1.1.9 2 2 2s2-.5 2-2z"/></svg>
+                Behance
+              </a>
+            </div>
+          </div>
 
-      <nav class="footer-nav-col" aria-label="Revista">
-        <h4 class="footer-nav-title">
-          <span class="nav-title-line"></span>
-          Revista Digital
-        </h4>
-        <ul>
-          <li><a href="/revista">Últimas Notas</a></li>
-          {footerArticles.map((article: any) => (
-            <li><a href={`/revista/${article.slug}`}>{article.title}</a></li>
-          ))}
-          <li><a href="/revista" class="link-all">→ Ver todas las notas</a></li>
-        </ul>
-      </nav>
+          <nav class="footer-nav-col" aria-label="Colecciones de obras">
+            <h4 class="footer-nav-title">
+              <span class="nav-title-line"></span>
+              Colecciones
+            </h4>
+            <ul>
+              <li><a href="/galeria">Ver Portfolio Completo</a></li>
+              {footerSeries.map((serie: any) => (
+                <li><a href={`/galeria/${serie.name.replace(/ /g, '_')}`}>{serie.name}</a></li>
+              ))}
+              <li><a href="/galeria" class="link-all">→ Ver todas las series</a></li>
+            </ul>
+          </nav>
 
-      <nav class="footer-nav-col" aria-label="Contacto">
-        <h4 class="footer-nav-title">
-          <span class="nav-title-line"></span>
-          Contacto
-        </h4>
-        <ul>
-          <li class="contact-item">
-            <span class="contact-label">Consultas de Obra</span>
-            <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
-          </li>
-          <li class="contact-item">
-            <span class="contact-label">WhatsApp</span>
-            <a href={whatsapp}>{contactWhatsapp}</a>
-          </li>
-          <li class="contact-item">
-            <span class="contact-label">Estudio</span>
-            <span>{studioAddress}</span>
-          </li>
-        </ul>
-      </nav>
+          <nav class="footer-nav-col" aria-label="Servicios">
+            <h4 class="footer-nav-title">
+              <span class="nav-title-line"></span>
+              Servicios
+            </h4>
+            <ul>
+              {services.map((service: string) => (
+                <li>
+                  <a href={service.includes('Laboratorio') ? '/laboratorio' : '#'}>
+                    {service}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <nav class="footer-nav-col" aria-label="Revista">
+            <h4 class="footer-nav-title">
+              <span class="nav-title-line"></span>
+              Revista Digital
+            </h4>
+            <ul>
+              <li><a href="/revista">Últimas Notas</a></li>
+              {footerArticles.map((article: any) => (
+                <li><a href={`/revista/${article.slug}`}>{article.title}</a></li>
+              ))}
+              <li><a href="/revista" class="link-all">→ Ver todas las notas</a></li>
+            </ul>
+          </nav>
+
+          <nav class="footer-nav-col" aria-label="Contacto">
+            <h4 class="footer-nav-title">
+              <span class="nav-title-line"></span>
+              Contacto
+            </h4>
+            <ul>
+              <li class="contact-item">
+                <span class="contact-label">Consultas de Obra</span>
+                <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+              </li>
+              <li class="contact-item">
+                <span class="contact-label">WhatsApp</span>
+                <a href={whatsapp}>{contactWhatsapp}</a>
+              </li>
+              <li class="contact-item">
+                <span class="contact-label">Estudio</span>
+                <span>{studioAddress}</span>
+              </li>
+            </ul>
+          </nav>
+        </>
+      )}
     </div>
   </div>
 
@@ -140,6 +155,30 @@ const studioAddress = footerSettings?.contact_studio_address || "Buenos Aires, A
     border-top: 1px solid rgba(255, 255, 255, 0.04);
     font-family: var(--font-secondary);
     color: var(--color-text-muted);
+  }
+
+  .col-content {
+    font-size: 0.85rem;
+    line-height: 1.8;
+  }
+
+  .col-content :global(ul) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .col-content :global(a) {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: 0.3s;
+  }
+
+  .col-content :global(a:hover) {
+    color: var(--color-accent);
   }
 
   .footer-sitemap {

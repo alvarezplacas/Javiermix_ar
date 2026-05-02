@@ -26,6 +26,11 @@
 		--color-travertine-mid: oklch(0.65 0.02 35);
 		--color-travertine-dark: oklch(0.45 0.01 35);
 
+		/* --- NEW ACCENT PALETTE (2026 Exacts) --- */
+		--ok-oro: oklch(0.57 0.12 70.32);      /* #A87439 - Oro Profundo */
+		--ok-plata: oklch(0.74 0.03 74.45);    /* #C4AC96 - Plata Travertino */
+		--ok-ferrari: oklch(0.53 0.23 27.33);  /* #CF0E0E - Ferrari Rojo */
+
 		/* Legacy Aliases for compatibility */
 		--color-gold: var(--ok-gold);
 		--color-burgundy: var(--ok-burgundy);
