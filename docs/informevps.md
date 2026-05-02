@@ -47,4 +47,4 @@ Ubicación: `/opt/alvarezplacas/` (Gestionado de forma independiente)
 ---
 **Nota para Agentes**: No intentar modificar la configuración de un nodo desde el otro. La separación es física y lógica para evitar colisiones de dependencias.
 
-*Actualizado por Antigravity - 2026-04-21*
+*Actualizado por Antigravity - 2026-05-02*
