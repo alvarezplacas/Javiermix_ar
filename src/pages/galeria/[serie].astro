@@ -2,7 +2,7 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getSerieDetails } from '@conexion/directus';
+import { getSerieDetails, getApprovedExhibitionModes } from '@conexion/directus';
 import { getArtworkLikes } from '@conexion/likes';
 import { getOptimizedImageURL } from '@utils/media';
 
@@ -33,6 +33,7 @@ const artworks = await Promise.all(mainImages.map(async (img: any) => {
 
 const serieName = name;
 const coverOg = artworks[0]?.mainUrl || undefined;
+const approvedModes = await getApprovedExhibitionModes();
 ---
 
 <Layout
@@ -57,6 +58,16 @@ const coverOg = artworks[0]?.mainUrl || undefined;
 				<span class="label">Volver a Colecciones</span>
 			</a>
 			<h1 class="serie-title">{name}</h1>
+			
+			<div class="serie-lab-suggestion">
+				<span class="suggestion-label">VER OBRAS EN:</span>
+				<div class="approved-modes">
+					{approvedModes.map(mode => (
+						<a href={`${mode.path}?serie=${name}`} class="lab-link">{mode.label}</a>
+					))}
+				</div>
+			</div>
+
 			<p class="serie-meta">
 				<span class="count">{artworks.length}</span>
 				<span class="label">Obras Disponibles</span>
@@ -184,6 +195,42 @@ const coverOg = artworks[0]?.mainUrl || undefined;
 	align-items: center;
 	justify-content: center;
 	gap: 1rem;
+}
+
+.serie-lab-suggestion {
+	margin: 1.5rem 0 2rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.approved-modes {
+	display: flex;
+	gap: 2rem;
+	justify-content: center;
+.suggestion-label {
+	font-size: 0.5rem;
+	letter-spacing: 3px;
+	color: rgba(255, 255, 255, 0.4);
+	font-weight: 800;
+}
+
+.lab-link {
+	color: var(--color-accent);
+	text-decoration: none;
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 5px;
+	text-transform: uppercase;
+	transition: all 0.4s var(--ease-premium);
+	opacity: 0.8;
+}
+
+.lab-link:hover {
+	opacity: 1;
+	transform: scale(1.05);
+	text-shadow: 0 0 15px var(--color-accent);
 }
 
 .serie-content-container {

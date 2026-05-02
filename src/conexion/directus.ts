@@ -301,6 +301,22 @@ export async function getFooterSettings() {
 
 export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Coleccion'] } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }
 
+export async function getApprovedExhibitionModes() {
+    try {
+        const client = await DirectusManager.getClient();
+        // Por ahora hardcodeado como aprobado, preparado para leer de una colección 'laboratorio_modos'
+        return [
+            { 
+                id: 'royal-gallery', 
+                name: 'Royal Gallery', 
+                path: '/laboratorio/galeria-real', 
+                label: '- Royal Gallery -',
+                isApproved: true 
+            }
+        ];
+    } catch (e) { return []; }
+}
+
 export async function getLaboratorioEntornos() {
     try {
         const client = await DirectusManager.getClient();

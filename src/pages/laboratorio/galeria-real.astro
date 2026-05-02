@@ -630,6 +630,19 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         window.addEventListener('touchstart', resetIdleTimer);
         resetIdleTimer();
 
+        // 🔍 Auto-Filtrado por Serie desde URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const querySerie = urlParams.get('serie');
+        if (querySerie) {
+            console.log(`[JMX] Auto-filtrando por serie: ${querySerie}`);
+            setTimeout(() => {
+                const targetBtn = Array.from(seriesBtns).find(btn => 
+                    btn.getAttribute('data-serie')?.toLowerCase() === querySerie.toLowerCase()
+                );
+                if (targetBtn) (targetBtn as HTMLElement).click();
+            }, 100);
+        }
+
         if (!gallery) return;
 
         // 🔊 Audio Engine
