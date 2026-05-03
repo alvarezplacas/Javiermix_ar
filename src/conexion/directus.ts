@@ -97,7 +97,11 @@ export class DirectusManager {
         }
 
         try {
-            const response = await fetch(url, { ...options, headers });
+            const response = await fetch(url, { 
+                cache: 'no-store', // 🚀 FIX: Forzar siempre datos frescos desde Directus
+                ...options, 
+                headers 
+            });
             if (!response.ok && response.status === 403) {
                 // Si da 403, re-intentamos SIN token por si acaso
                 const publicHeaders = { 'Content-Type': 'application/json', ...options.headers };
@@ -298,11 +302,19 @@ export async function getCertificates() { try { const client = await DirectusMan
 export async function getCertificateByUuid(uuid: string) { try { const client = await DirectusManager.getClient(); const results = await client.request(readItems('certificates', { filter: { id: { _eq: uuid } }, fields: ['*', { artwork_id: ['*'], collector_id: ['*'] }], limit: 1 })); return results[0] || null; } catch (e) { return null; } }
 export async function getHomeSettings() { 
     try { 
-        const res = await fetchFromDirectus('/items/home_settings?limit=1');
+        // 🚀 Nota: En Directus v11, los singletons se acceden sin ?limit=1 si se desea el objeto directo
+        const res = await fetchFromDirectus('/items/home_settings');
         const json = await res.json();
         const data = json.data;
+        
+        if (!data) return null;
+        
+        // Manejo híbrido (por si se cambió de Singleton a Colección accidentalmente)
         return Array.isArray(data) ? data[0] : data;
-    } catch (e) { return null; } 
+    } catch (e) { 
+        console.error('[Directus] Error en getHomeSettings:', e);
+        return null; 
+    } 
 }
 
 export async function getFooterSettings() { 
