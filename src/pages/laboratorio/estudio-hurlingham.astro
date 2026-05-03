@@ -538,6 +538,9 @@ const galleryItems = photos.map((file: any) => ({
 </style>
 
 <script>
+    const viewer = document.getElementById('viewer');
+    const closeBtn = document.getElementById('close-viewer');
+    const viewButtons = document.querySelectorAll('.view-btn');
     const slideCurrent = document.getElementById('slide-current');
     const slideNext = document.getElementById('slide-next');
     const viewerTitle = document.getElementById('viewer-title');
