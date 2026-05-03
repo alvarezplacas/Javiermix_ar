@@ -20,12 +20,21 @@ const behance = footerSettings?.behance_url || "#";
 const contactEmail = footerSettings?.contact_email || "info@javiermix.com";
 const contactWhatsapp = footerSettings?.contact_whatsapp || "+54 9 11 XXXX XXXX";
 const studioAddress = footerSettings?.contact_studio_address || "Buenos Aires, Argentina";
+
+// Soporte para columnas en el Singleton footer_settings (footer 1, 2, 3, 4, 5)
+const singletonColumns = [
+  { title: footerSettings?.footer_1_title, content: footerSettings?.footer_1_content },
+  { title: footerSettings?.footer_2_title, content: footerSettings?.footer_2_content },
+  { title: footerSettings?.footer_3_title, content: footerSettings?.footer_3_content },
+  { title: footerSettings?.footer_4_title, content: footerSettings?.footer_4_content },
+  { title: footerSettings?.footer_5_title, content: footerSettings?.footer_5_content }
+].filter(c => c.content); // Solo mostrar las que tengan contenido configurado
 ---
 
 <footer class="site-footer">
   <div class="footer-sitemap">    <div class="sitemap-inner">
-      {dynamicColumns && dynamicColumns.length > 0 ? (
-        dynamicColumns.map((col: any) => (
+      { (dynamicColumns && dynamicColumns.length > 0) || (singletonColumns.length > 0) ? (
+        (dynamicColumns.length > 0 ? dynamicColumns : singletonColumns).map((col: any) => (
           <div class="footer-nav-col dynamic-col">
             <h4 class="footer-nav-title">
               <span class="nav-title-line"></span>
@@ -248,7 +257,7 @@ const studioAddress = footerSettings?.contact_studio_address || "Buenos Aires, A
   .footer-nav-title {
     font-family: var(--font-primary);
     font-size: 1.3rem;
-    color: var(--color-white);
+    color: var(--ok-plata);
     font-weight: 400;
     margin-bottom: 2.5rem;
     display: flex;
