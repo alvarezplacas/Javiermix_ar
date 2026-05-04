@@ -1,33 +1,27 @@
-# 📅 Resumen de Sesión y Próximos Pasos - 03/05/2026
+# 📝 Resumen de Avances - 3 de Mayo, 2026
 
-## 🚀 Hitos Alcanzados Hoy
+Hoy hemos completado una fase crítica de la expansión del **Laboratorio JMX**, enfocándonos en la curaduría histórica y la interactividad avanzada.
 
-### 1. Estudio Hurlingham (Laboratorio Fotográfico)
-*   **Motor Cinematic Flow 2026**: Implementación de transiciones fluidas de doble slide con física quintic, desenfoque de movimiento direccional y perspectiva 3D.
-*   **Correcciones Críticas**: Restauración de eventos para los botones "Reproducir" y "Expandir" que se habían perdido en el refactor.
-*   **Metadatos**: Reubicación elegante del título y la fecha en la esquina inferior derecha para no obstruir la visualización de la obra.
+## ✅ Logros de Hoy
+1.  **Sección de Rescate de Fotos**:
+    *   Creada la página `rescate-fotos.astro` con estética "Restoration Lab" (grano sutil, tonos sepia, modo tour).
+    *   Integrada la función `getRescateFiles` en la capa de Directus para automatizar la carga de archivos históricos.
+2.  **Efecto Hover Dinámico (Variante _2)**:
+    *   Implementada lógica de detección de pares de archivos (`foto.jpg` + `foto_2.jpg`) en las secciones de **Estudio Hurlingham** y **Rescate de Fotos**.
+    *   Este efecto permite ver mockups o estados previos/posteriores al pasar el mouse por la galería.
+3.  **Visor Inmersivo con Hover**:
+    *   Se extendió el efecto de comparación al visor de pantalla completa.
+    *   Ahora, al expandir una obra, el usuario puede interactuar con el visor para ver el "antes y después" en alta resolución (1600px).
+4.  **Ajustes de Interfaz**:
+    *   Corregidos problemas de capas (z-index) que ocultaban los botones de acción durante el hover.
+    *   Asegurada la responsividad del nuevo grid de 50/50.
+5.  **Infraestructura**:
+    *   Ejecutado script de inicialización en Directus para crear la carpeta raíz "Rescate de Fotos" y subcarpetas de ejemplo.
 
-### 2. Footer Dinámico (Poder Total)
-*   **Estructura de 5 Columnas**: El footer ahora es 100% editable desde Directus.
-*   **Automatización Directus**: Se crearon vía API 10 campos nuevos (`footer_x_title` y `footer_x_content`) con interfaz **WYSIWYG** para facilitar la gestión de enlaces.
-*   **Acento Plata**: Aplicación del color Plata OKLCH a los títulos del footer.
-
-### 3. Revista Online (Diseño Editorial)
-*   **Nuevo Spread 50/50**: Inversión del diseño. Multimedia fija a la izquierda sobre fondo negro puro; narrativa a la derecha.
-*   **Alta Fidelidad Editorial**: Inclusión de Capitulares (Drop Caps) tipográficas y ajustes de legibilidad premium (interlineado y justificado).
-
-### 4. Sincronización Directus-Web
-*   **Parche no-store**: Se forzó la política de `cache: 'no-store'` en el puente de conexión para asegurar que los cambios en Directus se vean al instante sin esperas.
-
----
-
-## 📋 Pendientes para Mañana
-- [ ] **Validación de Sincronización**: Confirmar con el usuario que el Home se actualiza al instante tras el parche de caché.
-- [ ] **Responsive Check**: Verificar el comportamiento del nuevo diseño 50/50 de la revista en dispositivos móviles (especialmente la altura del bloque multimedia).
-- [ ] **Interacción Editorial**: Evaluar si los artículos necesitan más elementos dinámicos (citas destacadas, galerías internas).
-- [ ] **Optimización de Assets**: Revisar si el visor de Hurlingham requiere compresión AVIF dinámica adicional para Smart TVs.
+## 🚀 Pendiente para Mañana
+1.  **Optimización**: Revisar el rendimiento de carga de las imágenes `_2` en conexiones móviles.
+2.  **Audio**: Considerar la integración de un paisaje sonoro específico para el laboratorio de restauración (sonidos de archivos, químicos, papel).
+3.  **Feedback**: Confirmar con el usuario si el sistema de "Before/After" por hover es suficiente o si desea un slider interactivo (cortinilla).
 
 ---
-**Estado del Sistema:** ESTABLE y PUSHED.
-**Rama actual:** `master`
-**Último Commit:** `5236016` (Fix: Implemented cache: 'no-store')
+*Misión actual: Mantener el Estándar de Oro en cada píxel del Laboratorio.*

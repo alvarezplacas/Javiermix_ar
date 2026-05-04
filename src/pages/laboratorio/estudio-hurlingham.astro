@@ -69,11 +69,14 @@ const galleryItems = mainPhotos.map((file: any) => {
         ) : (
             <div class="contact-sheet">
                 {galleryItems.map((item, index) => (
-                    <div class="photo-cell" data-index={index}>
+                    <div class={`photo-cell ${item.hoverThumb ? 'has-hover' : ''}`} data-index={index}>
                         <div class="image-box">
                             <img src={item.thumb} alt={item.title} loading="lazy" class="main-img" />
                             {item.hoverThumb && (
-                                <img src={item.hoverThumb} alt={`${item.title} - View 2`} loading="lazy" class="hover-img" />
+                                <>
+                                    <img src={item.hoverThumb} alt={`${item.title} - View 2`} loading="lazy" class="hover-img" />
+                                    <div class="hover-trigger"></div>
+                                </>
                             )}
                             <div class="overlay">
                                 <button class="view-btn" 
@@ -102,6 +105,7 @@ const galleryItems = mainPhotos.map((file: any) => {
             </div>
             <div class="viewer-content">
                 <div class="slider-stage">
+                    <div class="hover-trigger"></div>
                     <div id="slide-current" class="slide-item active">
                         <img src="" alt="" class="v-main" />
                         <img src="" alt="" class="v-hover" />
@@ -221,12 +225,20 @@ const galleryItems = mainPhotos.map((file: any) => {
         z-index: 1;
     }
 
-    .photo-cell:hover .main-img { 
+    /* 🛡️ Hover Trigger System */
+    .hover-trigger {
+        position: absolute;
+        inset: 25%; /* Dead zone of 25% at borders (much more centered) */
+        z-index: 20;
+        background: transparent;
+    }
+
+    .has-hover .hover-trigger:hover ~ .main-img { 
         transform: scale(1.05); 
         opacity: 0;
     }
 
-    .photo-cell:hover .hover-img {
+    .has-hover .hover-trigger:hover ~ .hover-img {
         opacity: 1;
         transform: scale(1.05);
     }
@@ -242,9 +254,18 @@ const galleryItems = mainPhotos.map((file: any) => {
         transition: 0.4s;
         backdrop-filter: blur(5px);
         z-index: 10;
+        pointer-events: none;
     }
 
-    .photo-cell:hover .overlay { opacity: 1; }
+    .has-hover .hover-trigger:hover ~ .overlay { 
+        opacity: 1; 
+        pointer-events: auto;
+    }
+
+    .photo-cell:not(.has-hover):hover .overlay { 
+        opacity: 1; 
+        pointer-events: auto;
+    }
 
     .view-btn {
         background: transparent;
@@ -520,8 +541,15 @@ const galleryItems = mainPhotos.map((file: any) => {
         z-index: 5;
     }
 
-    .slider-stage:hover .v-main { opacity: 0; }
-    .slider-stage:hover .v-hover { opacity: 1; }
+    /* Only swap if the stage has the 'can-hover' class */
+    .slider-stage.can-hover .hover-trigger:hover ~ .slide-item .v-main { opacity: 0; }
+    .slider-stage.can-hover .hover-trigger:hover ~ .slide-item .v-hover { opacity: 1; }
+
+    .slider-stage .hover-trigger {
+        position: absolute;
+        inset: 20%; /* Centered trigger for viewer */
+        z-index: 100;
+    }
 
     .viewer-content.tour-active .slide-item {
         transition-duration: 1.6s;
@@ -609,8 +637,15 @@ const galleryItems = mainPhotos.map((file: any) => {
         // 1. Preparar el siguiente slide
         nextMain.src = src;
         nextHover.src = hoverSrc || '';
-        if (!hoverSrc) nextHover.style.display = 'none';
-        else nextHover.style.display = 'block';
+        
+        const stage = document.querySelector('.slider-stage');
+        if (hoverSrc) {
+            nextHover.style.display = 'block';
+            stage?.classList.add('can-hover');
+        } else {
+            nextHover.style.display = 'none';
+            stage?.classList.remove('can-hover');
+        }
 
         slideNext.className = 'slide-item enter-right';
         
