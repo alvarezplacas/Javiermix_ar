@@ -655,7 +655,6 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         // 1. Preparar el siguiente slide
         nextMain.src = src;
-        const nextHover = slideNext?.querySelector('.v-hover') as HTMLImageElement;
         const stage = document.getElementById('comparison-stage');
 
         if (hoverSrc && nextHover) {
