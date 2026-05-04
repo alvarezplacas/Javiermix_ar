@@ -6,13 +6,21 @@ const photos = await getHurlinghamFiles();
 
 const uniqueSeries = [...new Set(photos.map((f: any) => f.serie_name))].filter(Boolean);
 
-const galleryItems = photos.filter((p: any) => !p.filename_download.toLowerCase().includes('_2')).map((file: any) => {
+// Lógica de pares _2
+const mainPhotos = photos.filter((p: any) => !p.filename_download.toLowerCase().includes('_2'));
+const hoverPhotos = photos.filter((p: any) => p.filename_download.toLowerCase().includes('_2'));
+
+const galleryItems = mainPhotos.map((file: any) => {
+    const baseName = file.filename_download.split('.')[0];
+    const hoverFile = hoverPhotos.find((h: any) => h.filename_download.toLowerCase().startsWith(baseName.toLowerCase() + '_2'));
+
     return {
         id: file.id,
         title: file.title || file.filename_download,
         serie: file.serie_name,
         src: getAssetUrl(file.id, { width: 1600, format: 'webp', quality: 90 }),
         thumb: getAssetUrl(file.id, { width: 600, format: 'webp', quality: 70 }),
+        hoverThumb: hoverFile ? getAssetUrl(hoverFile.id, { width: 1600, format: 'webp', quality: 90 }) : null,
         metadata: {
             type: file.type,
             size: (file.filesize / 1024 / 1024).toFixed(2) + ' MB',
@@ -66,7 +74,7 @@ const galleryItems = photos.filter((p: any) => !p.filename_download.toLowerCase(
                             <div class="overlay">
                                 <button class="view-btn" 
                                      data-src={item.src} 
-                                     data-hover="" 
+                                     data-hover={item.hoverThumb || ''} 
                                      data-title={item.title} 
                                      data-date={item.metadata.date}
                                 >EXPANDIR</button>
@@ -89,12 +97,26 @@ const galleryItems = photos.filter((p: any) => !p.filename_download.toLowerCase(
                 <button id="close-viewer" class="close-btn">×</button>
             </div>
             <div class="viewer-content">
-                <div class="slider-stage">
+                <div class="slider-stage" id="comparison-stage">
+                    <div class="slider-curtain">
+                        <div class="curtain-line">
+                            <div class="curtain-handle">
+                                <span class="arrow-l">‹</span>
+                                <span class="arrow-r">›</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slider-labels">
+                        <span class="label-original">ARCHIVO ORIGINAL</span>
+                        <span class="label-restored">RESTAURACIÓN DIGITAL</span>
+                    </div>
                     <div id="slide-current" class="slide-item active">
                         <img src="" alt="" class="v-main" />
+                        <img src="" alt="" class="v-hover" />
                     </div>
                     <div id="slide-next" class="slide-item">
                         <img src="" alt="" class="v-main" />
+                        <img src="" alt="" class="v-hover" />
                     </div>
                 </div>
                 <div class="viewer-meta-box">
@@ -193,32 +215,93 @@ const galleryItems = photos.filter((p: any) => !p.filename_download.toLowerCase(
         border: 1px solid rgba(255,255,255,0.05);
     }
 
-    .image-box img {
+    .slider-stage {
+        position: relative;
         width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        perspective: 1500px;
+        overflow: hidden;
     }
 
-    .photo-cell:hover .main-img { 
-        transform: scale(1.05); 
+    .slide-item img {
+        max-width: 90%;
+        max-height: 100%;
+        object-fit: contain;
+        box-shadow: 0 40px 120px rgba(0,0,0,0.9);
     }
 
-    .overlay {
+    .v-hover {
+        position: absolute;
+        z-index: 5;
+        clip-path: inset(0 0 0 50%); /* Controlado por JS */
+    }
+
+    /* 🎭 Curtain UI */
+    .slider-curtain {
         position: absolute;
         inset: 0;
-        background: rgba(0,0,0,0.6);
+        z-index: 20;
+        pointer-events: none;
+        display: none;
+    }
+
+    .slider-stage.has-comparison .slider-curtain { display: block; pointer-events: auto; cursor: ew-resize; }
+
+    .curtain-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%; /* Controlado por JS */
+        width: 2px;
+        background: var(--studio-accent);
+        box-shadow: 0 0 20px rgba(220, 177, 74, 0.5);
+    }
+
+    .curtain-handle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        background: var(--studio-accent);
+        border-radius: 50%;
         display: flex;
         justify-content: center;
         align-items: center;
-        opacity: 0;
-        transition: 0.4s;
-        backdrop-filter: blur(5px);
-        z-index: 10;
+        color: #000;
+        font-weight: 900;
+        font-size: 1.2rem;
+        box-shadow: 0 0 30px rgba(0,0,0,0.8);
     }
 
-    .photo-cell:hover .overlay { 
-        opacity: 1; 
+    .slider-labels {
+        position: absolute;
+        top: 4rem;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 10%;
+        z-index: 25;
+        pointer-events: none;
+        opacity: 0;
+        transition: 0.5s;
+    }
+
+    .slider-stage.has-comparison:hover .slider-labels { opacity: 0.6; }
+
+    .slider-labels span {
+        font-size: 0.6rem;
+        letter-spacing: 3px;
+        font-weight: 900;
+        color: #fff;
+        background: rgba(0,0,0,0.4);
+        padding: 0.5rem 1rem;
+        border: 1px solid rgba(255,255,255,0.1);
     }
 
     .view-btn {
@@ -560,45 +643,59 @@ const galleryItems = photos.filter((p: any) => !p.filename_download.toLowerCase(
     
     let isTransitioning = false;
 
-    function updateViewer(src: string, hoverSrc: string, title: string, date: string, direction = 'right') {
+    function updateViewer(src: string, hoverSrc: string, title: string, date: string) {
         if (isTransitioning) return;
         isTransitioning = true;
 
-        const currentMain = slideCurrent?.querySelector('.v-main') as HTMLImageElement;
-        const currentHover = slideCurrent?.querySelector('.v-hover') as HTMLImageElement;
-        const nextMain = slideNext?.querySelector('.v-main') as HTMLImageElement;
-        const nextHover = slideNext?.querySelector('.v-hover') as HTMLImageElement;
+        const current = document.getElementById('slide-current');
+        const next = document.getElementById('slide-next');
+        const stage = document.getElementById('comparison-stage');
 
-        if (!slideCurrent || !slideNext || !nextMain || !nextHover) return;
+        if (!current || !next) {
+            isTransitioning = false;
+            return;
+        }
+
+        const nextMain = next.querySelector('.v-main') as HTMLImageElement;
+        const nextHover = next.querySelector('.v-hover') as HTMLImageElement;
+
+        if (!nextMain) {
+            isTransitioning = false;
+            return;
+        }
 
         // 1. Preparar el siguiente slide
         nextMain.src = src;
-        slideNext.className = 'slide-item enter-right';
-        
-        // Forzar reflow
-        void slideNext.offsetWidth;
+
+        if (hoverSrc && nextHover) {
+            nextHover.src = hoverSrc;
+            nextHover.style.display = 'block';
+            stage?.classList.add('has-comparison');
+            resetCurtain();
+        } else if (nextHover) {
+            nextHover.style.display = 'none';
+            stage?.classList.remove('has-comparison');
+        }
+
+        next.className = 'slide-item enter-right';
+        void next.offsetWidth;
 
         // 2. Ejecutar la coreografía
-        slideCurrent.classList.add('exit-left');
-        slideCurrent.classList.remove('active');
+        current.classList.add('exit-left');
+        current.classList.remove('active');
 
-        slideNext.classList.add('active');
-        slideNext.classList.remove('enter-right');
+        next.classList.add('active');
+        next.classList.remove('enter-right');
 
-        // Actualizar textos
         if (viewerTitle) viewerTitle.textContent = title;
         if (viewerDate) viewerDate.textContent = date;
 
         // 3. Swap de identidades tras la animación
         setTimeout(() => {
-            // Limpiar el que salió
-            slideCurrent.className = 'slide-item';
-            
-            // Intercambiar elementos para la próxima vuelta
-            const tempId = slideCurrent.id;
-            slideCurrent.id = slideNext.id;
-            slideNext.id = tempId;
-
+            current.className = 'slide-item';
+            const tempId = current.id;
+            current.id = next.id;
+            next.id = tempId;
             isTransitioning = false;
         }, 1200);
     }
@@ -699,5 +796,42 @@ const galleryItems = photos.filter((p: any) => !p.filename_download.toLowerCase(
                 document.body.style.overflow = 'auto';
             }
         }
+    });
+    // --- Lógica del Slider de Comparación ---
+    const comparisonStage = document.getElementById('comparison-stage');
+    const curtainLine = document.querySelector('.curtain-line') as HTMLElement;
+    
+    function resetCurtain() {
+        if (curtainLine) curtainLine.style.left = '50%';
+        const hoverImgs = document.querySelectorAll('.v-hover');
+        hoverImgs.forEach(img => (img as HTMLElement).style.clipPath = 'inset(0 0 0 50%)');
+    }
+
+    comparisonStage?.addEventListener('mousemove', (e) => {
+        if (!comparisonStage.classList.contains('has-comparison')) return;
+        
+        const rect = comparisonStage.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const boundedX = Math.max(0, Math.min(100, x));
+
+        if (curtainLine) curtainLine.style.left = `${boundedX}%`;
+        
+        const activeHover = comparisonStage.querySelector('.slide-item.active .v-hover') as HTMLElement;
+        if (activeHover) {
+            activeHover.style.clipPath = `inset(0 0 0 ${boundedX}%)`;
+        }
+    });
+
+    // Soporte Touch
+    comparisonStage?.addEventListener('touchmove', (e) => {
+        if (!comparisonStage.classList.contains('has-comparison')) return;
+        const touch = e.touches[0];
+        const rect = comparisonStage.getBoundingClientRect();
+        const x = ((touch.clientX - rect.left) / rect.width) * 100;
+        const boundedX = Math.max(0, Math.min(100, x));
+
+        if (curtainLine) curtainLine.style.left = `${boundedX}%`;
+        const activeHover = comparisonStage.querySelector('.slide-item.active .v-hover') as HTMLElement;
+        if (activeHover) activeHover.style.clipPath = `inset(0 0 0 ${boundedX}%)`;
     });
 </script>

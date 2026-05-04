@@ -642,20 +642,29 @@ const galleryItems = mainPhotos.map((file: any) => {
     
     let isTransitioning = false;
 
-    function updateViewer(src: string, hoverSrc: string, title: string, date: string, direction = 'right') {
+    function updateViewer(src: string, hoverSrc: string, title: string, date: string) {
         if (isTransitioning) return;
         isTransitioning = true;
 
-        const currentMain = slideCurrent?.querySelector('.v-main') as HTMLImageElement;
-        const currentHover = slideCurrent?.querySelector('.v-hover') as HTMLImageElement;
-        const nextMain = slideNext?.querySelector('.v-main') as HTMLImageElement;
-        const nextHover = slideNext?.querySelector('.v-hover') as HTMLImageElement;
+        const current = document.getElementById('slide-current');
+        const next = document.getElementById('slide-next');
+        const stage = document.getElementById('comparison-stage');
 
-        if (!slideCurrent || !slideNext || !nextMain || !nextHover) return;
+        if (!current || !next) {
+            isTransitioning = false;
+            return;
+        }
+
+        const nextMain = next.querySelector('.v-main') as HTMLImageElement;
+        const nextHover = next.querySelector('.v-hover') as HTMLImageElement;
+
+        if (!nextMain) {
+            isTransitioning = false;
+            return;
+        }
 
         // 1. Preparar el siguiente slide
         nextMain.src = src;
-        const stage = document.getElementById('comparison-stage');
 
         if (hoverSrc && nextHover) {
             nextHover.src = hoverSrc;
@@ -667,28 +676,25 @@ const galleryItems = mainPhotos.map((file: any) => {
             stage?.classList.remove('has-comparison');
         }
 
-        slideNext.className = 'slide-item enter-right';
-        
-        // Forzar reflow
-        void slideNext.offsetWidth;
+        next.className = 'slide-item enter-right';
+        void next.offsetWidth;
 
         // 2. Ejecutar la coreografía
-        slideCurrent.classList.add('exit-left');
-        slideCurrent.classList.remove('active');
+        current.classList.add('exit-left');
+        current.classList.remove('active');
 
-        slideNext.classList.add('active');
-        slideNext.classList.remove('enter-right');
+        next.classList.add('active');
+        next.classList.remove('enter-right');
 
-        // Actualizar textos
         if (viewerTitle) viewerTitle.textContent = title;
         if (viewerDate) viewerDate.textContent = date;
 
         // 3. Swap de identidades tras la animación
         setTimeout(() => {
-            slideCurrent.className = 'slide-item';
-            const tempId = slideCurrent.id;
-            slideCurrent.id = slideNext.id;
-            slideNext.id = tempId;
+            current.className = 'slide-item';
+            const tempId = current.id;
+            current.id = next.id;
+            next.id = tempId;
             isTransitioning = false;
         }, 1400);
     }
