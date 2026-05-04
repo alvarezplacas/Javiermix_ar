@@ -178,6 +178,40 @@ export async function getHurlinghamFiles() {
     }
 }
 
+export async function getRescateFiles() {
+    try {
+        const client = await DirectusManager.getClient();
+        // 1. Encontrar la carpeta raíz
+        const rootFolders = await client.request(readFolders({ filter: { name: { _eq: 'Rescate de Fotos' } }, limit: 1 }));
+        const rootId = rootFolders[0]?.id;
+        if (!rootId) return [];
+
+        // 2. Encontrar todas las subcarpetas (series de restauración)
+        const subFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } }, limit: -1 }));
+        const folderIds = [rootId, ...subFolders.map((f: any) => f.id)];
+        
+        // Crear un mapa de nombres de carpetas
+        const folderMap = new Map();
+        folderMap.set(rootId, "General");
+        subFolders.forEach((f: any) => folderMap.set(f.id, f.name));
+
+        // 3. Obtener todos los archivos
+        const files = await client.request(readFiles({ 
+            filter: { folder: { _in: folderIds } }, 
+            sort: ['-filename_download'], 
+            limit: -1 
+        }));
+
+        return (files as any[]).map((file: any) => ({
+            ...file,
+            serie_name: folderMap.get(file.folder) || "Restauración"
+        }));
+    } catch (e) { 
+        console.error("[getRescateFiles] Error:", e);
+        return []; 
+    }
+}
+
 export async function getSeries() {
     try {
         const client = await DirectusManager.getClient();
