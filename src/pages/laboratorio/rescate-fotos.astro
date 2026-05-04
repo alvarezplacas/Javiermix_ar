@@ -6,20 +6,29 @@ const photos = await getRescateFiles();
 
 const uniqueSeries = [...new Set(photos.map((f: any) => f.serie_name))].filter(Boolean);
 
-// Formateo de datos para la galería
-const galleryItems = photos.map((file: any) => ({
-    id: file.id,
-    title: file.title || file.filename_download,
-    serie: file.serie_name,
-    src: getAssetUrl(file.id, { width: 1600, format: 'webp', quality: 90 }),
-    thumb: getAssetUrl(file.id, { width: 600, format: 'webp', quality: 70 }),
-    metadata: {
-        type: file.type,
-        size: (file.filesize / 1024 / 1024).toFixed(2) + ' MB',
-        dim: `${file.width} x ${file.height}px`,
-        date: file.uploaded_on ? new Date(file.uploaded_on).toLocaleDateString('es-AR') : ''
-    }
-}));
+// Lógica de pares _2
+const mainPhotos = photos.filter((p: any) => !p.filename_download.toLowerCase().includes('_2'));
+const hoverPhotos = photos.filter((p: any) => p.filename_download.toLowerCase().includes('_2'));
+
+const galleryItems = mainPhotos.map((file: any) => {
+    const baseName = file.filename_download.split('.')[0];
+    const hoverFile = hoverPhotos.find((h: any) => h.filename_download.toLowerCase().startsWith(baseName.toLowerCase() + '_2'));
+
+    return {
+        id: file.id,
+        title: file.title || file.filename_download,
+        serie: file.serie_name,
+        src: getAssetUrl(file.id, { width: 1600, format: 'webp', quality: 90 }),
+        thumb: getAssetUrl(file.id, { width: 600, format: 'webp', quality: 70 }),
+        hoverThumb: hoverFile ? getAssetUrl(hoverFile.id, { width: 600, format: 'webp', quality: 70 }) : null,
+        metadata: {
+            type: file.type,
+            size: (file.filesize / 1024 / 1024).toFixed(2) + ' MB',
+            dim: `${file.width} x ${file.height}px`,
+            date: file.uploaded_on ? new Date(file.uploaded_on).toLocaleDateString('es-AR') : ''
+        }
+    };
+});
 ---
 
 <Layout title="Rescate de Fotos Antiguas | Laboratorio JMX">
@@ -64,7 +73,10 @@ const galleryItems = photos.map((file: any) => ({
                 {galleryItems.map((item, index) => (
                     <div class="photo-cell" data-index={index}>
                         <div class="image-box">
-                            <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect" />
+                            <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect main-img" />
+                            {item.hoverThumb && (
+                                <img src={item.hoverThumb} alt={`${item.title} - Restore View`} loading="lazy" class="hover-img" />
+                            )}
                             <div class="overlay">
                                 <button class="view-btn" data-src={item.src} data-title={item.title} data-date={item.metadata.date}>ANALIZAR OBRA</button>
                             </div>
@@ -219,14 +231,30 @@ const galleryItems = photos.map((file: any) => ({
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease, filter 1s ease;
+    }
+
+    .hover-img {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        z-index: 1;
     }
 
     .old-photo-effect {
         filter: sepia(0.2) contrast(1.1) brightness(0.9);
     }
 
-    .photo-cell:hover img { transform: scale(1.08); filter: sepia(0) contrast(1.1) brightness(1); }
+    .photo-cell:hover .main-img { 
+        transform: scale(1.08); 
+        opacity: 0;
+        filter: sepia(0) contrast(1.1) brightness(1); 
+    }
+
+    .photo-cell:hover .hover-img {
+        opacity: 1;
+        transform: scale(1.08);
+    }
 
     .overlay {
         position: absolute;
