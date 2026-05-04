@@ -20,7 +20,7 @@ const galleryItems = mainPhotos.map((file: any) => {
         serie: file.serie_name,
         src: getAssetUrl(file.id, { width: 1600, format: 'webp', quality: 90 }),
         thumb: getAssetUrl(file.id, { width: 600, format: 'webp', quality: 70 }),
-        hoverThumb: hoverFile ? getAssetUrl(hoverFile.id, { width: 600, format: 'webp', quality: 70 }) : null,
+        hoverThumb: hoverFile ? getAssetUrl(hoverFile.id, { width: 1600, format: 'webp', quality: 90 }) : null,
         metadata: {
             type: file.type,
             size: (file.filesize / 1024 / 1024).toFixed(2) + ' MB',
@@ -71,19 +71,13 @@ const galleryItems = mainPhotos.map((file: any) => {
         ) : (
             <div class="contact-sheet">
                 {galleryItems.map((item, index) => (
-                    <div class={`photo-cell ${item.hoverThumb ? 'has-hover' : ''}`} data-index={index}>
+                    <div class="photo-cell" data-index={index}>
                         <div class="image-box">
                             <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect main-img" />
-                            {item.hoverThumb && (
-                                <>
-                                    <img src={item.hoverThumb} alt={`${item.title} - Restore View`} loading="lazy" class="hover-img" />
-                                    <div class="hover-trigger"></div>
-                                </>
-                            )}
                             <div class="overlay">
                                 <button class="view-btn" 
                                     data-src={item.src} 
-                                    data-hover={item.hoverThumb ? item.hoverThumb.replace('width=600', 'width=1600') : ''} 
+                                    data-hover={item.hoverThumb || ''} 
                                     data-title={item.title} 
                                     data-date={item.metadata.date}
                                 >ANALIZAR OBRA</button>
@@ -106,8 +100,19 @@ const galleryItems = mainPhotos.map((file: any) => {
                 <button id="close-viewer" class="close-btn">×</button>
             </div>
             <div class="viewer-content">
-                <div class="slider-stage">
-                    <div class="hover-trigger"></div>
+                <div class="slider-stage" id="comparison-stage">
+                    <div class="slider-curtain">
+                        <div class="curtain-line">
+                            <div class="curtain-handle">
+                                <span class="arrow-l">‹</span>
+                                <span class="arrow-r">›</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slider-labels">
+                        <span class="label-original">ARCHIVO ORIGINAL</span>
+                        <span class="label-restored">RESTAURACIÓN DIGITAL</span>
+                    </div>
                     <div id="slide-current" class="slide-item active">
                         <img src="" alt="" class="v-main" />
                         <img src="" alt="" class="v-hover" />
@@ -242,38 +247,15 @@ const galleryItems = mainPhotos.map((file: any) => {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease, filter 1s ease;
-    }
-
-    .hover-img {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        z-index: 1;
-    }
-
-    /* 🛡️ Hover Trigger System */
-    .hover-trigger {
-        position: absolute;
-        inset: 25%; /* Dead zone of 25% at borders (much more centered) */
-        z-index: 20;
-        background: transparent;
+        transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .old-photo-effect {
         filter: sepia(0.2) contrast(1.1) brightness(0.9);
     }
 
-    /* Transition only when hovering the trigger */
-    .has-hover .hover-trigger:hover ~ .main-img { 
+    .photo-cell:hover .main-img { 
         transform: scale(1.08); 
-        opacity: 0;
-        filter: sepia(0) contrast(1.1) brightness(1); 
-    }
-
-    .has-hover .hover-trigger:hover ~ .hover-img {
-        opacity: 1;
-        transform: scale(1.08);
     }
 
     .overlay {
@@ -287,19 +269,10 @@ const galleryItems = mainPhotos.map((file: any) => {
         transition: 0.5s;
         backdrop-filter: blur(8px);
         z-index: 10;
-        pointer-events: none; /* Let the trigger capture events */
     }
 
-    /* Only show overlay if trigger is active */
-    .has-hover .hover-trigger:hover ~ .overlay { 
+    .photo-cell:hover .overlay { 
         opacity: 1; 
-        pointer-events: auto;
-    }
-
-    /* For non-hover items, show overlay on cell hover */
-    .photo-cell:not(.has-hover):hover .overlay { 
-        opacity: 1; 
-        pointer-events: auto;
     }
 
     .view-btn {
@@ -453,23 +426,77 @@ const galleryItems = mainPhotos.map((file: any) => {
         object-fit: contain;
         box-shadow: 0 50px 150px rgba(0,0,0,0.95);
         border: 1px solid rgba(255,255,255,0.05);
-        transition: opacity 0.8s ease;
     }
 
     .v-hover {
         position: absolute;
-        opacity: 0;
         z-index: 5;
+        clip-path: inset(0 0 0 50%); /* Controlado por JS */
     }
 
-    /* Only swap if the stage has the 'can-hover' class */
-    .slider-stage.can-hover .hover-trigger:hover ~ .slide-item .v-main { opacity: 0; }
-    .slider-stage.can-hover .hover-trigger:hover ~ .slide-item .v-hover { opacity: 1; }
-
-    .slider-stage .hover-trigger {
+    /* 🎭 Curtain UI */
+    .slider-curtain {
         position: absolute;
-        inset: 20%; /* Centered trigger for viewer */
-        z-index: 100;
+        inset: 0;
+        z-index: 20;
+        pointer-events: none;
+        display: none;
+    }
+
+    .slider-stage.has-comparison .slider-curtain { display: block; pointer-events: auto; cursor: ew-resize; }
+
+    .curtain-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%; /* Controlado por JS */
+        width: 2px;
+        background: var(--studio-accent);
+        box-shadow: 0 0 20px rgba(220, 177, 74, 0.5);
+    }
+
+    .curtain-handle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        background: var(--studio-accent);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #000;
+        font-weight: 900;
+        font-size: 1.2rem;
+        box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+
+    .slider-labels {
+        position: absolute;
+        top: 4rem;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 10%;
+        z-index: 25;
+        pointer-events: none;
+        opacity: 0;
+        transition: 0.5s;
+    }
+
+    .slider-stage.has-comparison:hover .slider-labels { opacity: 0.6; }
+
+    .slider-labels span {
+        font-size: 0.6rem;
+        letter-spacing: 3px;
+        font-weight: 900;
+        color: #fff;
+        background: rgba(0,0,0,0.4);
+        padding: 0.5rem 1rem;
+        border: 1px solid rgba(255,255,255,0.1);
     }
 
     .viewer-meta-box {
@@ -628,15 +655,17 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         // 1. Preparar el siguiente slide
         nextMain.src = src;
-        nextHover.src = hoverSrc || '';
-        
-        const stage = document.querySelector('.slider-stage');
-        if (hoverSrc) {
+        const nextHover = slideNext?.querySelector('.v-hover') as HTMLImageElement;
+        const stage = document.getElementById('comparison-stage');
+
+        if (hoverSrc && nextHover) {
+            nextHover.src = hoverSrc;
             nextHover.style.display = 'block';
-            stage?.classList.add('can-hover');
-        } else {
+            stage?.classList.add('has-comparison');
+            resetCurtain();
+        } else if (nextHover) {
             nextHover.style.display = 'none';
-            stage?.classList.remove('can-hover');
+            stage?.classList.remove('has-comparison');
         }
 
         slideNext.className = 'slide-item enter-right';
@@ -759,5 +788,43 @@ const galleryItems = mainPhotos.map((file: any) => {
                 document.body.style.overflow = 'auto';
             }
         }
+    });
+
+    // --- Lógica del Slider de Comparación ---
+    const comparisonStage = document.getElementById('comparison-stage');
+    const curtainLine = document.querySelector('.curtain-line') as HTMLElement;
+    
+    function resetCurtain() {
+        if (curtainLine) curtainLine.style.left = '50%';
+        const hoverImgs = document.querySelectorAll('.v-hover');
+        hoverImgs.forEach(img => (img as HTMLElement).style.clipPath = 'inset(0 0 0 50%)');
+    }
+
+    comparisonStage?.addEventListener('mousemove', (e) => {
+        if (!comparisonStage.classList.contains('has-comparison')) return;
+        
+        const rect = comparisonStage.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const boundedX = Math.max(0, Math.min(100, x));
+
+        if (curtainLine) curtainLine.style.left = `${boundedX}%`;
+        
+        const activeHover = comparisonStage.querySelector('.slide-item.active .v-hover') as HTMLElement;
+        if (activeHover) {
+            activeHover.style.clipPath = `inset(0 0 0 ${boundedX}%)`;
+        }
+    });
+
+    // Soporte Touch
+    comparisonStage?.addEventListener('touchmove', (e) => {
+        if (!comparisonStage.classList.contains('has-comparison')) return;
+        const touch = e.touches[0];
+        const rect = comparisonStage.getBoundingClientRect();
+        const x = ((touch.clientX - rect.left) / rect.width) * 100;
+        const boundedX = Math.max(0, Math.min(100, x));
+
+        if (curtainLine) curtainLine.style.left = `${boundedX}%`;
+        const activeHover = comparisonStage.querySelector('.slide-item.active .v-hover') as HTMLElement;
+        if (activeHover) activeHover.style.clipPath = `inset(0 0 0 ${boundedX}%)`;
     });
 </script>
