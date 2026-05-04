@@ -78,7 +78,12 @@ const galleryItems = mainPhotos.map((file: any) => {
                                 <img src={item.hoverThumb} alt={`${item.title} - Restore View`} loading="lazy" class="hover-img" />
                             )}
                             <div class="overlay">
-                                <button class="view-btn" data-src={item.src} data-title={item.title} data-date={item.metadata.date}>ANALIZAR OBRA</button>
+                                <button class="view-btn" 
+                                    data-src={item.src} 
+                                    data-hover={item.hoverThumb ? item.hoverThumb.replace('width=600', 'width=1600') : ''} 
+                                    data-title={item.title} 
+                                    data-date={item.metadata.date}
+                                >ANALIZAR OBRA</button>
                             </div>
                         </div>
                         <div class="photo-info">
@@ -100,10 +105,12 @@ const galleryItems = mainPhotos.map((file: any) => {
             <div class="viewer-content">
                 <div class="slider-stage">
                     <div id="slide-current" class="slide-item active">
-                        <img src="" alt="" />
+                        <img src="" alt="" class="v-main" />
+                        <img src="" alt="" class="v-hover" />
                     </div>
                     <div id="slide-next" class="slide-item">
-                        <img src="" alt="" />
+                        <img src="" alt="" class="v-main" />
+                        <img src="" alt="" class="v-hover" />
                     </div>
                 </div>
                 <div class="viewer-meta-box">
@@ -422,7 +429,17 @@ const galleryItems = mainPhotos.map((file: any) => {
         object-fit: contain;
         box-shadow: 0 50px 150px rgba(0,0,0,0.95);
         border: 1px solid rgba(255,255,255,0.05);
+        transition: opacity 0.8s ease;
     }
+
+    .v-hover {
+        position: absolute;
+        opacity: 0;
+        z-index: 5;
+    }
+
+    .slider-stage:hover .v-main { opacity: 0; }
+    .slider-stage:hover .v-hover { opacity: 1; }
 
     .viewer-meta-box {
         position: absolute;
@@ -567,17 +584,23 @@ const galleryItems = mainPhotos.map((file: any) => {
     
     let isTransitioning = false;
 
-    function updateViewer(src: string, title: string, date: string, direction = 'right') {
+    function updateViewer(src: string, hoverSrc: string, title: string, date: string, direction = 'right') {
         if (isTransitioning) return;
         isTransitioning = true;
 
-        const currentImg = slideCurrent?.querySelector('img');
-        const nextImg = slideNext?.querySelector('img');
+        const currentMain = slideCurrent?.querySelector('.v-main') as HTMLImageElement;
+        const currentHover = slideCurrent?.querySelector('.v-hover') as HTMLImageElement;
+        const nextMain = slideNext?.querySelector('.v-main') as HTMLImageElement;
+        const nextHover = slideNext?.querySelector('.v-hover') as HTMLImageElement;
 
-        if (!slideCurrent || !slideNext || !currentImg || !nextImg) return;
+        if (!slideCurrent || !slideNext || !nextMain || !nextHover) return;
 
         // 1. Preparar el siguiente slide
-        nextImg.src = src;
+        nextMain.src = src;
+        nextHover.src = hoverSrc || '';
+        if (!hoverSrc) nextHover.style.display = 'none';
+        else nextHover.style.display = 'block';
+
         slideNext.className = 'slide-item enter-right';
         
         // Forzar reflow
@@ -607,10 +630,11 @@ const galleryItems = mainPhotos.map((file: any) => {
     viewButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const src = btn.getAttribute('data-src') || '';
+            const hover = btn.getAttribute('data-hover') || '';
             const title = btn.getAttribute('data-title') || '';
             const date = btn.getAttribute('data-date') || '';
             
-            updateViewer(src, title, date);
+            updateViewer(src, hover, title, date);
             viewer?.classList.add('active');
             document.body.style.overflow = 'hidden';
         });
@@ -663,10 +687,11 @@ const galleryItems = mainPhotos.map((file: any) => {
             const viewBtn = photo.querySelector('.view-btn') as HTMLElement;
             
             const src = viewBtn.getAttribute('data-src') || '';
+            const hover = viewBtn.getAttribute('data-hover') || '';
             const title = viewBtn.getAttribute('data-title') || '';
             const date = viewBtn.getAttribute('data-date') || '';
             
-            updateViewer(src, title, date);
+            updateViewer(src, hover, title, date);
         }, 5000);
     }
 
