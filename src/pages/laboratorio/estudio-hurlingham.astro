@@ -324,7 +324,7 @@ const galleryItems = mainPhotos.map((file: any) => {
     }
 
     .slider-stage.has-comparison {
-        cursor: none !important;
+        cursor: default;
     }
 
     .curtain-handle {
@@ -749,11 +749,17 @@ const galleryItems = mainPhotos.map((file: any) => {
         // 1. Preparar el siguiente slide
         nextMain.src = src;
 
-        if (hoverSrc && nextHover) {
+        // VERIFICACIÓN CRÍTICA: Solo activar comparación si las imágenes son distintas
+        if (hoverSrc && hoverSrc !== src && nextHover) {
             nextHover.src = hoverSrc;
             nextHover.style.display = 'block';
             stage?.classList.add('has-comparison');
-            resetCurtain();
+            
+            nextHover.onload = () => {
+                const rect = nextMain.getBoundingClientRect();
+                nextHover.style.width = `${rect.width}px`;
+                resetCurtain();
+            };
         } else if (nextHover) {
             nextHover.style.display = 'none';
             stage?.classList.remove('has-comparison');
@@ -762,7 +768,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         next.className = 'slide-item enter-right';
         void next.offsetWidth;
 
-        // 2. Ejecutar la coreografía
         current.classList.add('exit-left');
         current.classList.remove('active');
 
@@ -772,7 +777,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         if (viewerTitle) viewerTitle.textContent = title;
         if (viewerDate) viewerDate.textContent = date;
 
-        // 3. Swap de identidades tras la animación
         setTimeout(() => {
             current.className = 'slide-item';
             const tempId = current.id;

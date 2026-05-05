@@ -496,7 +496,7 @@ const galleryItems = mainPhotos.map((file: any) => {
     }
 
     .slider-stage.has-comparison {
-        cursor: none !important; /* El mouse se convierte en la línea */
+        cursor: default;
     }
 
     .curtain-line {
@@ -739,11 +739,18 @@ const galleryItems = mainPhotos.map((file: any) => {
         // 1. Preparar el siguiente slide
         nextMain.src = src;
 
-        if (hoverSrc && nextHover) {
+        // VERIFICACIÓN CRÍTICA: Solo activar comparación si las imágenes son distintas
+        if (hoverSrc && hoverSrc !== src && nextHover) {
             nextHover.src = hoverSrc;
             nextHover.style.display = 'block';
             stage?.classList.add('has-comparison');
-            resetCurtain();
+            
+            // Forzar el ancho de la imagen superior para que coincida con la base
+            nextHover.onload = () => {
+                const rect = nextMain.getBoundingClientRect();
+                nextHover.style.width = `${rect.width}px`;
+                resetCurtain();
+            };
         } else if (nextHover) {
             nextHover.style.display = 'none';
             stage?.classList.remove('has-comparison');
@@ -762,7 +769,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         if (viewerTitle) viewerTitle.textContent = title;
         if (viewerDate) viewerDate.textContent = date;
 
-        // 3. Swap de identidades tras la animación
         setTimeout(() => {
             current.className = 'slide-item';
             const tempId = current.id;
