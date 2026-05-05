@@ -251,10 +251,10 @@ const galleryItems = mainPhotos.map((file: any) => {
     .slider-stage.has-comparison .slider-curtain { display: block; pointer-events: auto; cursor: ew-resize; }
 
     .curtain-line {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 50%; /* Controlado por JS */
+        position: fixed; /* Cambiado a fixed para usar coordenadas globales de la imagen */
+        top: 4rem;
+        bottom: 4rem;
+        left: 50%;
         width: 2px;
         background: var(--studio-accent);
         box-shadow: 0 0 20px rgba(220, 177, 74, 0.5);
@@ -810,11 +810,17 @@ const galleryItems = mainPhotos.map((file: any) => {
     comparisonStage?.addEventListener('mousemove', (e) => {
         if (!comparisonStage.classList.contains('has-comparison')) return;
         
-        const rect = comparisonStage.getBoundingClientRect();
+        const activeImg = comparisonStage.querySelector('.slide-item.active .v-main') as HTMLElement;
+        if (!activeImg) return;
+
+        const rect = activeImg.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const boundedX = Math.max(0, Math.min(100, x));
 
-        if (curtainLine) curtainLine.style.left = `${boundedX}%`;
+        // Posicionar la línea relativa a la imagen
+        if (curtainLine) {
+            curtainLine.style.left = `${rect.left + (rect.width * boundedX / 100)}px`;
+        }
         
         const activeHover = comparisonStage.querySelector('.slide-item.active .v-hover') as HTMLElement;
         if (activeHover) {
@@ -825,12 +831,19 @@ const galleryItems = mainPhotos.map((file: any) => {
     // Soporte Touch
     comparisonStage?.addEventListener('touchmove', (e) => {
         if (!comparisonStage.classList.contains('has-comparison')) return;
+        
+        const activeImg = comparisonStage.querySelector('.slide-item.active .v-main') as HTMLElement;
+        if (!activeImg) return;
+
         const touch = e.touches[0];
-        const rect = comparisonStage.getBoundingClientRect();
+        const rect = activeImg.getBoundingClientRect();
         const x = ((touch.clientX - rect.left) / rect.width) * 100;
         const boundedX = Math.max(0, Math.min(100, x));
 
-        if (curtainLine) curtainLine.style.left = `${boundedX}%`;
+        if (curtainLine) {
+            curtainLine.style.left = `${rect.left + (rect.width * boundedX / 100)}px`;
+        }
+        
         const activeHover = comparisonStage.querySelector('.slide-item.active .v-hover') as HTMLElement;
         if (activeHover) activeHover.style.clipPath = `inset(0 0 0 ${boundedX}%)`;
     });
