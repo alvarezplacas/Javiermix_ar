@@ -111,12 +111,16 @@ const galleryItems = mainPhotos.map((file: any) => {
                         <span class="label-restored">RESTAURACIÓN DIGITAL</span>
                     </div>
                     <div id="slide-current" class="slide-item active">
-                        <img src="" alt="" class="v-main" />
-                        <img src="" alt="" class="v-hover" />
+                        <div class="comparison-wrapper">
+                            <img src="" alt="" class="v-main" />
+                            <img src="" alt="" class="v-hover" />
+                        </div>
                     </div>
                     <div id="slide-next" class="slide-item">
-                        <img src="" alt="" class="v-main" />
-                        <img src="" alt="" class="v-hover" />
+                        <div class="comparison-wrapper">
+                            <img src="" alt="" class="v-main" />
+                            <img src="" alt="" class="v-hover" />
+                        </div>
                     </div>
                 </div>
                 <div class="viewer-meta-box">
@@ -253,6 +257,13 @@ const galleryItems = mainPhotos.map((file: any) => {
         perspective: 1500px;
         overflow: hidden;
     }
+    .comparison-wrapper {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
     .slide-item img {
         width: auto;
         height: auto;
@@ -264,8 +275,10 @@ const galleryItems = mainPhotos.map((file: any) => {
 
     .v-hover {
         position: absolute;
+        inset: 0;
+        margin: auto;
         z-index: 5;
-        clip-path: inset(0 0 0 50%); /* Controlado por JS */
+        clip-path: inset(0 0 0 50%);
     }
 
     /* 🎭 Curtain UI */
@@ -836,9 +849,23 @@ const galleryItems = mainPhotos.map((file: any) => {
     const curtainLine = document.querySelector('.curtain-line') as HTMLElement;
     
     function resetCurtain() {
-        if (curtainLine) curtainLine.style.left = '50%';
-        const hoverImgs = document.querySelectorAll('.v-hover');
-        hoverImgs.forEach(img => (img as HTMLElement).style.clipPath = 'inset(0 0 0 50%)');
+        setTimeout(() => {
+            const activeImg = comparisonStage?.querySelector('.slide-item.active .v-main') as HTMLElement;
+            if (!activeImg) return;
+
+            const rect = activeImg.getBoundingClientRect();
+            const initialX = 50;
+
+            if (curtainLine) {
+                curtainLine.style.left = `${rect.left + (rect.width * initialX / 100)}px`;
+                curtainLine.style.opacity = '1';
+            }
+            
+            const activeHover = comparisonStage?.querySelector('.slide-item.active .v-hover') as HTMLElement;
+            if (activeHover) {
+                activeHover.style.clipPath = `inset(0 0 0 ${initialX}%)`;
+            }
+        }, 50);
     }
 
     comparisonStage?.addEventListener('mousemove', (e) => {
