@@ -93,12 +93,12 @@ const galleryItems = mainPhotos.map((file: any) => {
         <!-- Visor de Alta Fidelidad -->
         <div id="viewer" class="studio-viewer">
             <div class="viewer-nav">
-                <span class="f11-hint">Sugerencia: Presiona <b>F11</b> para pantalla completa</span>
+                <div></div> <!-- Espacio para mantener el botón de cierre a la derecha -->
                 <button id="close-viewer" class="close-btn">×</button>
             </div>
             <div class="viewer-content">
+                <div class="f11-hint">Presiona <b>F11</b> para pantalla completa.</div>
                 <div class="slider-stage" id="comparison-stage">
-                    <div class="f11-hint">Presiona <b>F11</b> para pantalla completa.</div>
                     <div class="slider-curtain">
                         <div class="curtain-line">
                             <div class="curtain-handle">
@@ -537,13 +537,14 @@ const galleryItems = mainPhotos.map((file: any) => {
 
     .f11-hint {
         position: absolute;
-        bottom: 3rem;
-        left: 4rem;
-        font-size: 0.6rem;
+        bottom: 1.5rem;
+        left: 1.5rem;
+        font-size: 0.55rem;
         letter-spacing: 2px;
-        color: rgba(255,255,255,0.4);
+        color: rgba(255,255,255,0.3);
         text-transform: uppercase;
         z-index: 100;
+        pointer-events: none;
     }
 
     .f11-hint b { color: var(--studio-accent); }
