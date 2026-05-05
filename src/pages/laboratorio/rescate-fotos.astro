@@ -720,10 +720,8 @@ const galleryItems = mainPhotos.map((file: any) => {
             return;
         }
 
-        // 1. Preparar el siguiente slide
-        const version = new Date().getTime();
-        const separator = src.includes('?') ? '&' : '?';
-        nextMain.src = `${src}${separator}v=${version}`;
+        // 1. Preparar el siguiente slide (SIN CACHE BUSTING PARA MÁXIMA ESTABILIDAD)
+        nextMain.src = src;
 
         // Resetear slider al centro
         if (nextRange) nextRange.value = "50";
@@ -732,13 +730,11 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         // VERIFICACIÓN CRÍTICA: Solo activar comparación si las imágenes son distintas
         if (hoverSrc && hoverSrc !== src && nextHover) {
-            console.log(`[RESCATE] Emparejando: ${src} <-> ${hoverSrc}`);
-            const hSeparator = hoverSrc.includes('?') ? '&' : '?';
-            nextHover.src = `${hoverSrc}${hSeparator}v=${version}`;
+            console.log(`[RESCATE] Cargando par: ${src} | ${hoverSrc}`);
+            nextHover.src = hoverSrc;
             nextHover.style.display = 'block';
             stage?.classList.add('has-comparison');
         } else {
-            console.log(`[RESCATE] Sin versión restaurada para: ${src}`);
             if (nextHover) nextHover.style.display = 'none';
             stage?.classList.remove('has-comparison');
         }

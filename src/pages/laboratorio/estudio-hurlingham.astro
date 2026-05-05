@@ -769,8 +769,7 @@ const galleryItems = mainPhotos.map((file: any) => {
         }
 
         // 1. Preparar el siguiente slide
-        const version = new Date().getTime();
-        nextMain.src = `${src}&v=${version}`;
+        nextMain.src = src;
 
         // Resetear slider al centro
         if (nextRange) nextRange.value = "50";
@@ -779,12 +778,11 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         // VERIFICACIÓN CRÍTICA: Solo activar comparación si las imágenes son distintas
         if (hoverSrc && hoverSrc !== src && nextHover) {
-            console.log(`[HURLINGHAM] Emparejando: ${src} <-> ${hoverSrc}`);
-            nextHover.src = `${hoverSrc}&v=${version}`;
+            console.log(`[HURLINGHAM] Cargando par: ${src} | ${hoverSrc}`);
+            nextHover.src = hoverSrc;
             nextHover.style.display = 'block';
             stage?.classList.add('has-comparison');
         } else {
-            console.log(`[HURLINGHAM] Sin versión restaurada para: ${src}`);
             if (nextHover) nextHover.style.display = 'none';
             stage?.classList.remove('has-comparison');
         }
