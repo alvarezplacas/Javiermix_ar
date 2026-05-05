@@ -355,14 +355,14 @@ const galleryItems = mainPhotos.map((file: any) => {
     }
 
     .f11-hint {
-        position: absolute;
+        position: fixed; /* Fuera del flujo de la imagen */
         bottom: 1.5rem;
-        left: 1.5rem;
+        left: 2rem;
         font-size: 0.55rem;
         letter-spacing: 2px;
-        color: rgba(255,255,255,0.3);
+        color: rgba(255,255,255,0.25);
         text-transform: uppercase;
-        z-index: 100;
+        z-index: 1000;
         pointer-events: none;
     }
 
@@ -424,11 +424,14 @@ const galleryItems = mainPhotos.map((file: any) => {
     }
 
     .slide-item img {
-        max-width: 85%;
-        max-height: 90%;
-        object-fit: contain;
+        width: auto;
+        height: auto;
+        max-width: 90%;
+        max-height: 82vh;
         box-shadow: 0 50px 150px rgba(0,0,0,0.95);
         border: 1px solid rgba(255,255,255,0.05);
+        transition: transform 0.5s ease;
+        display: block;
     }
 
     .v-hover {
@@ -511,20 +514,17 @@ const galleryItems = mainPhotos.map((file: any) => {
     }
 
     .viewer-meta-box {
-        position: absolute;
-        bottom: 3rem;
-        right: 4rem;
+        position: fixed; /* Fuera del flujo de la imagen */
+        bottom: 1.5rem;
+        right: 2rem;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 0.3rem;
+        gap: 0.2rem;
         text-align: right;
         pointer-events: none;
-        z-index: 10;
-        background: rgba(0,0,0,0.5);
-        padding: 1.5rem;
-        backdrop-filter: blur(10px);
-        border-right: 2px solid var(--studio-accent);
+        z-index: 1000;
+        opacity: 0.4;
     }
 
     #viewer-title {
