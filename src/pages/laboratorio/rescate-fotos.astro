@@ -112,24 +112,27 @@ const galleryItems = mainPhotos.map((file: any) => {
                                 <span class="handle-arrows" style="display:flex; gap:4px; font-weight:900; font-size:1.2rem;">‹›</span>
                             </div>
                         </div>
-                    </div>
                     <div class="slider-labels">
                         <span class="label-original">ARCHIVO ORIGINAL</span>
                         <span class="label-restored">RESTAURACIÓN DIGITAL</span>
                     </div>
                     <div id="slide-current" class="slide-item active">
-                        <div class="comparison-wrapper">
-                            <img src="" alt="" class="v-main" />
-                            <div class="curtain-wrapper">
-                                <img src="" alt="" class="v-hover" />
+                        <div class="comparison-container">
+                            <!-- Imagen Original (Abajo) -->
+                            <img src="" alt="Original" class="v-main" />
+                            
+                            <!-- Imagen Restaurada (Arriba con recorte) -->
+                            <div class="curtain-wrapper" style="--pos: 50%;">
+                                <img src="" alt="Restaurada" class="v-hover" />
                             </div>
-                        </div>
-                    </div>
-                    <div id="slide-next" class="slide-item">
-                        <div class="comparison-wrapper">
-                            <img src="" alt="" class="v-main" />
-                            <div class="curtain-wrapper">
-                                <img src="" alt="" class="v-hover" />
+
+                            <!-- El Motor: Slider de Rango Nativo -->
+                            <input type="range" min="0" max="100" value="50" class="slider-input" oninput="this.parentElement.querySelector('.curtain-wrapper').style.setProperty('--pos', this.value + '%'); this.parentElement.querySelector('.curtain-line').style.left = this.value + '%';" />
+
+                            <div class="curtain-line" style="left: 50%;">
+                                <div class="curtain-handle">
+                                    <span class="handle-arrows" style="display:flex; gap:4px; font-weight:900; font-size:1.2rem;">‹›</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -435,72 +438,50 @@ const galleryItems = mainPhotos.map((file: any) => {
         filter: blur(20px) brightness(0.2);
     }
 
-    .comparison-wrapper {
+    .comparison-container {
         position: relative;
         display: grid;
         place-items: center;
+        width: 100%;
         max-width: 90vw;
         max-height: 82vh;
-        box-shadow: 0 50px 150px rgba(0,0,0,0.95);
-        border: 1px solid rgba(255,255,255,0.05);
-        --curtain-pos: 50%;
+        overflow: hidden;
+        background: #000;
+        box-shadow: 0 40px 100px rgba(0,0,0,0.8);
     }
 
-    /* Ambas capas ocupan el mismo espacio exacto */
-    .comparison-wrapper > * {
+    .v-main, .v-hover {
         grid-area: 1 / 1;
         width: 100%;
-        height: 100%;
-    }
-
-    .v-main {
-        width: auto !important;
-        height: auto !important;
-        max-width: 90vw;
+        height: auto;
         max-height: 82vh;
         object-fit: contain;
     }
 
     .curtain-wrapper {
-        width: var(--curtain-pos);
+        grid-area: 1 / 1;
+        width: 100%;
         height: 100%;
+        display: grid;
+        place-items: center;
         overflow: hidden;
         z-index: 5;
-        justify-self: start;
+        clip-path: inset(0 calc(100% - var(--pos)) 0 0);
         pointer-events: none;
-        /* Sombra de profundidad para efecto 3D */
-        border-right: 1px solid rgba(255,255,255,0.3);
-        box-shadow: 15px 0 40px rgba(0,0,0,0.6);
     }
 
-    .v-hover {
-        width: auto !important; /* El ancho real se sincroniza por JS para evitar deformación */
-        height: auto !important;
-        max-width: none;
-        max-height: 82vh;
-        object-fit: contain;
-    }
-
-    /* 🎭 Curtain UI */
-    .slider-curtain {
+    .slider-input {
         position: absolute;
         inset: 0;
-        z-index: 20;
-        pointer-events: none;
-        display: none;
-    }
-
-    .slider-stage.has-comparison .slider-curtain { 
-        display: block; 
-        pointer-events: auto; 
-    }
-
-    .slider-stage.has-comparison {
-        cursor: default;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: ew-resize;
+        z-index: 50;
     }
 
     .curtain-line {
-        position: fixed;
+        position: absolute;
         top: 0;
         bottom: 0;
         left: 50%;
