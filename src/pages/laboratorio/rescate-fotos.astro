@@ -938,12 +938,4 @@ const galleryItems = mainPhotos.map((file: any) => {
             }
         }, 200);
     }
-
-        if (curtainLine) {
-            curtainLine.style.left = `${rect.left + (rect.width * boundedX / 100)}px`;
-        }
-        
-        const activeHover = comparisonStage.querySelector('.slide-item.active .v-hover') as HTMLElement;
-        if (activeHover) activeHover.style.clipPath = `inset(0 0 0 ${boundedX}%)`;
-    });
 </script>

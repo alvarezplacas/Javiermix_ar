@@ -950,24 +950,4 @@ const galleryItems = mainPhotos.map((file: any) => {
             }
         }, 200);
     }
-
-    // Soporte Touch
-    comparisonStage?.addEventListener('touchmove', (e) => {
-        if (!comparisonStage.classList.contains('has-comparison')) return;
-        
-        const activeImg = comparisonStage.querySelector('.slide-item.active .v-main') as HTMLElement;
-        if (!activeImg) return;
-
-        const touch = e.touches[0];
-        const rect = activeImg.getBoundingClientRect();
-        const x = ((touch.clientX - rect.left) / rect.width) * 100;
-        const boundedX = Math.max(0, Math.min(100, x));
-
-        if (curtainLine) {
-            curtainLine.style.left = `${rect.left + (rect.width * boundedX / 100)}px`;
-        }
-        
-        const activeHover = comparisonStage.querySelector('.slide-item.active .v-hover') as HTMLElement;
-        if (activeHover) activeHover.style.clipPath = `inset(0 0 0 ${boundedX}%)`;
-    });
 </script>
