@@ -12,7 +12,10 @@ const hoverPhotos = photos.filter((p: any) => p.filename_download.toLowerCase().
 
 const galleryItems = mainPhotos.map((file: any) => {
     const baseName = file.filename_download.split('.')[0];
-    const hoverFile = hoverPhotos.find((h: any) => h.filename_download.toLowerCase().startsWith(baseName.toLowerCase() + '_2'));
+    const hoverFile = hoverPhotos.find((h: any) => 
+        h.filename_download.toLowerCase().includes(baseName.toLowerCase() + '_2') ||
+        h.filename_download.toLowerCase().includes(baseName.toLowerCase() + ' _2')
+    );
 
     return {
         id: file.id,
@@ -293,6 +296,9 @@ const galleryItems = mainPhotos.map((file: any) => {
         z-index: 5;
         justify-self: start;
         pointer-events: none;
+        /* Sombra de profundidad para efecto 3D */
+        border-right: 1px solid rgba(255,255,255,0.3);
+        box-shadow: 15px 0 40px rgba(0,0,0,0.6);
     }
 
     .v-hover {
@@ -321,20 +327,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         cursor: none !important;
     }
 
-    .curtain-line {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 50%;
-        width: 1px;
-        background: #fff;
-        box-shadow: 0 0 10px rgba(255,255,255,0.5);
-        z-index: 100;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.5s;
-    }
-
     .curtain-handle {
         position: absolute;
         top: 50%;
@@ -349,12 +341,14 @@ const galleryItems = mainPhotos.map((file: any) => {
         align-items: center;
         color: #000;
         box-shadow: 0 0 40px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.3);
-        cursor: ew-resize;
+        cursor: grab;
         transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        pointer-events: auto;
     }
 
-    .curtain-handle:hover {
-        transform: translate(-50%, -50%) scale(1.1);
+    .curtain-handle:active {
+        cursor: grabbing;
+        transform: translate(-50%, -50%) scale(0.9);
     }
 
     .handle-arrows {
@@ -889,27 +883,51 @@ const galleryItems = mainPhotos.map((file: any) => {
     const comparisonStage = document.getElementById('comparison-stage');
     const curtainLine = document.querySelector('.curtain-line') as HTMLElement;
     
-    comparisonStage?.addEventListener('mousemove', (e) => {
-        const activeWrapper = comparisonStage.querySelector('.slide-item.active .comparison-wrapper') as HTMLElement;
+    let isDragging = false;
+
+    const startDragging = (e: MouseEvent | TouchEvent) => {
+        isDragging = true;
+        comparisonStage?.classList.add('is-dragging');
+        handleMove(e instanceof MouseEvent ? e.clientX : e.touches[0].clientX);
+    };
+
+    const stopDragging = () => {
+        isDragging = false;
+        comparisonStage?.classList.remove('is-dragging');
+    };
+
+    const handleMove = (clientX: number) => {
+        if (!isDragging) return;
+        
+        const activeWrapper = comparisonStage?.querySelector('.slide-item.active .comparison-wrapper') as HTMLElement;
         const mainImg = activeWrapper?.querySelector('.v-main') as HTMLElement;
         if (!activeWrapper || !mainImg) return;
 
         const rect = mainImg.getBoundingClientRect();
-        const boundedX = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-
-        const curtainWrapper = activeWrapper.querySelector('.curtain-wrapper') as HTMLElement;
-        const hoverImg = activeWrapper.querySelector('.v-hover') as HTMLElement;
-
-        if (curtainLine) {
-            curtainLine.style.left = `${rect.left + (rect.width * boundedX / 100)}px`;
-        }
+        const x = ((clientX - rect.left) / rect.width) * 100;
+        const boundedX = Math.max(0, Math.min(100, x));
 
         activeWrapper.style.setProperty('--curtain-pos', `${boundedX}%`);
         
+        if (curtainLine) {
+            curtainLine.style.left = `${rect.left + (rect.width * boundedX / 100)}px`;
+            curtainLine.style.opacity = '1';
+        }
+
+        const hoverImg = activeWrapper.querySelector('.v-hover') as HTMLElement;
         if (hoverImg) {
             hoverImg.style.width = `${rect.width}px`;
         }
-    });
+    };
+
+    comparisonStage?.addEventListener('mousedown', (e) => startDragging(e));
+    window.addEventListener('mouseup', stopDragging);
+    window.addEventListener('mousemove', (e) => handleMove(e.clientX));
+
+    // Soporte Touch
+    comparisonStage?.addEventListener('touchstart', (e) => startDragging(e));
+    window.addEventListener('touchend', stopDragging);
+    window.addEventListener('touchmove', (e) => handleMove(e.touches[0].clientX));
 
     function resetCurtain() {
         setTimeout(() => {
