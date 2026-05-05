@@ -722,7 +722,8 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         // 1. Preparar el siguiente slide
         const version = new Date().getTime();
-        nextMain.src = `${src}&v=${version}`;
+        const separator = src.includes('?') ? '&' : '?';
+        nextMain.src = `${src}${separator}v=${version}`;
 
         // Resetear slider al centro
         if (nextRange) nextRange.value = "50";
@@ -732,7 +733,8 @@ const galleryItems = mainPhotos.map((file: any) => {
         // VERIFICACIÓN CRÍTICA: Solo activar comparación si las imágenes son distintas
         if (hoverSrc && hoverSrc !== src && nextHover) {
             console.log(`[RESCATE] Emparejando: ${src} <-> ${hoverSrc}`);
-            nextHover.src = `${hoverSrc}&v=${version}`;
+            const hSeparator = hoverSrc.includes('?') ? '&' : '?';
+            nextHover.src = `${hoverSrc}${hSeparator}v=${version}`;
             nextHover.style.display = 'block';
             stage?.classList.add('has-comparison');
         } else {
