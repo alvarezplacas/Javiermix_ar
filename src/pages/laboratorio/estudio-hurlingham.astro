@@ -436,18 +436,22 @@ const galleryItems = mainPhotos.map((file: any) => {
         position: fixed;
         inset: 0;
         background: #000;
-        z-index: 1000;
+        z-index: 99999;
         display: none;
         justify-content: center;
         align-items: center;
-        padding: 4rem;
+        padding: 0;
         opacity: 0;
-        transition: 0.5s;
+        transition: opacity 0.4s ease;
     }
 
     .studio-viewer.active {
-        display: flex;
+        display: flex !important;
         opacity: 1;
+    }
+
+    body.viewer-open {
+        overflow: hidden !important;
     }
 
     .viewer-content {
@@ -792,22 +796,29 @@ const galleryItems = mainPhotos.map((file: any) => {
     });
 
     viewButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
             const src = btn.getAttribute('data-src') || '';
             const hover = btn.getAttribute('data-hover') || '';
             const title = btn.getAttribute('data-title') || '';
             const date = btn.getAttribute('data-date') || '';
             
+            console.log("Activando visor:", title);
             updateViewer(src, hover, title, date);
-            viewer?.classList.add('active');
-            document.body.style.overflow = 'hidden';
+            
+            if (viewer) {
+                viewer.classList.add('active');
+                document.body.classList.add('viewer-open');
+            }
         });
     });
 
     closeBtn?.addEventListener('click', () => {
         stopTour();
-        viewer?.classList.remove('active');
-        document.body.style.overflow = 'auto';
+        if (viewer) {
+            viewer.classList.remove('active');
+            document.body.classList.remove('viewer-open');
+        }
     });
 
     // --- Lógica de Filtrado (Menú Desplegable) ---
