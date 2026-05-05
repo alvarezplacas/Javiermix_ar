@@ -116,13 +116,17 @@ const galleryItems = mainPhotos.map((file: any) => {
                     <div id="slide-current" class="slide-item active">
                         <div class="comparison-wrapper">
                             <img src="" alt="" class="v-main" />
-                            <img src="" alt="" class="v-hover" />
+                            <div class="curtain-wrapper">
+                                <img src="" alt="" class="v-hover" />
+                            </div>
                         </div>
                     </div>
                     <div id="slide-next" class="slide-item">
                         <div class="comparison-wrapper">
                             <img src="" alt="" class="v-main" />
-                            <img src="" alt="" class="v-hover" />
+                            <div class="curtain-wrapper">
+                                <img src="" alt="" class="v-hover" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -429,7 +433,8 @@ const galleryItems = mainPhotos.map((file: any) => {
 
     .comparison-wrapper {
         position: relative;
-        display: inline-flex;
+        display: inline-block;
+        line-height: 0;
         max-width: 90vw;
         max-height: 82vh;
         box-shadow: 0 50px 150px rgba(0,0,0,0.95);
@@ -440,21 +445,28 @@ const galleryItems = mainPhotos.map((file: any) => {
         display: block;
         width: auto;
         height: auto;
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
+        max-width: 90vw;
+        max-height: 82vh;
     }
 
-    .v-hover {
+    .curtain-wrapper {
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover; /* Clave: Coincidir con el contenedor dictado por v-main */
+        bottom: 0;
+        width: 50%; /* Controlado por JS */
+        overflow: hidden;
         z-index: 5;
-        clip-path: inset(0 0 0 50%);
-        pointer-events: none;
+    }
+
+    .v-hover {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: auto; /* Se sincroniza por JS con el ancho del v-main */
+        max-width: none;
     }
 
     /* 🎭 Curtain UI */
@@ -506,28 +518,31 @@ const galleryItems = mainPhotos.map((file: any) => {
 
     .slider-labels {
         position: absolute;
-        top: 4rem;
-        left: 0;
-        right: 0;
+        top: 2rem;
+        left: 2rem;
+        right: 2rem;
         display: flex;
         justify-content: space-between;
-        padding: 0 10%;
         z-index: 25;
         pointer-events: none;
         opacity: 0;
-        transition: 0.5s;
+        transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .slider-stage.has-comparison:hover .slider-labels { opacity: 0.6; }
+    .slider-stage.has-comparison:hover .slider-labels {
+        opacity: 1;
+    }
 
-    .slider-labels span {
-        font-size: 0.6rem;
+    .label-original, .label-restored {
+        font-size: 0.55rem;
         letter-spacing: 3px;
         font-weight: 900;
-        color: #fff;
+        color: rgba(255,255,255,0.9);
         background: rgba(0,0,0,0.4);
-        padding: 0.5rem 1rem;
+        padding: 0.6rem 1.2rem;
+        backdrop-filter: blur(10px);
         border: 1px solid rgba(255,255,255,0.1);
+        text-transform: uppercase;
     }
 
     .viewer-meta-box {
@@ -835,22 +850,27 @@ const galleryItems = mainPhotos.map((file: any) => {
         // Porcentaje relativo al contenedor de la imagen
         const boundedX = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
 
+        const curtainWrapper = activeWrapper.querySelector('.curtain-wrapper') as HTMLElement;
+        const hoverImg = activeWrapper.querySelector('.v-hover') as HTMLElement;
+
         if (curtainLine) {
             curtainLine.style.left = `${rect.left + (rect.width * boundedX / 100)}px`;
         }
 
-        const activeHover = activeWrapper.querySelector('.v-hover') as HTMLElement;
-        if (activeHover) {
-            activeHover.style.clipPath = `inset(0 0 0 ${boundedX}%)`;
+        if (curtainWrapper && hoverImg) {
+            curtainWrapper.style.width = `${boundedX}%`;
+            // IMPORTANTE: Sincronizar el ancho de la imagen interior con el contenedor base
+            hoverImg.style.width = `${rect.width}px`;
         }
     });
 
     function resetCurtain() {
         setTimeout(() => {
             const activeWrapper = comparisonStage?.querySelector('.slide-item.active .comparison-wrapper') as HTMLElement;
-            if (!activeWrapper) return;
+            const mainImg = activeWrapper?.querySelector('.v-main') as HTMLElement;
+            if (!activeWrapper || !mainImg) return;
 
-            const rect = activeWrapper.getBoundingClientRect();
+            const rect = mainImg.getBoundingClientRect();
             const initialX = 50;
 
             if (curtainLine) {
@@ -858,11 +878,13 @@ const galleryItems = mainPhotos.map((file: any) => {
                 curtainLine.style.opacity = '1';
             }
             
-            const activeHover = activeWrapper.querySelector('.v-hover') as HTMLElement;
-            if (activeHover) {
-                activeHover.style.clipPath = `inset(0 0 0 ${initialX}%)`;
+            const curtainWrapper = activeWrapper.querySelector('.curtain-wrapper') as HTMLElement;
+            const hoverImg = activeWrapper.querySelector('.v-hover') as HTMLElement;
+            if (curtainWrapper && hoverImg) {
+                curtainWrapper.style.width = `${initialX}%`;
+                hoverImg.style.width = `${rect.width}px`;
             }
-        }, 100);
+        }, 150);
     }
 
     // Soporte Touch
