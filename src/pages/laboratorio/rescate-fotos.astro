@@ -711,6 +711,9 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         const nextMain = next.querySelector('.v-main') as HTMLImageElement;
         const nextHover = next.querySelector('.v-hover') as HTMLImageElement;
+        const nextRange = next.querySelector('.slider-input') as HTMLInputElement;
+        const nextWrapper = next.querySelector('.curtain-wrapper') as HTMLElement;
+        const nextLine = next.querySelector('.curtain-line') as HTMLElement;
 
         if (!nextMain) {
             isTransitioning = false;
@@ -721,18 +724,17 @@ const galleryItems = mainPhotos.map((file: any) => {
         const version = new Date().getTime();
         nextMain.src = `${src}&v=${version}`;
 
+        // Resetear slider al centro
+        if (nextRange) nextRange.value = "50";
+        if (nextWrapper) nextWrapper.style.setProperty('--pos', '50%');
+        if (nextLine) nextLine.style.left = '50%';
+
         // VERIFICACIÓN CRÍTICA: Solo activar comparación si las imágenes son distintas
         if (hoverSrc && hoverSrc !== src && nextHover) {
             console.log(`[RESCATE] Emparejando: ${src} <-> ${hoverSrc}`);
             nextHover.src = `${hoverSrc}&v=${version}`;
             nextHover.style.display = 'block';
             stage?.classList.add('has-comparison');
-            
-            nextHover.onload = () => {
-                const rect = nextMain.getBoundingClientRect();
-                nextHover.style.width = `${rect.width}px`;
-                resetCurtain();
-            };
         } else {
             console.log(`[RESCATE] Sin versión restaurada para: ${src}`);
             if (nextHover) nextHover.style.display = 'none';
@@ -742,7 +744,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         next.className = 'slide-item enter-right';
         void next.offsetWidth;
 
-        // 2. Ejecutar la coreografía
         current.classList.add('exit-left');
         current.classList.remove('active');
 
