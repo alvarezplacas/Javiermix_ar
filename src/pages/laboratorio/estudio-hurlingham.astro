@@ -114,30 +114,20 @@ const galleryItems = mainPhotos.map((file: any) => {
                         <span class="label-restored">RESTAURACIÓN DIGITAL</span>
                     </div>
                     <div id="slide-current" class="slide-item active">
-                        <div class="comparison-container">
-                            <img src="" alt="Original" class="v-main" />
-                            <div class="curtain-wrapper" style="--pos: 50%;">
-                                <img src="" alt="Restaurada" class="v-hover" />
-                            </div>
-                            <input type="range" min="0" max="100" value="50" class="slider-input" oninput="this.parentElement.querySelector('.curtain-wrapper').style.setProperty('--pos', this.value + '%'); this.parentElement.querySelector('.curtain-line').style.left = this.value + '%';" />
-                            <div class="curtain-line" style="left: 50%;">
-                                <div class="curtain-handle">
-                                    <span class="handle-arrows" style="display:flex; gap:4px; font-weight:900; font-size:1.2rem;">‹›</span>
-                                </div>
+                        <div class="comparison-wrapper">
+                            <img src="" alt="" class="v-main" />
+                            <img src="" alt="" class="v-hover" />
+                            <div class="curtain-line">
+                                <div class="curtain-handle">‹›</div>
                             </div>
                         </div>
                     </div>
                     <div id="slide-next" class="slide-item">
-                        <div class="comparison-container">
-                            <img src="" alt="Original" class="v-main" />
-                            <div class="curtain-wrapper" style="--pos: 50%;">
-                                <img src="" alt="Restaurada" class="v-hover" />
-                            </div>
-                            <input type="range" min="0" max="100" value="50" class="slider-input" oninput="this.parentElement.querySelector('.curtain-wrapper').style.setProperty('--pos', this.value + '%'); this.parentElement.querySelector('.curtain-line').style.left = this.value + '%';" />
-                            <div class="curtain-line" style="left: 50%;">
-                                <div class="curtain-handle">
-                                    <span class="handle-arrows" style="display:flex; gap:4px; font-weight:900; font-size:1.2rem;">‹›</span>
-                                </div>
+                        <div class="comparison-wrapper">
+                            <img src="" alt="" class="v-main" />
+                            <img src="" alt="" class="v-hover" />
+                            <div class="curtain-line">
+                                <div class="curtain-handle">‹›</div>
                             </div>
                         </div>
                     </div>
@@ -276,58 +266,43 @@ const galleryItems = mainPhotos.map((file: any) => {
         perspective: 1500px;
         overflow: hidden;
     }
-    .comparison-container {
+    .comparison-wrapper {
         position: relative;
-        display: grid;
-        place-items: center;
-        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         max-width: 90vw;
         max-height: 82vh;
         overflow: hidden;
-        background: #000;
-        box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+        cursor: crosshair;
     }
 
-    .v-main, .v-hover {
-        grid-area: 1 / 1;
-        width: 100%;
-        height: auto;
+    .v-main {
+        max-width: 90vw;
         max-height: 82vh;
-        object-fit: contain;
+        display: block;
     }
 
-    .curtain-wrapper {
-        grid-area: 1 / 1;
-        width: 100%;
-        height: 100%;
-        display: grid;
-        place-items: center;
-        overflow: hidden;
-        z-index: 5;
-        clip-path: inset(0 calc(100% - var(--pos)) 0 0);
-        pointer-events: none;
-    }
-
-    .slider-input {
+    .v-hover {
         position: absolute;
-        inset: 0;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
-        opacity: 0;
-        cursor: ew-resize;
-        z-index: 50;
+        object-fit: contain;
+        clip-path: inset(0 50% 0 0);
+        z-index: 2;
     }
 
     .curtain-line {
         position: absolute;
         top: 0;
         bottom: 0;
+        left: 50%;
         width: 2px;
         background: #fff;
-        z-index: 40;
+        z-index: 10;
         pointer-events: none;
-        box-shadow: 0 0 15px rgba(255,255,255,0.8);
-        transform: translateX(-50%);
     }
 
     .curtain-handle {
@@ -335,15 +310,16 @@ const galleryItems = mainPhotos.map((file: any) => {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 48px;
-        height: 48px;
+        width: 40px;
+        height: 40px;
         background: #fff;
+        color: #000;
         border-radius: 50%;
         display: flex;
-        justify-content: center;
         align-items: center;
-        color: #000;
-        box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        justify-content: center;
+        font-weight: bold;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
 
     .curtain-handle {
@@ -759,26 +735,15 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         const nextMain = next.querySelector('.v-main') as HTMLImageElement;
         const nextHover = next.querySelector('.v-hover') as HTMLImageElement;
-        const nextRange = next.querySelector('.slider-input') as HTMLInputElement;
-        const nextWrapper = next.querySelector('.curtain-wrapper') as HTMLElement;
-        const nextLine = next.querySelector('.curtain-line') as HTMLElement;
 
         if (!nextMain) {
             isTransitioning = false;
             return;
         }
 
-        // 1. Preparar el siguiente slide
         nextMain.src = src;
 
-        // Resetear slider al centro
-        if (nextRange) nextRange.value = "50";
-        if (nextWrapper) nextWrapper.style.setProperty('--pos', '50%');
-        if (nextLine) nextLine.style.left = '50%';
-
-        // VERIFICACIÓN CRÍTICA: Solo activar comparación si las imágenes son distintas
         if (hoverSrc && hoverSrc !== src && nextHover) {
-            console.log(`[HURLINGHAM] Cargando par: ${src} | ${hoverSrc}`);
             nextHover.src = hoverSrc;
             nextHover.style.display = 'block';
             stage?.classList.add('has-comparison');
@@ -792,7 +757,6 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         current.classList.add('exit-left');
         current.classList.remove('active');
-
         next.classList.add('active');
         next.classList.remove('enter-right');
 
@@ -807,6 +771,25 @@ const galleryItems = mainPhotos.map((file: any) => {
             isTransitioning = false;
         }, 1200);
     }
+
+    // EL MOTOR ORIGINAL: Seguimiento de mouse simple
+    comparisonStage?.addEventListener('mousemove', (e) => {
+        if (!comparisonStage.classList.contains('has-comparison')) return;
+        
+        const activeItem = comparisonStage.querySelector('.slide-item.active');
+        const mainImg = activeItem?.querySelector('.v-main') as HTMLElement;
+        const hoverImg = activeItem?.querySelector('.v-hover') as HTMLElement;
+        const line = activeItem?.querySelector('.curtain-line') as HTMLElement;
+        
+        if (!mainImg || !hoverImg || !line) return;
+
+        const rect = mainImg.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const boundedX = Math.max(0, Math.min(100, x));
+
+        hoverImg.style.clipPath = `inset(0 ${100 - boundedX}% 0 0)`;
+        line.style.left = `${boundedX}%`;
+    });
 
     viewButtons.forEach(btn => {
         btn.addEventListener('click', () => {
