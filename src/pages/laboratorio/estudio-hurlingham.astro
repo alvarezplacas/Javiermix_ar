@@ -795,28 +795,33 @@ const galleryItems = mainPhotos.map((file: any) => {
         line.style.left = `${boundedX}%`;
     });
 
-    viewButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const src = btn.getAttribute('data-src') || '';
-            const hover = btn.getAttribute('data-hover') || '';
-            const title = btn.getAttribute('data-title') || '';
-            const date = btn.getAttribute('data-date') || '';
-            
-            console.log("Activando visor:", title);
-            updateViewer(src, hover, title, date);
-            
-            if (viewer) {
-                viewer.classList.add('active');
-                document.body.classList.add('viewer-open');
-            }
-        });
+    // --- MOTOR DE APERTURA MAESTRO (Delegación Global) ---
+    document.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('.view-btn');
+        if (!btn) return;
+
+        e.preventDefault();
+        const src = btn.getAttribute('data-src') || '';
+        const hover = btn.getAttribute('data-hover') || '';
+        const title = btn.getAttribute('data-title') || '';
+        const date = btn.getAttribute('data-date') || '';
+        
+        console.log("[JS] Clic detectado en:", title);
+        updateViewer(src, hover, title, date);
+        
+        if (viewer) {
+            viewer.style.display = 'flex';
+            viewer.classList.add('active');
+            document.body.classList.add('viewer-open');
+            console.log("[JS] Visor activado correctamente.");
+        }
     });
 
     closeBtn?.addEventListener('click', () => {
         stopTour();
         if (viewer) {
             viewer.classList.remove('active');
+            viewer.style.display = 'none';
             document.body.classList.remove('viewer-open');
         }
     });
