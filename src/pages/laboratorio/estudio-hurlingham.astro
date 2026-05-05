@@ -105,7 +105,7 @@ const galleryItems = mainPhotos.map((file: any) => {
                     <div class="slider-curtain">
                         <div class="curtain-line">
                             <div class="curtain-handle">
-                                <div class="handle-arrows">‹›</div>
+                                <span class="handle-arrows" style="display:flex; gap:4px; font-weight:900; font-size:1.2rem;">‹›</span>
                             </div>
                         </div>
                     </div>
@@ -747,11 +747,13 @@ const galleryItems = mainPhotos.map((file: any) => {
         }
 
         // 1. Preparar el siguiente slide
-        nextMain.src = src;
+        const version = new Date().getTime();
+        nextMain.src = `${src}&v=${version}`;
 
         // VERIFICACIÓN CRÍTICA: Solo activar comparación si las imágenes son distintas
         if (hoverSrc && hoverSrc !== src && nextHover) {
-            nextHover.src = hoverSrc;
+            console.log(`[HURLINGHAM] Emparejando: ${src} <-> ${hoverSrc}`);
+            nextHover.src = `${hoverSrc}&v=${version}`;
             nextHover.style.display = 'block';
             stage?.classList.add('has-comparison');
             
@@ -760,8 +762,9 @@ const galleryItems = mainPhotos.map((file: any) => {
                 nextHover.style.width = `${rect.width}px`;
                 resetCurtain();
             };
-        } else if (nextHover) {
-            nextHover.style.display = 'none';
+        } else {
+            console.log(`[HURLINGHAM] Sin versión restaurada para: ${src}`);
+            if (nextHover) nextHover.style.display = 'none';
             stage?.classList.remove('has-comparison');
         }
 
