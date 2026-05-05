@@ -101,11 +101,11 @@ const galleryItems = mainPhotos.map((file: any) => {
             </div>
             <div class="viewer-content">
                 <div class="slider-stage" id="comparison-stage">
+                    <div class="f11-hint">Presiona <b>F11</b> para pantalla completa.</div>
                     <div class="slider-curtain">
                         <div class="curtain-line">
                             <div class="curtain-handle">
-                                <span class="arrow-l">‹</span>
-                                <span class="arrow-r">›</span>
+                                <span class="eye-icon">👁</span>
                             </div>
                         </div>
                     </div>
@@ -126,8 +126,6 @@ const galleryItems = mainPhotos.map((file: any) => {
                     <span id="viewer-title"></span>
                     <span id="viewer-date"></span>
                 </div>
-            </div>
-        </div>
     </main>
 </Layout>
 
@@ -357,10 +355,14 @@ const galleryItems = mainPhotos.map((file: any) => {
     }
 
     .f11-hint {
-        font-size: 0.65rem;
-        letter-spacing: 1px;
-        color: rgba(255,255,255,0.3);
+        position: absolute;
+        bottom: 3rem;
+        left: 4rem;
+        font-size: 0.6rem;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
         text-transform: uppercase;
+        z-index: 100;
     }
 
     .f11-hint b { color: var(--studio-accent); }
@@ -443,16 +445,25 @@ const galleryItems = mainPhotos.map((file: any) => {
         display: none;
     }
 
-    .slider-stage.has-comparison .slider-curtain { display: block; pointer-events: auto; cursor: ew-resize; }
+    .slider-stage.has-comparison .slider-curtain { 
+        display: block; 
+        pointer-events: auto; 
+    }
+
+    .slider-stage.has-comparison {
+        cursor: none !important; /* El mouse se convierte en la línea */
+    }
 
     .curtain-line {
-        position: fixed; /* Cambiado a fixed para usar coordenadas globales de la imagen */
-        top: 4rem;
-        bottom: 4rem;
+        position: fixed;
+        top: 0;
+        bottom: 0;
         left: 50%;
-        width: 2px;
-        background: var(--studio-accent);
-        box-shadow: 0 0 20px rgba(220, 177, 74, 0.5);
+        width: 1px;
+        background: linear-gradient(to bottom, transparent, var(--studio-accent), transparent);
+        box-shadow: 0 0 15px rgba(220, 177, 74, 0.4);
+        z-index: 100;
+        pointer-events: none;
     }
 
     .curtain-handle {
@@ -460,17 +471,16 @@ const galleryItems = mainPhotos.map((file: any) => {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         background: var(--studio-accent);
         border-radius: 50%;
         display: flex;
         justify-content: center;
         align-items: center;
         color: #000;
-        font-weight: 900;
-        font-size: 1.2rem;
-        box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        box-shadow: 0 0 40px rgba(0,0,0,0.8), 0 0 20px rgba(220, 177, 74, 0.4);
+        border: 2px solid rgba(0,0,0,0.2);
     }
 
     .slider-labels {
