@@ -6,18 +6,28 @@ import { getOptimizedImageURL } from '@utils/media';
 
 export const prerender = false;
 
+// 🚀 MOTOR DE DATOS: Recuperamos todas las obras y series
 const artworksRaw = await getCatalogoFiles();
+
+// Mapeo detallado con soporte de dimensiones para marcos dinámicos
 const artworks = artworksRaw
     .filter(file => !file.filename_download.toLowerCase().includes('_2'))
-    .slice(0, 100) // Aumentamos el límite para cubrir múltiples series
-    .map((file, index) => ({
-        id: file.id,
-        title: file.title || `Masterpiece ${index + 1}`,
-        img: getOptimizedImageURL(file.id, { width: 1200, format: 'webp', quality: 90 }),
-        serie: file.serie_name || 'Sin Serie',
-    }));
+    .slice(0, 150) // Límite expandido para exhibiciones masivas
+    .map((file, index) => {
+        const isVertical = (file.height || 0) > (file.width || 0);
+        return {
+            id: file.id,
+            title: file.title || `Obra Maestra ${index + 1}`,
+            img: getOptimizedImageURL(file.id, { width: 1400, format: 'webp', quality: 95 }),
+            serie: file.serie_name || 'Archivo',
+            aspectRatio: isVertical ? 'vertical' : 'horizontal',
+            width: file.width,
+            height: file.height
+        };
+    });
 
-const uniqueSeries = [...new Set(artworksRaw.map(f => f.serie_name))].filter(Boolean);
+// Normalización de series para el menú inferior
+const uniqueSeries = [...new Set(artworks.map(f => f.serie))].filter(Boolean).sort();
 
 const entornosData = await getLaboratorioEntornos();
 
@@ -130,7 +140,12 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
         <div class="horizontal-wall" id="wall">
             {artworks.map((art, index) => (
-                <div class="artwork-station" data-serie={art.serie} style={`--station-index: ${index}; view-timeline-name: --artwork-${index}; view-timeline-axis: inline;`} id={`artwork-${art.id}`}>
+                <div 
+                    class={`artwork-station is-${art.aspectRatio}`} 
+                    data-serie={art.serie} 
+                    style={`--station-index: ${index}; view-timeline-name: --artwork-${index};`} 
+                    id={`artwork-${art.id}`}
+                >
                     <div class="frame-wrapper">
                         <div class="frame-container">
                             <div class="museum-spotlight"></div>
@@ -138,6 +153,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                                 src={art.img} 
                                 alt={art.title} 
                                 class="main-artwork" 
+                                loading={index < 5 ? "eager" : "lazy"}
                                 onerror="this.src='/img/placeholder.jpg'; this.classList.add('error');"
                             />
                             <div class="frame-shadow"></div>
@@ -145,15 +161,22 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                         </div>
 
                         <div class="museum-label">
-                            <span class="serial">INV-2026-{index + 100}</span>
+                            <span class="serial">JMX-26-{art.id.slice(0,4).toUpperCase()}</span>
                             <h3>{art.title}</h3>
-                            <p>Javier Mix · 2026</p>
-                            <p class="specs">Giclée Hahnemühle</p>
-                            <button class="buy-btn" data-id={art.id}>COLECCIONAR</button>
+                            <p>Serie: <b>{art.serie}</b></p>
+                            <p>Papel Fine Art · Edición Limitada</p>
+                            <button class="buy-btn" data-id={art.id}>ADQUIRIR OBRA</button>
                         </div>
                     </div>
                 </div>
             ))}
+            
+            {artworks.length === 0 && (
+                <div class="empty-gallery">
+                    <h2>Gelería en Montaje</h2>
+                    <p>No se han encontrado obras en las carpetas de catálogo.</p>
+                </div>
+            )}
         </div>
 
         <div class="scroll-progress-container">
@@ -487,40 +510,39 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
     .frame-container {
         position: relative;
-        padding: 60px; /* Más aire para el paspartú */
+        padding: 4.5rem; /* Paspartú Maestro */
         background-color: oklch(0.98 0.01 85);
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-        border: 25px solid oklch(0.1 0 0);
+        border: 1.5rem solid oklch(0.1 0 0); /* Marco de madera negra */
         
-        /* Sombra de Cuadro Real (Casting on Wall) */
         box-shadow: 
-            /* Profundidad interna */
-            inset 0 0 20px oklch(0 0 0 / 0.2),
-            /* Sombra proyectada real */
-            0 30px 60px oklch(0 0 0 / 0.5),
-            0 10px 20px oklch(0 0 0 / 0.3);
+            inset 0 0 40px oklch(0 0 0 / 0.1),
+            0 40px 80px oklch(0 0 0 / 0.4),
+            0 15px 30px oklch(0 0 0 / 0.2);
 
         transform-style: preserve-3d;
-        transition: 0.8s var(--ease-premium);
+        transition: transform 0.8s var(--ease-premium), box-shadow 0.8s ease;
 
         &::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(165deg, oklch(1 0 0 / 0.05), transparent);
-            backdrop-filter: contrast(1.02) brightness(1.02);
+            background: linear-gradient(135deg, oklch(1 0 0 / 0.1), transparent 50%, oklch(0 0 0 / 0.05));
             pointer-events: none;
         }
 
         .main-artwork {
-            max-height: 48vh;
             width: auto;
             display: block;
-            box-shadow: 0 0 10px oklch(0 0 0 / 0.3);
-            transition: transform 0.6s var(--ease-premium);
+            box-shadow: 0 0 15px oklch(0 0 0 / 0.2);
+            transition: transform 1.2s var(--ease-premium);
         }
 
-        &:hover .main-artwork { transform: scale(1.02); }
+        /* 🖼️ Ajustes por Formato */
+        .artwork-station.is-horizontal & .main-artwork { max-height: 50vh; min-width: 30vw; }
+        .artwork-station.is-vertical & .main-artwork { max-height: 65vh; min-width: 20vw; }
+
+        &:hover { transform: scale(1.02) rotateY(-2deg); }
     }
 
     .museum-label {

@@ -381,7 +381,43 @@ export async function getFooterColumns() {
     }
 }
 
-export async function getCatalogoFiles() { try { const client = await DirectusManager.getClient(); const folders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Coleccion'] } } })); const rootId = folders[0]?.id; if (!rootId) return []; const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: rootId } } })); const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); const files = await client.request(readFiles({ filter: { folder: { _in: seriesFolders.map((f: any) => f.id) } }, limit: -1 })); return (files as any[]).map((file: any) => ({ ...file, serie_name: seriesMap.get(file.folder) || "Sin Serie" })); } catch (e) { return []; } }
+export async function getCatalogoFiles() { 
+    try { 
+        const client = await DirectusManager.getClient(); 
+        // 🚀 Buscamos en todas las posibles carpetas raíz de arte
+        const rootFolders = await client.request(readFolders({ 
+            filter: { name: { _in: ['Catalogo', 'Coleccion', 'Obras', 'Royal Gallery', 'Exposicion'] } } 
+        })); 
+        
+        if (rootFolders.length === 0) return []; 
+        
+        const rootIds = rootFolders.map((f: any) => f.id);
+        
+        // Obtener TODAS las subcarpetas de esas raíces
+        const seriesFolders = await client.request(readFolders({ 
+            filter: { parent: { _in: rootIds } },
+            limit: -1
+        })); 
+        
+        const allFolderIds = [...rootIds, ...seriesFolders.map((f: any) => f.id)];
+        const seriesMap = new Map(seriesFolders.map((f: any) => [f.id, f.name])); 
+        rootFolders.forEach((f: any) => seriesMap.set(f.id, f.name));
+
+        const files = await client.request(readFiles({ 
+            filter: { folder: { _in: allFolderIds } }, 
+            sort: ['-uploaded_on'],
+            limit: -1 
+        })); 
+        
+        return (files as any[]).map((file: any) => ({ 
+            ...file, 
+            serie_name: seriesMap.get(file.folder) || "Archivo General" 
+        })); 
+    } catch (e) { 
+        console.error("[getCatalogoFiles] Error:", e);
+        return []; 
+    } 
+}
 
 export async function getApprovedExhibitionModes() {
     try {
