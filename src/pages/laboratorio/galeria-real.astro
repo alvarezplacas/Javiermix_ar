@@ -75,6 +75,15 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
             <div class="atmos-overlay"></div>
         </div>
 
+        <!-- ⏳ PRE-LOADER INMERSIVO -->
+        <div id="gallery-loader" class="gallery-loader">
+            <div class="loader-content">
+                <div class="loader-line"></div>
+                <p class="loader-text">PREPARANDO EXHIBICIÓN MAESTRA</p>
+                <span class="loader-subtext">Cargando obras de alta fidelidad...</span>
+            </div>
+        </div>
+
         <header class="gallery-ui">
             <div class="ui-top">
                 <a href="/laboratorio" class="exit-link">SALIR DE LA EXHIBICIÓN</a>
@@ -178,8 +187,8 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                 </div>
             )}
 
-            <!-- 🔄 Buffer para el Loop Perfecto -->
-            <div class="loop-buffer" style="flex: 0 0 100vw; height: 1px;"></div>
+            <!-- 🔄 Buffer para el Loop Perfecto (Optimizado) -->
+            <div class="loop-buffer" style="flex: 0 0 50vw; height: 1px;"></div>
         </div>
 
         <div class="scroll-progress-container">
@@ -610,15 +619,39 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         to { scale: 1 1; }
     }
 
-    /* Adaptaciones Atmosferas Oscuras */
-    .is-atmos-night, .is-atmos-velvet, .is-atmos-blue, .is-atmos-concrete {
-        .museum-label { 
-            border-color: oklch(1 0 0 / 0.1); 
-            p { color: oklch(1 0 0 / 0.5); }
-            h3 { color: oklch(1 0 0); }
-        }
-        .buy-btn { background: oklch(1 0 0); color: oklch(0.1 0 0); }
+    /* 📱 MOBILE */
+    @media (max-width: 1024px) { 
+        .gallery-ui { padding: 2rem; }
+        .horizontal-wall { padding: 0 20vw; gap: 50vw; }
     }
+
+    /* ⏳ Estilos del Loader */
+    .gallery-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 1.5s var(--ease-premium), visibility 1.5s;
+        &.is-loaded { opacity: 0; visibility: hidden; }
+    }
+
+    .loader-content { text-align: center; }
+    .loader-text { 
+        font-family: 'Cormorant Garamond', serif; 
+        font-size: 1.2rem; 
+        letter-spacing: 0.5em; 
+        color: var(--color-accent); 
+        margin: 2rem 0 0.5rem;
+        animation: pulse-text 2s infinite ease-in-out;
+    }
+    .loader-subtext { font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.4; text-transform: uppercase; }
+    .loader-line { width: 40px; height: 1px; background: var(--color-accent); margin: 0 auto; animation: grow-line 2s infinite; }
+
+    @keyframes pulse-text { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    @keyframes grow-line { 0% { width: 0; opacity: 0; } 50% { width: 80px; opacity: 1; } 100% { width: 0; opacity: 0; } }
 </style>
 
 <script>
@@ -631,6 +664,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         const audioBrowser = document.getElementById('audio-browser') as HTMLSelectElement;
         
         const ui = document.querySelectorAll('.gallery-ui');
+        const loader = document.getElementById('gallery-loader');
         const wall = document.getElementById('wall');
         const stations = document.querySelectorAll('.artwork-station');
         const seriesBtns = document.querySelectorAll('.series-btn');
@@ -638,6 +672,18 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         let soundEnabled = false;
         let autoPlayInterval: any = null;
         let idleTimer: any = null;
+
+        // 🏁 Quitar Loader cuando todo esté listo
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                loader?.classList.add('is-loaded');
+            }, 1000);
+        });
+
+        // Fallback por si 'load' tarda demasiado
+        setTimeout(() => {
+            loader?.classList.add('is-loaded');
+        }, 5000);
 
         // 🌙 Idle Management
         const resetIdleTimer = () => {
