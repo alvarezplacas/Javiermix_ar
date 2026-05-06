@@ -177,6 +177,9 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                     <p>No se han encontrado obras en las carpetas de catálogo.</p>
                 </div>
             )}
+
+            <!-- 🔄 Buffer para el Loop Perfecto -->
+            <div class="loop-buffer" style="flex: 0 0 100vw; height: 1px;"></div>
         </div>
 
         <div class="scroll-progress-container">
@@ -722,8 +725,10 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                 playBtn!.classList.add('active');
                 playBtn!.innerHTML = '<span class="icon">⏸</span> STOP TOUR';
                 autoPlayInterval = setInterval(() => {
-                    gallery.scrollLeft += 1.5;
-                    if (gallery.scrollLeft >= gallery.scrollWidth - window.innerWidth) {
+                    gallery.scrollLeft += 1.2; // Velocidad un poco más cinematográfica
+                    
+                    // Si llegamos al final del buffer (la última obra ya salió)
+                    if (gallery.scrollLeft >= gallery.scrollWidth - window.innerWidth - 10) {
                         gallery.scrollLeft = 0;
                     }
                 }, 30);

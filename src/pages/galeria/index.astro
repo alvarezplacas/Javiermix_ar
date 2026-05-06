@@ -17,17 +17,16 @@ const seriesList = seriesListRaw.map(s => ({
 
 const artworksRaw = await getCatalogoFiles();
 const artworks = artworksRaw
-    .filter(file => !file.filename_download.toLowerCase().includes('_2')) // 🚫 Excluir muestras de ambiente
+    .filter(file => file.id && !file.filename_download.toLowerCase().includes('_2')) // 🚫 Validar ID y excluir muestras
     .map(file => {
-        // Encontrar el mockup correspondiente (_2)
         const baseName = file.filename_download.split('.')[0];
         const mockup = artworksRaw.find(f => f.filename_download.toLowerCase().startsWith(baseName.toLowerCase() + '_2'));
         return {
             id: file.id,
             title: file.title || file.filename_download.split('.')[0],
-            serie: file.serie_name || 'Sin Serie',
-            thumb: getOptimizedImageURL(file.id, { width: 800, format: 'avif', quality: 90 }),
-            mockup: mockup ? getOptimizedImageURL(mockup.id, { width: 800, format: 'avif', quality: 90 }) : null
+            serie: file.serie_name || 'Archivo General',
+            thumb: getOptimizedImageURL(file.id, { width: 800, format: 'webp', quality: 80 }),
+            mockup: mockup ? getOptimizedImageURL(mockup.id, { width: 800, format: 'webp', quality: 80 }) : null
         };
     });
 ---
@@ -78,8 +77,8 @@ const artworks = artworksRaw
                              alt={art.title} 
                              class="img-main" 
                              loading={index < 4 ? "eager" : "lazy"} 
-                             fetchpriority={index < 4 ? "high" : "auto"} />
-                        {art.mockup && <img src={art.mockup} alt={`${art.title} ambiente`} class="img-mockup" loading="lazy" />}
+                             onerror="this.style.opacity='0.3'; this.src='/img/placeholder.jpg';" />
+                        {art.mockup && <img src={art.mockup} alt={`${art.title} ambiente`} class="img-mockup" loading="lazy" onerror="this.remove()" />}
                         <div class="item-overlay">
                             <span class="art-title">{art.title}</span>
                             <span class="art-serie">{art.serie}</span>
@@ -470,9 +469,10 @@ const artworks = artworksRaw
     };
 
     const renderGrid = (items: any[], type: 'WORK' | 'SERIE') => {
+        if (!grid) return;
         if (type === 'SERIE') {
-            grid!.classList.add('list-mode');
-            grid!.innerHTML = items.map((item: any) => {
+            grid.classList.add('list-mode');
+            grid.innerHTML = items.map((item: any) => {
                 return `
                     <a href="/galeria/${item.id}" class="series-card-result">
                         <div class="series-info-side">
@@ -481,19 +481,19 @@ const artworks = artworksRaw
                             <p class="s-teaser">${item.description || 'Explora esta colección exclusiva.'}</p>
                         </div>
                         <div class="series-photo-side">
-                            <img src="${item.coverUrl}" alt="${item.name}" loading="lazy" />
+                            <img src="${item.coverUrl}" alt="${item.name}" onerror="this.src='/img/placeholder.jpg'" loading="lazy" />
                         </div>
                     </a>
                 `;
             }).join('');
         } else {
-            grid!.classList.remove('list-mode');
-            grid!.innerHTML = items.map((item: any) => {
+            grid.classList.remove('list-mode');
+            grid.innerHTML = items.map((item: any) => {
                 const url = `/obra/${item.id}`;
                 return `
                     <a href="${url}" class="grid-item">
-                        <img src="${item.thumb}" alt="${item.title}" class="img-main" loading="lazy" />
-                        ${item.mockup ? `<img src="${item.mockup}" alt="${item.title} ambiente" class="img-mockup" loading="lazy" />` : ''}
+                        <img src="${item.thumb}" alt="${item.title}" class="img-main" onerror="this.src='/img/placeholder.jpg'; this.style.opacity='0.3';" loading="lazy" />
+                        ${item.mockup ? `<img src="${item.mockup}" alt="${item.title} ambiente" class="img-mockup" onerror="this.remove()" loading="lazy" />` : ''}
                         <div class="item-overlay">
                             <span class="art-title">${item.title}</span>
                             <span class="art-serie">${item.serie}</span>
