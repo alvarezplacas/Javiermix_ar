@@ -79,8 +79,8 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         <div id="gallery-loader" class="gallery-loader">
             <div class="loader-content">
                 <div class="loader-line"></div>
-                <p class="loader-text">PREPARANDO EXHIBICIÓN MAESTRA</p>
-                <span class="loader-subtext">Cargando obras de alta fidelidad...</span>
+                <p class="loader-text" id="loader-msg">PREPARANDO EXHIBICIÓN</p>
+                <span class="loader-subtext">Optimización de arte digital...</span>
             </div>
         </div>
 
@@ -163,7 +163,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                                 alt={art.title} 
                                 class="main-artwork" 
                                 loading={index < 5 ? "eager" : "lazy"}
-                                onerror="this.src='/img/placeholder.jpg'; this.classList.add('error');"
+                                onerror="this.src='/logo/javiermix-logo.png'; this.style.opacity='0.2';"
                             />
                             <div class="frame-shadow"></div>
                             <div class="sold-dot" id={`dot-${art.id}`}></div>
@@ -762,22 +762,31 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
         // 🚀 Auto-Tour Logic
         const toggleTour = () => {
+            const loaderMsg = document.getElementById('loader-msg');
+            
             if (autoPlayInterval) {
                 clearInterval(autoPlayInterval);
                 autoPlayInterval = null;
                 playBtn!.innerHTML = '<span class="icon">▶</span> PLAY TOUR';
                 playBtn!.classList.remove('active');
             } else {
-                playBtn!.classList.add('active');
-                playBtn!.innerHTML = '<span class="icon">⏸</span> STOP TOUR';
-                autoPlayInterval = setInterval(() => {
-                    gallery.scrollLeft += 1.2; // Velocidad un poco más cinematográfica
-                    
-                    // Si llegamos al final del buffer (la última obra ya salió)
-                    if (gallery.scrollLeft >= gallery.scrollWidth - window.innerWidth - 10) {
-                        gallery.scrollLeft = 0;
-                    }
-                }, 30);
+                // Activar Loader brevemente para cubrir la latencia inicial
+                if (loader) {
+                    if (loaderMsg) loaderMsg.innerText = "PREPARANDO TOUR";
+                    loader.classList.remove('is-loaded');
+                    setTimeout(() => loader.classList.add('is-loaded'), 1200);
+                }
+
+                setTimeout(() => {
+                    playBtn!.classList.add('active');
+                    playBtn!.innerHTML = '<span class="icon">⏸</span> STOP TOUR';
+                    autoPlayInterval = setInterval(() => {
+                        gallery.scrollLeft += 1.2; 
+                        if (gallery.scrollLeft >= gallery.scrollWidth - window.innerWidth - 10) {
+                            gallery.scrollLeft = 0;
+                        }
+                    }, 30);
+                }, 500); // Pequeño delay para que el loader se vea
             }
         };
 
