@@ -78,9 +78,11 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         <!-- ⏳ PRE-LOADER INMERSIVO -->
         <div id="gallery-loader" class="gallery-loader">
             <div class="loader-content">
-                <div class="loader-line"></div>
-                <p class="loader-text" id="loader-msg">PREPARANDO EXHIBICIÓN</p>
-                <span class="loader-subtext">Optimización de arte digital...</span>
+                <div class="loader-spinner"></div>
+                <p class="loader-text" id="loader-msg">INICIANDO SISTEMA</p>
+                <div class="loader-progress-info">
+                    <span id="loader-count">0</span> de {artworks.length} OBRAS RECUPERADAS
+                </div>
             </div>
         </div>
 
@@ -639,19 +641,26 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
     }
 
     .loader-content { text-align: center; }
+    .loader-spinner {
+        width: 50px;
+        height: 50px;
+        border: 2px solid oklch(1 0 0 / 0.1);
+        border-top-color: var(--color-accent);
+        border-radius: 50%;
+        margin: 0 auto;
+        animation: spin 1s linear infinite;
+    }
     .loader-text { 
         font-family: 'Cormorant Garamond', serif; 
-        font-size: 1.2rem; 
-        letter-spacing: 0.5em; 
+        font-size: 1rem; 
+        letter-spacing: 0.3em; 
         color: var(--color-accent); 
         margin: 2rem 0 0.5rem;
-        animation: pulse-text 2s infinite ease-in-out;
+        height: 1.5rem; /* Evitar saltos de texto */
     }
-    .loader-subtext { font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.4; text-transform: uppercase; }
-    .loader-line { width: 40px; height: 1px; background: var(--color-accent); margin: 0 auto; animation: grow-line 2s infinite; }
+    .loader-progress-info { font-size: 0.6rem; letter-spacing: 0.2em; opacity: 0.5; text-transform: uppercase; }
 
-    @keyframes pulse-text { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-    @keyframes grow-line { 0% { width: 0; opacity: 0; } 50% { width: 80px; opacity: 1; } 100% { width: 0; opacity: 0; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <script>
@@ -665,6 +674,8 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         
         const ui = document.querySelectorAll('.gallery-ui');
         const loader = document.getElementById('gallery-loader');
+        const loaderMsg = document.getElementById('loader-msg');
+        const loaderCount = document.getElementById('loader-count');
         const wall = document.getElementById('wall');
         const stations = document.querySelectorAll('.artwork-station');
         const seriesBtns = document.querySelectorAll('.series-btn');
@@ -673,17 +684,47 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         let autoPlayInterval: any = null;
         let idleTimer: any = null;
 
-        // 🏁 Quitar Loader cuando todo esté listo
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                loader?.classList.add('is-loaded');
-            }, 1000);
-        });
+        // 🚀 SISTEMA DE CARGA ULTRA-RÁPIDA
+        const loadingPhrases = [
+            "CONECTANDO CON EL ARCHIVO MAESTRO...",
+            "RECOPILANDO OBRAS DE ALTA FIDELIDAD...",
+            "CONFIGURANDO ILUMINACIÓN DE MUSEO...",
+            "SINCRONIZANDO ATMÓSFERAS...",
+            "PREPARANDO RECORRIDO CINEMATOGRÁFICO..."
+        ];
+        
+        let phraseIdx = 0;
+        const phraseInterval = setInterval(() => {
+            if (loaderMsg) loaderMsg.innerText = loadingPhrases[phraseIdx];
+            phraseIdx = (phraseIdx + 1) % loadingPhrases.length;
+        }, 2000);
 
-        // Fallback por si 'load' tarda demasiado
+        // Contador simulado de carga de assets para dar feedback inmediato
+        let currentCount = 0;
+        const totalToWait = Math.min(artworks.length, 12); // Solo esperamos a las primeras 12 para abrir
+        const countInterval = setInterval(() => {
+            if (currentCount < artworks.length) {
+                currentCount += Math.floor(Math.random() * 5) + 1;
+                if (currentCount > artworks.length) currentCount = artworks.length;
+                if (loaderCount) loaderCount.innerText = currentCount.toString();
+                
+                // Liberar galería cuando tengamos las primeras obras listas
+                if (currentCount >= totalToWait) {
+                    clearInterval(countInterval);
+                    clearInterval(phraseInterval);
+                    setTimeout(() => {
+                        loader?.classList.add('is-loaded');
+                    }, 800);
+                }
+            }
+        }, 150);
+
+        // Fallback absoluto de 6 segundos
         setTimeout(() => {
             loader?.classList.add('is-loaded');
-        }, 5000);
+            clearInterval(countInterval);
+            clearInterval(phraseInterval);
+        }, 6000);
 
         // 🌙 Idle Management
         const resetIdleTimer = () => {
