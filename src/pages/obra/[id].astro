@@ -520,7 +520,7 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
 .image-column {
   width: 50vw;
   height: 100vh;
-  background: var(--color-onyx-charcoal);
+  background: radial-gradient(circle at center, #111 0%, #050505 100%);
   position: sticky;
   top: 0;
   display: flex;
@@ -528,7 +528,8 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
   justify-content: center;
   align-items: center;
   padding: 0; 
-  border-right: 1px solid rgba(255,255,255,0.05);
+  border-right: 1px solid rgba(255,255,255,0.03);
+  overflow: hidden;
 }
 
 .sticky-image-container {
@@ -539,99 +540,112 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    padding: 5vh 2vw;
 }
 
 .image-wrapper {
   position: relative;
-  width: 95%; /* MÁXIMA ANCHURA HORIZONTAL */
-  aspect-ratio: 1 / 1; /* CONTENEDOR CUADRADO */
+  width: 100%;
+  height: 100%;
+  max-height: 75vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible; /* Permitir que sombras respiren */
   cursor: zoom-in;
-  background: rgba(0,0,0,0.2); /* Sutil fondo para el área de la obra */
-  flex-shrink: 0;
+  transition: all 0.8s var(--ease-premium);
 }
 
 /* 🚀 REGLA UNIVERSAL DE ESCALADO MÁXIMO */
 .main-artwork, .room-artwork {
-  position: absolute;
-  width: 100%;
-  height: 100%;
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 20px 60px rgba(0,0,0,0.8));
-  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.6s ease;
+  filter: drop-shadow(0 30px 80px rgba(0,0,0,0.9));
+  transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.8s ease;
   will-change: transform, opacity;
+  z-index: 1;
 }
 
-.room-artwork { opacity: 0; z-index: 2; }
+.room-artwork { 
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0; 
+    z-index: 2; 
+}
 
 .image-controls {
     position: absolute;
-    bottom: 12vh;
+    bottom: 8vh;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 1.2rem;
+    gap: 1.5rem;
     z-index: 100;
-    width: fit-content;
+    padding: 0.8rem 1.5rem;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 100px;
 }
 
 .control-btn {
-    background: rgba(0,0,0,0.4);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.15);
-    color: var(--color-white);
-    padding: 1.2rem 2.2rem; /* Más grandes */
-    font-size: 0.75rem; /* Más legibles */
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    padding: 0.8rem 1.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    flex-shrink: 0;
+    transition: all 0.4s var(--ease-premium);
     white-space: nowrap;
 }
 
+.control-btn:hover, .control-btn.active {
+    color: var(--color-accent);
+}
+
 .btn-like-glass {
-    width: 60px;
+    width: 45px;
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    background: transparent;
-    border: none;
-    backdrop-filter: none;
-    margin-left: 1rem;
-    flex-shrink: 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transition: all 0.4s var(--ease-premium);
 }
 
 .heart-icon-glass {
-    width: 32px; /* Más grande como pediste */
-    height: 32px;
+    width: 20px;
+    height: 20px;
     fill: none;
-    stroke: var(--color-accent);
-    stroke-width: 1.5;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    filter: drop-shadow(0 0 5px rgba(220, 177, 74, 0.3));
+    stroke: currentColor;
+    stroke-width: 2;
 }
 
-.btn-like-glass:hover .heart-icon-glass {
-    transform: scale(1.2);
-    filter: drop-shadow(0 0 12px var(--color-accent));
+.btn-like-glass.liked {
+    background: rgba(255, 45, 85, 0.15);
+    border-color: #FF2D55;
+    color: #FF2D55;
 }
 
 .btn-like-glass.liked .heart-icon-glass {
-    fill: var(--color-accent);
-    stroke: var(--color-accent);
-    filter: drop-shadow(0 0 15px var(--color-accent));
+    fill: currentColor;
 }
 
 .control-btn:hover {
-    border-color: var(--color-accent);
-    background: rgba(220, 177, 74, 0.15);
-    transform: translateY(-3px);
+    transform: translateY(-2px);
 }
 
 .share-controls-left {

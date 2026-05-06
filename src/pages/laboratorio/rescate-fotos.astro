@@ -78,14 +78,16 @@ const galleryItems = mainPhotos.map((file: any) => {
                     <div class="photo-cell" data-index={index}>
                         <div class="image-box">
                             <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect main-img" />
-                            <div class="overlay">
-                                <button class="view-btn" 
-                                    data-src={item.src} 
-                                    data-hover={item.hoverThumb || ''} 
-                                    data-title={item.title} 
-                                    data-date={item.metadata.date}
-                                >ANALIZAR OBRA</button>
-                            </div>
+                            <button 
+                                class="view-btn" 
+                                onclick="openStudioViewer(this)"
+                                data-src={item.src} 
+                                data-hover={item.hoverSrc} 
+                                data-title={item.title} 
+                                data-date={item.date}
+                            >
+                                <span class="icon">🔍</span> ANALIZAR OBRA
+                            </button>
                         </div>
                         <div class="photo-info">
                             <span class="file-serie">{item.serie}</span>
@@ -651,16 +653,28 @@ const galleryItems = mainPhotos.map((file: any) => {
 </style>
 
 <script>
-    const viewer = document.getElementById('viewer');
-    const closeBtn = document.getElementById('close-viewer');
-    const viewButtons = document.querySelectorAll('.view-btn');
-    const slideCurrent = document.getElementById('slide-current');
-    const slideNext = document.getElementById('slide-next');
-    const viewerTitle = document.getElementById('viewer-title');
-    const viewerDate = document.getElementById('viewer-date');
-    const viewerContent = document.querySelector('.viewer-content');
-    
     let isTransitioning = false;
+
+    // --- FUNCIÓN GLOBAL DE APERTURA (Infalible) ---
+    (window as any).openStudioViewer = function(btn: HTMLElement) {
+        const src = btn.getAttribute('data-src') || '';
+        const hover = btn.getAttribute('data-hover') || '';
+        const title = btn.getAttribute('data-title') || '';
+        const date = btn.getAttribute('data-date') || '';
+        
+        console.log("[MASTER] Abriendo:", title);
+        updateViewer(src, hover, title, date);
+        
+        const v = document.getElementById('viewer');
+        if (v) {
+            v.style.display = 'flex';
+            v.style.zIndex = '1000000';
+            v.classList.add('active');
+            document.body.classList.add('viewer-open');
+        } else {
+            alert("Error: No se encontró el visor #viewer en el DOM");
+        }
+    };
 
     function updateViewer(src: string, hoverSrc: string, title: string, date: string) {
         if (isTransitioning) return;
