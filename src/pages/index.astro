@@ -101,20 +101,8 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
           <h1 class="main-heading">
             <span class="weight-light gold-text">{homeTitle}</span>
           </h1>
-          <p class="intro-text">
-            {homeContent}
-          </p>
+          <div class="intro-text" set:html={homeContent} />
         </header>
-
-        <div class="home-section">
-            <h3>LEGADO VISUAL</h3>
-            <p>Especializado en técnica mixta y soportes metálicos, mi trabajo explora la relación entre el tiempo y la materia.</p>
-        </div>
-
-        <div class="home-section">
-            <h3>PARA EL COLECCIONISTA</h3>
-            <p>Cada pieza se entrega con certificado de autenticidad y opciones de montaje museum-grade. No solo vendemos imágenes, proveemos presencia y valor estético para espacios de alta jerarquía.</p>
-        </div>
 
         <div class="home-closing">
             {famousQuote}
