@@ -89,7 +89,10 @@ const singletonColumns = [
             <ul>
               {services.map((service: string) => (
                 <li>
-                  <a href={service.includes('Laboratorio') ? '/laboratorio' : '#'}>
+                  <a 
+                    href={service.includes('Laboratorio') ? '/laboratorio' : '#'}
+                    class={service.includes('Laboratorio') ? 'link-lab' : ''}
+                  >
                     {service}
                   </a>
                 </li>
