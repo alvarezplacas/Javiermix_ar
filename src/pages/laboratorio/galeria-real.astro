@@ -493,7 +493,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         display: flex;
         align-items: center;
         padding: 0 40vw;
-        gap: 35vw;
+        /* gap: 35vw; REMOVIDO: Causaba tiempo muerto en el filtrado */
         will-change: transform;
         background: transparent !important;
         transition: transform 0.8s var(--ease-premium);
@@ -501,16 +501,20 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
     .artwork-station {
         flex: 0 0 auto;
+        margin-right: 35vw; /* Espaciado movido aquí */
         transition: opacity 0.8s var(--ease-premium), transform 0.8s var(--ease-premium), width 0.8s var(--ease-premium), margin 0.8s var(--ease-premium), padding 0.8s var(--ease-premium);
         
+        &:last-child { margin-right: 0; }
+
         &.is-hidden {
             opacity: 0;
             transform: scale(0.5) translateY(50px);
-            width: 0;
-            margin: 0;
-            padding: 0;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
             pointer-events: none;
             overflow: hidden;
+            display: none; /* Forzar desaparición total para evitar 'tiempo muerto' en el scroll */
         }
         .frame-wrapper {
             display: flex;
