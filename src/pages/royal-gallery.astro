@@ -202,7 +202,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 </Layout>
 
 <style>
-    @import "../../styles/atmospheres.css";
+    @import "../styles/atmospheres.css";
 
     :root {
         --color-accent: oklch(0.75 0.15 85); /* Luxury Gold */
@@ -666,7 +666,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 </style>
 
 <script>
-    import { soundManager } from '../../utils/SoundManager';
+    import { soundManager } from '../utils/SoundManager';
 
     document.addEventListener('astro:page-load', () => {
         const gallery = document.getElementById('gallery-container');
