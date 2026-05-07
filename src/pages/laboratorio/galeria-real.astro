@@ -196,6 +196,8 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         <div class="scroll-progress-container">
             <div class="scroll-progress-bar" id="progress-bar"></div>
         </div>
+
+        <script id="artworks-data" type="application/json" is:inline set:html={JSON.stringify(artworks)} />
     </main>
 </Layout>
 
@@ -684,47 +686,26 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         let autoPlayInterval: any = null;
         let idleTimer: any = null;
 
-        // 🚀 SISTEMA DE CARGA ULTRA-RÁPIDA
+        const artworksData = JSON.parse(document.getElementById('artworks-data')?.innerHTML || '[]');
+
+        // 🚀 SISTEMA DE CARGA FLUIDA
         const loadingPhrases = [
-            "CONECTANDO CON EL ARCHIVO MAESTRO...",
-            "RECOPILANDO OBRAS DE ALTA FIDELIDAD...",
-            "CONFIGURANDO ILUMINACIÓN DE MUSEO...",
-            "SINCRONIZANDO ATMÓSFERAS...",
-            "PREPARANDO RECORRIDO CINEMATOGRÁFICO..."
+            "CONECTANDO CON EL ARCHIVO...",
+            "ILUMINANDO SALA MAESTRO...",
+            "SINCRONIZANDO OBRAS..."
         ];
         
         let phraseIdx = 0;
         const phraseInterval = setInterval(() => {
             if (loaderMsg) loaderMsg.innerText = loadingPhrases[phraseIdx];
             phraseIdx = (phraseIdx + 1) % loadingPhrases.length;
-        }, 2000);
+        }, 1500);
 
-        // Contador simulado de carga de assets para dar feedback inmediato
-        let currentCount = 0;
-        const totalToWait = Math.min(artworks.length, 12); // Solo esperamos a las primeras 12 para abrir
-        const countInterval = setInterval(() => {
-            if (currentCount < artworks.length) {
-                currentCount += Math.floor(Math.random() * 5) + 1;
-                if (currentCount > artworks.length) currentCount = artworks.length;
-                if (loaderCount) loaderCount.innerText = currentCount.toString();
-                
-                // Liberar galería cuando tengamos las primeras obras listas
-                if (currentCount >= totalToWait) {
-                    clearInterval(countInterval);
-                    clearInterval(phraseInterval);
-                    setTimeout(() => {
-                        loader?.classList.add('is-loaded');
-                    }, 800);
-                }
-            }
-        }, 150);
-
-        // Fallback absoluto de 6 segundos
+        // Desbloqueo rápido garantizado
         setTimeout(() => {
             loader?.classList.add('is-loaded');
-            clearInterval(countInterval);
             clearInterval(phraseInterval);
-        }, 6000);
+        }, 2000);
 
         // 🌙 Idle Management
         const resetIdleTimer = () => {
