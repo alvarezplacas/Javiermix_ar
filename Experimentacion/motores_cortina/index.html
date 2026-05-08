@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor de Restauración: Cortina JMX Premium</title>
+    <style>
+        :root {
+            --pos: 50%;
+            --accent: #dcb14a;
+            --bg: #000;
+        }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%), url('img/papel.avif');
+            background-size: cover;
+            background-attachment: fixed;
+            background-blend-mode: darken;
+            color: white;
+            font-family: 'Inter', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .lab-header {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .lab-header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            font-weight: 300;
+            margin: 0;
+            color: var(--accent);
+        }
+
+        .lab-header p {
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin-top: 10px;
+        }
+
+        .stage {
+            position: relative;
+            width: 85vw;
+            height: 75vh;
+            background: transparent;
+            overflow: hidden;
+            cursor: default;
+            user-select: none;
+        }
+
+        .layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .layer img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Capa Original (Arriba - se recorta) */
+        .layer-top {
+            z-index: 2;
+            clip-path: inset(0 calc(100% - var(--pos)) 0 0);
+        }
+
+        /* Capa Restaurada (Abajo - se revela) */
+        .layer-bottom {
+            z-index: 1;
+        }
+
+        .curtain-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: var(--pos);
+            width: 14px;
+            background: #111; 
+            z-index: 10;
+            transform: translateX(-50%);
+            pointer-events: none;
+            transition: background 0.4s, box-shadow 0.4s;
+            /* Geometría orgánica: más gorda al centro */
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        .stage.is-dragging .curtain-line {
+            background: linear-gradient(to bottom, #ff0000, #ff4e00, #dcb14a, #ff4e00, #ff0000);
+            background-size: 100% 200%;
+            animation: lava-flow 1s infinite linear;
+            box-shadow: 0 0 20px #ff0000, 0 0 40px #ff4e00;
+        }
+
+        @keyframes lava-flow {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 0% 200%; }
+        }
+
+        .stage:active .curtain-line {
+            transform: translateX(-50%) scaleX(1.1);
+        }
+
+        .hint {
+            position: fixed;
+            bottom: 2rem;
+            font-size: 0.6rem;
+            letter-spacing: 3px;
+            opacity: 0.3;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="lab-header">
+        <h1>Restauración</h1>
+        <p>INTERVENCIÓN DE FOTOGRAFÍAS ANTIGUAS</p>
+    </header>
+
+    <div class="stage" id="stage">
+        <!-- Fondo (Restaurado - la que termina en _2) -->
+        <div class="layer layer-bottom">
+            <img src="img/peche059%20copia_2.avif" alt="Restaurado">
+        </div>
+        <!-- Frente (Original - se recorta para revelar lo de atrás) -->
+        <div class="layer layer-top" id="top-layer">
+            <img src="img/peche059.avif" alt="Original">
+        </div>
+
+        <div class="curtain-line" id="line"></div>
+    </div>
+
+    <!-- Contenedor para las gotas de lava -->
+    <div id="lava-container" style="position:fixed; inset:0; pointer-events:none; z-index:9;"></div>
+
+    <div class="hint">Mantén presionado y arrastra para comparar</div>
+
+    <script>
+        const stage = document.getElementById('stage');
+        let isDragging = false;
+
+        const updatePosition = (e) => {
+            const rect = stage.getBoundingClientRect();
+            let x = (e.clientX - rect.left) / rect.width;
+            x = Math.max(0, Math.min(1, x));
+            document.documentElement.style.setProperty('--pos', (x * 100) + '%');
+        };
+
+        stage.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            stage.classList.add('is-dragging');
+            updatePosition(e);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            updatePosition(e);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            stage.classList.remove('is-dragging');
+        });
+
+        // --- SISTEMA DE GOTAS DE LAVA ---
+        const lavaContainer = document.getElementById('lava-container');
+        
+        function spawnDrop() {
+            if (!isDragging) return;
+            
+            const drop = document.createElement('div');
+            const size = Math.random() * 6 + 2;
+            const lineRect = document.getElementById('line').getBoundingClientRect();
+            
+            drop.style.position = 'absolute';
+            drop.style.left = (lineRect.left + lineRect.width / 2) + 'px';
+            drop.style.top = (lineRect.top + Math.random() * lineRect.height) + 'px';
+            drop.style.width = size + 'px';
+            drop.style.height = size + 'px';
+            drop.style.background = Math.random() > 0.5 ? '#ff0000' : '#ff4e00';
+            drop.style.borderRadius = '50%';
+            drop.style.filter = 'blur(1px)';
+            drop.style.boxShadow = '0 0 10px #ff0000';
+            drop.style.zIndex = '15';
+            
+            lavaContainer.appendChild(drop);
+            
+            const anim = drop.animate([
+                { transform: `translate(0, 0) scale(1)`, opacity: 1 },
+                { transform: `translate(${(Math.random() - 0.5) * 40}px, ${Math.random() * 100}px) scale(0)`, opacity: 0 }
+            ], {
+                duration: 800 + Math.random() * 600,
+                easing: 'cubic-bezier(0.4, 0, 1, 1)'
+            });
+            
+            anim.onfinish = () => drop.remove();
+        }
+
+        setInterval(spawnDrop, 50);
+
+        // Soporte Táctil
+        stage.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            stage.classList.add('is-dragging');
+            updatePosition(e.touches[0]);
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            updatePosition(e.touches[0]);
+        });
+
+        window.addEventListener('touchend', () => {
+            isDragging = false;
+            stage.classList.remove('is-dragging');
+        });
+    </script>
+</body>
+</html>

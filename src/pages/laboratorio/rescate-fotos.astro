@@ -108,32 +108,25 @@ const galleryItems = mainPhotos.map((file: any) => {
             <div class="viewer-content">
                 <div class="f11-hint">Presiona <b>F11</b> para pantalla completa.</div>
                 <div class="slider-stage" id="comparison-stage">
-                    <div class="slider-curtain">
-                        <div class="curtain-line">
-                            <div class="curtain-handle">
-                                <span class="handle-arrows" style="display:flex; gap:4px; font-weight:900; font-size:1.2rem;">‹›</span>
-                            </div>
-                        </div>
+                    <div id="lava-container" style="position:absolute; inset:0; pointer-events:none; z-index:15;"></div>
                     <div class="slider-labels">
                         <span class="label-original">ARCHIVO ORIGINAL</span>
                         <span class="label-restored">RESTAURACIÓN DIGITAL</span>
                     </div>
                     <div id="slide-current" class="slide-item active">
                         <div class="comparison-wrapper">
-                            <img src="" alt="" class="v-main" />
+                            <!-- Fondo (Restaurado) -->
                             <img src="" alt="" class="v-hover" />
-                            <div class="curtain-line">
-                                <div class="curtain-handle">‹›</div>
-                            </div>
+                            <!-- Frente (Original) -->
+                            <img src="" alt="" class="v-main" />
+                            <div class="curtain-line" id="lava-line"></div>
                         </div>
                     </div>
                     <div id="slide-next" class="slide-item">
                         <div class="comparison-wrapper">
-                            <img src="" alt="" class="v-main" />
                             <img src="" alt="" class="v-hover" />
-                            <div class="curtain-line">
-                                <div class="curtain-handle">‹›</div>
-                            </div>
+                            <img src="" alt="" class="v-main" />
+                            <div class="curtain-line"></div>
                         </div>
                     </div>
                 </div>
@@ -443,27 +436,31 @@ const galleryItems = mainPhotos.map((file: any) => {
         display: flex;
         justify-content: center;
         align-items: center;
-        max-width: 90vw;
-        max-height: 82vh;
+        width: 100%;
+        height: 100%;
+        max-width: 95vw;
+        max-height: 90vh;
         overflow: hidden;
-        cursor: crosshair;
-    }
-
-    .v-main {
-        max-width: 90vw;
-        max-height: 82vh;
-        display: block;
+        cursor: default;
     }
 
     .v-hover {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        z-index: 1;
+    }
+
+    .v-main {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         object-fit: contain;
-        clip-path: inset(0 50% 0 0);
         z-index: 2;
+        clip-path: inset(0 50% 0 0);
     }
 
     .curtain-line {
@@ -471,27 +468,31 @@ const galleryItems = mainPhotos.map((file: any) => {
         top: 0;
         bottom: 0;
         left: 50%;
-        width: 2px;
-        background: #fff;
+        width: 14px;
+        background: rgba(255, 255, 255, 0.1);
         z-index: 10;
+        transform: translateX(-50%);
         pointer-events: none;
+        transition: background 0.4s, box-shadow 0.4s, width 0.4s;
+        clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        display: none; /* Oculto por defecto */
     }
 
-    .curtain-handle {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 40px;
-        height: 40px;
-        background: #fff;
-        color: #000;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    .slider-stage.has-comparison .curtain-line {
+        display: block; /* Solo visible si hay par _2 */
+    }
+
+    .slider-stage.is-dragging .curtain-line {
+        background: linear-gradient(to bottom, #ff0000, #ff4e00, #dcb14a, #ff4e00, #ff0000);
+        background-size: 100% 200%;
+        animation: lava-flow 1s infinite linear;
+        box-shadow: 0 0 20px #ff0000, 0 0 40px #ff4e00;
+        width: 16px;
+    }
+
+    @keyframes lava-flow {
+        0% { background-position: 0% 0%; }
+        100% { background-position: 0% 200%; }
     }
 
     .slider-labels {
@@ -703,9 +704,17 @@ const galleryItems = mainPhotos.map((file: any) => {
             nextHover.src = hoverSrc;
             nextHover.style.display = 'block';
             stage?.classList.add('has-comparison');
+            // Resetear clip-path y posición de la línea al abrir
+            currentX = 50;
+            const nextMain = next.querySelector('.v-main') as HTMLElement;
+            const nextLine = next.querySelector('.curtain-line') as HTMLElement;
+            if (nextMain) nextMain.style.clipPath = `inset(0 50% 0 0)`;
+            if (nextLine) nextLine.style.left = `50%`;
         } else {
             if (nextHover) nextHover.style.display = 'none';
             stage?.classList.remove('has-comparison');
+            const nextMain = next.querySelector('.v-main') as HTMLElement;
+            if (nextMain) nextMain.style.clipPath = 'none';
         }
 
         next.className = 'slide-item enter-right';
@@ -728,24 +737,99 @@ const galleryItems = mainPhotos.map((file: any) => {
         }, 1400);
     }
 
-    // EL MOTOR ORIGINAL: Seguimiento de mouse simple
-    comparisonStage?.addEventListener('mousemove', (e) => {
+    let isDragging = false;
+    let currentX = 50;
+
+    comparisonStage?.addEventListener('mousedown', (e) => {
         if (!comparisonStage.classList.contains('has-comparison')) return;
-        
+        isDragging = true;
+        comparisonStage.classList.add('is-dragging');
+        updateComparator(e.clientX);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        updateComparator(e.clientX);
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+        comparisonStage?.classList.remove('is-dragging');
+    });
+
+    // Soporte Táctil
+    comparisonStage?.addEventListener('touchstart', (e) => {
+        if (!comparisonStage.classList.contains('has-comparison')) return;
+        isDragging = true;
+        comparisonStage.classList.add('is-dragging');
+        updateComparator(e.touches[0].clientX);
+    });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        updateComparator(e.touches[0].clientX);
+    });
+
+    window.addEventListener('touchend', () => {
+        isDragging = false;
+        comparisonStage?.classList.remove('is-dragging');
+    });
+
+    function updateComparator(clientX: number) {
+        if (!comparisonStage) return;
         const activeItem = comparisonStage.querySelector('.slide-item.active');
         const mainImg = activeItem?.querySelector('.v-main') as HTMLElement;
         const hoverImg = activeItem?.querySelector('.v-hover') as HTMLElement;
         const line = activeItem?.querySelector('.curtain-line') as HTMLElement;
         
-        if (!mainImg || !hoverImg || !line) return;
+        if (!mainImg || !line) return;
 
         const rect = mainImg.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const boundedX = Math.max(0, Math.min(100, x));
+        let x = ((clientX - rect.left) / rect.width) * 100;
+        currentX = Math.max(0, Math.min(100, x));
 
-        hoverImg.style.clipPath = `inset(0 ${100 - boundedX}% 0 0)`;
-        line.style.left = `${boundedX}%`;
-    });
+        mainImg.style.clipPath = `inset(0 ${100 - currentX}% 0 0)`;
+        line.style.left = `${currentX}%`;
+    }
+
+    // --- SISTEMA DE GOTAS DE LAVA ---
+    const lavaContainer = document.getElementById('lava-container');
+    
+    function spawnLavaDrop() {
+        if (!isDragging || !lavaContainer || !comparisonStage?.classList.contains('has-comparison')) return;
+        
+        const activeLine = comparisonStage?.querySelector('.slide-item.active .curtain-line');
+        if (!activeLine) return;
+
+        const lineRect = activeLine.getBoundingClientRect();
+        const drop = document.createElement('div');
+        const size = Math.random() * 5 + 2;
+        
+        drop.style.position = 'absolute';
+        drop.style.left = (lineRect.left + lineRect.width / 2) + 'px';
+        drop.style.top = (lineRect.top + Math.random() * lineRect.height) + 'px';
+        drop.style.width = size + 'px';
+        drop.style.height = size + 'px';
+        drop.style.background = Math.random() > 0.5 ? '#ff0000' : '#ff4e00';
+        drop.style.borderRadius = '50%';
+        drop.style.filter = 'blur(1px)';
+        drop.style.boxShadow = '0 0 10px #ff0000';
+        drop.style.zIndex = '1000001';
+        
+        lavaContainer.appendChild(drop);
+        
+        const anim = drop.animate([
+            { transform: `translate(0, 0) scale(1)`, opacity: 1 },
+            { transform: `translate(${(Math.random() - 0.5) * 40}px, ${50 + Math.random() * 100}px) scale(0)`, opacity: 0 }
+        ], {
+            duration: 800 + Math.random() * 600,
+            easing: 'cubic-bezier(0.4, 0, 1, 1)'
+        });
+        
+        anim.onfinish = () => drop.remove();
+    }
+
+    setInterval(spawnLavaDrop, 60);
 
     // --- MOTOR DE APERTURA MAESTRO (Delegación Global) ---
     document.addEventListener('click', (e) => {
