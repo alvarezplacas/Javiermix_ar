@@ -324,6 +324,9 @@ const galleryItems = mainPhotos.map((file: any) => {
         position: fixed;
         inset: 0;
         background: #000;
+        background-image: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%), url('/img/revista/papel.avif');
+        background-size: cover;
+        background-blend-mode: darken;
         z-index: 99999;
         display: none;
         justify-content: center;
@@ -456,13 +459,13 @@ const galleryItems = mainPhotos.map((file: any) => {
         bottom: 0;
         left: 50%;
         width: 14px;
-        background: rgba(255, 255, 255, 0.1);
+        background: #111; /* Color apagado */
         z-index: 10;
         transform: translateX(-50%);
         pointer-events: none;
         transition: background 0.4s, box-shadow 0.4s, width 0.4s;
         clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-        display: none; /* Oculto por defecto */
+        display: none;
     }
 
     .slider-stage.has-comparison .curtain-line {
@@ -763,12 +766,15 @@ const galleryItems = mainPhotos.map((file: any) => {
         updateComparator(e.clientX);
     });
 
-    window.addEventListener('mouseup', () => {
+    const endDragging = () => {
         isDragging = false;
         comparisonStage?.classList.remove('is-dragging');
-    });
+    };
 
-    // Touch support
+    window.addEventListener('mouseup', endDragging);
+    window.addEventListener('blur', endDragging); // Por si se pierde el foco
+
+    // Soporte Táctil
     comparisonStage?.addEventListener('touchstart', (e) => {
         if (!comparisonStage.classList.contains('has-comparison')) return;
         isDragging = true;
@@ -778,10 +784,8 @@ const galleryItems = mainPhotos.map((file: any) => {
     window.addEventListener('touchmove', (e) => {
         if (isDragging) updateComparator(e.touches[0].clientX);
     });
-    window.addEventListener('touchend', () => {
-        isDragging = false;
-        comparisonStage?.classList.remove('is-dragging');
-    });
+    window.addEventListener('touchend', endDragging);
+    window.addEventListener('touchcancel', endDragging);
 
     // --- SISTEMA DE GOTAS DE LAVA ---
     function spawnLavaDrop() {
