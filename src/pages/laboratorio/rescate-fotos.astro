@@ -76,18 +76,17 @@ const galleryItems = mainPhotos.map((file: any) => {
             <div class="contact-sheet">
                 {galleryItems.map((item, index) => (
                     <div class="photo-cell" data-index={index}>
-                        <div class="image-box">
+                        <div class="image-box" onclick="openStudioViewer(this)" 
+                            style="cursor: pointer;"
+                            data-src={item.src} 
+                            data-hover={item.hoverThumb} 
+                            data-title={item.title} 
+                            data-date={item.metadata.date}
+                        >
                             <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect main-img" />
-                            <button 
-                                class="view-btn" 
-                                onclick="openStudioViewer(this)"
-                                data-src={item.src} 
-                                data-hover={item.hoverSrc} 
-                                data-title={item.title} 
-                                data-date={item.date}
-                            >
+                            <div class="view-btn">
                                 <span class="icon">🔍</span> ANALIZAR OBRA
-                            </button>
+                            </div>
                         </div>
                         <div class="photo-info">
                             <span class="file-serie">{item.serie}</span>
