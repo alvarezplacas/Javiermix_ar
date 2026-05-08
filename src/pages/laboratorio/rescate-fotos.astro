@@ -96,9 +96,9 @@ const galleryItems = mainPhotos.map((file: any) => {
                 <div class="f11-hint">Presiona <b>F11</b> para pantalla completa.</div>
                 <div class="slider-stage" id="comparison-stage">
                     <div id="lava-container" style="position:absolute; inset:0; pointer-events:none; z-index:15;"></div>
-                    <div class="slider-labels">
-                        <span class="label-original">ARCHIVO ORIGINAL</span>
-                        <span class="label-restored">RESTAURACIÓN DIGITAL</span>
+                    <div class="motor-titles">
+                        <div class="motor-main">RESTAURACIÓN</div>
+                        <div class="motor-sub">INTERVENCIÓN DE FOTOGRAFÍAS ANTIGUAS</div>
                     </div>
                     <div id="slide-current" class="slide-item active">
                         <div class="comparison-wrapper">
@@ -513,34 +513,30 @@ const galleryItems = mainPhotos.map((file: any) => {
         100% { background-position: 0% 200%; }
     }
 
-    .slider-labels {
+    .motor-titles {
         position: absolute;
-        top: 2rem;
-        left: 2rem;
-        right: 2rem;
-        display: flex;
-        justify-content: space-between;
-        z-index: 25;
+        top: 3rem;
+        left: 0;
+        right: 0;
+        text-align: center;
+        z-index: 100;
         pointer-events: none;
-        opacity: 0;
-        transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .slider-stage.has-comparison:hover .slider-labels {
-        opacity: 1;
+    .motor-main {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.5rem;
+        color: #fff;
+        letter-spacing: 5px;
+        font-weight: 300;
     }
 
-    .label-original, .label-restored {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.5rem;
-        letter-spacing: 2px;
+    .motor-sub {
+        font-size: 0.6rem;
+        color: var(--studio-accent);
+        letter-spacing: 3px;
         font-weight: 800;
-        color: #000;
-        background: #fff;
-        padding: 0.5rem 1.2rem;
-        border-radius: 100px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        text-transform: uppercase;
+        margin-top: 0.5rem;
     }
 
     .viewer-meta-box {
@@ -788,30 +784,32 @@ const galleryItems = mainPhotos.map((file: any) => {
         line.style.left = `${currentX}%`;
     }
 
-    const startDragging = (clientX: number) => {
+    const startDragging = (e: PointerEvent) => {
         if (!comparisonStage?.classList.contains('has-comparison')) return;
         isDragging = true;
         comparisonStage.classList.add('is-dragging');
-        updateComparator(clientX);
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        updateComparator(e.clientX);
     };
 
-    const endDragging = () => {
+    const handlePointerMove = (e: PointerEvent) => {
+        if (!isDragging) return;
+        updateComparator(e.clientX);
+    };
+
+    const endDragging = (e: PointerEvent) => {
         isDragging = false;
         comparisonStage?.classList.remove('is-dragging');
+        if (e && (e.target as HTMLElement).hasPointerCapture(e.pointerId)) {
+            (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+        }
     };
 
-    comparisonStage?.addEventListener('mousedown', (e) => startDragging(e.clientX));
-    window.addEventListener('mousemove', (e) => { if (isDragging) updateComparator(e.clientX); });
-    window.addEventListener('mouseup', endDragging);
-    window.addEventListener('blur', endDragging);
-    window.addEventListener('mouseleave', endDragging);
-    comparisonStage?.addEventListener('mouseleave', endDragging);
-
-    // Soporte Táctil
-    comparisonStage?.addEventListener('touchstart', (e) => startDragging(e.touches[0].clientX));
-    window.addEventListener('touchmove', (e) => { if (isDragging) updateComparator(e.touches[0].clientX); });
-    window.addEventListener('touchend', endDragging);
-    window.addEventListener('touchcancel', endDragging);
+    comparisonStage?.addEventListener('pointerdown', startDragging);
+    comparisonStage?.addEventListener('pointermove', handlePointerMove);
+    comparisonStage?.addEventListener('pointerup', endDragging);
+    comparisonStage?.addEventListener('pointercancel', endDragging);
+    comparisonStage?.addEventListener('pointerleave', endDragging);
 
     // --- SISTEMA DE GOTAS DE LAVA ---
     function spawnLavaDrop() {
