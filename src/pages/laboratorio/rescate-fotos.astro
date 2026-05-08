@@ -48,23 +48,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         <header class="studio-header">
             <div class="pre-title">ARCHIVOS RECUPERADOS</div>
             <h1>Restauración & Memoria</h1>
-            
-            <div class="studio-controls">
-                <div class="filter-group">
-                    <span class="label">Serie Histórica:</span>
-                    <select id="session-filter" class="studio-select">
-                        <option value="all">Todo el Archivo</option>
-                        {uniqueSeries.map(s => (
-                            <option value={s}>{s}</option>
-                        ))}
-                    </select>
-                </div>
-                <button id="play-tour" class="play-btn">
-                    <span class="icon">▶</span> INICIAR SECUENCIA (5s)
-                </button>
-            </div>
-
-            <p>Laboratorio de recuperación química y digital. Cada imagen en esta sección ha sido sometida a un proceso de restauración de alta fidelidad para preservar su valor documental y estético.</p>
         </header>
 
         {galleryItems.length === 0 ? (
@@ -225,33 +208,38 @@ const galleryItems = mainPhotos.map((file: any) => {
         max-width: 700px;
     }
 
-    /* 🎞️ Contact Sheet Grid */
+    /* 🎞️ Tetris / Masonry Sheet */
     .contact-sheet {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 3rem;
+        column-count: 3;
+        column-gap: 2rem;
+        width: 100%;
     }
 
+    @media (max-width: 1200px) { .contact-sheet { column-count: 2; } }
+    @media (max-width: 768px) { .contact-sheet { column-count: 1; } }
+
     .photo-cell {
+        break-inside: avoid;
+        margin-bottom: 2rem;
         display: flex;
         flex-direction: column;
-        gap: 1.2rem;
+        gap: 1rem;
         transition: 0.4s;
     }
 
     .image-box {
         position: relative;
-        aspect-ratio: 4/5;
         background: #0a0a0a;
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.03);
         box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border-radius: 4px;
     }
 
     .image-box img {
         width: 100%;
-        height: 100%;
-        object-fit: cover;
+        height: auto;
+        display: block;
         transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -653,26 +641,38 @@ const galleryItems = mainPhotos.map((file: any) => {
 </style>
 
 <script>
-    let isTransitioning = false;
+    // --- SELECCIÓN DE ELEMENTOS ---
+    const viewer = document.getElementById('viewer');
+    const viewerContent = document.querySelector('.viewer-content');
+    const viewerTitle = document.getElementById('viewer-title');
+    const viewerDate = document.getElementById('viewer-date');
+    const closeBtn = document.getElementById('close-viewer');
+    const comparisonStage = document.getElementById('comparison-stage');
+    const playTourBtn = document.getElementById('play-tour');
+    const sessionFilter = document.getElementById('session-filter') as HTMLSelectElement;
+    const photoCells = document.querySelectorAll('.photo-cell');
+    const lavaContainer = document.getElementById('lava-container');
 
-    // --- FUNCIÓN GLOBAL DE APERTURA (Infalible) ---
+    // --- ESTADO GLOBAL ---
+    let isTransitioning = false;
+    let isDragging = false;
+    let currentX = 50;
+    let tourInterval: any = null;
+    let currentTourIndex = 0;
+
+    // --- FUNCIÓN GLOBAL DE APERTURA ---
     (window as any).openStudioViewer = function(btn: HTMLElement) {
         const src = btn.getAttribute('data-src') || '';
         const hover = btn.getAttribute('data-hover') || '';
         const title = btn.getAttribute('data-title') || '';
         const date = btn.getAttribute('data-date') || '';
         
-        console.log("[MASTER] Abriendo:", title);
         updateViewer(src, hover, title, date);
         
-        const v = document.getElementById('viewer');
-        if (v) {
-            v.style.display = 'flex';
-            v.style.zIndex = '1000000';
-            v.classList.add('active');
+        if (viewer) {
+            viewer.style.display = 'flex';
+            viewer.classList.add('active');
             document.body.classList.add('viewer-open');
-        } else {
-            alert("Error: No se encontró el visor #viewer en el DOM");
         }
     };
 
@@ -682,7 +682,6 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         const current = document.getElementById('slide-current');
         const next = document.getElementById('slide-next');
-        const stage = document.getElementById('comparison-stage');
 
         if (!current || !next) {
             isTransitioning = false;
@@ -702,18 +701,17 @@ const galleryItems = mainPhotos.map((file: any) => {
         if (hoverSrc && hoverSrc !== src && nextHover) {
             nextHover.src = hoverSrc;
             nextHover.style.display = 'block';
-            stage?.classList.add('has-comparison');
-            // Resetear clip-path y posición de la línea al abrir
+            comparisonStage?.classList.add('has-comparison');
+            
+            // Resetear posición
             currentX = 50;
-            const nextMain = next.querySelector('.v-main') as HTMLElement;
+            nextMain.style.clipPath = `inset(0 50% 0 0)`;
             const nextLine = next.querySelector('.curtain-line') as HTMLElement;
-            if (nextMain) nextMain.style.clipPath = `inset(0 50% 0 0)`;
             if (nextLine) nextLine.style.left = `50%`;
         } else {
             if (nextHover) nextHover.style.display = 'none';
-            stage?.classList.remove('has-comparison');
-            const nextMain = next.querySelector('.v-main') as HTMLElement;
-            if (nextMain) nextMain.style.clipPath = 'none';
+            comparisonStage?.classList.remove('has-comparison');
+            nextMain.style.clipPath = 'none';
         }
 
         next.className = 'slide-item enter-right';
@@ -736,8 +734,22 @@ const galleryItems = mainPhotos.map((file: any) => {
         }, 1400);
     }
 
-    let isDragging = false;
-    let currentX = 50;
+    // --- MOTOR DE COMPARACIÓN (LAVA) ---
+    function updateComparator(clientX: number) {
+        if (!comparisonStage || !comparisonStage.classList.contains('has-comparison')) return;
+        const activeItem = comparisonStage.querySelector('.slide-item.active');
+        const mainImg = activeItem?.querySelector('.v-main') as HTMLElement;
+        const line = activeItem?.querySelector('.curtain-line') as HTMLElement;
+        
+        if (!mainImg || !line) return;
+
+        const rect = mainImg.getBoundingClientRect();
+        let x = ((clientX - rect.left) / rect.width) * 100;
+        currentX = Math.max(0, Math.min(100, x));
+
+        mainImg.style.clipPath = `inset(0 ${100 - currentX}% 0 0)`;
+        line.style.left = `${currentX}%`;
+    }
 
     comparisonStage?.addEventListener('mousedown', (e) => {
         if (!comparisonStage.classList.contains('has-comparison')) return;
@@ -756,44 +768,22 @@ const galleryItems = mainPhotos.map((file: any) => {
         comparisonStage?.classList.remove('is-dragging');
     });
 
-    // Soporte Táctil
+    // Touch support
     comparisonStage?.addEventListener('touchstart', (e) => {
         if (!comparisonStage.classList.contains('has-comparison')) return;
         isDragging = true;
         comparisonStage.classList.add('is-dragging');
         updateComparator(e.touches[0].clientX);
     });
-
     window.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        updateComparator(e.touches[0].clientX);
+        if (isDragging) updateComparator(e.touches[0].clientX);
     });
-
     window.addEventListener('touchend', () => {
         isDragging = false;
         comparisonStage?.classList.remove('is-dragging');
     });
 
-    function updateComparator(clientX: number) {
-        if (!comparisonStage) return;
-        const activeItem = comparisonStage.querySelector('.slide-item.active');
-        const mainImg = activeItem?.querySelector('.v-main') as HTMLElement;
-        const hoverImg = activeItem?.querySelector('.v-hover') as HTMLElement;
-        const line = activeItem?.querySelector('.curtain-line') as HTMLElement;
-        
-        if (!mainImg || !line) return;
-
-        const rect = mainImg.getBoundingClientRect();
-        let x = ((clientX - rect.left) / rect.width) * 100;
-        currentX = Math.max(0, Math.min(100, x));
-
-        mainImg.style.clipPath = `inset(0 ${100 - currentX}% 0 0)`;
-        line.style.left = `${currentX}%`;
-    }
-
     // --- SISTEMA DE GOTAS DE LAVA ---
-    const lavaContainer = document.getElementById('lava-container');
-    
     function spawnLavaDrop() {
         if (!isDragging || !lavaContainer || !comparisonStage?.classList.contains('has-comparison')) return;
         
@@ -827,36 +817,11 @@ const galleryItems = mainPhotos.map((file: any) => {
         
         anim.onfinish = () => drop.remove();
     }
-
     setInterval(spawnLavaDrop, 60);
 
-    // --- MOTOR DE APERTURA MAESTRO (Delegación Global) ---
-    document.addEventListener('click', (e) => {
-        const btn = (e.target as HTMLElement).closest('.view-btn');
-        if (!btn) return;
-
-        e.preventDefault();
-        const src = btn.getAttribute('data-src') || '';
-        const hover = btn.getAttribute('data-hover') || '';
-        const title = btn.getAttribute('data-title') || '';
-        const date = btn.getAttribute('data-date') || '';
-
-        console.log("[JS] Clic detectado en:", title);
-        
-        updateViewer(src, hover, title, date);
-        
-        if (viewer) {
-            viewer.style.display = 'flex';
-            viewer.classList.add('active');
-            document.body.classList.add('viewer-open');
-            console.log("[JS] Visor activado correctamente.");
-        } else {
-            console.error("[JS] Error: No se encontró el elemento #viewer");
-        }
-    });
-
+    // --- CONTROLES Y NAVEGACIÓN ---
     closeBtn?.addEventListener('click', () => {
-        stopTour();
+        if (tourInterval) stopTour();
         if (viewer) {
             viewer.classList.remove('active');
             viewer.style.display = 'none';
@@ -864,29 +829,15 @@ const galleryItems = mainPhotos.map((file: any) => {
         }
     });
 
-    // --- Lógica de Filtrado ---
-    const sessionFilter = document.getElementById('session-filter') as HTMLSelectElement;
-    const photoCells = document.querySelectorAll('.photo-cell');
-
     sessionFilter?.addEventListener('change', () => {
         const filter = sessionFilter.value;
-
         photoCells.forEach(cell => {
             const serie = (cell as HTMLElement).querySelector('.file-serie')?.textContent;
-            if (filter === 'all' || serie === filter) {
-                (cell as HTMLElement).style.display = 'flex';
-            } else {
-                (cell as HTMLElement).style.display = 'none';
-            }
+            if (filter === 'all' || serie === filter) (cell as HTMLElement).style.display = 'flex';
+            else (cell as HTMLElement).style.display = 'none';
         });
-        
         if (tourInterval) { stopTour(); startTour(); }
     });
-
-    // --- Lógica de Tour ---
-    const playTourBtn = document.getElementById('play-tour');
-    let tourInterval: any = null;
-    let currentTourIndex = 0;
 
     function startTour() {
         const visiblePhotos = Array.from(photoCells).filter(p => (p as HTMLElement).style.display !== 'none');
@@ -894,22 +845,12 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         playTourBtn?.classList.add('active');
         playTourBtn!.innerHTML = '<span class="icon">⏹</span> DETENER SECUENCIA';
-        viewerContent?.classList.add('tour-active');
         
-        const firstBtn = visiblePhotos[0].querySelector('.view-btn') as HTMLElement;
-        firstBtn?.click();
-
         tourInterval = setInterval(() => {
             currentTourIndex = (currentTourIndex + 1) % visiblePhotos.length;
             const photo = visiblePhotos[currentTourIndex];
-            const viewBtn = photo.querySelector('.view-btn') as HTMLElement;
-            
-            const src = viewBtn.getAttribute('data-src') || '';
-            const hover = viewBtn.getAttribute('data-hover') || '';
-            const title = viewBtn.getAttribute('data-title') || '';
-            const date = viewBtn.getAttribute('data-date') || '';
-            
-            updateViewer(src, hover, title, date);
+            const viewBtn = photo.querySelector('.image-box') as HTMLElement;
+            if (viewBtn) viewBtn.click();
         }, 5000);
     }
 
@@ -918,97 +859,17 @@ const galleryItems = mainPhotos.map((file: any) => {
         tourInterval = null;
         playTourBtn?.classList.remove('active');
         playTourBtn!.innerHTML = '<span class="icon">▶</span> INICIAR SECUENCIA (5s)';
-        viewerContent?.classList.remove('tour-active');
-        viewer?.classList.remove('active');
-        document.body.style.overflow = 'auto';
     }
 
     playTourBtn?.addEventListener('click', () => {
         if (tourInterval) stopTour();
-        else {
-            currentTourIndex = 0;
-            startTour();
-        }
+        else { currentTourIndex = 0; startTour(); }
     });
 
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (tourInterval) stopTour();
-            else {
-                viewer?.classList.remove('active');
-                document.body.style.overflow = 'auto';
-            }
+            else if (viewer?.classList.contains('active')) closeBtn?.click();
         }
     });
-
-    // --- Lógica del Slider de Comparación ---
-    const comparisonStage = document.getElementById('comparison-stage');
-    const curtainLine = document.querySelector('.curtain-line') as HTMLElement;
-    let isDragging = false;
-
-    const startDragging = (e: MouseEvent | TouchEvent) => {
-        isDragging = true;
-        comparisonStage?.classList.add('is-dragging');
-        handleMove(e instanceof MouseEvent ? e.clientX : e.touches[0].clientX);
-    };
-
-    const stopDragging = () => {
-        isDragging = false;
-        comparisonStage?.classList.remove('is-dragging');
-    };
-
-    const handleMove = (clientX: number) => {
-        if (!isDragging) return;
-        
-        const activeWrapper = comparisonStage?.querySelector('.slide-item.active .comparison-wrapper') as HTMLElement;
-        const mainImg = activeWrapper?.querySelector('.v-main') as HTMLElement;
-        if (!activeWrapper || !mainImg) return;
-
-        const rect = mainImg.getBoundingClientRect();
-        const x = ((clientX - rect.left) / rect.width) * 100;
-        const boundedX = Math.max(0, Math.min(100, x));
-
-        activeWrapper.style.setProperty('--curtain-pos', `${boundedX}%`);
-        
-        if (curtainLine) {
-            curtainLine.style.left = `${rect.left + (rect.width * boundedX / 100)}px`;
-            curtainLine.style.opacity = '1';
-        }
-
-        const hoverImg = activeWrapper.querySelector('.v-hover') as HTMLElement;
-        if (hoverImg) {
-            hoverImg.style.width = `${rect.width}px`;
-        }
-    };
-
-    comparisonStage?.addEventListener('mousedown', (e) => startDragging(e));
-    window.addEventListener('mouseup', stopDragging);
-    window.addEventListener('mousemove', (e) => handleMove(e.clientX));
-
-    // Soporte Touch
-    comparisonStage?.addEventListener('touchstart', (e) => startDragging(e));
-    window.addEventListener('touchend', stopDragging);
-    window.addEventListener('touchmove', (e) => handleMove(e.touches[0].clientX));
-
-    function resetCurtain() {
-        setTimeout(() => {
-            const activeWrapper = comparisonStage?.querySelector('.slide-item.active .comparison-wrapper') as HTMLElement;
-            const mainImg = activeWrapper?.querySelector('.v-main') as HTMLElement;
-            if (!activeWrapper || !mainImg) return;
-
-            const rect = mainImg.getBoundingClientRect();
-            const initialX = 50;
-
-            if (curtainLine) {
-                curtainLine.style.left = `${rect.left + (rect.width * initialX / 100)}px`;
-                curtainLine.style.opacity = '1';
-            }
-            
-            activeWrapper.style.setProperty('--curtain-pos', `${initialX}%`);
-            const hoverImg = activeWrapper.querySelector('.v-hover') as HTMLElement;
-            if (hoverImg) {
-                hoverImg.style.width = `${rect.width}px`;
-            }
-        }, 200);
-    }
 </script>
