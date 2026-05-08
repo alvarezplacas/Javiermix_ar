@@ -103,16 +103,16 @@ const galleryItems = mainPhotos.map((file: any) => {
                     <div id="slide-current" class="slide-item active">
                         <div class="comparison-wrapper">
                             <!-- Fondo (Restaurado) -->
-                            <img src="" alt="" class="v-hover" />
+                            <img src="" alt="" class="v-hover" draggable="false" />
                             <!-- Frente (Original) -->
-                            <img src="" alt="" class="v-main" />
+                            <img src="" alt="" class="v-main" draggable="false" />
                             <div class="curtain-line" id="lava-line"></div>
                         </div>
                     </div>
                     <div id="slide-next" class="slide-item">
                         <div class="comparison-wrapper">
-                            <img src="" alt="" class="v-hover" />
-                            <img src="" alt="" class="v-main" />
+                            <img src="" alt="" class="v-hover" draggable="false" />
+                            <img src="" alt="" class="v-main" draggable="false" />
                             <div class="curtain-line"></div>
                         </div>
                     </div>
@@ -352,9 +352,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         position: fixed;
         inset: 0;
         background: #000;
-        background-image: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%), url('/img/revista/papel.avif');
-        background-size: cover;
-        background-blend-mode: darken;
         z-index: 99999;
         display: none;
         justify-content: center;
@@ -362,6 +359,19 @@ const galleryItems = mainPhotos.map((file: any) => {
         padding: 0;
         opacity: 0;
         transition: opacity 0.4s ease;
+        user-select: none;
+    }
+
+    /* Fondo de papel forzado */
+    .studio-viewer::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%), url('/img/revista/papel.avif');
+        background-size: cover;
+        background-blend-mode: darken;
+        opacity: 1;
+        z-index: -1;
     }
 
     .studio-viewer.active {
@@ -413,6 +423,7 @@ const galleryItems = mainPhotos.map((file: any) => {
         align-items: center;
         justify-content: center;
         perspective: 1500px;
+        touch-action: none; /* Prevenir scroll/drag nativo */
     }
 
     .slide-item {
@@ -515,7 +526,7 @@ const galleryItems = mainPhotos.map((file: any) => {
 
     .motor-titles {
         position: absolute;
-        top: 3rem;
+        top: 1rem; /* Subido para no pisar */
         left: 0;
         right: 0;
         text-align: center;
