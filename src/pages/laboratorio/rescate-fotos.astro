@@ -48,6 +48,15 @@ const galleryItems = mainPhotos.map((file: any) => {
         <header class="studio-header">
             <div class="pre-title">ARCHIVOS RECUPERADOS</div>
             <h1>Restauración & Memoria</h1>
+            
+            <div class="filter-navigation">
+                <select id="session-filter" class="tag-selector">
+                    <option value="all">TODOS LOS ARCHIVOS</option>
+                    {uniqueSeries.map(s => (
+                        <option value={s}>{s.toUpperCase()}</option>
+                    ))}
+                </select>
+            </div>
         </header>
 
         {galleryItems.length === 0 ? (
@@ -58,7 +67,7 @@ const galleryItems = mainPhotos.map((file: any) => {
         ) : (
             <div class="contact-sheet">
                 {galleryItems.map((item, index) => (
-                    <div class="photo-cell" data-index={index}>
+                    <div class="photo-cell" data-index={index} data-serie={item.serie}>
                         <div class="image-box" onclick="openStudioViewer(this)" 
                             style="cursor: pointer;"
                             data-src={item.src} 
@@ -67,14 +76,10 @@ const galleryItems = mainPhotos.map((file: any) => {
                             data-date={item.metadata.date}
                         >
                             <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect main-img" />
-                            <div class="view-btn">
-                                <span class="icon">🔍</span> ANALIZAR OBRA
-                            </div>
                         </div>
                         <div class="photo-info">
-                            <span class="file-serie">{item.serie}</span>
                             <span class="file-name">{item.title}</span>
-                            <span class="file-meta">{item.metadata.dim} | {item.metadata.size}</span>
+                            <span class="file-meta">{item.metadata.date ? new Date(item.metadata.date).getFullYear() : ''}</span>
                         </div>
                     </div>
                 ))}
@@ -196,9 +201,32 @@ const galleryItems = mainPhotos.map((file: any) => {
     h1 {
         font-family: 'Cormorant Garamond', serif;
         font-size: 4rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 0.5rem;
         letter-spacing: -1px;
         line-height: 1;
+    }
+
+    .filter-navigation {
+        margin-top: 1rem;
+    }
+
+    .tag-selector {
+        background: transparent;
+        border: none;
+        border-left: 2px solid var(--studio-accent);
+        color: var(--studio-accent);
+        font-size: 0.65rem;
+        font-weight: 900;
+        letter-spacing: 3px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        outline: none;
+        appearance: none;
+        text-transform: uppercase;
+        transition: 0.3s;
+    }
+    .tag-selector:hover {
+        background: rgba(220, 177, 74, 0.05);
     }
 
     p {
@@ -646,22 +674,28 @@ const galleryItems = mainPhotos.map((file: any) => {
 <script>
     // --- SELECCIÓN DE ELEMENTOS ---
     const viewer = document.getElementById('viewer');
-    const viewerContent = document.querySelector('.viewer-content');
     const viewerTitle = document.getElementById('viewer-title');
     const viewerDate = document.getElementById('viewer-date');
     const closeBtn = document.getElementById('close-viewer');
     const comparisonStage = document.getElementById('comparison-stage');
-    const playTourBtn = document.getElementById('play-tour');
     const sessionFilter = document.getElementById('session-filter') as HTMLSelectElement;
-    const photoCells = document.querySelectorAll('.photo-cell');
-    const lavaContainer = document.getElementById('lava-container');
 
     // --- ESTADO GLOBAL ---
     let isTransitioning = false;
     let isDragging = false;
     let currentX = 50;
-    let tourInterval: any = null;
-    let currentTourIndex = 0;
+
+    sessionFilter?.addEventListener('change', () => {
+        const filter = sessionFilter.value;
+        photoCells.forEach(cell => {
+            const serie = (cell as HTMLElement).getAttribute('data-serie');
+            if (filter === 'all' || serie === filter) {
+                (cell as HTMLElement).style.display = 'flex';
+            } else {
+                (cell as HTMLElement).style.display = 'none';
+            }
+        });
+    });
 
     // --- FUNCIÓN GLOBAL DE APERTURA ---
     (window as any).openStudioViewer = function(btn: HTMLElement) {
@@ -754,36 +788,28 @@ const galleryItems = mainPhotos.map((file: any) => {
         line.style.left = `${currentX}%`;
     }
 
-    comparisonStage?.addEventListener('mousedown', (e) => {
-        if (!comparisonStage.classList.contains('has-comparison')) return;
+    const startDragging = (clientX: number) => {
+        if (!comparisonStage?.classList.contains('has-comparison')) return;
         isDragging = true;
         comparisonStage.classList.add('is-dragging');
-        updateComparator(e.clientX);
-    });
-
-    window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        updateComparator(e.clientX);
-    });
+        updateComparator(clientX);
+    };
 
     const endDragging = () => {
         isDragging = false;
         comparisonStage?.classList.remove('is-dragging');
     };
 
+    comparisonStage?.addEventListener('mousedown', (e) => startDragging(e.clientX));
+    window.addEventListener('mousemove', (e) => { if (isDragging) updateComparator(e.clientX); });
     window.addEventListener('mouseup', endDragging);
-    window.addEventListener('blur', endDragging); // Por si se pierde el foco
+    window.addEventListener('blur', endDragging);
+    window.addEventListener('mouseleave', endDragging);
+    comparisonStage?.addEventListener('mouseleave', endDragging);
 
     // Soporte Táctil
-    comparisonStage?.addEventListener('touchstart', (e) => {
-        if (!comparisonStage.classList.contains('has-comparison')) return;
-        isDragging = true;
-        comparisonStage.classList.add('is-dragging');
-        updateComparator(e.touches[0].clientX);
-    });
-    window.addEventListener('touchmove', (e) => {
-        if (isDragging) updateComparator(e.touches[0].clientX);
-    });
+    comparisonStage?.addEventListener('touchstart', (e) => startDragging(e.touches[0].clientX));
+    window.addEventListener('touchmove', (e) => { if (isDragging) updateComparator(e.touches[0].clientX); });
     window.addEventListener('touchend', endDragging);
     window.addEventListener('touchcancel', endDragging);
 
@@ -823,9 +849,9 @@ const galleryItems = mainPhotos.map((file: any) => {
     }
     setInterval(spawnLavaDrop, 60);
 
-    // --- CONTROLES Y NAVEGACIÓN ---
+    // --- CONTROLES ---
     closeBtn?.addEventListener('click', () => {
-        if (tourInterval) stopTour();
+        isDragging = false;
         if (viewer) {
             viewer.classList.remove('active');
             viewer.style.display = 'none';
@@ -833,47 +859,7 @@ const galleryItems = mainPhotos.map((file: any) => {
         }
     });
 
-    sessionFilter?.addEventListener('change', () => {
-        const filter = sessionFilter.value;
-        photoCells.forEach(cell => {
-            const serie = (cell as HTMLElement).querySelector('.file-serie')?.textContent;
-            if (filter === 'all' || serie === filter) (cell as HTMLElement).style.display = 'flex';
-            else (cell as HTMLElement).style.display = 'none';
-        });
-        if (tourInterval) { stopTour(); startTour(); }
-    });
-
-    function startTour() {
-        const visiblePhotos = Array.from(photoCells).filter(p => (p as HTMLElement).style.display !== 'none');
-        if (visiblePhotos.length === 0) return;
-
-        playTourBtn?.classList.add('active');
-        playTourBtn!.innerHTML = '<span class="icon">⏹</span> DETENER SECUENCIA';
-        
-        tourInterval = setInterval(() => {
-            currentTourIndex = (currentTourIndex + 1) % visiblePhotos.length;
-            const photo = visiblePhotos[currentTourIndex];
-            const viewBtn = photo.querySelector('.image-box') as HTMLElement;
-            if (viewBtn) viewBtn.click();
-        }, 5000);
-    }
-
-    function stopTour() {
-        if (tourInterval) clearInterval(tourInterval);
-        tourInterval = null;
-        playTourBtn?.classList.remove('active');
-        playTourBtn!.innerHTML = '<span class="icon">▶</span> INICIAR SECUENCIA (5s)';
-    }
-
-    playTourBtn?.addEventListener('click', () => {
-        if (tourInterval) stopTour();
-        else { currentTourIndex = 0; startTour(); }
-    });
-
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            if (tourInterval) stopTour();
-            else if (viewer?.classList.contains('active')) closeBtn?.click();
-        }
+        if (e.key === 'Escape' && viewer?.classList.contains('active')) closeBtn?.click();
     });
 </script>
