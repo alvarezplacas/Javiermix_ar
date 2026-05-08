@@ -89,17 +89,14 @@ const galleryItems = mainPhotos.map((file: any) => {
         <!-- Visor de Alta Fidelidad -->
         <div id="viewer" class="studio-viewer">
             <div class="viewer-nav">
-                <div></div> <!-- Espacio para mantener el botón de cierre a la derecha -->
+                <div class="branding-label">INTERVENCIÓN DE FOTOGRAFÍAS ANTIGUAS</div>
                 <button id="close-viewer" class="close-btn">×</button>
             </div>
             <div class="viewer-content">
                 <div class="f11-hint">Presiona <b>F11</b> para pantalla completa.</div>
                 <div class="slider-stage" id="comparison-stage">
                     <div id="lava-container" style="position:absolute; inset:0; pointer-events:none; z-index:15;"></div>
-                    <div class="motor-titles">
-                        <div class="motor-main">RESTAURACIÓN</div>
-                        <div class="motor-sub">INTERVENCIÓN DE FOTOGRAFÍAS ANTIGUAS</div>
-                    </div>
+
                     <div id="slide-current" class="slide-item active">
                         <div class="comparison-wrapper">
                             <!-- Fondo (Restaurado) -->
@@ -524,30 +521,13 @@ const galleryItems = mainPhotos.map((file: any) => {
         100% { background-position: 0% 200%; }
     }
 
-    .motor-titles {
-        position: absolute;
-        top: 1rem; /* Subido para no pisar */
-        left: 0;
-        right: 0;
-        text-align: center;
-        z-index: 100;
-        pointer-events: none;
-    }
-
-    .motor-main {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 2.5rem;
-        color: #fff;
-        letter-spacing: 5px;
-        font-weight: 300;
-    }
-
-    .motor-sub {
-        font-size: 0.6rem;
+    .branding-label {
+        font-size: 0.65rem;
         color: var(--studio-accent);
-        letter-spacing: 3px;
+        letter-spacing: 2px;
         font-weight: 800;
-        margin-top: 0.5rem;
+        opacity: 0.8;
+        text-transform: uppercase;
     }
 
     .viewer-meta-box {
