@@ -1,0 +1,437 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Lava Fractal Experiment | JAVIERMIX">
+    <div class="lava-wrapper">
+        <!-- DUOTONE CONTROL PANEL -->
+        <div class="control-panel" id="mainPanel">
+            <div class="control-header">
+                <span>LABORATORIO 2026</span>
+                <button id="togglePanel" class="mini-button">×</button>
+            </div>
+            
+            <div class="panel-content">
+                <div class="control-group">
+                    <label>Color Primario</label>
+                    <div class="picker-wrapper">
+                        <input type="color" id="color1" value="#0f0500">
+                        <span id="hex1">#0F0500</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Color Secundario</label>
+                    <div class="picker-wrapper">
+                        <input type="color" id="color2" value="#140934">
+                        <span id="hex2">#140934</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Brillo / Reflejo</label>
+                    <div class="picker-wrapper">
+                        <input type="color" id="colorBrillo" value="#140505">
+                        <span id="hexBrillo">#140505</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Cuadrícula / Fondo</label>
+                    <div class="picker-wrapper">
+                        <input type="color" id="colorGrid" value="#000000">
+                        <span id="hexGrid">#000000</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Patrón de Fondo</label>
+                    <select id="bgPattern" class="select-input">
+                        <option value="grid">Cuadrícula</option>
+                        <option value="circles">Círculos</option>
+                        <option value="triangles">Triángulos</option>
+                        <option value="none">Ninguno</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Densidad de Patrón</label>
+                    <input type="range" id="patternDensity" min="40" max="200" value="107" class="range-input">
+                </div>
+
+                <div class="control-group">
+                    <label>Cantidad de Gotas</label>
+                    <input type="range" id="ballCount" min="20" max="400" value="228" class="range-input">
+                </div>
+
+                <div class="control-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+                    <label>Efecto Magnético</label>
+                    <input type="checkbox" id="magneticEffect" class="checkbox-input">
+                </div>
+
+                <div class="control-group">
+                    <label>Tamaño de Gotas</label>
+                    <input type="range" id="ballSize" min="20" max="250" value="246" class="range-input">
+                </div>
+                <div class="control-group">
+                    <label>Velocidad / Dispersión</label>
+                    <input type="range" id="ballSpeed" min="0.1" max="5" step="0.1" value="0.2" class="range-input">
+                </div>
+                
+                <div class="control-group">
+                    <label>Nombre del Tema</label>
+                    <input type="text" id="themeName" placeholder="Ejem: Lava Cyberpunk" class="text-input">
+                </div>
+                <div class="control-group" style="display: flex; flex-direction: row; gap: 10px;">
+                    <button id="saveTheme" class="action-button" style="flex: 1;">Guardar</button>
+                    <button id="copyConfig" class="action-button" style="flex: 1;">Copiar ID</button>
+                </div>
+                <div class="control-footer">Control Total de Experiencia</div>
+            </div>
+        </div>
+
+        <button id="showPanel" class="show-panel-btn">⚙️</button>
+
+        <div class="main-scroll-wrapper">
+            <div class="gooey-container">
+                <canvas id="oilCanvas"></canvas>
+            </div>
+            <div class="rising-object" id="risingObject"></div>
+            
+            <div class="content-overlay">
+                <h1>LAVA FRACTAL</h1>
+                <p>Experimentación visual 2026</p>
+            </div>
+        </div>
+
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="display: none;">
+            <defs>
+                <filter id="goo">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+                    <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 40 -18" result="goo" />
+                    <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+                    <feSpecularLighting in="blur" surfaceScale="5" specularConstant="1.2" specularExponent="15" lighting-color="#fff" result="specular">
+                        <feDistantLight azimuth="45" elevation="45" />
+                    </feSpecularLighting>
+                    <feComposite in="specular" in2="goo" operator="in" result="specularOut" />
+                    <feMerge>
+                        <feMergeNode in="goo" />
+                        <feMergeNode in="specularOut" />
+                    </feMerge>
+                </filter>
+            </defs>
+        </svg>
+    </div>
+</Layout>
+
+<style>
+    .lava-wrapper {
+        --bg: #000;
+        --panel-bg: rgba(20, 20, 20, 0.85);
+        --accent: #140934;
+        background: var(--bg);
+        min-height: 100vh;
+        color: #fff;
+        font-family: 'Outfit', sans-serif;
+        overflow-x: hidden;
+    }
+
+    .main-scroll-wrapper { width: 100%; height: 5000px; position: relative; }
+
+    canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; }
+
+    .gooey-container {
+        filter: url('#goo');
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;
+    }
+
+    .control-panel {
+        position: fixed; top: 120px; right: 30px; width: 300px;
+        background: var(--panel-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        z-index: 100;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        overflow: hidden;
+    }
+
+    .control-panel.minimized {
+        transform: scale(0) translateX(100px);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .control-header {
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .panel-content { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+
+    .mini-button {
+        background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; opacity: 0.5;
+    }
+
+    .show-panel-btn {
+        position: fixed; top: 120px; right: 30px; width: 50px; height: 50px;
+        background: var(--panel-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        color: #fff; z-index: 90; display: flex; align-items: center; justify-content: center;
+    }
+
+    .control-group { display: flex; flex-direction: column; gap: 8px; }
+    .control-group label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255, 255, 255, 0.5); }
+
+    .picker-wrapper {
+        display: flex; align-items: center; gap: 12px; background: rgba(0, 0, 0, 0.3);
+        padding: 8px 12px; border-radius: 12px;
+    }
+
+    input[type="color"] { appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+    .select-input, .text-input {
+        background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px; padding: 12px; color: #fff; font-size: 0.85rem;
+    }
+
+    .checkbox-input {
+        appearance: none; width: 40px; height: 20px; background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px; position: relative; cursor: pointer;
+    }
+    .checkbox-input:checked { background: var(--accent); }
+    .checkbox-input::before {
+        content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+        background: #fff; border-radius: 50%; transition: 0.3s;
+    }
+    .checkbox-input:checked::before { transform: translateX(20px); }
+
+    .range-input { appearance: none; background: rgba(0, 0, 0, 0.3); height: 4px; border-radius: 2px; }
+    .range-input::-webkit-slider-thumb {
+        appearance: none; width: 16px; height: 16px; background: #fff; border-radius: 50%; cursor: pointer;
+    }
+
+    .action-button {
+        background: #fff; color: #000; border: none; border-radius: 12px;
+        padding: 12px; font-size: 0.7rem; font-weight: 800; cursor: pointer; text-transform: uppercase;
+    }
+
+    .rising-object {
+        position: fixed; bottom: 0; left: 70%; width: 100px; height: 100px;
+        background: var(--accent); clip-path: circle(50% at 50% 50%);
+        z-index: 12; box-shadow: 0 0 100px rgba(20, 9, 52, 0.3); pointer-events: none;
+    }
+
+    .content-overlay {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        text-align: center; z-index: 5; pointer-events: none;
+    }
+
+    .content-overlay h1 {
+        font-size: clamp(3rem, 10vw, 8rem); margin: 0; font-weight: 800;
+        letter-spacing: -2px; color: #fff; opacity: 0.9;
+    }
+
+    .content-overlay p {
+        font-size: 1.2rem; text-transform: uppercase; letter-spacing: 5px; opacity: 0.5;
+    }
+
+    .control-footer {
+        text-align: center; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px;
+        margin-top: 10px; opacity: 0.3;
+    }
+</style>
+
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+        const oilCanvas = document.getElementById('oilCanvas');
+        if (!oilCanvas) return;
+        const oCtx = oilCanvas.getContext('2d');
+        const specularElement = document.querySelector('feSpecularLighting');
+
+        let w, h;
+        const resize = () => {
+            w = oilCanvas.width = window.innerWidth;
+            h = oilCanvas.height = window.innerHeight;
+        };
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- STATE (LAVA_THEME APPLIED) ---
+        let color1 = "#0f0500";
+        let color2 = "#140934";
+        let colorGrid = "#000000";
+        let colorBrillo = "#140505";
+        let baseSize = 246;
+        let baseSpeed = 0.2;
+        let currentPattern = "grid";
+        let density = 107;
+        let magneticEnabled = false;
+        let targetCount = 228;
+
+        const mouse = { x: -1000, y: -1000 };
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        const mainPanel = document.getElementById('mainPanel');
+        const toggleBtn = document.getElementById('togglePanel');
+        const showBtn = document.getElementById('showPanel');
+        if (toggleBtn) toggleBtn.addEventListener('click', () => mainPanel.classList.add('minimized'));
+        if (showBtn) showBtn.addEventListener('click', () => mainPanel.classList.remove('minimized'));
+
+        const updateParams = () => {
+            color1 = document.getElementById('color1').value;
+            color2 = document.getElementById('color2').value;
+            colorGrid = document.getElementById('colorGrid').value;
+            colorBrillo = document.getElementById('colorBrillo').value;
+            baseSize = parseFloat(document.getElementById('ballSize').value);
+            baseSpeed = parseFloat(document.getElementById('ballSpeed').value);
+            currentPattern = document.getElementById('bgPattern').value;
+            density = parseFloat(document.getElementById('patternDensity').value);
+            magneticEnabled = document.getElementById('magneticEffect').checked;
+            targetCount = parseInt(document.getElementById('ballCount').value);
+            
+            document.getElementById('hex1').innerText = color1.toUpperCase();
+            document.getElementById('hex2').innerText = color2.toUpperCase();
+            document.getElementById('hexGrid').innerText = colorGrid.toUpperCase();
+            document.getElementById('hexBrillo').innerText = colorBrillo.toUpperCase();
+
+            document.documentElement.style.setProperty('--accent', color2);
+            if (specularElement) specularElement.setAttribute('lighting-color', colorBrillo);
+
+            while (balls.length < targetCount) balls.push(new Ball());
+            while (balls.length > targetCount) balls.pop();
+        };
+
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', updateParams);
+        });
+
+        const hexToRgb = (hex) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `${r}, ${g}, ${b}`;
+        };
+
+        const drawShape = (ctx, x, y, shape) => {
+            if (shape === 'circles') {
+                ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.stroke();
+            } else if (shape === 'triangles') {
+                ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x + 5, y + 5); ctx.lineTo(x - 5, y + 5); ctx.closePath(); ctx.stroke();
+            }
+        };
+
+        class Ball {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * w;
+                this.y = Math.random() * (h * 4);
+                this.vx = (Math.random() - 0.5) * baseSpeed;
+                this.vy = (Math.random() - 0.5) * baseSpeed;
+                this.radius = (Math.random() * 0.5 + 0.75) * baseSize;
+                this.type = Math.random() > 0.5 ? 1 : 2;
+            }
+            update(offset) {
+                const drawY = this.y - offset;
+                if (magneticEnabled) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - drawY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 600) {
+                        const force = (1 - dist / 600) * 0.012;
+                        this.vx += dx * force;
+                        this.vy += dy * force;
+                    }
+                    this.vx *= 0.985;
+                    this.vy *= 0.985;
+                }
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < -this.radius) this.x = w + this.radius;
+                if (this.x > w + this.radius) this.x = -this.radius;
+                if (this.y < -this.radius) this.y = h * 4 + this.radius;
+                if (this.y > h * 4 + this.radius) this.y = -this.radius;
+            }
+            
+            drawLens(drawY) {
+                if (currentPattern === 'none') return;
+                oCtx.save();
+                oCtx.beginPath(); oCtx.arc(this.x, drawY, this.radius, 0, Math.PI * 2); oCtx.clip();
+                oCtx.strokeStyle = `rgba(${hexToRgb(colorGrid)}, 0.6)`;
+                oCtx.lineWidth = 2;
+                const bulge = 0.6;
+                const startX = Math.floor((this.x - this.radius*2) / density) * density;
+                const endX = Math.ceil((this.x + this.radius*2) / density) * density;
+                const startY = Math.floor((drawY - this.radius*2) / density) * density;
+                const endY = Math.ceil((drawY + this.radius*2) / density) * density;
+                for (let lx = startX; lx <= endX; lx += density) {
+                    for (let ly = startY; ly <= endY; ly += density) {
+                        const dx = lx - this.x;
+                        const dy = ly - drawY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const ratio = dist / (this.radius * 2);
+                        if (ratio < 1) {
+                            const factor = 1 + (1 - ratio) * bulge;
+                            const px = this.x + dx * factor;
+                            const py = drawY + dy * factor;
+                            if (currentPattern === 'grid') {
+                                oCtx.beginPath(); oCtx.moveTo(px - density/2, py); oCtx.lineTo(px + density/2, py); oCtx.moveTo(px, py - density/2); oCtx.lineTo(px, py + density/2); oCtx.stroke();
+                            } else { drawShape(oCtx, px, py, currentPattern); }
+                        }
+                    }
+                }
+                oCtx.restore();
+            }
+
+            draw(offset) {
+                const drawY = this.y - offset;
+                if (drawY + this.radius < -200 || drawY - this.radius > h + 200) return;
+                this.drawLens(drawY);
+                const rgb = hexToRgb(this.type === 1 ? color1 : color2);
+                const grad = oCtx.createRadialGradient(this.x, drawY, 0, this.x, drawY, this.radius);
+                grad.addColorStop(0, `rgba(${rgb}, 0.6)`); grad.addColorStop(0.7, `rgba(${rgb}, 0.2)`); grad.addColorStop(1, `rgba(${rgb}, 0)`);
+                oCtx.beginPath(); oCtx.arc(this.x, drawY, this.radius, 0, Math.PI * 2); oCtx.fillStyle = grad; oCtx.fill();
+                const bRgb = hexToRgb(colorBrillo);
+                const sG = oCtx.createRadialGradient(this.x - this.radius * 0.3, drawY - this.radius * 0.3, 0, this.x - this.radius * 0.3, drawY - this.radius * 0.3, this.radius * 0.4);
+                sG.addColorStop(0, `rgba(${bRgb}, 0.4)`); sG.addColorStop(1, `rgba(${bRgb}, 0)`);
+                oCtx.beginPath(); oCtx.arc(this.x - this.radius * 0.3, drawY - this.radius * 0.3, this.radius * 0.4, 0, Math.PI * 2); oCtx.fillStyle = sG; oCtx.fill();
+            }
+        }
+
+        let balls = Array.from({ length: targetCount }, () => new Ball());
+
+        const drawGlobalGrid = () => {
+            if (currentPattern === 'none') return;
+            oCtx.strokeStyle = `rgba(${hexToRgb(colorGrid)}, 0.3)`; 
+            oCtx.lineWidth = 1;
+            for (let x = 0; x < w + density; x += density) {
+                for (let y = 0; y < h + density; y += density) {
+                    if (currentPattern === 'grid') {
+                        oCtx.beginPath(); oCtx.moveTo(x, 0); oCtx.lineTo(x, h); oCtx.stroke();
+                        oCtx.beginPath(); oCtx.moveTo(0, y); oCtx.lineTo(w, y); oCtx.stroke();
+                    } else { drawShape(oCtx, x, y, currentPattern); }
+                }
+            }
+        };
+
+        const animate = () => {
+            const scrollY = window.scrollY;
+            oCtx.clearRect(0, 0, w, h);
+            drawGlobalGrid();
+            balls.forEach(ball => { ball.update(scrollY); ball.draw(scrollY); });
+            const r = document.getElementById('risingObject');
+            if (r) r.style.transform = `translateY(-${scrollY * 1.5}px) rotate(${scrollY * 0.05}deg)`;
+            requestAnimationFrame(animate);
+        };
+
+        animate();
+        updateParams();
+    });
+</script>
