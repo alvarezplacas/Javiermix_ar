@@ -1,0 +1,16 @@
+{
+  "nombre": "Restauracion fotografica fondo",
+  "config": {
+    "p": "#150404",
+    "s": "#020203",
+    "g": "#0c0909",
+    "b": "#08081b",
+    "size": 245,
+    "speed": 0.4,
+    "pattern": "grid",
+    "dens": 79,
+    "count": 185,
+    "mag": false
+  },
+  "timestamp": "9/5/2026, 19:26:58"
+}
