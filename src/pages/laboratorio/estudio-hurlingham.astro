@@ -10,6 +10,13 @@ const uniqueSeries = [...new Set(photos.map((f: any) => f.serie_name))].filter(B
 const mainPhotos = photos.filter((p: any) => !p.filename_download.toLowerCase().includes('_2'));
 const hoverPhotos = photos.filter((p: any) => p.filename_download.toLowerCase().includes('_2'));
 
+const galleryItems = mainPhotos.map((file: any) => {
+    const baseName = file.filename_download.split('.')[0];
+    const hoverFile = hoverPhotos.find((h: any) => 
+        h.filename_download.toLowerCase().includes(baseName.toLowerCase() + '_2') ||
+        h.filename_download.toLowerCase().includes(baseName.toLowerCase() + ' _2')
+    );
+
     return {
         id: file.id,
         title: file.title || file.filename_download,
