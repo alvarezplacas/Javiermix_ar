@@ -10,13 +10,6 @@ const uniqueSeries = [...new Set(photos.map((f: any) => f.serie_name))].filter(B
 const mainPhotos = photos.filter((p: any) => !p.filename_download.toLowerCase().includes('_2'));
 const hoverPhotos = photos.filter((p: any) => p.filename_download.toLowerCase().includes('_2'));
 
-const galleryItems = mainPhotos.map((file: any) => {
-    const baseName = file.filename_download.split('.')[0];
-    const hoverFile = hoverPhotos.find((h: any) => 
-        h.filename_download.toLowerCase().includes(baseName.toLowerCase() + '_2') ||
-        h.filename_download.toLowerCase().includes(baseName.toLowerCase() + ' _2')
-    );
-
     return {
         id: file.id,
         title: file.title || file.filename_download,
@@ -24,6 +17,7 @@ const galleryItems = mainPhotos.map((file: any) => {
         src: getAssetUrl(file.id, { width: 1600, format: 'webp', quality: 90 }),
         thumb: getAssetUrl(file.id, { width: 600, format: 'webp', quality: 70 }),
         hoverSrc: hoverFile ? getAssetUrl(hoverFile.id, { width: 1600, format: 'webp', quality: 90 }) : null,
+        rawDate: file.uploaded_on ? new Date(file.uploaded_on).getTime() : 0,
         metadata: {
             type: file.type,
             size: (file.filesize / 1024 / 1024).toFixed(2) + ' MB',
@@ -33,13 +27,16 @@ const galleryItems = mainPhotos.map((file: any) => {
     };
 });
 
+// Ordenar por fecha de producción (descendente)
+const sortedGallery = [...galleryItems].sort((a, b) => b.rawDate - a.rawDate);
+
 // Paginación
 const url = new URL(Astro.request.url);
 const page = parseInt(url.searchParams.get('page') || '1');
 const limit = 10;
 const start = (page - 1) * limit;
-const itemsToDisplay = galleryItems.slice(start, start + limit);
-const totalPages = Math.ceil(galleryItems.length / limit);
+const itemsToDisplay = sortedGallery.slice(start, start + limit);
+const totalPages = Math.ceil(sortedGallery.length / limit);
 const hasNext = page < totalPages;
 const hasPrev = page > 1;
 
@@ -54,24 +51,25 @@ const hasPrev = page > 1;
         </nav>
 
         <header class="studio-header">
-            <h1>Talleres Fotográficos</h1>
+            <div class="header-pre-title">ARCHIVO DE INVESTIGACIÓN</div>
+            <h1>EXPLORACIÓN & CURACIÓN</h1>
             
             <div class="studio-controls">
                 <div class="filter-group">
-                    <span class="label">Filtrar por Sesión:</span>
+                    <span class="label">SISTEMA DE FILTRADO:</span>
                     <select id="session-filter" class="studio-select">
-                        <option value="all">Todas las Sesiones</option>
+                        <option value="all">TODAS LAS SESIONES</option>
                         {uniqueSeries.map(s => (
-                            <option value={s}>{s}</option>
+                            <option value={s}>{s.toUpperCase()}</option>
                         ))}
                     </select>
                 </div>
-                <button id="play-tour" class="play-btn">
-                    <span class="icon">▶</span> REPRODUCIR (5s)
-                </button>
             </div>
 
-            <p>Exploración técnica y archivo visual de las capturas realizadas en los talleres del Municipio de Hurlingham.</p>
+            <p class="journalistic-text">
+                Sector de estudio técnico y archivo visual. Las imágenes presentadas se encuentran en etapa de curaduría y forman parte del proceso creativo y la exploración fotográfica experimental. 
+                <br/>— <i>Muestra del proceso de investigación y estudio</i>.
+            </p>
         </header>
 
         {itemsToDisplay.length === 0 ? (
@@ -192,16 +190,37 @@ const hasPrev = page > 1;
     }
 
     h1 {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 3.5rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 5rem;
+        font-weight: 900;
         margin-bottom: 1.5rem;
-        letter-spacing: -1px;
+        letter-spacing: -3px;
+        line-height: 0.9;
+        text-transform: uppercase;
+        border-bottom: 15px solid var(--studio-accent);
+        display: inline-block;
+        padding-bottom: 0.5rem;
     }
 
-    p {
+    .header-pre-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 5px;
+        color: var(--studio-accent);
+        margin-bottom: 0.5rem;
+    }
+
+    p.journalistic-text {
         color: var(--studio-text);
         line-height: 1.6;
-        font-size: 1rem;
+        font-size: 0.9rem;
+        max-width: 600px;
+        font-family: 'Inter', sans-serif;
+        margin-top: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.8;
     }
 
     /* 🎞️ Contact Sheet Grid (Masonry / Tetris Style) */
@@ -321,17 +340,18 @@ const hasPrev = page > 1;
     }
 
     .view-btn {
-        background: transparent;
-        border: 1px solid #fff;
-        color: #fff;
+        background: #fff;
+        border: none;
+        color: #000;
         padding: 0.8rem 1.5rem;
-        font-size: 0.6rem;
-        font-weight: 800;
+        font-size: 0.7rem;
+        font-weight: 900;
         letter-spacing: 2px;
         cursor: pointer;
         transition: 0.3s;
+        font-family: 'Inter', sans-serif;
     }
-    .view-btn:hover { background: #fff; color: #000; }
+    .view-btn:hover { background: var(--studio-accent); color: #000; }
 
     .photo-info {
         display: flex;
@@ -740,7 +760,6 @@ const hasPrev = page > 1;
     });
 
     closeBtn?.addEventListener('click', () => {
-        stopTour();
         if (viewer) {
             viewer.classList.remove('active');
             viewer.style.display = 'none';
@@ -763,65 +782,15 @@ const hasPrev = page > 1;
                 (cell as HTMLElement).style.display = 'none';
             }
         });
-        
-        if (tourInterval) { stopTour(); startTour(); }
-    });
-
-    // --- Lógica de Tour (Slideshow) ---
-    const playTourBtn = document.getElementById('play-tour');
-    let tourInterval: any = null;
-    let currentTourIndex = 0;
-
-    function startTour() {
-        const visiblePhotos = Array.from(photoCells).filter(p => (p as HTMLElement).style.display !== 'none');
-        if (visiblePhotos.length === 0) return;
-
-        playTourBtn?.classList.add('active');
-        playTourBtn!.innerHTML = '<span class="icon">⏹</span> DETENER TOUR';
-        viewerContent?.classList.add('tour-active');
-        
-        // Abrir el visor con la primera
-        const firstBtn = visiblePhotos[0].querySelector('.view-btn') as HTMLElement;
-        firstBtn?.click();
-
-        tourInterval = setInterval(() => {
-            currentTourIndex = (currentTourIndex + 1) % visiblePhotos.length;
-            const photo = visiblePhotos[currentTourIndex];
-            const viewBtn = photo.querySelector('.view-btn') as HTMLElement;
-            
-            const src = viewBtn.getAttribute('data-src') || '';
-            const title = viewBtn.getAttribute('data-title') || '';
-            const date = viewBtn.getAttribute('data-date') || '';
-            
-            updateViewer(src, title, date);
-        }, 5000);
-    }
-
-    function stopTour() {
-        if (tourInterval) clearInterval(tourInterval);
-        tourInterval = null;
-        playTourBtn?.classList.remove('active');
-        playTourBtn!.innerHTML = '<span class="icon">▶</span> REPRODUCIR (5s)';
-        viewerContent?.classList.remove('tour-active');
-        viewer?.classList.remove('active');
-        document.body.style.overflow = 'auto';
-    }
-
-    playTourBtn?.addEventListener('click', () => {
-        if (tourInterval) stopTour();
-        else {
-            currentTourIndex = 0;
-            startTour();
-        }
     });
 
     // Cerrar con Escape
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            if (tourInterval) stopTour();
-            else {
-                viewer?.classList.remove('active');
-                document.body.style.overflow = 'auto';
+            if (viewer) {
+                viewer.classList.remove('active');
+                viewer.style.display = 'none';
+                document.body.classList.remove('viewer-open');
             }
         }
     });
