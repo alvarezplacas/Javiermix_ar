@@ -23,7 +23,7 @@ const galleryItems = mainPhotos.map((file: any) => {
         serie: file.serie_name,
         src: getAssetUrl(file.id, { width: 1600, format: 'webp', quality: 90 }),
         thumb: getAssetUrl(file.id, { width: 600, format: 'webp', quality: 70 }),
-        hoverThumb: hoverFile ? getAssetUrl(hoverFile.id, { width: 1600, format: 'webp', quality: 90 }) : null,
+        hoverSrc: hoverFile ? getAssetUrl(hoverFile.id, { width: 1600, format: 'webp', quality: 90 }) : null,
         metadata: {
             type: file.type,
             size: (file.filesize / 1024 / 1024).toFixed(2) + ' MB',
@@ -103,34 +103,11 @@ const galleryItems = mainPhotos.map((file: any) => {
             <div class="viewer-content">
                 <div class="f11-hint">Presiona <b>F11</b> para pantalla completa.</div>
                 <div class="slider-stage" id="comparison-stage">
-                    <div class="slider-curtain">
-                        <div class="curtain-line">
-                            <div class="curtain-handle">
-                                <span class="handle-arrows" style="display:flex; gap:4px; font-weight:900; font-size:1.2rem;">‹›</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="slider-labels">
-                        <span class="label-original">ARCHIVO ORIGINAL</span>
-                        <span class="label-restored">RESTAURACIÓN DIGITAL</span>
-                    </div>
                     <div id="slide-current" class="slide-item active">
-                        <div class="comparison-wrapper">
-                            <img src="" alt="" class="v-main" />
-                            <img src="" alt="" class="v-hover" />
-                            <div class="curtain-line">
-                                <div class="curtain-handle">‹›</div>
-                            </div>
-                        </div>
+                        <img src="" alt="" class="v-main" />
                     </div>
                     <div id="slide-next" class="slide-item">
-                        <div class="comparison-wrapper">
-                            <img src="" alt="" class="v-main" />
-                            <img src="" alt="" class="v-hover" />
-                            <div class="curtain-line">
-                                <div class="curtain-handle">‹›</div>
-                            </div>
-                        </div>
+                        <img src="" alt="" class="v-main" />
                     </div>
                 </div>
                 <div class="viewer-meta-box">
@@ -223,16 +200,19 @@ const galleryItems = mainPhotos.map((file: any) => {
 
     .image-box {
         position: relative;
-        aspect-ratio: 3/4;
-        background: #111;
+        background: #0d0d0d;
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .image-box img {
         width: 100%;
-        height: 100%;
-        object-fit: cover;
+        height: auto;
+        display: block;
+        object-fit: contain;
         transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -267,122 +247,11 @@ const galleryItems = mainPhotos.map((file: any) => {
         perspective: 1500px;
         overflow: hidden;
     }
-    .comparison-wrapper {
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        max-width: 90vw;
-        max-height: 82vh;
-        overflow: hidden;
-        cursor: crosshair;
-    }
-
     .v-main {
         max-width: 90vw;
         max-height: 82vh;
         display: block;
-    }
-
-    .v-hover {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
         object-fit: contain;
-        clip-path: inset(0 50% 0 0);
-        z-index: 2;
-    }
-
-    .curtain-line {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 50%;
-        width: 2px;
-        background: #fff;
-        z-index: 10;
-        pointer-events: none;
-    }
-
-    .curtain-handle {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 40px;
-        height: 40px;
-        background: #fff;
-        color: #000;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    }
-
-    .curtain-handle {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 48px;
-        height: 48px;
-        background: #fff;
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: #000;
-        box-shadow: 0 0 40px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.3);
-        cursor: grab;
-        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        pointer-events: auto;
-    }
-
-    .curtain-handle:active {
-        cursor: grabbing;
-        transform: translate(-50%, -50%) scale(0.9);
-    }
-
-    .handle-arrows {
-        display: flex;
-        gap: 4px;
-        font-size: 1rem;
-        font-weight: 900;
-        letter-spacing: -2px;
-    }
-
-    .slider-labels {
-        position: absolute;
-        top: 2rem;
-        left: 2rem;
-        right: 2rem;
-        display: flex;
-        justify-content: space-between;
-        z-index: 25;
-        pointer-events: none;
-        opacity: 0;
-        transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .slider-stage.has-comparison:hover .slider-labels {
-        opacity: 1;
-    }
-
-    .label-original, .label-restored {
-        font-family: 'Inter', sans-serif;
-        font-size: 0.5rem;
-        letter-spacing: 2px;
-        font-weight: 800;
-        color: #000;
-        background: #fff;
-        padding: 0.5rem 1.2rem;
-        border-radius: 100px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        text-transform: uppercase;
     }
 
     .view-btn {
@@ -714,17 +583,22 @@ const galleryItems = mainPhotos.map((file: any) => {
 </style>
 
 <script>
+    const viewer = document.getElementById('viewer');
+    const viewerContent = document.querySelector('.viewer-content');
+    const closeBtn = document.getElementById('close-viewer');
+    const viewerTitle = document.getElementById('viewer-title');
+    const viewerDate = document.getElementById('viewer-date');
+
     let isTransitioning = false;
 
     // --- FUNCIÓN GLOBAL DE APERTURA (Infalible) ---
     (window as any).openStudioViewer = function(btn: HTMLElement) {
         const src = btn.getAttribute('data-src') || '';
-        const hover = btn.getAttribute('data-hover') || '';
         const title = btn.getAttribute('data-title') || '';
         const date = btn.getAttribute('data-date') || '';
         
         console.log("[MASTER] Abriendo:", title);
-        updateViewer(src, hover, title, date);
+        updateViewer(src, title, date);
         
         const v = document.getElementById('viewer');
         if (v) {
@@ -737,13 +611,12 @@ const galleryItems = mainPhotos.map((file: any) => {
         }
     };
 
-    function updateViewer(src: string, hoverSrc: string, title: string, date: string) {
+    function updateViewer(src: string, title: string, date: string) {
         if (isTransitioning) return;
         isTransitioning = true;
 
         const current = document.getElementById('slide-current');
         const next = document.getElementById('slide-next');
-        const stage = document.getElementById('comparison-stage');
 
         if (!current || !next) {
             isTransitioning = false;
@@ -751,7 +624,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         }
 
         const nextMain = next.querySelector('.v-main') as HTMLImageElement;
-        const nextHover = next.querySelector('.v-hover') as HTMLImageElement;
 
         if (!nextMain) {
             isTransitioning = false;
@@ -759,15 +631,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         }
 
         nextMain.src = src;
-
-        if (hoverSrc && hoverSrc !== src && nextHover) {
-            nextHover.src = hoverSrc;
-            nextHover.style.display = 'block';
-            stage?.classList.add('has-comparison');
-        } else {
-            if (nextHover) nextHover.style.display = 'none';
-            stage?.classList.remove('has-comparison');
-        }
 
         next.className = 'slide-item enter-right';
         void next.offsetWidth;
@@ -789,25 +652,6 @@ const galleryItems = mainPhotos.map((file: any) => {
         }, 1200);
     }
 
-    // EL MOTOR ORIGINAL: Seguimiento de mouse simple
-    comparisonStage?.addEventListener('mousemove', (e) => {
-        if (!comparisonStage.classList.contains('has-comparison')) return;
-        
-        const activeItem = comparisonStage.querySelector('.slide-item.active');
-        const mainImg = activeItem?.querySelector('.v-main') as HTMLElement;
-        const hoverImg = activeItem?.querySelector('.v-hover') as HTMLElement;
-        const line = activeItem?.querySelector('.curtain-line') as HTMLElement;
-        
-        if (!mainImg || !hoverImg || !line) return;
-
-        const rect = mainImg.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const boundedX = Math.max(0, Math.min(100, x));
-
-        hoverImg.style.clipPath = `inset(0 ${100 - boundedX}% 0 0)`;
-        line.style.left = `${boundedX}%`;
-    });
-
     // --- MOTOR DE APERTURA MAESTRO (Delegación Global) ---
     document.addEventListener('click', (e) => {
         const btn = (e.target as HTMLElement).closest('.view-btn');
@@ -815,12 +659,11 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         e.preventDefault();
         const src = btn.getAttribute('data-src') || '';
-        const hover = btn.getAttribute('data-hover') || '';
         const title = btn.getAttribute('data-title') || '';
         const date = btn.getAttribute('data-date') || '';
-        
+
         console.log("[JS] Clic detectado en:", title);
-        updateViewer(src, hover, title, date);
+        updateViewer(src, title, date);
         
         if (viewer) {
             viewer.style.display = 'flex';
@@ -881,11 +724,10 @@ const galleryItems = mainPhotos.map((file: any) => {
             const viewBtn = photo.querySelector('.view-btn') as HTMLElement;
             
             const src = viewBtn.getAttribute('data-src') || '';
-            const hover = viewBtn.getAttribute('data-hover') || '';
             const title = viewBtn.getAttribute('data-title') || '';
             const date = viewBtn.getAttribute('data-date') || '';
             
-            updateViewer(src, hover, title, date);
+            updateViewer(src, title, date);
         }, 5000);
     }
 
@@ -917,75 +759,4 @@ const galleryItems = mainPhotos.map((file: any) => {
             }
         }
     });
-    // --- Lógica del Slider de Comparación ---
-    const comparisonStage = document.getElementById('comparison-stage');
-    const curtainLine = document.querySelector('.curtain-line') as HTMLElement;
-    
-    let isDragging = false;
-
-    const startDragging = (e: MouseEvent | TouchEvent) => {
-        isDragging = true;
-        comparisonStage?.classList.add('is-dragging');
-        handleMove(e instanceof MouseEvent ? e.clientX : e.touches[0].clientX);
-    };
-
-    const stopDragging = () => {
-        isDragging = false;
-        comparisonStage?.classList.remove('is-dragging');
-    };
-
-    const handleMove = (clientX: number) => {
-        if (!isDragging) return;
-        
-        const activeWrapper = comparisonStage?.querySelector('.slide-item.active .comparison-wrapper') as HTMLElement;
-        const mainImg = activeWrapper?.querySelector('.v-main') as HTMLElement;
-        if (!activeWrapper || !mainImg) return;
-
-        const rect = mainImg.getBoundingClientRect();
-        const x = ((clientX - rect.left) / rect.width) * 100;
-        const boundedX = Math.max(0, Math.min(100, x));
-
-        activeWrapper.style.setProperty('--curtain-pos', `${boundedX}%`);
-        
-        if (curtainLine) {
-            curtainLine.style.left = `${rect.left + (rect.width * boundedX / 100)}px`;
-            curtainLine.style.opacity = '1';
-        }
-
-        const hoverImg = activeWrapper.querySelector('.v-hover') as HTMLElement;
-        if (hoverImg) {
-            hoverImg.style.width = `${rect.width}px`;
-        }
-    };
-
-    comparisonStage?.addEventListener('mousedown', (e) => startDragging(e));
-    window.addEventListener('mouseup', stopDragging);
-    window.addEventListener('mousemove', (e) => handleMove(e.clientX));
-
-    // Soporte Touch
-    comparisonStage?.addEventListener('touchstart', (e) => startDragging(e));
-    window.addEventListener('touchend', stopDragging);
-    window.addEventListener('touchmove', (e) => handleMove(e.touches[0].clientX));
-
-    function resetCurtain() {
-        setTimeout(() => {
-            const activeWrapper = comparisonStage?.querySelector('.slide-item.active .comparison-wrapper') as HTMLElement;
-            const mainImg = activeWrapper?.querySelector('.v-main') as HTMLElement;
-            if (!activeWrapper || !mainImg) return;
-
-            const rect = mainImg.getBoundingClientRect();
-            const initialX = 50;
-
-            if (curtainLine) {
-                curtainLine.style.left = `${rect.left + (rect.width * initialX / 100)}px`;
-                curtainLine.style.opacity = '1';
-            }
-            
-            activeWrapper.style.setProperty('--curtain-pos', `${initialX}%`);
-            const hoverImg = activeWrapper.querySelector('.v-hover') as HTMLElement;
-            if (hoverImg) {
-                hoverImg.style.width = `${rect.width}px`;
-            }
-        }, 200);
-    }
 </script>
