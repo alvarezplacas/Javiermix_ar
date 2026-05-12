@@ -421,20 +421,29 @@ const hasPrev = page > 1;
     .studio-viewer {
         position: fixed;
         inset: 0;
-        background: #000;
+        background: transparent;
         z-index: 1000;
         display: none;
         flex-direction: column;
         overflow: hidden;
     }
 
+    /* Fondo base sólido detrás de la lava */
+    .studio-viewer::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: #000;
+        z-index: -1;
+    }
+
     .gooey-container {
         position: absolute;
         inset: 0;
-        z-index: 0;
+        z-index: 1;
         pointer-events: none;
         filter: url('#goo');
-        opacity: 0.6;
+        opacity: 1;
     }
 
     #oilCanvas {
@@ -450,7 +459,17 @@ const hasPrev = page > 1;
         overflow: hidden !important;
     }
 
+    .viewer-nav {
+        padding: 2rem 4rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
+    }
+
     .viewer-content {
+        position: relative;
+        z-index: 5;
         max-width: 90%;
         max-height: 90%;
         display: flex;
@@ -833,6 +852,7 @@ const hasPrev = page > 1;
                 document.body.classList.remove('viewer-open');
             }
         }
+    });
 
     // --- LAVA FRACTAL ENGINE (TALLER THEME) ---
     const oilCanvas = document.getElementById('oilCanvas');
@@ -884,8 +904,8 @@ const hasPrev = page > 1;
         draw() {
             const rgb = hexToRgb(this.type === 1 ? color1 : color2);
             const grad = oCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-            grad.addColorStop(0, `rgba(${rgb}, 0.6)`);
-            grad.addColorStop(0.7, `rgba(${rgb}, 0.1)`);
+            grad.addColorStop(0, `rgba(${rgb}, 0.8)`);
+            grad.addColorStop(0.7, `rgba(${rgb}, 0.3)`);
             grad.addColorStop(1, `rgba(${rgb}, 0)`);
             oCtx.beginPath(); oCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
             oCtx.fillStyle = grad; oCtx.fill();
