@@ -15,10 +15,12 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 		<div class="nav-links">
             <a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
             <a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>Colección</a>
-            <a href="/rescate" class={currentPath.startsWith('/rescate') ? 'active' : ''} data-tooltip="Restauración y rescate de fotografías antiguas">Rescate</a>
+            <a href="/rescate" class={currentPath.startsWith('/rescate') ? 'active' : ''}>Rescate</a>
             <a href="/royal-gallery" class={currentPath.startsWith('/royal-gallery') ? 'active' : ''}>Royal</a>
             <a href="/revista" class={currentPath.startsWith('/revista') ? 'active' : ''}>Revista</a>
-			<CartNavButton client:load />
+            <div class="cart-wrapper">
+			    <CartNavButton client:load />
+            </div>
 		</div>
 	</nav>
 </header>
@@ -36,22 +38,15 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 }
 
 .nav-container {
-	width: 100%;
-	padding: 0 4rem;
-	display: flex;
-	justify-content: flex-end; /* Empuja el menú a la derecha absoluta */
-	align-items: center;
-    position: relative;
-}
-
-.nav-logo {
-    position: absolute;
-    left: 4rem;
+    width: 100%;
+    padding: 3rem 4rem;
+    display: flex;
+    justify-content: flex-start;
 }
 
 .brand-name {
 	font-family: var(--font-primary);
-	font-size: 1.8rem; /* Un poco más pequeño para evitar pises */
+	font-size: 1.8rem;
 	font-weight: 300;
 	font-style: italic;
 	color: var(--color-white);
@@ -61,46 +56,61 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 	text-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
-
 .nav-links {
-	display: flex;
-	gap: 3.5rem; /* Espaciado elegante */
-	align-items: center;
+    position: fixed;
+    right: 4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column; /* VERTICAL */
+    gap: 2.5rem;
+    align-items: flex-end;
+    z-index: 2000;
 }
 
 .nav-links a {
-	color: var(--color-text-muted);
-	text-decoration: none;
-	transition: all 0.4s ease;
-	position: relative;
-	padding: 0.5rem 0;
+    color: rgba(255, 255, 255, 0.3);
+    text-decoration: none;
     font-family: 'Cormorant Garamond', serif;
-    font-size: 1.1rem;
-    font-weight: 400;
-    letter-spacing: 1.5px;
-    text-transform: capitalize;
+    font-size: 1rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    padding-right: 1.5rem;
 }
 
 .nav-links a:hover, 
 .nav-links a.active {
-	color: var(--color-white);
+    color: var(--color-white);
+    letter-spacing: 4px;
 }
 
+/* Indicador lateral minimalista */
 .nav-links a::after {
-	content: '';
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	width: 0;
-	height: 1px;
-	background-color: var(--color-accent);
-	transition: var(--transition-premium);
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 0;
+    background: var(--color-accent);
+    transition: height 0.5s ease;
 }
 
 .nav-links a:hover::after,
 .nav-links a.active::after {
-	width: 100%;
+    height: 100%;
 }
+
+.cart-wrapper {
+    margin-top: 1rem;
+    opacity: 0.7;
+    transition: 0.3s;
+}
+.cart-wrapper:hover { opacity: 1; }
 
 /* 🏷️ Premium Tooltip */
 [data-tooltip] {
