@@ -35,21 +35,23 @@ const galleryItems = mainPhotos.map((file: any) => {
 });
 ---
 
-<Layout title="Rescate de Fotos Antiguas | Laboratorio JMX">
+<Layout title="Rescate Fotográfico | Javier Mix">
     <main class="studio-wrapper">
         <div class="grain-overlay"></div>
         
         <!-- Navegación -->
         <nav class="studio-nav">
-            <a href="/laboratorio" class="back-link">← VOLVER AL LABORATORIO</a>
-            <div class="studio-badge">PROTOCOLO: RESCATE HISTÓRICO</div>
+            <a href="/" class="back-link">← INICIO</a>
+            <div class="studio-badge">SERVICIO DE RESCATE HISTÓRICO</div>
         </nav>
 
         <header class="studio-header">
             <div class="pre-title">ARCHIVOS RECUPERADOS</div>
             <h1>Restauración & Memoria</h1>
+            <p class="section-intro">Preservación de la memoria visual mediante técnicas avanzadas de recuperación química y digital. Especialistas en archivos familiares e históricos.</p>
             
             <div class="filter-navigation">
+                <span class="filter-label">GRUPOS:</span>
                 <select id="session-filter" class="tag-selector">
                     <option value="all">TODOS LOS ARCHIVOS</option>
                     {uniqueSeries.map(s => (
@@ -59,29 +61,39 @@ const galleryItems = mainPhotos.map((file: any) => {
             </div>
         </header>
 
-        {galleryItems.length === 0 ? (
+        {uniqueSeries.length === 0 ? (
             <div class="empty-state">
                 <p>No se encontraron capturas en la carpeta "Rescate de Fotos".</p>
                 <p class="hint">Asegúrate de haber creado la carpeta en Directus y subido las imágenes.</p>
             </div>
         ) : (
-            <div class="contact-sheet">
-                {galleryItems.map((item, index) => (
-                    <div class="photo-cell" data-index={index} data-serie={item.serie}>
-                        <div class="image-box" onclick="openStudioViewer(this)" 
-                            style="cursor: pointer;"
-                            data-src={item.src} 
-                            data-hover={item.hoverThumb} 
-                            data-title={item.title} 
-                            data-date={item.metadata.date}
-                        >
-                            <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect main-img" />
+            <div class="gallery-container">
+                {uniqueSeries.map((serie) => (
+                    <section class="serie-group" data-serie={serie}>
+                        <div class="serie-header">
+                            <h2 class="serie-title">{serie}</h2>
+                            <div class="serie-stats">{galleryItems.filter(item => item.serie === serie).length} ARCHIVOS</div>
                         </div>
-                        <div class="photo-info">
-                            <span class="file-name">{item.title}</span>
-                            <span class="file-meta">{item.metadata.date ? new Date(item.metadata.date).getFullYear() : ''}</span>
+                        <div class="contact-sheet">
+                            {galleryItems.filter(item => item.serie === serie).map((item, index) => (
+                                <div class="photo-cell" data-index={index}>
+                                    <div class="image-box" onclick="openStudioViewer(this)" 
+                                        style="cursor: pointer;"
+                                        data-src={item.src} 
+                                        data-hover={item.hoverThumb} 
+                                        data-title={item.title} 
+                                        data-date={item.metadata.date}
+                                    >
+                                        <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect main-img" />
+                                    </div>
+                                    <div class="photo-info">
+                                        <span class="file-name">{item.title}</span>
+                                        <span class="file-meta">{item.metadata.date ? new Date(item.metadata.date).getFullYear() : ''}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
+                    </section>
                 ))}
             </div>
         )}
@@ -203,8 +215,26 @@ const galleryItems = mainPhotos.map((file: any) => {
         line-height: 1;
     }
 
+    .section-intro {
+        margin-top: 1.5rem;
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.4);
+        max-width: 600px;
+        line-height: 1.6;
+    }
+
     .filter-navigation {
-        margin-top: 1rem;
+        margin-top: 3rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .filter-label {
+        font-size: 0.6rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.2);
     }
 
     .tag-selector {
@@ -226,11 +256,37 @@ const galleryItems = mainPhotos.map((file: any) => {
         background: rgba(220, 177, 74, 0.05);
     }
 
-    p {
-        color: var(--studio-text);
-        line-height: 1.7;
-        font-size: 1.05rem;
-        max-width: 700px;
+    .gallery-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6rem;
+    }
+
+    .serie-group {
+        border-top: 1px solid rgba(255,255,255,0.05);
+        padding-top: 2rem;
+    }
+
+    .serie-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 2rem;
+    }
+
+    .serie-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.2rem;
+        color: var(--studio-accent);
+        margin: 0;
+        text-transform: capitalize;
+    }
+
+    .serie-stats {
+        font-family: monospace;
+        font-size: 0.6rem;
+        color: rgba(255,255,255,0.2);
+        letter-spacing: 2px;
     }
 
     /* 🎞️ Tetris / Masonry Sheet */
@@ -672,14 +728,16 @@ const galleryItems = mainPhotos.map((file: any) => {
     let isDragging = false;
     let currentX = 50;
 
+    const serieGroups = document.querySelectorAll('.serie-group');
+
     sessionFilter?.addEventListener('change', () => {
         const filter = sessionFilter.value;
-        photoCells.forEach(cell => {
-            const serie = (cell as HTMLElement).getAttribute('data-serie');
+        serieGroups.forEach(group => {
+            const serie = (group as HTMLElement).getAttribute('data-serie');
             if (filter === 'all' || serie === filter) {
-                (cell as HTMLElement).style.display = 'flex';
+                (group as HTMLElement).style.display = 'block';
             } else {
-                (cell as HTMLElement).style.display = 'none';
+                (group as HTMLElement).style.display = 'none';
             }
         });
     });

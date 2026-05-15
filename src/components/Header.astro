@@ -15,6 +15,7 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 		<div class="nav-links">
 			<a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
 			<a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>Colección</a>
+			<a href="/rescate" class={currentPath.startsWith('/rescate') ? 'active' : ''} data-tooltip="Restauración y rescate de fotografías antiguas">Rescate</a>
 			<a href="/royal-gallery" class={currentPath.startsWith('/royal-gallery') ? 'active' : ''}>Royal Gallery</a>
 			<a href="/revista" class={currentPath.startsWith('/revista') ? 'active' : ''}>Revista</a>
 			<CartNavButton client:load />
@@ -94,6 +95,38 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 .nav-links a:hover::after,
 .nav-links a.active::after {
 	width: 100%;
+}
+
+/* 🏷️ Premium Tooltip */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(0, 0, 0, 0.9);
+    color: var(--color-accent);
+    padding: 0.5rem 1rem;
+    font-size: 0.6rem;
+    font-weight: 800;
+    white-space: nowrap;
+    letter-spacing: 1px;
+    border: 1px solid rgba(220, 177, 74, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+[data-tooltip]:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
 }
 
 @media (max-width: 768px) {
