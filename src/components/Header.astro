@@ -13,11 +13,23 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 		) : <div class="nav-spacer"></div>}
 		
 		<div class="nav-links">
-			<a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
-			<a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>Colección</a>
-			<a href="/rescate" class={currentPath.startsWith('/rescate') ? 'active' : ''} data-tooltip="Restauración y rescate de fotografías antiguas">Rescate</a>
-			<a href="/royal-gallery" class={currentPath.startsWith('/royal-gallery') ? 'active' : ''}>Royal Gallery</a>
-			<a href="/revista" class={currentPath.startsWith('/revista') ? 'active' : ''}>Revista</a>
+            <div class="nav-pill">
+                <a href="/" class={currentPath === '/' ? 'active' : ''}>
+                    <span class="nav-idx">01</span>Inicio
+                </a>
+                <a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>
+                    <span class="nav-idx">02</span>Colección
+                </a>
+                <a href="/rescate" class={currentPath.startsWith('/rescate') ? 'active' : ''} data-tooltip="Restauración y rescate de fotografías antiguas">
+                    <span class="nav-idx">03</span>Rescate
+                </a>
+                <a href="/royal-gallery" class={currentPath.startsWith('/royal-gallery') ? 'active' : ''}>
+                    <span class="nav-idx">04</span>Royal
+                </a>
+                <a href="/revista" class={currentPath.startsWith('/revista') ? 'active' : ''}>
+                    <span class="nav-idx">05</span>Revista
+                </a>
+            </div>
 			<CartNavButton client:load />
 		</div>
 	</nav>
@@ -60,12 +72,42 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 
 .nav-links {
 	display: flex;
-	gap: 2.5rem;
+	gap: 1.5rem;
 	font-family: var(--font-secondary);
-	font-size: 0.8rem;
+	font-size: 0.7rem;
 	text-transform: uppercase;
 	letter-spacing: 2px;
-    font-weight: 600;
+    font-weight: 500;
+    align-items: center;
+}
+
+.nav-pill {
+    display: flex;
+    align-items: center;
+    gap: 1.8rem;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 0.6rem 2rem;
+    border-radius: 100px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-pill:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.nav-idx {
+    font-family: monospace;
+    font-size: 0.5rem;
+    color: var(--color-accent);
+    margin-right: 0.5rem;
+    opacity: 0.6;
+    font-weight: 400;
 }
 
 .nav-links a {
@@ -95,6 +137,11 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 .nav-links a:hover::after,
 .nav-links a.active::after {
 	width: 100%;
+}
+
+.nav-pill a {
+    display: flex;
+    align-items: center;
 }
 
 /* 🏷️ Premium Tooltip */
