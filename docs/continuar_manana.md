@@ -1,27 +1,22 @@
-# 📝 Resumen de Avances - 3 de Mayo, 2026
+# 📝 Resumen de Avances - 14 de Mayo, 2026 (Sesión Nocturna)
 
-Hoy hemos completado una fase crítica de la expansión del **Laboratorio JMX**, enfocándonos en la curaduría histórica y la interactividad avanzada.
+Hoy hemos finalizado la transición del módulo de **Rescate Fotográfico** a una página principal y rediseñado la navegación global hacia un estilo ultra-minimalista.
 
 ## ✅ Logros de Hoy
-1.  **Sección de Rescate de Fotos**:
-    *   Creada la página `rescate-fotos.astro` con estética "Restoration Lab" (grano sutil, tonos sepia, modo tour).
-    *   Integrada la función `getRescateFiles` en la capa de Directus para automatizar la carga de archivos históricos.
-2.  **Efecto Hover Dinámico (Variante _2)**:
-    *   Implementada lógica de detección de pares de archivos (`foto.jpg` + `foto_2.jpg`) en las secciones de **Estudio Hurlingham** y **Rescate de Fotos**.
-    *   Este efecto permite ver mockups o estados previos/posteriores al pasar el mouse por la galería.
-3.  **Visor Inmersivo con Hover**:
-    *   Se extendió el efecto de comparación al visor de pantalla completa.
-    *   Ahora, al expandir una obra, el usuario puede interactuar con el visor para ver el "antes y después" en alta resolución (1600px).
-4.  **Ajustes de Interfaz**:
-    *   Corregidos problemas de capas (z-index) que ocultaban los botones de acción durante el hover.
-    *   Asegurada la responsividad del nuevo grid de 50/50.
-5.  **Infraestructura**:
-    *   Ejecutado script de inicialización en Directus para crear la carpeta raíz "Rescate de Fotos" y subcarpetas de ejemplo.
+1.  **Migración de Rescate**: 
+    *   La sección de restauración ya es oficial en `javiermix.ar/rescate`.
+    *   Se implementó la organización por grupos (series) basada en carpetas de Directus.
+2.  **Rediseño de Menú "The Gallery Sidebar"**:
+    *   Se eliminó el menú horizontal clunky y se reemplazó por una **barra lateral derecha vertical y fija**.
+    *   Estética de "Galería de Arte" con tipografía Serif (**Cormorant Garamond**) y micro-indicadores dorados.
+3.  **Automatización de Despliegue**:
+    *   Se creó el script `DESPLEGAR.ps1` que automatiza el Git Push local y el Git Reset/Pull en el VPS para evitar conflictos de ramas.
+    *   Se identificó y corrigió el error de rutas relativas (`Layout` y `Directus`) tras mover la página a la raíz.
 
 ## 🚀 Pendiente para Mañana
-1.  **Optimización**: Revisar el rendimiento de carga de las imágenes `_2` en conexiones móviles.
-2.  **Audio**: Considerar la integración de un paisaje sonoro específico para el laboratorio de restauración (sonidos de archivos, químicos, papel).
-3.  **Feedback**: Confirmar con el usuario si el sistema de "Before/After" por hover es suficiente o si desea un slider interactivo (cortinilla).
+1.  **Verificación Visual**: Confirmar que el menú vertical se ve perfecto en todos los navegadores tras el despliegue final.
+2.  **Ajustes de Sidebar**: Verificar si el espaciado vertical de la sidebar necesita ajustes en pantallas más pequeñas.
+3.  **Directus Metadata**: Asegurar que todos los archivos en la carpeta "Rescate de Fotos" tengan asignada una "Serie" para que no queden huérfanos.
 
 ---
-*Misión actual: Mantener el Estándar de Oro en cada píxel del Laboratorio.*
+*Estado del Sistema: GOLDEN MASTER 2.0 - Despliegue en curso.*
