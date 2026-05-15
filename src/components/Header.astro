@@ -13,23 +13,11 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 		) : <div class="nav-spacer"></div>}
 		
 		<div class="nav-links">
-            <div class="nav-pill">
-                <a href="/" class={currentPath === '/' ? 'active' : ''}>
-                    <span class="nav-idx">01</span>Inicio
-                </a>
-                <a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>
-                    <span class="nav-idx">02</span>Colección
-                </a>
-                <a href="/rescate" class={currentPath.startsWith('/rescate') ? 'active' : ''} data-tooltip="Restauración y rescate de fotografías antiguas">
-                    <span class="nav-idx">03</span>Rescate
-                </a>
-                <a href="/royal-gallery" class={currentPath.startsWith('/royal-gallery') ? 'active' : ''}>
-                    <span class="nav-idx">04</span>Royal
-                </a>
-                <a href="/revista" class={currentPath.startsWith('/revista') ? 'active' : ''}>
-                    <span class="nav-idx">05</span>Revista
-                </a>
-            </div>
+            <a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
+            <a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>Colección</a>
+            <a href="/rescate" class={currentPath.startsWith('/rescate') ? 'active' : ''} data-tooltip="Restauración y rescate de fotografías antiguas">Rescate</a>
+            <a href="/royal-gallery" class={currentPath.startsWith('/royal-gallery') ? 'active' : ''}>Royal</a>
+            <a href="/revista" class={currentPath.startsWith('/revista') ? 'active' : ''}>Revista</a>
 			<CartNavButton client:load />
 		</div>
 	</nav>
@@ -76,58 +64,26 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 
 .nav-links {
 	display: flex;
-	gap: 2rem;
+	gap: 3.5rem; /* Espaciado elegante */
 	align-items: center;
 }
 
-.nav-pill {
-    display: flex;
-    align-items: center;
-    gap: 2.2rem;
-    background: rgba(10, 10, 10, 0.4);
-    backdrop-filter: blur(25px) saturate(180%);
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
-    padding: 0.8rem 2.5rem;
-    border-radius: 100px;
-    border: 1px solid rgba(220, 177, 74, 0.15);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.nav-pill:hover {
-    background: rgba(15, 15, 15, 0.6);
-    border-color: rgba(220, 177, 74, 0.4);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6), 0 0 20px rgba(220, 177, 74, 0.05);
-}
-
-.nav-idx {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.55rem;
-    color: var(--color-accent);
-    margin-right: 0.7rem;
-    opacity: 0.6;
-    font-weight: 700;
-    letter-spacing: 1px;
-}
-
-.nav-pill a {
-	color: rgba(255, 255, 255, 0.5);
+.nav-links a {
+	color: var(--color-text-muted);
 	text-decoration: none;
 	transition: all 0.4s ease;
 	position: relative;
-	padding: 0.4rem 0;
+	padding: 0.5rem 0;
     font-family: 'Cormorant Garamond', serif;
-    font-size: 1rem;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 1.5px;
     text-transform: capitalize;
 }
 
-.nav-pill a:hover, 
-.nav-pill a.active {
+.nav-links a:hover, 
+.nav-links a.active {
 	color: var(--color-white);
-    text-shadow: 0 0 15px rgba(255,255,255,0.3);
 }
 
 .nav-links a::after {
@@ -144,11 +100,6 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 .nav-links a:hover::after,
 .nav-links a.active::after {
 	width: 100%;
-}
-
-.nav-pill a {
-    display: flex;
-    align-items: center;
 }
 
 /* 🏷️ Premium Tooltip */
