@@ -29,7 +29,8 @@ const galleryItems = mainPhotos.map((file: any) => {
             type: file.type,
             size: (file.filesize / 1024 / 1024).toFixed(2) + ' MB',
             dim: `${file.width} x ${file.height}px`,
-            date: file.uploaded_on ? new Date(file.uploaded_on).toLocaleDateString('es-AR') : ''
+            date: file.uploaded_on ? new Date(file.uploaded_on).toLocaleDateString('es-AR') : '',
+            year: file.uploaded_on ? new Date(file.uploaded_on).getFullYear().toString() : ''
         }
     };
 });
@@ -77,18 +78,18 @@ const galleryItems = mainPhotos.map((file: any) => {
                         <div class="contact-sheet">
                             {galleryItems.filter(item => item.serie === serie).map((item, index) => (
                                 <div class="photo-cell" data-index={index}>
-                                    <div class="image-box" onclick="openStudioViewer(this)" 
-                                        style="cursor: pointer;"
+                                    <button class="image-box" onclick="openStudioViewer(this)" 
+                                        aria-label={`Ver restauración de ${item.title}`}
                                         data-src={item.src} 
                                         data-hover={item.hoverThumb} 
                                         data-title={item.title} 
                                         data-date={item.metadata.date}
                                     >
                                         <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect main-img" />
-                                    </div>
+                                    </button>
                                     <div class="photo-info">
                                         <span class="file-name">{item.title}</span>
-                                        <span class="file-meta">{item.metadata.date ? new Date(item.metadata.date).getFullYear() : ''}</span>
+                                        <span class="file-meta">{item.metadata.year}</span>
                                     </div>
                                 </div>
                             ))}
@@ -265,6 +266,9 @@ const galleryItems = mainPhotos.map((file: any) => {
     .serie-group {
         border-top: 1px solid rgba(255,255,255,0.05);
         padding-top: 2rem;
+        transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 1;
+        transform: translateY(0);
     }
 
     .serie-header {
@@ -315,6 +319,12 @@ const galleryItems = mainPhotos.map((file: any) => {
         border: 1px solid rgba(255,255,255,0.03);
         box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         border-radius: 4px;
+        padding: 0;
+        width: 100%;
+        display: block;
+        text-align: left;
+        cursor: pointer;
+        outline: none;
     }
 
     .image-box img {
@@ -733,11 +743,28 @@ const galleryItems = mainPhotos.map((file: any) => {
     sessionFilter?.addEventListener('change', () => {
         const filter = sessionFilter.value;
         serieGroups.forEach(group => {
-            const serie = (group as HTMLElement).getAttribute('data-serie');
-            if (filter === 'all' || serie === filter) {
-                (group as HTMLElement).style.display = 'block';
+            const el = group as HTMLElement;
+            const serie = el.getAttribute('data-serie');
+            const shouldShow = filter === 'all' || serie === filter;
+
+            if (shouldShow) {
+                el.style.display = 'block';
+                // Trigger layout reflow to allow transition
+                void el.offsetWidth;
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
             } else {
-                (group as HTMLElement).style.display = 'none';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(15px)';
+                
+                // Clear any existing handler to prevent multi-triggering
+                el.ontransitionend = null;
+                el.ontransitionend = () => {
+                    if (el.style.opacity === '0') {
+                        el.style.display = 'none';
+                    }
+                    el.ontransitionend = null;
+                };
             }
         });
     });
