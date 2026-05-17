@@ -149,6 +149,7 @@ const galleryItems = mainPhotos.map((file: any) => {
         padding: 8rem 4rem 4rem;
         font-family: 'Inter', system-ui, sans-serif;
         position: relative;
+        overflow-x: hidden; /* Evita que elementos se desborden de la pantalla horizontalmente */
     }
 
     .grain-overlay {
@@ -166,6 +167,8 @@ const galleryItems = mainPhotos.map((file: any) => {
         top: 0;
         left: 0;
         right: 0;
+        width: 100%;
+        box-sizing: border-box; /* Contiene el padding dentro del 100% del ancho del viewport */
         padding: 2rem 4rem;
         display: flex;
         justify-content: space-between;
@@ -718,8 +721,19 @@ const galleryItems = mainPhotos.map((file: any) => {
     }
 
     @media (max-width: 768px) {
-        .studio-wrapper { padding: 6rem 2rem 2rem; }
-        .contact-sheet { grid-template-columns: 1fr; }
+        .studio-wrapper { 
+            padding: 6rem 1.2rem 7rem; /* Aumenta padding inferior para no solapar con la botonera flotante */
+        }
+        .studio-nav {
+            padding: 1.2rem 1.2rem;
+        }
+        .contact-sheet { 
+            column-count: 1 !important; /* Fuerza una sola columna vertical limpia en móviles */
+            column-gap: 0;
+        }
+        .photo-cell {
+            margin-bottom: 2.5rem; /* Separación clara entre fotos */
+        }
         h1 { font-size: 2.8rem; }
     }
 </style>

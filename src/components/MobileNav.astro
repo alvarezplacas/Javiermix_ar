@@ -11,17 +11,17 @@ const navItems = [
     </svg>`
   },
   {
-    label: 'Buscar',
-    href: '/galeria',
-    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </svg>`
-  },
-  {
     label: 'Rescate',
     href: '/rescate',
     icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+    </svg>`
+  },
+  {
+    label: 'Buscar',
+    href: '/galeria',
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </svg>`
   },
   {
@@ -45,11 +45,12 @@ const navItems = [
   {navItems.map(item => {
     const isActive = currentPath === item.href || 
       (item.href !== '/' && currentPath.startsWith(item.href));
+    const isSpecial = item.label === 'Buscar';
     return (
-      <a href={item.href} class={`mobile-nav-item ${isActive ? 'active' : ''}`} aria-label={item.label}>
+      <a href={item.href} class={`mobile-nav-item ${isActive ? 'active' : ''} ${isSpecial ? 'special-btn' : ''}`} aria-label={item.label}>
         <span class="nav-icon" set:html={item.icon} />
         <span class="nav-label">{item.label}</span>
-        {isActive && <span class="active-dot" />}
+        {isActive && !isSpecial && <span class="active-dot" />}
       </a>
     );
   })}
@@ -69,19 +70,19 @@ const navItems = [
       transform: translateX(-50%);
       z-index: 9999;
       width: calc(100% - 3rem);
-      max-width: 420px;
-      background: rgba(10, 10, 10, 0.88);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 24px;
+      max-width: 440px;
+      background: rgba(10, 10, 10, 0.93);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 28px;
       box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.6),
+        0 14px 45px rgba(0, 0, 0, 0.75),
         0 0 0 0.5px rgba(255, 255, 255, 0.04) inset;
-      padding: 0.6rem 0.5rem;
-      justify-content: space-around;
+      padding: 0.5rem 0.6rem;
+      justify-content: space-between;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.15rem;
       animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
@@ -101,8 +102,8 @@ const navItems = [
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.3rem;
-      padding: 0.6rem 1rem;
+      gap: 0.2rem;
+      padding: 0.5rem 0.4rem;
       border-radius: 16px;
       text-decoration: none;
       color: rgba(255, 255, 255, 0.4);
@@ -118,7 +119,30 @@ const navItems = [
 
     .mobile-nav-item.active {
       color: var(--color-accent);
-      background: rgba(220, 177, 74, 0.08);
+      background: rgba(220, 177, 74, 0.06);
+    }
+
+    .mobile-nav-item.special-btn {
+      background: var(--color-accent, #dcb14a);
+      color: #000 !important;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      flex: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: -24px;
+      box-shadow: 
+        0 10px 25px rgba(220, 177, 74, 0.45),
+        0 0 0 5px rgba(10, 10, 10, 0.93);
+      z-index: 10000;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .mobile-nav-item.special-btn:active {
+      transform: scale(0.9) translateY(-1px);
     }
 
     .nav-icon {
@@ -136,6 +160,12 @@ const navItems = [
       transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
+    .mobile-nav-item.special-btn .nav-icon {
+      color: #000 !important;
+      width: 23px;
+      height: 23px;
+    }
+
     .mobile-nav-item.active .nav-icon svg {
       transform: translateY(-1px);
     }
@@ -148,6 +178,14 @@ const navItems = [
       font-weight: 600;
       white-space: nowrap;
       transition: color 0.35s ease;
+    }
+
+    .mobile-nav-item.special-btn .nav-label {
+      color: #000 !important;
+      font-size: 0.52rem;
+      font-weight: 850;
+      letter-spacing: 1px;
+      margin-top: 1px;
     }
 
     .active-dot {
