@@ -27,7 +27,7 @@ const artworks = artworksRaw
 
         <div class="scrolling-scene" id="scene">
             {artworks.map((art, index) => (
-                <div class="art-frame" style={`--z: ${art.z}px; --x: ${art.x}px; --y: ${art.y}px; animation-delay: ${index * 0.2}s`}>
+                <div class="art-frame" data-z={art.z} data-x={art.x} data-y={art.y} style={`--z: ${art.z}px; --x: ${art.x}px; --y: ${art.y}px; animation-delay: ${index * 0.2}s`}>
                     <img src={art.img} alt={art.title} />
                     <div class="art-info">
                         <h3>{art.title}</h3>
@@ -91,7 +91,7 @@ const artworks = artworksRaw
         width: 600px;
         transform-style: preserve-3d;
         transform: translate3d(var(--x), var(--y), var(--z));
-        opacity: 0;
+        opacity: 1;
         transition: opacity 0.8s ease;
     }
 
@@ -286,15 +286,18 @@ const artworks = artworksRaw
 
             // Update Frames
             frames.forEach((frame: any, i) => {
-                const baseZ = parseInt(frame.style.getPropertyValue('--z'));
-                const baseY = parseInt(frame.style.getPropertyValue('--y'));
+                // Leer valores numéricos desde data-attributes (evita el bug de parseInt con CSS vars)
+                const baseZ = parseFloat(frame.dataset.z) || 0;
+                const baseX = parseFloat(frame.dataset.x) || 0;
+                const baseY = parseFloat(frame.dataset.y) || 0;
                 
                 const currentZ = baseZ + currentScroll * 1.2;
                 
                 // Efecto de flotación hacia el cielo (Y disminuye)
                 const floatY = baseY - (currentScroll * 0.1) + Math.sin(Date.now() * 0.001 + i) * 10;
                 
-                const opacity = currentZ > 600 ? 0 : (currentZ < -3000 ? 0 : 1);
+                // Visible cuando está en rango de profundidad útil
+                const opacity = currentZ > 800 ? 0 : (currentZ < -3000 ? 0 : 1);
                 
                 let xOffset = 0;
                 let rotateY = 0;
@@ -304,7 +307,7 @@ const artworks = artworksRaw
                     rotateY = factor * 30;
                 }
 
-                frame.style.transform = `translate3d(calc(var(--x) + ${xOffset}px), ${floatY}px, ${currentZ}px) rotateY(${-rotateY}deg)`;
+                frame.style.transform = `translate3d(calc(${baseX}px + ${xOffset}px), ${floatY}px, ${currentZ}px) rotateY(${-rotateY}deg)`;
                 frame.style.opacity = opacity.toString();
             });
 
