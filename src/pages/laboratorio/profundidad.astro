@@ -14,37 +14,51 @@ const artworks = artworksRaw
         id: file.id,
         title: file.title || `Obra ${index + 1}`,
         img: getOptimizedImageURL(file.id, { width: 1200, format: 'avif', quality: 90 }),
-        z: index * -800, // Espaciado inicial en Z
-        x: (Math.random() - 0.5) * 400, // Desvío aleatorio
-        y: (Math.random() - 0.5) * 200
+        x: Math.round((Math.random() - 0.5) * 300),
+        y: Math.round((Math.random() - 0.5) * 150),
+        index,
     }));
+
+const SPACING = 900; // px entre cuadros en el eje Z
 ---
 
 <Layout title="Infinity Gallery 3D | Laboratorio JMX">
     <main class="infinity-container">
+
         <!-- 🌌 Fondo de Partículas -->
         <canvas id="dust-canvas"></canvas>
 
-        <div class="scrolling-scene" id="scene">
-            {artworks.map((art, index) => (
-                <div class="art-frame" data-z={art.z} data-x={art.x} data-y={art.y} style={`--z: ${art.z}px; --x: ${art.x}px; --y: ${art.y}px; animation-delay: ${index * 0.2}s`}>
-                    <img src={art.img} alt={art.title} />
-                    <div class="art-info">
-                        <h3>{art.title}</h3>
-                        <span>0{index + 1}</span>
+        <!--
+            ✅ ARQUITECTURA 3D CORRECTA:
+            .scene-wrapper → tiene perspective (fixed, así cubre el viewport)
+            .tunnel        → se mueve en Z (simula que la cámara avanza)
+            .art-frame     → posiciones fijas en Z, centradas en X/Y
+        -->
+        <div class="scene-wrapper">
+            <div class="tunnel" id="tunnel">
+                {artworks.map((art) => (
+                    <div
+                        class="art-frame"
+                        data-index={art.index}
+                        style={`transform: translate3d(${art.x}px, ${art.y}px, ${-(art.index + 1) * SPACING}px);`}
+                    >
+                        <img src={art.img} alt={art.title} loading="lazy" />
+                        <div class="art-info">
+                            <h3>{art.title}</h3>
+                            <span>0{art.index + 1}</span>
+                        </div>
                     </div>
-                </div>
-            ))}
-            
-            <div class="horizon-light"></div>
+                ))}
+            </div>
         </div>
 
+        <!-- Indicador de scroll -->
         <div class="scroll-indicator" id="scroll-hint">
             <div class="mouse"></div>
-            <span>SCROLL PARA NAVEGAR</span>
+            <span>SCROLL PARA AVANZAR</span>
         </div>
 
-        <!-- 🕹️ Controles de Navegación -->
+        <!-- 🕹️ Controles -->
         <div class="lab-controls">
             <button id="play-btn" class="lab-btn">
                 <span class="icon">▶</span> PLAY TOUR
@@ -60,146 +74,183 @@ const artworks = artworksRaw
 </Layout>
 
 <style>
+    /* ─── Contenedor scrolleable (da espacio al scroll) ─── */
     .infinity-container {
-        height: 500vh; /* Espacio para scroll */
+        height: 700vh;
         background: #000;
-        overflow-x: hidden;
         color: #fff;
-        perspective: 1000px;
     }
 
+    /* ─── Canvas partículas ─── */
     #dust-canvas {
         position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
+        inset: 0;
+        width: 100%; height: 100%;
         pointer-events: none;
         z-index: 1;
-        opacity: 0.3;
+        opacity: 0.35;
     }
 
-    .scrolling-scene {
+    /* ─── Wrapper con PERSPECTIVE (fixed = cubre viewport) ─── */
+    .scene-wrapper {
         position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transform-style: preserve-3d;
+        inset: 0;
+        perspective: 850px;
+        perspective-origin: 50% 45%;
+        overflow: hidden;
         z-index: 2;
     }
 
+    /* ─── Túnel 3D: JS le aplica translateZ para simular avance ─── */
+    .tunnel {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+        /* JS: translateZ(progress) */
+    }
+
+    /* ─── Cada cuadro, centrado en viewport ─── */
     .art-frame {
         position: absolute;
-        width: 600px;
+        width: 520px;
+        /* Centrar en el viewport */
+        left: 50%;
+        top: 50%;
+        margin-left: -260px;
+        margin-top: -220px;
         transform-style: preserve-3d;
-        transform: translate3d(var(--x), var(--y), var(--z));
-        opacity: 1;
-        transition: opacity 0.8s ease;
+        /* transform inicial viene del style inline en el HTML */
+        will-change: opacity, transform;
     }
 
     .art-frame img {
         width: 100%;
         height: auto;
-        box-shadow: 0 50px 100px rgba(0,0,0,0.9);
-        border: 1px solid rgba(255,255,255,0.05);
+        display: block;
+        box-shadow: 0 40px 120px rgba(0,0,0,0.95), 0 0 60px rgba(220,177,74,0.08);
+        border: 1px solid rgba(255,255,255,0.06);
     }
 
     .art-info {
-        margin-top: 1rem;
+        margin-top: 0.9rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
         font-family: 'Cormorant Garamond', serif;
     }
 
-    .art-info h3 { font-weight: 300; letter-spacing: 2px; text-transform: uppercase; font-size: 1.2rem; }
-    .art-info span { color: var(--color-accent, #dcb14a); font-weight: 800; font-size: 0.8rem; }
-
-    .horizon-light {
-        position: absolute;
-        bottom: -20vh;
-        width: 100%;
-        height: 40vh;
-        background: radial-gradient(ellipse at bottom, rgba(220, 177, 74, 0.15) 0%, transparent 70%);
-        pointer-events: none;
+    .art-info h3 {
+        font-weight: 300;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.85);
     }
 
+    .art-info span {
+        color: #dcb14a;
+        font-weight: 800;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+
+    /* ─── Scroll indicator ─── */
     .scroll-indicator {
         position: fixed;
-        bottom: 3rem;
+        bottom: 6rem;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1rem;
+        gap: 0.8rem;
         z-index: 10;
         opacity: 0.6;
+        transition: opacity 0.5s;
+        font-size: 0.6rem;
+        letter-spacing: 3px;
+        font-weight: 700;
     }
 
-    .mouse { width: 20px; height: 35px; border: 2px solid #fff; border-radius: 15px; position: relative; }
-    .mouse::after { content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: scrollMouse 2s infinite; }
+    .mouse {
+        width: 20px; height: 34px;
+        border: 2px solid rgba(255,255,255,0.7);
+        border-radius: 15px;
+        position: relative;
+    }
+    .mouse::after {
+        content: '';
+        position: absolute;
+        top: 7px; left: 50%;
+        transform: translateX(-50%);
+        width: 3px; height: 3px;
+        background: #fff;
+        border-radius: 50%;
+        animation: scrollMouse 1.8s infinite;
+    }
+    @keyframes scrollMouse {
+        0%   { opacity: 1; top: 7px; }
+        100% { opacity: 0; top: 22px; }
+    }
 
-    @keyframes scrollMouse { 0% { opacity: 1; top: 8px; } 100% { opacity: 0; top: 22px; } }
-
+    /* ─── Back btn ─── */
     .back-btn {
         position: fixed;
-        top: 2rem; left: 2rem;
+        top: 1.8rem; left: 1.8rem;
         z-index: 100;
-        color: #fff;
+        color: rgba(255,255,255,0.5);
         text-decoration: none;
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         letter-spacing: 3px;
         font-weight: 900;
-        opacity: 0.5;
         transition: 0.3s;
     }
-    .back-btn:hover { opacity: 1; color: var(--color-accent, #dcb14a); }
+    .back-btn:hover { color: #dcb14a; opacity: 1; }
 
-    /* 🕹️ Controls UI */
+    /* ─── Controls bar ─── */
     .lab-controls {
         position: fixed;
-        bottom: 2rem;
+        bottom: 1.5rem;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
         align-items: center;
         gap: 2rem;
-        background: rgba(0,0,0,0.8);
-        padding: 0.8rem 2rem;
-        border: 1px solid rgba(220, 177, 74, 0.2);
+        background: rgba(0,0,0,0.75);
+        padding: 0.75rem 2rem;
+        border: 1px solid rgba(220,177,74,0.2);
         border-radius: 50px;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px);
         z-index: 100;
     }
 
     .lab-btn {
         background: transparent;
         border: none;
-        color: #fff;
-        font-size: 0.65rem;
+        color: rgba(255,255,255,0.6);
+        font-size: 0.62rem;
         font-weight: 800;
         letter-spacing: 2px;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 0.8rem;
+        gap: 0.6rem;
         transition: 0.3s;
-        opacity: 0.6;
     }
-
-    .lab-btn:hover, .lab-btn.active { opacity: 1; color: var(--color-accent, #dcb14a); }
+    .lab-btn:hover, .lab-btn.active { color: #dcb14a; opacity: 1 !important; }
 
     .depth-meter {
         font-family: monospace;
-        font-size: 0.6rem;
-        color: rgba(255,255,255,0.4);
+        font-size: 0.58rem;
+        color: rgba(255,255,255,0.35);
         border-left: 1px solid rgba(255,255,255,0.1);
-        padding-left: 2rem;
+        padding-left: 1.5rem;
         letter-spacing: 1px;
     }
 
     @media (max-width: 768px) {
-        .art-frame { width: 85vw; }
-        .lab-controls { width: 90vw; justify-content: center; gap: 1rem; }
+        .art-frame { width: 85vw; margin-left: -42.5vw; }
+        .lab-controls { width: 90vw; gap: 1rem; }
         .depth-meter { display: none; }
     }
 </style>
@@ -208,28 +259,33 @@ const artworks = artworksRaw
     import { soundManager } from '../../utils/SoundManager';
 
     document.addEventListener('astro:page-load', () => {
-        const scene = document.getElementById('scene');
-        const frames = document.querySelectorAll('.art-frame');
-        const canvas = document.getElementById('dust-canvas') as HTMLCanvasElement;
-        const playBtn = document.getElementById('play-btn');
-        const soundBtn = document.getElementById('sound-btn');
-        const depthVal = document.getElementById('depth-val');
-        const scrollHint = document.getElementById('scroll-hint');
-        
-        if (!scene || !canvas) return;
+        const tunnel    = document.getElementById('tunnel') as HTMLElement;
+        const frames    = document.querySelectorAll<HTMLElement>('.art-frame');
+        const canvas    = document.getElementById('dust-canvas') as HTMLCanvasElement;
+        const playBtn   = document.getElementById('play-btn') as HTMLButtonElement;
+        const soundBtn  = document.getElementById('sound-btn') as HTMLButtonElement;
+        const depthVal  = document.getElementById('depth-val') as HTMLElement;
+        const scrollHint = document.getElementById('scroll-hint') as HTMLElement;
 
-        // 🔊 Audio
-        soundManager.init();
-        let soundEnabled = false;
-        let isPlaying = false;
+        if (!tunnel || !canvas) return;
+
+        const SPACING      = 900;   // debe coincidir con el valor en el frontmatter
+        const SCROLL_SPEED = 1.0;   // px de avance por px de scroll
+        const AUTO_SPEED   = 1.8;   // px por frame en auto-tour
+
+        let soundEnabled  = false;
+        let isPlaying     = false;
         let virtualScroll = 0;
-        let lastScroll = 0;
+        let lastScrollY   = 0;
 
-        soundBtn?.addEventListener('click', () => {
+        // ── Audio ──────────────────────────────────────────
+        soundManager.init();
+
+        soundBtn.addEventListener('click', () => {
             soundEnabled = !soundEnabled;
             if (soundEnabled) {
                 soundManager.enable();
-                soundManager.playMusic('https://admin.javiermix.ar/assets/22503906-6608-4d38-ae0d-fe7999d25216'); // Ambient Cosmic
+                soundManager.playMusic('https://admin.javiermix.ar/assets/22503906-6608-4d38-ae0d-fe7999d25216');
                 soundBtn.innerHTML = '<span class="icon">🔊</span> AUDIO ON';
                 soundBtn.classList.add('active');
             } else {
@@ -239,92 +295,103 @@ const artworks = artworksRaw
             }
         });
 
-        playBtn?.addEventListener('click', () => {
+        playBtn.addEventListener('click', () => {
             isPlaying = !isPlaying;
-            playBtn.innerHTML = isPlaying ? '<span class="icon">⏸</span> PAUSE' : '<span class="icon">▶</span> PLAY TOUR';
+            playBtn.innerHTML = isPlaying
+                ? '<span class="icon">⏸</span> PAUSE'
+                : '<span class="icon">▶</span> PLAY TOUR';
             playBtn.classList.toggle('active', isPlaying);
-            if (isPlaying) scrollHint?.style.setProperty('opacity', '0');
+            if (isPlaying) scrollHint.style.opacity = '0';
         });
 
-        // 🎨 Partículas
-        const ctx = canvas.getContext('2d');
-        let particles: any[] = [];
-        const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+        window.addEventListener('scroll', () => {
+            if (Math.abs(window.scrollY - lastScrollY) > 8) {
+                if (isPlaying) {
+                    isPlaying = false;
+                    playBtn.innerHTML = '<span class="icon">▶</span> PLAY TOUR';
+                    playBtn.classList.remove('active');
+                }
+                // Ocultar hint después del primer scroll
+                scrollHint.style.opacity = '0';
+                lastScrollY = window.scrollY;
+            }
+        });
+
+        // ── Partículas ─────────────────────────────────────
+        const ctx = canvas.getContext('2d')!;
+        const particles: { x: number; y: number; size: number; speed: number }[] = [];
+
+        const resize = () => {
+            canvas.width  = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
         window.addEventListener('resize', resize);
         resize();
 
-        for(let i = 0; i < 150; i++) {
+        for (let i = 0; i < 180; i++) {
             particles.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 1.5,
-                speed: Math.random() * 0.5 + 0.2
+                x:     Math.random() * canvas.width,
+                y:     Math.random() * canvas.height,
+                size:  Math.random() * 1.4 + 0.3,
+                speed: Math.random() * 0.6 + 0.15,
             });
         }
 
+        // ── Loop principal ─────────────────────────────────
         function animate() {
-            if (!ctx) return;
-            
-            // Auto-Tour Logic
-            if (isPlaying) {
-                virtualScroll += 1.5;
-            }
+            // Avance en auto-tour
+            if (isPlaying) virtualScroll += AUTO_SPEED;
 
-            const currentScroll = window.scrollY + virtualScroll;
-            if (depthVal) depthVal.innerText = Math.floor(currentScroll / 10).toString();
+            // Progreso total de la "cámara"
+            const progress = (window.scrollY + virtualScroll) * SCROLL_SPEED;
 
-            // Render Partículas
+            // Actualizar profundidad en UI
+            depthVal.innerText = Math.floor(progress / 10).toString();
+
+            // ── Mover el TÚNEL entero hacia la cámara ──
+            //    Esto es lo que da el efecto de caminar hacia los cuadros
+            tunnel.style.transform = `translateZ(${progress}px)`;
+
+            // ── Gestionar opacidad de cada frame ──────────
+            frames.forEach((frame) => {
+                const idx     = parseInt(frame.dataset.index ?? '0');
+                // Z original del frame en el mundo (negativo = adelante de la cámara)
+                const frameWorldZ = -(idx + 1) * SPACING;
+                // Z relativo a la cámara actual
+                const relZ = frameWorldZ + progress;
+
+                // relZ ≈ 0  → el cuadro está justo frente a vos → opacidad 1
+                // relZ < -SPACING*2 → muy lejos → opacidad 0
+                // relZ > 300 → ya pasó la cámara → opacidad 0
+                let opacity: number;
+                if (relZ > 350) {
+                    opacity = 0; // ya pasó
+                } else if (relZ > 0) {
+                    opacity = 1 - relZ / 350; // fade al pasar
+                } else if (relZ > -SPACING * 2) {
+                    opacity = 1; // visible
+                } else {
+                    // fade cuando está muy lejos
+                    opacity = Math.max(0, 1 + (relZ + SPACING * 2) / SPACING);
+                }
+
+                frame.style.opacity = opacity.toFixed(3);
+            });
+
+            // ── Partículas (estrellitas) ───────────────────
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#fff';
-            particles.forEach(p => {
-                p.y -= (p.speed + (isPlaying ? 0.5 : 0));
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            const extra = isPlaying ? 0.8 : 0;
+            for (const p of particles) {
+                p.y -= p.speed + extra;
                 if (p.y < 0) p.y = canvas.height;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fill();
-            });
-
-            // Update Frames
-            frames.forEach((frame: any, i) => {
-                // Leer valores numéricos desde data-attributes (evita el bug de parseInt con CSS vars)
-                const baseZ = parseFloat(frame.dataset.z) || 0;
-                const baseX = parseFloat(frame.dataset.x) || 0;
-                const baseY = parseFloat(frame.dataset.y) || 0;
-                
-                const currentZ = baseZ + currentScroll * 1.2;
-                
-                // Efecto de flotación hacia el cielo (Y disminuye)
-                const floatY = baseY - (currentScroll * 0.1) + Math.sin(Date.now() * 0.001 + i) * 10;
-                
-                // Visible cuando está en rango de profundidad útil
-                const opacity = currentZ > 800 ? 0 : (currentZ < -3000 ? 0 : 1);
-                
-                let xOffset = 0;
-                let rotateY = 0;
-                if (currentZ > -300) {
-                    const factor = (currentZ + 300) / 900;
-                    xOffset = factor * 1200;
-                    rotateY = factor * 30;
-                }
-
-                frame.style.transform = `translate3d(calc(${baseX}px + ${xOffset}px), ${floatY}px, ${currentZ}px) rotateY(${-rotateY}deg)`;
-                frame.style.opacity = opacity.toString();
-            });
+            }
 
             requestAnimationFrame(animate);
         }
-
-        // Detectar Scroll Manual para apagar Auto-Play
-        window.addEventListener('scroll', () => {
-            if (Math.abs(window.scrollY - lastScroll) > 10) {
-                if (isPlaying) {
-                    isPlaying = false;
-                    playBtn!.innerHTML = '<span class="icon">▶</span> PLAY TOUR';
-                    playBtn!.classList.remove('active');
-                }
-                lastScroll = window.scrollY;
-            }
-        });
 
         animate();
     });
