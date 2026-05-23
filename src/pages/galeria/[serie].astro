@@ -2,7 +2,7 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getSerieDetails, getApprovedExhibitionModes } from '@conexion/directus';
+import { getSerieDetails, getApprovedExhibitionModes, getSerieSettings } from '@conexion/directus';
 import { getArtworkLikes } from '@conexion/likes';
 import { getOptimizedImageURL } from '@utils/media';
 
@@ -10,6 +10,7 @@ export const prerender = false;
 
 const { serie } = Astro.params; // Folder ID
 const { name, items } = await getSerieDetails(serie as string);
+const serieSettings = await getSerieSettings(serie as string);
 
 // Lógica: JMX_xxxx.ext es principal, JMX_xxxx_2.ext es variante hover
 const mainImages = items.filter((f: any) => {
@@ -77,6 +78,22 @@ const approvedModes = await getApprovedExhibitionModes();
 
 	<article class="serie-content-container">
 		<section class="masonry-grid" id="series-masonry">
+            {serieSettings && serieSettings.narrative && (
+                <div class="gallery-artwork-card narrative-artwork-card">
+                    <div class="artwork-figure narrative-figure">
+                        {serieSettings.cover_artwork ? (
+                            <img src={getOptimizedImageURL(serieSettings.cover_artwork)} alt="Contexto de la serie" class="artwork-img main-img narrative-bg" loading="lazy" />
+                        ) : (
+                            <div class="narrative-bg-fallback"></div>
+                        )}
+                        <div class="narrative-content-overlay">
+                            <h2 class="narrative-title">CONTEXTO</h2>
+                            <div class="narrative-text" set:html={serieSettings.narrative}></div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 			{artworks.map((artwork) => (
 				<div class="gallery-artwork-card" data-id={artwork.id}>
 					<a href={`/obra/${artwork.id}`} class="artwork-link">
@@ -405,6 +422,93 @@ const approvedModes = await getApprovedExhibitionModes();
 	box-shadow: 0 15px 40px rgba(0,0,0,0.4);
 }
 
+/* ─── NARRATIVE ARTWORK BLOCK ─── */
+.narrative-artwork-card {
+    grid-column: span 1; /* Ocupa una columna normal como las demás obras */
+    aspect-ratio: 4/5; /* Formato retrato para encajar bien */
+    display: flex;
+}
+
+.narrative-figure {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    position: relative;
+}
+
+.narrative-bg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: grayscale(1) brightness(0.3);
+    transition: all 1s var(--ease-premium);
+}
+
+.narrative-bg-fallback {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #111, #000);
+}
+
+.narrative-artwork-card:hover .narrative-bg {
+    filter: grayscale(0) brightness(0.2);
+    transform: scale(1.05);
+}
+
+.narrative-content-overlay {
+    position: relative;
+    z-index: 10;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #fff;
+}
+
+.narrative-title {
+    font-family: var(--font-secondary);
+    font-size: 0.75rem;
+    letter-spacing: 5px;
+    color: var(--color-accent);
+    margin-bottom: 2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.narrative-title::after {
+    content: '';
+    display: block;
+    width: 30px;
+    height: 1px;
+    background: var(--color-accent);
+    margin-top: 1rem;
+    opacity: 0.5;
+}
+
+.narrative-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    font-weight: 300;
+    color: rgba(255,255,255,0.85);
+    overflow-y: auto;
+    max-height: 100%;
+    padding-right: 1rem;
+}
+
+.narrative-text p {
+    margin-bottom: 1rem;
+}
+
+/* Scrollbar para el texto narrativo si es muy largo */
+.narrative-text::-webkit-scrollbar { width: 3px; }
+.narrative-text::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+.narrative-text::-webkit-scrollbar-thumb { background: var(--color-accent); border-radius: 10px; }
+
 @media (max-width: 1200px) {
 	.masonry-grid { column-count: 2; column-gap: 2rem; }
 }
@@ -414,6 +518,7 @@ const approvedModes = await getApprovedExhibitionModes();
 	.serie-title { font-size: 3.5rem; }
 	.immersive-header { height: 60vh; }
 	.serie-content-container { margin-top: -5vh; }
+    .narrative-artwork-card { aspect-ratio: auto; min-height: 400px; }
 }
 </style>
 

@@ -256,6 +256,28 @@ export async function getSerieDetails(folderId: string) {
     }
 }
 
+export async function getSerieSettings(folderId: string) {
+    try {
+        const client = await DirectusManager.getClient();
+        
+        // Determinar si folderId parece un UUID o un nombre
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(folderId);
+        
+        const filter = isUUID 
+            ? { folder_id: { _eq: folderId } } 
+            : { folder_id: { name: { _eq: folderId } } };
+
+        const items = await client.request(readItems('series_settings', {
+            filter: filter as any,
+            limit: 1
+        }));
+        return items[0] || null;
+    } catch (e) {
+        console.error('[getSerieSettings] Error:', e);
+        return null;
+    }
+}
+
 export async function createOrder(data: any) { try { const client = await DirectusManager.getClient(); return await client.request(createItem('orders', data)); } catch (e) { return null; } }
 export async function updateOrder(id: string, data: any) { try { const client = await DirectusManager.getClient(); return await client.request(updateItem('orders', id, data)); } catch (e) { return null; } }
 export async function getOrder(id: string) { try { const client = await DirectusManager.getClient(); return await client.request(readItem('orders', id)); } catch (e) { return null; } }
@@ -427,7 +449,7 @@ export async function getApprovedExhibitionModes() {
             { 
                 id: 'royal-gallery', 
                 name: 'Royal Gallery', 
-                path: '/laboratorio/galeria-real', 
+                path: '/royal-gallery', 
                 label: '- Royal Gallery -',
                 isApproved: true 
             }
