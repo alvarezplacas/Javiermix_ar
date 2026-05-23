@@ -452,29 +452,88 @@ const artworks = artworksRaw
         return newArr;
     };
 
-    // 🔄 MOTOR DE RE-ORDENAMIENTO AUTOMÁTICO (FÓRMULA DINÁMICA)
-    let autoReorderTimer: any = null;
+    // 🔄 MOTOR DE TRANSICIÓN INDIVIDUAL ALEATORIA (Efecto desvanecimiento cada 2 segundos)
+    let autoRandomTimer: any = null;
 
-    const startAutoReorder = () => {
-        if (autoReorderTimer) clearInterval(autoReorderTimer);
-        autoReorderTimer = setInterval(() => {
-            const term = searchInput.value.toLowerCase().trim();
-            if (term === '') {
-                if (searchMode === 'WORKS') {
-                    // Mezclar aleatoriamente las obras y tomar las primeras 15
-                    const shuffledWorks = shuffleArray(artworks).slice(0, 15);
-                    renderGrid(shuffledWorks, 'WORK');
-                } else {
-                    // Mezclar aleatoriamente las series
-                    const shuffledSeries = shuffleArray(series);
-                    renderGrid(shuffledSeries, 'SERIE');
+    const startAutoRandomTransition = () => {
+        if (autoRandomTimer) clearInterval(autoRandomTimer);
+        
+        // Solo iniciar si estamos en modo WORKS y la búsqueda está vacía
+        const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        if (searchMode !== 'WORKS' || term !== '') return;
+
+        autoRandomTimer = setInterval(() => {
+            if (!grid) return;
+            const items = grid.querySelectorAll('.grid-item');
+            if (items.length === 0) return;
+
+            // Encontrar qué IDs de obras están visibles actualmente
+            const visibleIds = new Set(
+                Array.from(items).map(el => {
+                    const href = el.getAttribute('href') || '';
+                    return href.split('/').pop() || '';
+                })
+            );
+
+            // Filtrar obras del pool total que NO estén visibles
+            const candidates = artworks.filter((art: any) => !visibleIds.has(art.id));
+            if (candidates.length === 0) return;
+
+            // Elegir una obra aleatoria no visible y un slot visible aleatorio
+            const newArt = candidates[Math.floor(Math.random() * candidates.length)];
+            const randomIndex = Math.floor(Math.random() * items.length);
+            const targetItem = items[randomIndex] as HTMLElement;
+
+            // Efecto desvanecimiento (Fade Out)
+            targetItem.style.transition = 'opacity 0.6s ease';
+            targetItem.style.opacity = '0';
+
+            setTimeout(() => {
+                // Actualizar los atributos y textos del slot
+                targetItem.setAttribute('href', `/obra/${newArt.id}`);
+                
+                // Imagen principal
+                const imgMain = targetItem.querySelector('.img-main') as HTMLImageElement;
+                if (imgMain) {
+                    imgMain.src = newArt.thumb;
+                    imgMain.alt = newArt.title;
                 }
-            }
-        }, 3000); // Cambiar orden cada 3 segundos
+                
+                // Imagen de ambiente (mockup)
+                let imgMockup = targetItem.querySelector('.img-mockup') as HTMLImageElement;
+                if (newArt.mockup) {
+                    if (!imgMockup) {
+                        imgMockup = document.createElement('img');
+                        imgMockup.className = 'img-mockup';
+                        imgMockup.loading = 'lazy';
+                        imgMockup.onerror = () => imgMockup.remove();
+                        targetItem.insertBefore(imgMockup, targetItem.querySelector('.item-overlay'));
+                    }
+                    imgMockup.src = newArt.mockup;
+                    imgMockup.alt = `${newArt.title} ambiente`;
+                } else {
+                    if (imgMockup) imgMockup.remove();
+                }
+
+                // Título y Serie
+                const titleEl = targetItem.querySelector('.art-title');
+                if (titleEl) titleEl.textContent = newArt.title;
+
+                const serieEl = targetItem.querySelector('.art-serie');
+                if (serieEl) serieEl.textContent = newArt.serie;
+
+                // Reactivar desvanecimiento (Fade In)
+                targetItem.style.opacity = '1';
+            }, 600);
+
+        }, 2000); // Una foto cada 2 segundos
     };
 
-    const stopAutoReorder = () => {
-        if (autoReorderTimer) clearInterval(autoReorderTimer);
+    const stopAutoRandomTransition = () => {
+        if (autoRandomTimer) {
+            clearInterval(autoRandomTimer);
+            autoRandomTimer = null;
+        }
     };
 
     // 🔘 TOGGLE MODO
@@ -484,16 +543,21 @@ const artworks = artworksRaw
         if (modeLabel) modeLabel.textContent = searchMode === 'SERIES' ? 'SERIES' : 'OBRAS';
         
         const term = searchInput.value.toLowerCase().trim();
-        if (term === '') {
-            startAutoReorder();
-            // Ejecutar mezcla inmediata para el nuevo modo
-            if (searchMode === 'WORKS') {
-                renderGrid(shuffleArray(artworks).slice(0, 15), 'WORK');
-            } else {
+        if (searchMode === 'SERIES') {
+            stopAutoRandomTransition();
+            if (term === '') {
                 renderGrid(shuffleArray(series), 'SERIE');
+            } else {
+                triggerSearch();
             }
         } else {
-            triggerSearch();
+            // Regresamos a modo WORKS
+            if (term === '') {
+                renderGrid(shuffleArray(artworks).slice(0, 15), 'WORK');
+                startAutoRandomTransition();
+            } else {
+                triggerSearch();
+            }
         }
     });
 
@@ -502,7 +566,6 @@ const artworks = artworksRaw
         
         if (term === '' && searchMode === 'WORKS') {
             resultsInfo!.style.display = 'none';
-            // Al limpiar, mostramos una mezcla fresca y reactivamos el timer
             renderGrid(shuffleArray(artworks).slice(0, 15), 'WORK');
             return;
         }
@@ -556,14 +619,16 @@ const artworks = artworksRaw
     searchInput?.addEventListener('input', () => {
         const term = searchInput.value.toLowerCase().trim();
         if (term !== '') {
-            stopAutoReorder();
+            stopAutoRandomTransition();
         } else {
-            startAutoReorder();
+            if (searchMode === 'WORKS') {
+                startAutoRandomTransition();
+            }
         }
         triggerSearch();
     });
 
     // Iniciar auto-reproducción al cargar
-    startAutoReorder();
+    startAutoRandomTransition();
   });
 </script>
