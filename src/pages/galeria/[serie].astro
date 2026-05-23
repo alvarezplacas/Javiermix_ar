@@ -106,8 +106,7 @@ const approvedModes = await getApprovedExhibitionModes();
 
                     <!-- 📝 Columna 2: Texto Explicativo Curatorial -->
                     <div class="editorial-text-column">
-                        <span class="editorial-meta-label">PRESENTACIÓN DE LA SERIE</span>
-                        <h2 class="editorial-title">{name}</h2>
+                        <span class="editorial-meta-label">Presentación:</span>
                         <div class="editorial-body" set:html={narrativeClean}></div>
                         
                         <div class="editorial-signature">
@@ -545,22 +544,13 @@ const approvedModes = await getApprovedExhibitionModes();
 
 .editorial-meta-label {
     font-family: var(--font-secondary);
-    font-size: 0.65rem;
-    letter-spacing: 5px;
-    color: var(--color-accent);
-    font-weight: 800;
-    margin-bottom: 1rem;
+    font-size: 0.8rem; /* Slightly larger, elegant label size */
+    letter-spacing: 5px; /* Premium letter spacing */
+    color: var(--color-accent); /* Gold! */
+    font-weight: 700;
+    margin-bottom: 2rem;
     text-transform: uppercase;
-}
-
-.editorial-title {
-    font-family: var(--font-primary);
-    font-size: clamp(2rem, 4vw, 3rem);
-    font-weight: 300;
-    color: #fff;
-    line-height: 1.1;
-    margin-bottom: 2.5rem;
-    letter-spacing: -1px;
+    display: inline-block;
 }
 
 .editorial-body {
@@ -571,12 +561,12 @@ const approvedModes = await getApprovedExhibitionModes();
 .editorial-body :global(p) {
     font-family: 'Montserrat', sans-serif !important;
     font-size: 1.05rem; /* Tamaño de lectura de catálogo */
-    line-height: 1.85;
+    line-height: 1.9;
     font-weight: 300;
     color: rgba(255, 255, 255, 0.75); /* Contraste elegante y descansado */
     text-align: left;
     margin-bottom: 1.5rem;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.025em; /* Optical spacing for Montserrat fine art descriptions */
 }
 
 .editorial-body :global(p:last-child) {
