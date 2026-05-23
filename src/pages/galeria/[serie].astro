@@ -80,10 +80,9 @@ const approvedModes = await getApprovedExhibitionModes();
         
         {serieSettings && serieSettings.narrative && (
             <div class="serie-editorial-preamble">
-                {serieSettings.cover_artwork && (
+                {(serieSettings.cover_artwork || artworks[0]?.id) && (
                     <div class="editorial-cover">
-                        <img src={getOptimizedImageURL(serieSettings.cover_artwork)} alt="Contexto de la serie" loading="lazy" />
-                        <div class="editorial-cover-fade"></div>
+                        <img src={getOptimizedImageURL(serieSettings.cover_artwork || artworks[0]?.id)} alt="Contexto de la serie" loading="lazy" />
                     </div>
                 )}
                 <div class="editorial-text-container">
@@ -471,8 +470,8 @@ const approvedModes = await getApprovedExhibitionModes();
     text-transform: uppercase;
 }
 
-.editorial-body {
-    font-family: var(--font-primary), sans-serif;
+.editorial-body, .editorial-body p {
+    font-family: 'Montserrat', sans-serif !important;
     font-size: 1.5rem;
     line-height: 1.9;
     font-weight: 300;
