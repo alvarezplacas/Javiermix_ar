@@ -126,39 +126,46 @@ const approvedModes = await getApprovedExhibitionModes();
             
             <!-- 🎭 Experiencia Inmersiva Fullscreen (cross-fade con transparencias) -->
             <div class="immersive-overlay" id="immersive-slideshow-overlay">
+                <!-- Top Bar with F11 hint and Close Button -->
+                <div class="immersive-top-bar">
+                    <span class="desktop-f11-hint">Presione F11 para una mejor experiencia.</span>
+                    <button class="immersive-close-btn" id="immersive-close" title="Cerrar Experiencia">
+                        <span class="icon">&times;</span>
+                    </button>
+                </div>
+
                 <div class="immersive-slideshow-container">
                     {artworks.map((artwork, idx) => (
-                        <div class={`immersive-slide ${idx === 0 ? 'active' : ''}`} data-index={idx}>
+                        <div class={`immersive-slide ${idx === 0 ? 'active' : ''}`} data-index={idx} data-title={artwork.title} data-serie={name}>
                             <div class="immersive-artwork-wrapper">
                                 <img src={artwork.mainUrl} alt={artwork.title} class="immersive-artwork-image" loading="lazy" />
-                                <div class="immersive-artwork-label">
-                                    <h3>{artwork.title}</h3>
-                                    <p>Serie: {name}</p>
-                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
 
-                <!-- Controles del Reproductor -->
-                <div class="immersive-controls">
-                    <button class="immersive-ctrl-btn prev-btn" id="immersive-prev" title="Anterior">
-                        <span class="icon">&larr;</span>
-                    </button>
-                    
-                    <button class="immersive-ctrl-btn play-pause-btn" id="immersive-play-pause" title="Auto-reproducción (Play/Pause)">
-                        <span class="icon" id="play-pause-icon">⏸</span>
-                    </button>
+                <!-- Sleek Bottom Immersive Bar -->
+                <div class="immersive-footer-bar">
+                    <!-- Left Side: Player Controls -->
+                    <div class="immersive-bar-controls">
+                        <button class="immersive-ctrl-btn prev-btn" id="immersive-prev" title="Anterior">
+                            <span class="icon">&larr;</span>
+                        </button>
+                        
+                        <button class="immersive-ctrl-btn play-pause-btn" id="immersive-play-pause" title="Auto-reproducción (Play/Pause)">
+                            <span class="icon" id="play-pause-icon">⏸</span>
+                        </button>
 
-                    <button class="immersive-ctrl-btn next-btn" id="immersive-next" title="Siguiente">
-                        <span class="icon">&rarr;</span>
-                    </button>
+                        <button class="immersive-ctrl-btn next-btn" id="immersive-next" title="Siguiente">
+                            <span class="icon">&rarr;</span>
+                        </button>
+                    </div>
+
+                    <!-- Right Side: Minimalist Single-Color Description -->
+                    <div class="immersive-bar-description">
+                        <span class="immersive-desc-text" id="immersive-active-desc"></span>
+                    </div>
                 </div>
-
-                <!-- Botón de Cerrar Overlay -->
-                <button class="immersive-close-btn" id="immersive-close" title="Cerrar Experiencia">
-                    <span class="icon">&times;</span>
-                </button>
             </div>
         )}
 
@@ -779,94 +786,48 @@ const approvedModes = await getApprovedExhibitionModes();
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    justify-content: center;
 }
 
 .immersive-artwork-image {
     max-width: 100%;
-    max-height: 70vh;
+    max-height: 75vh;
     object-fit: contain;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
-    border: 4px solid rgba(255, 255, 255, 0.03);
+    box-shadow: 0 35px 90px rgba(0, 0, 0, 0.95);
+    border: 4px solid rgba(255, 255, 255, 0.02);
 }
 
-.immersive-artwork-label {
-    text-align: center;
-    opacity: 0;
-    transform: translateY(15px);
-    transition: all 1s cubic-bezier(0.25, 1, 0.5, 1) 0.5s;
-}
-
-.immersive-slide.active .immersive-artwork-label {
-    opacity: 0.85;
-    transform: translateY(0);
-}
-
-.immersive-artwork-label h3 {
-    font-family: var(--font-secondary);
-    font-size: 0.8rem;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: #fff;
-    margin-bottom: 0.4rem;
-    font-weight: 700;
-}
-
-.immersive-artwork-label p {
-    font-family: var(--font-secondary);
-    font-size: 0.65rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--color-accent);
-}
-
-/* Controls */
-.immersive-controls {
+/* Top Bar: Muted F11 Hint + Close Button */
+.immersive-top-bar {
     position: absolute;
-    bottom: 4rem;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 3rem;
+    left: 4rem;
+    right: 4rem;
     z-index: 10;
     display: flex;
+    justify-content: flex-end;
     align-items: center;
-    gap: 2.5rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 0.6rem 2rem;
-    border-radius: 50px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    gap: 2rem;
+    pointer-events: none;
 }
 
-.immersive-ctrl-btn {
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.6);
-    cursor: pointer;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.4s var(--ease-premium);
-    padding: 0.5rem;
+.desktop-f11-hint {
+    font-family: var(--font-secondary);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.35); /* Elegant Muted Grey */
+    text-transform: uppercase;
+    display: none;
 }
 
-.immersive-ctrl-btn:hover {
-    color: var(--color-accent);
-    transform: scale(1.15);
-}
-
-.immersive-ctrl-btn.play-pause-btn {
-    font-size: 0.95rem;
-    color: var(--color-accent);
+@media (min-width: 1024px) {
+    .desktop-f11-hint {
+        display: inline-block;
+    }
 }
 
 .immersive-close-btn {
-    position: absolute;
-    top: 3rem;
-    right: 4rem;
-    z-index: 10;
+    pointer-events: auto;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     width: 50px;
@@ -890,6 +851,69 @@ const approvedModes = await getApprovedExhibitionModes();
     transform: scale(1.1) rotate(90deg);
 }
 
+/* Sleek Bottom Bar (Two-Sided Split) */
+.immersive-footer-bar {
+    position: absolute;
+    bottom: 3rem;
+    left: 4rem;
+    right: 4rem;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+}
+
+.immersive-bar-controls {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+}
+
+.immersive-ctrl-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s var(--ease-premium);
+    padding: 0.4rem;
+}
+
+.immersive-ctrl-btn:hover {
+    color: var(--color-accent);
+    transform: scale(1.15);
+}
+
+.immersive-ctrl-btn.play-pause-btn {
+    font-size: 0.85rem;
+    color: var(--color-accent);
+}
+
+.immersive-bar-description {
+    text-align: right;
+}
+
+.immersive-desc-text {
+    font-family: var(--font-secondary);
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.45); /* Muted single-color grey */
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
 @media (max-width: 992px) {
     .btn-glass-play {
         margin-top: 1.5rem;
@@ -898,17 +922,26 @@ const approvedModes = await getApprovedExhibitionModes();
 }
 
 @media (max-width: 768px) {
-    .immersive-close-btn {
+    .immersive-top-bar {
         top: 2rem;
+        left: 2rem;
         right: 2rem;
+    }
+    .immersive-close-btn {
         width: 44px;
         height: 44px;
         font-size: 1.2rem;
     }
-    .immersive-controls {
-        bottom: 3rem;
-        gap: 2rem;
-        padding: 0.5rem 1.5rem;
+    .immersive-footer-bar {
+        bottom: 2rem;
+        left: 2rem;
+        right: 2rem;
+        flex-direction: column;
+        gap: 1.2rem;
+        align-items: center;
+    }
+    .immersive-bar-description {
+        text-align: center;
     }
 }
 </style>
@@ -982,10 +1015,18 @@ const approvedModes = await getApprovedExhibitionModes();
             let isPlaying = true;
             let autoPlayTimer: any = null;
             
+            const descEl = document.getElementById('immersive-active-desc');
             const showSlide = (index: number) => {
                 slides.forEach(slide => slide.classList.remove('active'));
                 currentIndex = (index + slides.length) % slides.length;
-                slides[currentIndex].classList.add('active');
+                const activeSlide = slides[currentIndex];
+                activeSlide.classList.add('active');
+                
+                if (descEl) {
+                    const title = activeSlide.getAttribute('data-title') || '';
+                    const serie = activeSlide.getAttribute('data-serie') || '';
+                    descEl.textContent = `${title} · ${serie}`;
+                }
             };
             
             const startAutoPlay = () => {
