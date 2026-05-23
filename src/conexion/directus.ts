@@ -215,8 +215,8 @@ export async function getRescateFiles() {
 export async function getSeries() {
     try {
         const client = await DirectusManager.getClient();
-        // Primero encontrar la carpeta raíz "Catalogo"
-        const catalogoFolders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Coleccion'] } }, limit: 1 }));
+        // Primero encontrar la carpeta raíz "Catalogo" o "Catálogo" o "Coleccion" o "Colección"
+        const catalogoFolders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Catálogo', 'Coleccion', 'Colección'] } }, limit: 1 }));
         const catalogoId = catalogoFolders[0]?.id;
         if (!catalogoId) return [];
         // Obtener TODAS las subcarpetas de Catalogo
@@ -408,7 +408,7 @@ export async function getCatalogoFiles() {
         const client = await DirectusManager.getClient(); 
         // 🚀 Buscamos en todas las posibles carpetas raíz de arte
         const rootFolders = await client.request(readFolders({ 
-            filter: { name: { _in: ['Catalogo', 'Coleccion', 'Obras', 'Royal Gallery', 'Exposicion'] } } 
+            filter: { name: { _in: ['Catalogo', 'Catálogo', 'Coleccion', 'Colección', 'Obras', 'Royal Gallery', 'Exposicion', 'Exposición'] } } 
         })); 
         
         if (rootFolders.length === 0) return []; 
