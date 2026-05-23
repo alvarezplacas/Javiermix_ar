@@ -240,7 +240,6 @@ const artworks = artworksRaw
     column-gap: 2rem;
 }
 
-/* 🗂️ SERIES CARD RESULT (HORIZONTAL) */
 .series-card-result {
     display: flex;
     flex-direction: column; /* Cambiado a columna para que entre bien en 2 col grid */
@@ -254,6 +253,8 @@ const artworks = artworksRaw
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     break-inside: avoid;
     width: 100%;
+    opacity: 0;
+    animation: fadeInScale 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 
 .series-card-result:hover {
@@ -441,12 +442,59 @@ const artworks = artworksRaw
     grid?.addEventListener('mousemove', (e: any) => handleTilt(e));
     grid?.addEventListener('mouseout', (e: any) => resetTilt(e));
 
+    // 🔘 ALGORITMO DE MEZCLA (SHUFFLE)
+    const shuffleArray = (array: any[]) => {
+        const newArr = [...array];
+        for (let i = newArr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+        }
+        return newArr;
+    };
+
+    // 🔄 MOTOR DE RE-ORDENAMIENTO AUTOMÁTICO (FÓRMULA DINÁMICA)
+    let autoReorderTimer: any = null;
+
+    const startAutoReorder = () => {
+        if (autoReorderTimer) clearInterval(autoReorderTimer);
+        autoReorderTimer = setInterval(() => {
+            const term = searchInput.value.toLowerCase().trim();
+            if (term === '') {
+                if (searchMode === 'WORKS') {
+                    // Mezclar aleatoriamente las obras y tomar las primeras 15
+                    const shuffledWorks = shuffleArray(artworks).slice(0, 15);
+                    renderGrid(shuffledWorks, 'WORK');
+                } else {
+                    // Mezclar aleatoriamente las series
+                    const shuffledSeries = shuffleArray(series);
+                    renderGrid(shuffledSeries, 'SERIE');
+                }
+            }
+        }, 3000); // Cambiar orden cada 3 segundos
+    };
+
+    const stopAutoReorder = () => {
+        if (autoReorderTimer) clearInterval(autoReorderTimer);
+    };
+
     // 🔘 TOGGLE MODO
     btnToggle?.addEventListener('click', () => {
         searchMode = (searchMode === 'WORKS') ? 'SERIES' : 'WORKS';
         btnToggle.classList.toggle('active');
         if (modeLabel) modeLabel.textContent = searchMode === 'SERIES' ? 'SERIES' : 'OBRAS';
-        triggerSearch();
+        
+        const term = searchInput.value.toLowerCase().trim();
+        if (term === '') {
+            startAutoReorder();
+            // Ejecutar mezcla inmediata para el nuevo modo
+            if (searchMode === 'WORKS') {
+                renderGrid(shuffleArray(artworks).slice(0, 15), 'WORK');
+            } else {
+                renderGrid(shuffleArray(series), 'SERIE');
+            }
+        } else {
+            triggerSearch();
+        }
     });
 
     const triggerSearch = () => {
@@ -454,8 +502,8 @@ const artworks = artworksRaw
         
         if (term === '' && searchMode === 'WORKS') {
             resultsInfo!.style.display = 'none';
-            // Mostrar los iniciales (re-renderizar artworks[0..15])
-            renderGrid(artworks.slice(0, 15), 'WORK');
+            // Al limpiar, mostramos una mezcla fresca y reactivamos el timer
+            renderGrid(shuffleArray(artworks).slice(0, 15), 'WORK');
             return;
         }
 
@@ -472,9 +520,9 @@ const artworks = artworksRaw
         if (!grid) return;
         if (type === 'SERIE') {
             grid.classList.add('list-mode');
-            grid.innerHTML = items.map((item: any) => {
+            grid.innerHTML = items.map((item: any, index: number) => {
                 return `
-                    <a href="/galeria/${item.id}" class="series-card-result">
+                    <a href="/galeria/${item.id}" class="series-card-result" style="animation-delay: ${index * 0.08}s">
                         <div class="series-info-side">
                             <h3 class="s-name">${item.name}</h3>
                             <span class="s-count">${item.count} OBRAS DISPONIBLES</span>
@@ -488,10 +536,10 @@ const artworks = artworksRaw
             }).join('');
         } else {
             grid.classList.remove('list-mode');
-            grid.innerHTML = items.map((item: any) => {
+            grid.innerHTML = items.map((item: any, index: number) => {
                 const url = `/obra/${item.id}`;
                 return `
-                    <a href="${url}" class="grid-item">
+                    <a href="${url}" class="grid-item" style="animation-delay: ${index * 0.05}s">
                         <img src="${item.thumb}" alt="${item.title}" class="img-main" onerror="this.src='/logo/javiermix-logo.png'; this.style.opacity='0.2';" loading="lazy" />
                         ${item.mockup ? `<img src="${item.mockup}" alt="${item.title} ambiente" class="img-mockup" onerror="this.remove()" loading="lazy" />` : ''}
                         <div class="item-overlay">
@@ -502,9 +550,20 @@ const artworks = artworksRaw
                 `;
             }).join('');
         }
-        applyTilt();
     };
 
-    searchInput?.addEventListener('input', triggerSearch);
+    // Control de timer mediante escritura
+    searchInput?.addEventListener('input', () => {
+        const term = searchInput.value.toLowerCase().trim();
+        if (term !== '') {
+            stopAutoReorder();
+        } else {
+            startAutoReorder();
+        }
+        triggerSearch();
+    });
+
+    // Iniciar auto-reproducción al cargar
+    startAutoReorder();
   });
 </script>
