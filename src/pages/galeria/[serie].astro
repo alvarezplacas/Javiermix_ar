@@ -1033,7 +1033,7 @@ const approvedModes = await getApprovedExhibitionModes();
                 if (autoPlayTimer) clearInterval(autoPlayTimer);
                 autoPlayTimer = setInterval(() => {
                     showSlide(currentIndex + 1);
-                }, 4000); // Auto transition every 4 seconds
+                }, 7000); // Auto transition every 7 seconds
                 isPlaying = true;
                 if (playPauseIcon) playPauseIcon.textContent = '⏸';
             };
