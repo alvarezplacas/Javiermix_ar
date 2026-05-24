@@ -70,7 +70,7 @@ const artworks = artworksRaw
             <div id="gallery-grid" class="masonry-grid">
                 {artworks.slice(0, 15).map((art, index) => (
                     <a href={`/obra/${art.id}`} 
-                       class="grid-item" 
+                       class={`grid-item ${art.mockup ? 'has-mockup' : ''}`} 
                        data-tilt 
                        style={`animation-delay: ${index * 0.05}s`}>
                         <img src={art.thumb} 
@@ -314,8 +314,9 @@ const artworks = artworksRaw
     z-index: 2;
 }
 
-.grid-item:hover .img-main { opacity: 0; transform: scale(1.05); }
-.grid-item:hover .img-mockup { opacity: 1; transform: scale(1); }
+.grid-item.has-mockup:hover .img-main { opacity: 0; transform: scale(1.05); }
+.grid-item.has-mockup:hover .img-mockup { opacity: 1; transform: scale(1); }
+.grid-item:not(.has-mockup):hover .img-main { transform: scale(1.03); }
 
 .item-overlay {
     padding: 1.5rem;
@@ -536,8 +537,10 @@ const artworks = artworksRaw
                         }
                         currentMockup.src = newArt.mockup;
                         currentMockup.alt = `${newArt.title} ambiente`;
+                        targetItem.classList.add('has-mockup');
                     } else {
                         if (currentMockup) currentMockup.remove();
+                        targetItem.classList.remove('has-mockup');
                     }
 
                     if (titleEl) titleEl.textContent = newArt.title;
@@ -662,7 +665,7 @@ const artworks = artworksRaw
             grid.innerHTML = items.map((item: any, index: number) => {
                 const url = `/obra/${item.id}`;
                 return `
-                    <a href="${url}" class="grid-item" style="animation-delay: ${index * 0.05}s">
+                    <a href="${url}" class="grid-item ${item.mockup ? 'has-mockup' : ''}" style="animation-delay: ${index * 0.05}s">
                         <img src="${item.thumb}" alt="${item.title}" class="img-main" onerror="this.src='/logo/javiermix-logo.png'; this.style.opacity='0.2';" loading="lazy" />
                         ${item.mockup ? `<img src="${item.mockup}" alt="${item.title} ambiente" class="img-mockup" onerror="this.remove()" loading="lazy" />` : ''}
                         <div class="item-overlay">
