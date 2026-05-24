@@ -1,17 +1,17 @@
 # ==========================================================================
-# JMX DEPLOY MASTER v3.2 - ESTANDAR DE ORO JAVIERMIX
+# JMX DEPLOY MASTER v3.3 - ESTANDAR DE ORO JAVIERMIX
 # ==========================================================================
 Clear-Host
 
 # Logotipo Moderno y Seguro en Consola
 Write-Host " ==========================================================================" -ForegroundColor Yellow
-Write-Host "        JJJJJ  M   M  X   X      D   D  EEEEE  PPPP   L      OOO  Y   Y" -ForegroundColor Gold
-Write-Host "          J    MM MM   X X       D   D  E      P   P  L     O   O  Y Y " -ForegroundColor Gold
-Write-Host "          J    M M M    X        D   D  EEEE   PPPP   L     O   O   Y  " -ForegroundColor Gold
-Write-Host "      J   J    M   M   X X       D   D  E      P      L     O   O   Y  " -ForegroundColor Gold
-Write-Host "       JJJ     M   M  X   X      DDDD   EEEEE  P      LLLLL  OOO    Y  " -ForegroundColor Gold
+Write-Host "        JJJJJ  M   M  X   X      D   D  EEEEE  PPPP   L      OOO  Y   Y" -ForegroundColor Yellow
+Write-Host "          J    MM MM   X X       D   D  E      P   P  L     O   O  Y Y " -ForegroundColor Yellow
+Write-Host "          J    M M M    X        D   D  EEEE   PPPP   L     O   O   Y  " -ForegroundColor Yellow
+Write-Host "      J   J    M   M   X X       D   D  E      P      L     O   O   Y  " -ForegroundColor Yellow
+Write-Host "       JJJ     M   M  X   X      DDDD   EEEEE  P      LLLLL  OOO    Y  " -ForegroundColor Yellow
 Write-Host " ==========================================================================" -ForegroundColor Yellow
-Write-Host "                    SISTEMA DE DESPLIEGUE ULTRA-AUTOMATICO                  " -ForegroundColor Gold
+Write-Host "                    SISTEMA DE DESPLIEGUE ULTRA-AUTOMATICO                  " -ForegroundColor Yellow
 Write-Host " ==========================================================================" -ForegroundColor Yellow
 Write-Host ""
 
@@ -108,7 +108,7 @@ Write-Host ""
 Write-Host "Paso 4: Ordenando compilacion y reinicio en el VPS..." -ForegroundColor Cyan
 $remoteCommand = "cd /opt/javiermix/web_0504/ ; git fetch origin ; git reset --hard origin/master ; docker compose up -d --build web_javiermix"
 
-Write-Host "Construyendo imagen de Astro en contenedor Docker..." -ForegroundColor Gold
+Write-Host "Construyendo imagen de Astro en contenedor Docker..." -ForegroundColor Yellow
 ssh -o StrictHostKeyChecking=no root@$targetIP $remoteCommand
 
 # 5. Finalizacion
@@ -116,6 +116,6 @@ Write-Host ""
 Write-Host " ==========================================================================" -ForegroundColor Yellow
 Write-Host "   DESPLIEGUE FINALIZADO CON EXITO!" -ForegroundColor Green
 Write-Host "   Sitio web actualizado sobre: $targetIP" -ForegroundColor Cyan
-Write-Host "   Estandar de Oro JMX aplicado." -ForegroundColor Gold
+Write-Host "   Estandar de Oro JMX aplicado." -ForegroundColor Yellow
 Write-Host " ==========================================================================" -ForegroundColor Yellow
 Write-Host ""
