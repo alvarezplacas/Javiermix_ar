@@ -13,6 +13,7 @@ function decodeHtml(html: string): string {
   if (!html) return '';
   return html
     .replace(/&eacute;/g, 'é')
+    .replace(/&ecute;/g, 'é') // Parche para entidad mal escrita en CMS
     .replace(/&aacute;/g, 'á')
     .replace(/&iacute;/g, 'í')
     .replace(/&oacute;/g, 'ó')
