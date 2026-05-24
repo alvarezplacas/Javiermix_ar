@@ -140,10 +140,18 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
                 </button>
             </div>
 
+            <button class="control-btn btn-framing-glass" id="btn-framing-glass-trigger" title="Configurar Enmarcado Premium" aria-label="Configurar Enmarcado">
+                <i class="fas fa-crop-alt"></i>
+            </button>
+
             <button class="control-btn btn-like-glass" id="btn-like-premium" data-id={id}>
                 <svg class="heart-icon-glass" viewBox="0 0 24 24">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
+            </button>
+
+            <button class="control-btn btn-fullscreen-glass" id="btn-fullscreen-toggle" title="Pantalla Completa" aria-label="Pantalla Completa">
+                <i class="fas fa-expand"></i>
             </button>
           </div>
         </div>
@@ -327,6 +335,21 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
   </article>
 
   <FramingStudio imageSrc={coverImage} title={title} />
+
+  <!-- Fullscreen Theater Overlay -->
+  <div id="fullscreen-theater-overlay" class="theater-overlay">
+    <button id="btn-close-theater" class="theater-close-btn" aria-label="Salir de pantalla completa">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="theater-canvas">
+      <img src={coverImage} alt={title} class="theater-image" id="theater-image" />
+      <div class="theater-secure-mask" id="theater-secure-mask"></div>
+      <div class="theater-lupa-lens" id="theater-lupa-lens"></div>
+    </div>
+    <div id="screenshot-warning" class="theater-warning">
+      <i class="fas fa-shield-alt"></i> Captura deshabilitada por derechos de autor - Javier Mix Fine Art
+    </div>
+  </div>
 </Layout>
 
 <script>
@@ -356,14 +379,18 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
 
     // --- FRAMING & 3D STUDIO TRIGGERS (UNIFICADO) ---
     const btnFraming = document.getElementById('btn-framing-config');
+    const btnFramingGlass = document.getElementById('btn-framing-glass-trigger');
     const studio = document.getElementById('framing-studio');
 
-    if (btnFraming && studio) {
-      btnFraming.addEventListener('click', () => {
+    const openFramingStudio = () => {
+      if (studio) {
         studio.style.display = 'block';
         document.body.style.overflow = 'hidden';
-      });
-    }
+      }
+    };
+
+    if (btnFraming) btnFraming.addEventListener('click', openFramingStudio);
+    if (btnFramingGlass) btnFramingGlass.addEventListener('click', openFramingStudio);
 
     // --- ZOOM & PAN LOGIC (PREMIUM V1) ---
     const wrapper = document.getElementById('artwork-wrapper');
@@ -489,6 +516,175 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
 
     // Default init
     if (artworkWrapper) artworkWrapper.classList.add('is-atmos-gallery');
+
+    // --- FULLSCREEN THEATER, LUPA & PROTECTIONS ENGINE ---
+    const btnFullscreen = document.getElementById('btn-fullscreen-toggle');
+    const theaterOverlay = document.getElementById('fullscreen-theater-overlay');
+    const btnCloseTheater = document.getElementById('btn-close-theater');
+    const theaterImg = document.getElementById('theater-image') as HTMLImageElement;
+    const secureMask = document.getElementById('theater-secure-mask');
+    const lupaLens = document.getElementById('theater-lupa-lens');
+    const screenshotWarning = document.getElementById('screenshot-warning');
+    
+    let inTheaterMode = false;
+
+    // 1. Activar Pantalla Completa
+    const enterTheaterMode = () => {
+      if (!theaterOverlay) return;
+      
+      theaterOverlay.style.display = 'flex';
+      inTheaterMode = true;
+
+      // Intentar forzar pantalla completa nativa (F11)
+      const reqFs = theaterOverlay.requestFullscreen || 
+                    (theaterOverlay as any).webkitRequestFullscreen || 
+                    (theaterOverlay as any).mozRequestFullScreen || 
+                    (theaterOverlay as any).msRequestFullscreen;
+      
+      if (reqFs) {
+        reqFs.call(theaterOverlay).catch(() => {});
+      }
+      
+      document.body.style.overflow = 'hidden';
+    };
+
+    // 2. Salir de Pantalla Completa
+    const exitTheaterMode = () => {
+      if (!theaterOverlay) return;
+      
+      theaterOverlay.style.display = 'none';
+      inTheaterMode = false;
+      
+      if (lupaLens) lupaLens.style.display = 'none';
+
+      // Salir de pantalla completa nativa
+      const exitFs = document.exitFullscreen || 
+                     (document as any).webkitExitFullscreen || 
+                     (document as any).mozCancelFullScreen || 
+                     (document as any).msExitFullscreen;
+      
+      if (exitFs && (document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement)) {
+        exitFs.call(document).catch(() => {});
+      }
+      
+      document.body.style.overflow = '';
+    };
+
+    if (btnFullscreen) btnFullscreen.addEventListener('click', enterTheaterMode);
+    if (btnCloseTheater) btnCloseTheater.addEventListener('click', exitTheaterMode);
+
+    // Escuchar el evento de salida nativo de pantalla completa (ej. si presionan ESC)
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        exitTheaterMode();
+      }
+    });
+    document.addEventListener('webkitfullscreenchange', () => {
+      if (!(document as any).webkitFullscreenElement) {
+        exitTheaterMode();
+      }
+    });
+
+    // 3. Efecto Lupa Dinámica Premium (Magia de Aumento 2.5x)
+    const handleLupaMove = (e: MouseEvent) => {
+      if (!inTheaterMode || !secureMask || !lupaLens || !theaterImg) return;
+
+      const rect = theaterImg.getBoundingClientRect();
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+
+      // Coordenadas relativas a la caja de la imagen real
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      // Verificar si el cursor está fuera de los límites reales de la imagen
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+        lupaLens.style.display = 'none';
+        return;
+      }
+
+      // Mostrar lupa
+      lupaLens.style.display = 'block';
+      
+      // Centrar el círculo de la lupa en el puntero del mouse
+      const lensRadius = 110; // Ancho 220px / 2
+      lupaLens.style.left = `${clientX - lensRadius}px`;
+      lupaLens.style.top = `${clientY - lensRadius}px`;
+
+      // Calcular porcentajes exactos de posición
+      const px = (x / rect.width) * 100;
+      const py = (y / rect.height) * 100;
+
+      // Inyectar fondo aumentado (2.5x) en el lente circular
+      const coverUrl = theaterImg.src;
+      lupaLens.style.backgroundImage = `url('${coverUrl}')`;
+      lupaLens.style.backgroundSize = `${rect.width * 2.5}px ${rect.height * 2.5}px`;
+      lupaLens.style.backgroundPosition = `${px}% ${py}%`;
+    };
+
+    const handleLupaLeave = () => {
+      if (lupaLens) lupaLens.style.display = 'none';
+    };
+
+    if (secureMask) {
+      secureMask.addEventListener('mousemove', handleLupaMove);
+      secureMask.addEventListener('mouseleave', handleLupaLeave);
+    }
+
+    // 4. Blindaje y Protección de Copyright
+    // A. Anular Clic Derecho en toda la pantalla completa
+    if (theaterOverlay) {
+      theaterOverlay.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    }
+
+    // B. Alertas y Limpieza de Portapapeles Reactiva al presionar PrintScreen u atajos
+    const triggerProtectionWarning = () => {
+      if (!screenshotWarning) return;
+      
+      // Borrar el portapapeles de inmediato para destruir cualquier screenshot copiado
+      navigator.clipboard.writeText('').catch(() => {});
+      
+      screenshotWarning.classList.add('active');
+      setTimeout(() => {
+        screenshotWarning.classList.remove('active');
+      }, 3500);
+    };
+
+    // Interceptar atajos de teclado y PrintScreen
+    document.addEventListener('keydown', (e) => {
+      if (!inTheaterMode) return;
+
+      const key = e.key;
+      const ctrl = e.ctrlKey || e.metaKey;
+      const shift = e.shiftKey;
+
+      // 1. PrintScreen Key
+      if (key === 'PrintScreen' || key === 'Snapshot') {
+        e.preventDefault();
+        triggerProtectionWarning();
+      }
+
+      // 2. Guardar (Ctrl+S), Imprimir (Ctrl+P), Copiar (Ctrl+C), Inspeccionar (F12)
+      if (ctrl && (key === 's' || key === 'S' || key === 'p' || key === 'P' || key === 'c' || key === 'C' || key === 'u' || key === 'U')) {
+        e.preventDefault();
+        triggerProtectionWarning();
+      }
+      
+      if (key === 'F12' || (ctrl && shift && (key === 'I' || key === 'i' || key === 'J' || key === 'j' || key === 'C' || key === 'c'))) {
+        e.preventDefault();
+        triggerProtectionWarning();
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (!inTheaterMode) return;
+      if (e.key === 'PrintScreen' || e.key === 'Snapshot') {
+        triggerProtectionWarning();
+      }
+    });
   });
 </script>
 
@@ -613,7 +809,7 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
     color: var(--color-accent);
 }
 
-.btn-like-glass {
+.btn-like-glass, .btn-fullscreen-glass, .btn-framing-glass {
     width: 45px;
     height: 45px;
     display: flex;
@@ -624,6 +820,15 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 50%;
     transition: all 0.4s var(--ease-premium);
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+}
+
+.btn-fullscreen-glass:hover, .btn-framing-glass:hover {
+    background: rgba(220, 177, 74, 0.15);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    transform: translateY(-2px);
 }
 
 .heart-icon-glass {
@@ -943,7 +1148,7 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
     font-size: 0.6rem;
   }
 
-  .btn-like-glass {
+  .btn-like-glass, .btn-fullscreen-glass, .btn-framing-glass {
     width: 56px;
     height: 56px;
     background: rgba(220, 177, 74, 0.2);
@@ -954,6 +1159,7 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
     justify-content: center;
     margin: 0;
     backdrop-filter: blur(5px);
+    color: var(--color-white);
   }
   .heart-icon-glass { 
       width: 30px; 
@@ -974,4 +1180,152 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .fade-in-content { animation: fadeIn 0.8s forwards; }
+
+/* ==========================================================================
+   🏛️ THEATER FULLSCREEN MODE & SECURE LUPA STYLES (GOLDEN MASTER)
+   ========================================================================== */
+.theater-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: #050505;
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.theater-close-btn {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(28, 26, 23, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100000;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 1.2rem;
+  backdrop-filter: blur(10px);
+}
+
+.theater-close-btn:hover {
+  background: #c5a059;
+  border-color: #c5a059;
+  color: #050505;
+  transform: scale(1.08) rotate(90deg);
+  box-shadow: 0 10px 25px rgba(197, 160, 89, 0.3);
+}
+
+.theater-canvas {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theater-image {
+  max-width: 100%;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  box-shadow: 0 50px 100px rgba(0,0,0,0.9);
+  pointer-events: none;
+  -webkit-user-drag: none;
+  transition: transform 0.4s ease;
+}
+
+.theater-secure-mask {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  z-index: 99999;
+  cursor: crosshair;
+}
+
+/* 🔍 EL LENTE DE LA LUPA FISICA JMX */
+.theater-lupa-lens {
+  position: fixed; /* Posicionamiento fijo con coordenadas del cursor */
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 2px solid rgba(220, 177, 74, 0.75);
+  box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.4);
+  pointer-events: none;
+  display: none;
+  z-index: 100001;
+  background-repeat: no-repeat;
+  background-color: #050505;
+  transform: translate3d(0, 0, 0);
+  will-change: left, top, background-position;
+}
+
+/* 🛡️ AVISO DE DERECHOS DE AUTOR FLOTANTE */
+.theater-warning {
+  position: absolute;
+  bottom: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(28, 26, 23, 0.95);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  padding: 1rem 2rem;
+  font-family: var(--font-secondary), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  z-index: 100005;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+  border-radius: 4px;
+  transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.theater-warning i {
+  font-size: 1rem;
+}
+
+.theater-warning.active {
+  bottom: 5vh;
+  opacity: 1;
+}
+
+@media (max-width: 1024px) {
+  .theater-canvas {
+    max-width: 95vw;
+    max-height: 80vh;
+  }
+  .theater-close-btn {
+    top: 1rem;
+    right: 1rem;
+    width: 44px;
+    height: 44px;
+  }
+  /* Desactivar lupa física en móvil por rendimiento y usabilidad táctil */
+  .theater-lupa-lens {
+    display: none !important;
+  }
+  .theater-secure-mask {
+    cursor: default;
+  }
+}
 </style>
