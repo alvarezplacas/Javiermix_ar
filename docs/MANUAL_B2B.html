@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Expansión B2B - Javier Mix Art</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #F7F4EF;
+            --color-text: #2D2D2A;
+            --color-accent: #c5a059;
+            --color-muted: #5c5c5c;
+            --font-primary: 'Cormorant Garamond', serif;
+            --font-secondary: 'Montserrat', sans-serif;
+        }
+
+        @media print {
+            body {
+                background-color: #fff !important;
+                color: #000 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-secondary);
+            font-size: 16px;
+            line-height: 1.8;
+            padding: 4rem 10%;
+            max-width: 900px;
+            margin: 0 auto;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .print-btn-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 3rem;
+        }
+
+        .btn-print {
+            background-color: var(--color-accent);
+            color: #000;
+            border: none;
+            padding: 0.8rem 2rem;
+            font-family: var(--font-secondary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-print:hover {
+            background-color: var(--color-text);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            font-family: var(--font-primary);
+            font-size: 3.5rem;
+            font-weight: 300;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+            border-bottom: 2px solid var(--color-accent);
+            padding-bottom: 1.5rem;
+        }
+
+        h2 {
+            font-family: var(--font-primary);
+            font-size: 2.2rem;
+            font-weight: 400;
+            font-style: italic;
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
+            color: #1a1a1a;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            font-family: var(--font-secondary);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: var(--color-text);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+            text-align: justify;
+        }
+
+        ul {
+            margin-bottom: 2rem;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.8rem;
+            font-weight: 300;
+        }
+
+        strong {
+            font-weight: 600;
+            color: #000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: rgba(197, 160, 89, 0.1);
+            border-bottom: 2px solid var(--color-accent);
+            padding: 1rem;
+            font-weight: 700;
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            font-weight: 300;
+        }
+
+        tr:hover {
+            background-color: rgba(0,0,0,0.02);
+        }
+
+        .highlight-box {
+            background-color: rgba(197, 160, 89, 0.05);
+            border-left: 4px solid var(--color-accent);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-btn-container no-print">
+        <button class="btn-print" onclick="window.print()">Guardar como PDF</button>
+    </div>
+
+    <header>
+        <h1>Manual de Expansión B2B y Logística</h1>
+        <p style="font-size: 1.2rem; font-style: italic; margin-top: 1rem; color: var(--color-muted);">Javier Mix Art — Edición Especial 2026</p>
+    </header>
+
+    <div class="highlight-box">
+        Este manual consolida la estrategia comercial, la investigación de mercado en Buenos Aires, el plan de acción semanal, los precios y la logística física de enmarcado e impresión para posicionar tus obras Fine Art de edición limitada en los espacios más exclusivos.
+    </div>
+
+    <section>
+        <h2>🏛️ 1. Investigación de Mercado B2B: Clientes Potenciales</h2>
+        <p>Hemos mapeado prospectos reales en Buenos Aires que valoran la estética, el diseño de autor y el lujo minimalista.</p>
+
+        <h3>A. Estudios de Interiorismo y Decoradores (Ventas de Volumen)</h3>
+        <ul>
+            <li><strong>REN Studio (Palermo/Web):</strong> Especialistas en minimalismo puro, altísima estética y funcionalidad. Diseños sumamente limpios. ideal para tu serie <em>Líneas de Paso</em> u obras geométricas de gran contraste. (IG: <code>@renstudio.ar</code> | Web: renstudio.ar).</li>
+            <li><strong>Estudio Viviana Melamed (Palermo Chico):</strong> Referente consolidado del interiorismo de súper lujo en Argentina. Ideal para formatos gigantescos enmarcados con vidrio de museo. (IG: <code>@vivianamelamed</code>).</li>
+            <li><strong>Estudio Noûs (Palermo Hollywood):</strong> Especialistas en diseño integral de espacios residenciales y comerciales de alto nivel. (IG: <code>@estudio.nous</code> | Web: estudionous.com).</li>
+            <li><strong>Estudio Equilibrio (Zona Norte/Oeste):</strong> Milagros Moreno y Valeria Bucciarelli. Diseño de autor y mobiliario a medida de alta gama. (IG: <code>@equilibriomobiliario</code> | Web: estudioequilibrio.com).</li>
+        </ul>
+
+        <h3>B. Hoteles Boutique de Diseño (Prestigio y Exposición)</h3>
+        <ul>
+            <li><strong>Mio Buenos Aires (Recoleta):</strong> Lujo de autor vanguardista, madera maciza, acero y piedra. Obras recomendadas: Gran formato Fine Art en blanco y negro para suites VIP y el Spa. (IG: <code>@miobuenosaires</code>).</li>
+            <li><strong>Palo Santo Hotel (Palermo Hollywood):</strong> Primer hotel verde y sostenible, jardines verticales y luz natural pura. Obras recomendadas: Texturas orgánicas y botánicas. (IG: <code>@palosantohotel</code>).</li>
+            <li><strong>Algodon Mansion (Recoleta):</strong> Casona histórica sofisticada de estilo francés. Ideal para enmarcados de conservación clásicos. (IG: <code>@algodonhotels</code>).</li>
+            <li><strong>BE Jardin Escondido by Coppola (Palermo Soho):</strong> Exclusiva casona con jardines frondosos y mística cinematográfica de Francis Ford Coppola. (IG: <code>@jardinescondido_bycoppola</code>).</li>
+        </ul>
+
+        <h3>C. Gastronomía de Autor y Bares de Diseño</h3>
+        <ul>
+            <li><strong>Casa Cavia (Palermo Chico):</strong> Casona de 1920 restaurada con un gusto exquisito. Sereno, literario y sofisticado. (IG: <code>@casacavia</code>).</li>
+            <li><strong>Mamba (Palermo Hollywood):</strong> Diseño arquitectónico onírico abstracto galardonado internacionalmente. (IG: <code>@mambabar</code>).</li>
+        </ul>
+    </section>
+
+    <div class="page-break"></div>
+
+    <section>
+        <h2>🗓️ 2. Plan de Acción Semanal (Organización sin Presupuesto)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Día</th>
+                    <th>Actividad Comercial / Contenido</th>
+                    <th>Tiempo</th>
+                    <th>Objetivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Lunes</strong></td>
+                    <td>Grabar clips de proceso (Lightroom, revelar, cortar paspartú, firmar obras).</td>
+                    <td>1 Hora</td>
+                    <td>Material estético para redes.</td>
+                </tr>
+                <tr>
+                    <td><strong>Martes</strong></td>
+                    <td>Publicar Reel cinemático o ASMR en Instagram.</td>
+                    <td>30 Mins</td>
+                    <td>Alcance orgánico de marca.</td>
+                </tr>
+                <tr>
+                    <td><strong>Miércoles</strong></td>
+                    <td>Crear 3 Pines en Pinterest enlazando mockups al catálogo web.</td>
+                    <td>30 Mins</td>
+                    <td>Tráfico pasivo a largo plazo.</td>
+                </tr>
+                <tr>
+                    <td><strong>Jueves</strong></td>
+                    <td>Enviar mensajes de alianza a 5 interioristas/arquitectos.</td>
+                    <td>1 Hora</td>
+                    <td>Apertura de relaciones B2B.</td>
+                </tr>
+                <tr>
+                    <td><strong>Viernes</strong></td>
+                    <td>Redactar y enviar 1 historia corta al Círculo de Coleccionistas.</td>
+                    <td>1 Hora</td>
+                    <td>Fidelizar e incentivar ventas.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>💵 3. Precios y Estrategia de Cobro (Mercado Pago y Web)</h2>
+        <p>Actualmente en el sitio falta terminar de configurar la exhibición de precios públicos y automatizar el flujo de cierre con Mercado Pago.</p>
+        <h3>A. Estructura de Precios (B2C vs. B2B)</h3>
+        <ul>
+            <li><strong>Precio B2C (Público General):</strong> Debe reflejar el valor absoluto de una edición limitada. <em>Costo de Impresión + Costo de Enmarcado + 300% de margen de autor</em>.</li>
+            <li><strong>Precio B2B (Profesionales):</strong> Ofrecer un <strong>descuento comercial del 20% al 30%</strong> por volumen constante.</li>
+        </ul>
+        <h3>B. Integración de Mercado Pago</h3>
+        <p>El sitio web está programado con Astro y Directus. Cuando el cliente compra, Mercado Pago envía un webhook al backend y la orden en Directus cambia de 'pending' a 'paid' automáticamente. Recuerda configurar tu token productivo en el archivo <code>.env</code>. Para ventas cerradas por chat, puedes enviar un link de cobro rápido generado desde la app de Mercado Pago.</p>
+    </section>
+
+    <div class="page-break"></div>
+
+    <section>
+        <h2>🎨 4. Guía de Producción Física: Impresión y Enmarcado</h2>
+        <h3>A. Laboratorios Fine Art Certificados en Buenos Aires</h3>
+        <p>Para vender a hoteles y diseñadores, debes usar <strong>impresión Giclée (Fine Art)</strong> en papeles 100% de algodón libre de ácido de marcas como <em>Hahnemühle</em> o <em>Canson</em>. Los laboratorios recomendados son:</p>
+        <ul>
+            <li><strong>Carlos Fadigati:</strong> Referente de la fotografía de autor para museos y galerías.</li>
+            <li><strong>Kinefot (Microcentro - Belgrano 634):</strong> Laboratorio profesional con área giclée dedicada.</li>
+            <li><strong>Megaphoto (Palermo - Honduras 4150):</strong> Laboratorio oficialmente certificado por Hahnemühle.</li>
+        </ul>
+
+        <h3>B. Enmarcado: ¿Tercerizar o DIY?</h3>
+        <p>Para tus pruebas de escala e iluminación puedes armar marcos tú mismo, pero para la venta a clientes B2B se recomienda <strong>tercerizar con enmarcadores profesionales de conservación</strong>.</p>
+        <ul>
+            <li><strong>Carmiña Enmarcados (Castelar):</strong> Especialistas en enmarcado de conservación y montajes libres de ácido. (Tel: 011 5668-9400).</li>
+            <li><strong>Cuadros B.A. (Ramos Mejía):</strong> Enorme catálogo de molduras y enmarcado a medida. (Tel: 011 4658-0005).</li>
+            <li><strong>Molduras IMDO (El Palomar):</strong> Venta de molduras de primera calidad por mayor si decides enmarcar tú mismo para hacer maquetas. (moldurasimdo.com.ar).</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>📦 5. Logística y Envíos (Resumen)</h2>
+        <p>Para recordar la operativa clave de tu archivo de ventas local:</p>
+        <ul>
+            <li><strong>Manipulación:</strong> Usar siempre <strong>guantes de algodón blanco</strong> para proteger el papel de algodón Fine Art y envolver en papel de seda libre de ácido (pH neutro, de librería Teorema).</li>
+            <li><strong>Tubos Rígidos:</strong> Para fotos sin enmarcar, usar tubos rígidos de cartón (Cartouch Argentina, Haedo). Incluir siempre el Certificado de Autenticidad físico con su QR.</li>
+            <li><strong>DHL Envíos:</strong> Exportaciones bajo el código aduanero <strong>HS 9705.00.00 (Arte Original)</strong> con Declaración Jurada de Artista Vivo para quedar eximido de impuestos de exportación de arte en la aduana.</li>
+        </ul>
+    </section>
+</body>
+</html>

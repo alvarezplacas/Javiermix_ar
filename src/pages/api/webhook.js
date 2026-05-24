@@ -1,4 +1,4 @@
-import { updateOrder, DirectusManager } from '@conexion/directus';
+import { getOrder, updateOrder, createCollector, createCertificate, DirectusManager } from '@conexion/directus';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 const client = new MercadoPagoConfig({
@@ -30,11 +30,20 @@ export const POST = async ({ request }) => {
                 const order = await getOrder(orderId);
 
                 if (order) {
-                    // 2. Crear o Actualizar Coleccionista
+                    // 🌟 Extraer datos reales del comprador desde Mercado Pago
+                    const payerEmail = paymentData.payer?.email || order.customer_email;
+                    const payerFirstName = paymentData.payer?.first_name || '';
+                    const payerLastName = paymentData.payer?.last_name || '';
+                    const payerName = `${payerFirstName} ${payerLastName}`.trim() || order.customer_name || "Cliente Javier Mix";
+                    const payerPhone = paymentData.payer?.phone?.number || order.customer_phone || "";
+
+                    console.log(`👤 Datos de Comprador Recuperados: ${payerName} <${payerEmail}>`);
+
+                    // 2. Crear o Actualizar Coleccionista con datos reales
                     const collector = await createCollector({
-                        name: order.customer_name || "Cliente Javier Mix",
-                        email: order.customer_email,
-                        phone: order.customer_phone
+                        name: payerName,
+                        email: payerEmail,
+                        phone: payerPhone
                     });
 
                     // 3. Generar Certificados para cada obra
@@ -47,20 +56,23 @@ export const POST = async ({ request }) => {
                                     collector_id: collector.id,
                                     sale_date: new Date().toISOString(),
                                     order_id: orderId,
-                                    edition_number: "Edición Abierta", // O lógica de stock
+                                    edition_number: "Edición Abierta",
                                     dimensions: "Según Pedido"
                                 });
                             }
                         }
                     }
-                }
 
-                // 4. Actualizar estado final de la Orden
-                await updateOrder(orderId, { 
-                    status: 'paid', 
-                    mercadopago_id: mpTransactionId,
-                    payment_date: new Date().toISOString()
-                });
+                    // 4. Actualizar estado final de la Orden (enriquecida con datos reales)
+                    await updateOrder(orderId, { 
+                        status: 'paid', 
+                        mercadopago_id: mpTransactionId,
+                        payment_date: new Date().toISOString(),
+                        customer_name: payerName,
+                        customer_email: payerEmail,
+                        customer_phone: payerPhone
+                    });
+                }
             }
         }
 
@@ -71,3 +83,4 @@ export const POST = async ({ request }) => {
         return new Response(null, { status: 200 }); // Siempre 200 para que MP no reintente infinitamente
     }
 };
+

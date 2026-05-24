@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libro de Estrategia B2B - El Arte de Complementar el Espacio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #F7F4EF;
+            --color-text: #2D2D2A;
+            --color-accent: #c5a059;
+            --color-muted: #5c5c5c;
+            --font-primary: 'Cormorant Garamond', serif;
+            --font-secondary: 'Montserrat', sans-serif;
+        }
+
+        @media print {
+            body {
+                background-color: #fff !important;
+                color: #000 !important;
+                padding: 2rem 5% !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            .trend-image {
+                max-height: 450px !important;
+                page-break-inside: avoid;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-secondary);
+            font-size: 16px;
+            line-height: 1.8;
+            padding: 5rem 12%;
+            max-width: 950px;
+            margin: 0 auto;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .print-btn-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 3rem;
+        }
+
+        .btn-print {
+            background-color: var(--color-accent);
+            color: #000;
+            border: none;
+            padding: 0.8rem 2rem;
+            font-family: var(--font-secondary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-print:hover {
+            background-color: var(--color-text);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            font-family: var(--font-primary);
+            font-size: 3.8rem;
+            font-weight: 300;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+            border-bottom: 2px solid var(--color-accent);
+            padding-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-family: var(--font-primary);
+            font-size: 2.2rem;
+            font-weight: 400;
+            font-style: italic;
+            margin-top: 3.5rem;
+            margin-bottom: 1.5rem;
+            color: #1a1a1a;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            font-family: var(--font-secondary);
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--color-text);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+            text-align: justify;
+            font-size: 1.05rem;
+        }
+
+        ul {
+            margin-bottom: 2rem;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.8rem;
+            font-weight: 300;
+        }
+
+        strong {
+            font-weight: 600;
+            color: #000;
+        }
+
+        .highlight-box {
+            background-color: rgba(197, 160, 89, 0.05);
+            border-left: 4px solid var(--color-accent);
+            padding: 2rem;
+            margin: 2.5rem 0;
+            font-style: italic;
+            font-family: var(--font-primary);
+            font-size: 1.3rem;
+            line-height: 1.6;
+        }
+
+        /* 🖼️ Trend Images styling */
+        .trend-container {
+            margin: 3rem 0;
+            background: #fff;
+            padding: 1.5rem;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        }
+
+        .trend-image {
+            width: 100%;
+            height: auto;
+            max-height: 520px;
+            object-fit: cover;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .trend-caption {
+            font-family: var(--font-primary);
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--color-muted);
+            text-align: center;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            padding-top: 0.8rem;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--color-accent), transparent);
+            margin: 4rem 0;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-btn-container no-print">
+        <button class="btn-print" onclick="window.print()">Guardar como PDF</button>
+    </div>
+
+    <header>
+        <span style="font-size: 0.8rem; letter-spacing: 4px; color: var(--color-accent); font-weight: 700; text-transform: uppercase;">EDICIÓN MAESTRA B2B · 2026</span>
+        <h1 style="margin-top: 0.5rem;">El Arte de Complementar el Espacio</h1>
+        <p style="font-size: 1.3rem; font-style: italic; color: var(--color-muted); font-family: var(--font-primary);">Libro de Estrategia, Curaduría Visual e Interiorismo para Fotografía Fine Art</p>
+        <p style="font-size: 0.75rem; letter-spacing: 2px; margin-top: 0.8rem; font-weight: 600;">AUTOR: JAVIER MIX ART & ANTIGRAVITY CONSULTING</p>
+    </header>
+
+    <div class="highlight-box">
+        "En el mundo del interiorismo de alta gama, la fotografía artística de autor no cumple una función meramente decorativa. Funciona como un ancla visual e intelectual. Viste los muros de la misma manera en que un sastre corta un traje a medida: define la escala, establece la temperatura lumínica y valida el prestigio cultural de la propiedad."
+    </div>
+
+    <div class="divider"></div>
+
+    <section>
+        <h2>🎨 CAPÍTULO 1: Tendencias de Interiorismo en Buenos Aires</h2>
+        <p>Los estudios de diseño en Palermo, Recoleta y Zona Norte lideran una transformación estética basada en la pureza y los materiales nobles. A continuación, analizamos las tres corrientes dominantes en el mercado de lujo actual y cómo tu fotografía encaja en ellas.</p>
+
+        <h3>1. Minimalismo Japandi (Calidez Orgánica)</h3>
+        <p>El estilo Japandi es la fusión entre la simplicidad del minimalismo escandinavo y la calidez natural del diseño japonés. Utiliza paletas de colores tierra suaves (tonos travertino, lino, arena, tiza y madera de roble claro). En un espacio Japandi, los muros necesitan respirar. Se evita saturar con pequeños cuadros. En su lugar, se utiliza una única pieza de gran formato en blanco y negro con paspartú blanco puro y marco negro sutil.</p>
+        <p><strong>Tu enfoque:</strong> Obras con composiciones arquitectónicas limpias, juegos de sombras geométricas suaves o retratos minimalistas de autor.</p>
+
+        <div class="trend-container">
+            <img src="./japandi_interior_art_1779594955908.png" alt="Tendencia Minimalista Japandi" class="trend-image">
+            <div class="trend-caption">Simulación de obra de autor con enmarcado passepartout montada en un salón de tendencia Japandi.</div>
+        </div>
+
+        <div class="page-break"></div>
+
+        <h3>2. Modernismo Orgánico (Texturas y Curvas)</h3>
+        <p>Esta corriente busca integrar la fluidez y las imperfecciones de la naturaleza dentro de los espacios construidos. Presenta muros con acabados de yeso rústico, mesas redondas de madera maciza, cerámicas artesanales y sillones curvos de lana bouclé.</p>
+        <p>Los espacios orgánicos necesitan fotografías de alto contraste y fuerte carga matérica. Obras enmarcadas en maderas oscuras o marcos negros carbón que contengan imágenes con texturas macro (detalles de piedra, agua, metal oxidado o contrastes lumínicos teatrales) que generen curiosidad visual.</p>
+
+        <div class="trend-container">
+            <img src="./organic_modernism_art_1779594981246.png" alt="Tendencia Modernismo Orgánico" class="trend-image">
+            <div class="trend-caption">Obra Fine Art de alto contraste integrada en un comedor con acabados rústicos de tendencia Modernismo Orgánico.</div>
+        </div>
+
+        <div class="page-break"></div>
+
+        <h3>3. Soft Brutalismo Suave (Hormigón y Spotlights)</h3>
+        <p>Una reinterpretación contemporánea del brutalismo clásico. Se mantiene la honestidad del hormigón visto pero se suaviza mediante iluminación focal, spotlights y textiles premium. Esta arquitectura es monumental y dramática. Exige una galería o una obra de escala imponente montada sobre una pared de hormigón. El blanco y negro de autor cortado por el paspartú de algodón crea una barrera estética espectacular contra la textura del cemento.</p>
+        <p><strong>Tu enfoque:</strong> Crónicas urbanas, retratos en claroscuro de alto dramatismo o series que jueguen con la escala monumental y el contraste de la luz sobre la ciudad (como tu serie <em>Líneas de Paso</em>).</p>
+
+        <div class="trend-container">
+            <img src="./brutalist_gallery_art_1779595005362.png" alt="Tendencia Soft Brutalismo" class="trend-image">
+            <div class="trend-caption">Gran formato fotográfico montado sobre muro de hormigón visto en una galería de tendencia Soft Brutalista.</div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section>
+        <h2>💼 CAPÍTULO 2: La Estrategia Comercial B2B</h2>
+        <p>Para hacer rentable tu arte y no depender de presupuestos pequeños, debes enfocar tus ventas hacia las empresas y profesionales del diseño. Tus compradores corporativos clave son:</p>
+        <ul>
+            <li><strong>Interioristas y Decoradores:</strong> Compran arte para vestir las casas residenciales de sus clientes. Manejan presupuestos de decoración completos.</li>
+            <li><strong>Desarrolladoras Inmobiliarias:</strong> Necesitan obras a gran escala para amueblar el vestíbulo (lobby) de edificios residenciales nuevos o para armar departamentos piloto (showrooms) de preventa (Home Staging).</li>
+            <li><strong>Hoteles Boutique y Casonas de Lujo:</strong> Compran colecciones enteras (de 10 a 30 cuadros) para vestir suites, pasillos y áreas gastronómicas.</li>
+        </ul>
+        <p><strong>El Gancho del Cierre (El Laboratorio Web):</strong> El 90% de los fotógrafos locales envían un archivo PDF plano por mail. Tú tienes una ventaja tecnológica insuperable: tu sitio web interactivo <code>javiermix.ar/laboratorio</code>. Invítalos a usar el Laboratorio. Explícales que allí pueden ver las escalas reales de las obras en muro y simular cómo cambia la obra de día y de noche (Modo Luz/Noche).</p>
+    </section>
+
+    <div class="page-break"></div>
+
+    <section>
+        <h2>📦 CAPÍTULO 3: Producción Física de Museo</h2>
+        <p>Para vender a un hotel de Recoleta o a un estudio de diseño de Palermo Chico, el acabado físico del cuadro debe ser impecable.</p>
+        <h3>A. Impresión Giclée (Calidad de Conservación)</h3>
+        <p>Imprime en laboratorios especializados usando papeles de base 100% algodón (pH neutro libre de ácido) que aseguren una durabilidad de más de 100 años sin decolorar. Recomendaciones en Buenos Aires:</p>
+        <ul>
+            <li><strong>Carlos Fadigati:</strong> Referente de la fotografía de autor para museos y galerías.</li>
+            <li><strong>Kinefot (Microcentro - Belgrano 634):</strong> Área profesional giclée de museo sobre papeles premium como Hahnemühle Photo Rag o Canson Infinity.</li>
+            <li><strong>Megaphoto (Palermo - Honduras 4150):</strong> Laboratorio oficialmente certificado por Hahnemühle en Buenos Aires.</li>
+        </ul>
+        <h3>B. Enmarcado Profesional: ¿Tercerizar o DIY?</h3>
+        <p>Para tus primeras pruebas puedes ensamblar marcos y hacer maquetas, pero para la venta a clientes B2B se recomienda tercerizar con profesionales de conservación de Zona Oeste como <strong>Carmiña Enmarcados (Castelar)</strong> o <strong>Cuadros B.A. (Ramos Mejía)</strong> para asegurar ingletes perfectos y montajes libres de polvo.</p>
+    </section>
+</body>
+</html>
