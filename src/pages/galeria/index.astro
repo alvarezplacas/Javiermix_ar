@@ -455,7 +455,7 @@ const artworks = artworksRaw
         return newArr;
     };
 
-    // 🔄 MOTOR DE TRANSICIÓN INDIVIDUAL ALEATORIA (Efecto desvanecimiento cada 2 segundos)
+    // 🔄 MOTOR DE TRANSICIÓN INDIVIDUAL ALEATORIA (Efecto desvanecimiento suave de 1.2s con precarga)
     let autoRandomTimer: any = null;
 
     const startAutoRandomTransition = () => {
@@ -487,49 +487,106 @@ const artworks = artworksRaw
             const randomIndex = Math.floor(Math.random() * items.length);
             const targetItem = items[randomIndex] as HTMLElement;
 
-            // Efecto desvanecimiento (Fade Out)
-            targetItem.style.transition = 'opacity 0.6s ease';
-            targetItem.style.opacity = '0';
-
-            setTimeout(() => {
-                // Actualizar los atributos y textos del slot
-                targetItem.setAttribute('href', `/obra/${newArt.id}`);
-                
-                // Imagen principal
+            // 🌟 1. Pre-cargar imágenes para evitar parpadeos y colapso de la grilla
+            const preloadImg = new Image();
+            preloadImg.src = newArt.thumb;
+            
+            const runTransition = () => {
                 const imgMain = targetItem.querySelector('.img-main') as HTMLImageElement;
-                if (imgMain) {
-                    imgMain.src = newArt.thumb;
-                    imgMain.alt = newArt.title;
-                }
-                
-                // Imagen de ambiente (mockup)
-                let imgMockup = targetItem.querySelector('.img-mockup') as HTMLImageElement;
-                if (newArt.mockup) {
-                    if (!imgMockup) {
-                        imgMockup = document.createElement('img');
-                        imgMockup.className = 'img-mockup';
-                        imgMockup.loading = 'lazy';
-                        imgMockup.onerror = () => imgMockup.remove();
-                        targetItem.insertBefore(imgMockup, targetItem.querySelector('.item-overlay'));
-                    }
-                    imgMockup.src = newArt.mockup;
-                    imgMockup.alt = `${newArt.title} ambiente`;
-                } else {
-                    if (imgMockup) imgMockup.remove();
-                }
-
-                // Título y Serie
+                const imgMockup = targetItem.querySelector('.img-mockup') as HTMLImageElement;
                 const titleEl = targetItem.querySelector('.art-title');
-                if (titleEl) titleEl.textContent = newArt.title;
-
                 const serieEl = targetItem.querySelector('.art-serie');
-                if (serieEl) serieEl.textContent = newArt.serie;
+                const overlayEl = targetItem.querySelector('.item-overlay') as HTMLElement;
 
-                // Reactivar desvanecimiento (Fade In)
-                targetItem.style.opacity = '1';
-            }, 600);
+                // 🌟 2. Configurar transiciones ultra suaves
+                const duration = '1.2s';
+                const timing = 'cubic-bezier(0.4, 0, 0.2, 1)';
+                
+                if (imgMain) {
+                    imgMain.style.transition = `opacity ${duration} ${timing}`;
+                    imgMain.style.opacity = '0';
+                }
+                if (imgMockup) {
+                    imgMockup.style.transition = `opacity ${duration} ${timing}`;
+                    imgMockup.style.opacity = '0';
+                }
+                if (overlayEl) {
+                    overlayEl.style.transition = `opacity ${duration} ${timing}`;
+                    overlayEl.style.opacity = '0';
+                }
 
-        }, 2000); // Una foto cada 2 segundos
+                // 🌟 3. Intercambiar datos en el DOM tras la disolución
+                setTimeout(() => {
+                    targetItem.setAttribute('href', `/obra/${newArt.id}`);
+                    
+                    if (imgMain) {
+                        imgMain.src = newArt.thumb;
+                        imgMain.alt = newArt.title;
+                    }
+                    
+                    let currentMockup = targetItem.querySelector('.img-mockup') as HTMLImageElement;
+                    if (newArt.mockup) {
+                        if (!currentMockup) {
+                            currentMockup = document.createElement('img');
+                            currentMockup.className = 'img-mockup';
+                            currentMockup.loading = 'lazy';
+                            currentMockup.style.opacity = '0';
+                            currentMockup.onerror = () => currentMockup.remove();
+                            targetItem.insertBefore(currentMockup, overlayEl);
+                        }
+                        currentMockup.src = newArt.mockup;
+                        currentMockup.alt = `${newArt.title} ambiente`;
+                    } else {
+                        if (currentMockup) currentMockup.remove();
+                    }
+
+                    if (titleEl) titleEl.textContent = newArt.title;
+                    if (serieEl) serieEl.textContent = newArt.serie;
+
+                    // 🌟 4. Revelar la nueva obra
+                    requestAnimationFrame(() => {
+                        if (imgMain) imgMain.style.opacity = '1';
+                        if (overlayEl) overlayEl.style.opacity = '1';
+                        
+                        // 🌟 5. Liberar estilos inline para restaurar hover CSS
+                        setTimeout(() => {
+                            if (imgMain) {
+                                imgMain.style.opacity = '';
+                                imgMain.style.transition = '';
+                            }
+                            if (currentMockup) {
+                                currentMockup.style.opacity = '';
+                                currentMockup.style.transition = '';
+                            }
+                            if (overlayEl) {
+                                overlayEl.style.opacity = '';
+                                overlayEl.style.transition = '';
+                            }
+                        }, 1200);
+                    });
+
+                }, 1200);
+            };
+
+            // Ejecución segura de precarga
+            if (newArt.mockup) {
+                const preloadMockup = new Image();
+                preloadMockup.src = newArt.mockup;
+                let loaded = 0;
+                const onLoaded = () => {
+                    loaded++;
+                    if (loaded === 2) runTransition();
+                };
+                preloadImg.onload = onLoaded;
+                preloadMockup.onload = onLoaded;
+                preloadImg.onerror = runTransition;
+                preloadMockup.onerror = runTransition;
+            } else {
+                preloadImg.onload = runTransition;
+                preloadImg.onerror = runTransition;
+            }
+
+        }, 5000); // 5 segundos para apreciar el efecto disolvente lento
     };
 
     const stopAutoRandomTransition = () => {
