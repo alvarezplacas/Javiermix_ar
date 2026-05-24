@@ -225,18 +225,19 @@ const articles = fetchedArticles.map(a => {
   }
   .image-glare { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; opacity: 0; }
   
-  /* 🌟 Bloque de contenido con paralaje y micro-iluminación dorada */
+  /* 🌟 Bloque de contenido estilo "Papel de Algodón Fine Art" (Máxima Legibilidad) */
   .card-content-block { 
       flex: 1; 
       padding: 4rem; 
-      background: rgba(17, 17, 17, 0.6); 
-      backdrop-filter: blur(25px); 
-      -webkit-backdrop-filter: blur(25px); 
-      border: 1px solid rgba(255,255,255,0.05); 
+      /* Fondo color papel crema de alto contraste */
+      background-color: #f7f4ef;
+      /* Textura orgánica táctil sutil */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      border: 1px solid rgba(28, 26, 23, 0.08); 
       position: relative; 
       z-index: 2; 
       margin-left: -5%;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.4);
       transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
                   background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
                   border-color 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
@@ -246,30 +247,31 @@ const articles = fetchedArticles.map(a => {
   
   /* Desplazamiento Parallax 3D suave en Hover */
   .magazine-card:hover .card-content-block {
-      background-color: rgba(22, 22, 22, 0.85);
-      border-color: rgba(220, 177, 74, 0.2);
-      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+      background-color: #fcfaf7;
+      border-color: rgba(156, 122, 60, 0.3);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5);
       transform: translate3d(-12px, 0, 0);
   }
   .magazine-card.row-reverse:hover .card-content-block {
       transform: translate3d(12px, 0, 0);
   }
   
-  .article-location { color: var(--color-accent); font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; font-weight: 700; margin-bottom: 2rem; display: block; }
-  .article-title { font-size: clamp(2rem, 3vw, 3rem); font-family: var(--font-primary); line-height: 1.1; margin-bottom: 2rem; color: var(--color-white); }
-  .article-excerpt { color: var(--color-travertine-light); font-size: 1rem; line-height: 1.8; margin-bottom: 3rem; max-width: 90%; font-weight: 300; }
-  .article-meta { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem; }
-  .time-indicator { display: flex; align-items: center; gap: 0.75rem; color: var(--color-text-muted); font-size: 0.75rem; letter-spacing: 2px; }
-  .clock-icon { width: 14px; height: 14px; color: var(--color-accent); }
+  /* Tipografía de Alto Contraste para Lectura Placentera */
+  .article-location { color: #9c7a3c; font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; font-weight: 700; margin-bottom: 2rem; display: block; }
+  .article-title { font-size: clamp(2rem, 3vw, 3rem); font-family: var(--font-primary); line-height: 1.1; margin-bottom: 2rem; color: #1c1a17; }
+  .article-excerpt { color: #4a453f; font-size: 1rem; line-height: 1.8; margin-bottom: 3rem; max-width: 90%; font-weight: 400; }
+  .article-meta { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(28, 26, 23, 0.15); padding-top: 2rem; }
+  .time-indicator { display: flex; align-items: center; gap: 0.75rem; color: #6e675f; font-size: 0.75rem; letter-spacing: 2px; }
+  .clock-icon { width: 14px; height: 14px; color: #9c7a3c; }
   
-  /* 🌟 Botón de lectura premium refinado con efecto cinético lateral */
+  /* 🌟 Botón de lectura premium adaptado a papel claro */
   .btn-read-premium { 
       position: relative; 
       display: inline-flex; 
       flex-direction: column; 
-      color: var(--color-white); 
+      color: #1c1a17; 
       text-decoration: none; 
-      font-weight: 700; 
+      font-weight: 800; 
       letter-spacing: 3px; 
       font-size: 0.8rem; 
       transition: var(--transition-premium); 
@@ -279,8 +281,8 @@ const articles = fetchedArticles.map(a => {
       display: inline-block;
       transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .btn-line { width: 30px; height: 2px; background-color: var(--color-accent); margin-top: 8px; transition: width 0.4s ease; }
-  .btn-read-premium:hover .btn-label { color: var(--color-accent); transform: translate3d(5px, 0, 0); }
+  .btn-line { width: 30px; height: 2px; background-color: #9c7a3c; margin-top: 8px; transition: width 0.4s ease; }
+  .btn-read-premium:hover .btn-label { color: #9c7a3c; transform: translate3d(5px, 0, 0); }
   .btn-read-premium:hover .btn-line { width: 100%; }
   .reveal { opacity: 0; transform: translateY(30px); transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1); }
   .reveal.active { opacity: 1; transform: translateY(0); }
