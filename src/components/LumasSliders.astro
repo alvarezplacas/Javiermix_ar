@@ -1,0 +1,910 @@
+---
+// d:\web_javiermix\JAVIERMIX-AR-0504\src\components\LumasSliders.astro
+interface Artwork {
+    id: string;
+    title: string;
+    serie: string;
+    thumb: string;
+    mockup: string | null;
+}
+
+interface Article {
+    title: string;
+    excerpt: string;
+    slideshow: Array<{ url: string; type: 'image' | 'video' }>;
+    link: string;
+    location: string;
+    readTime: string;
+}
+
+interface Props {
+    artworks: Artwork[];
+    articles: Article[];
+}
+
+const { artworks = [], articles = [] } = Astro.props;
+---
+
+<div class="lumas-showroom-container">
+  <!-- 🎨 FILA 1: FOTOGRAFÍAS RECOMENDADAS (ESTILO LUMAS MUSEUM) -->
+  <section class="showroom-section artworks-row-section">
+    <div class="showroom-header">
+      <span class="showroom-tag">EXHIBICIÓN RECOMENDADA</span>
+      <h2 class="showroom-title">FOTOGRAFÍAS RECOMENDADAS PARA TI</h2>
+      <div class="showroom-line"></div>
+    </div>
+    
+    <div class="slider-outer-wrapper">
+      <button class="slider-arrow prev" data-slider-arrow="prev" data-slider-target="artworks" aria-label="Anterior">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      
+      <div class="slider-viewport" data-slider-id="artworks">
+        <div class="slider-canvas">
+          {artworks.map(art => (
+            <div class="gallery-artwork-card" data-artwork-id={art.id}>
+              <a href={`/obra/${art.id}`} class="artwork-link">
+                <div class="artwork-frame">
+                  <img src={art.thumb} alt={art.title} class="artwork-image" loading="lazy" />
+                  {art.mockup && (
+                    <img src={art.mockup} alt={`${art.title} ambiente`} class="artwork-mockup-image" loading="lazy" />
+                  )}
+                  <div class="artwork-vignette"></div>
+                </div>
+              </a>
+              <div class="artwork-info-bar">
+                <div class="artwork-details">
+                  <h3 class="artwork-card-title">{art.title}</h3>
+                  <p class="artwork-card-serie">{art.serie}</p>
+                </div>
+                <button class="favorite-heart-btn" data-fav-btn={art.id} aria-label="Añadir a favoritos">
+                  <svg viewBox="0 0 24 24" class="heart-svg">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <button class="slider-arrow next" data-slider-arrow="next" data-slider-target="artworks" aria-label="Siguiente">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- 📖 FILA 2: REVISTA DIGITAL & EDITORIALES (ESTILO COTTON PAPER) -->
+  <section class="showroom-section magazine-row-section">
+    <div class="showroom-header">
+      <span class="showroom-tag">CRÓNICAS DE LUZ</span>
+      <h2 class="showroom-title">REVISTA DIGITAL & ENSAYOS</h2>
+      <div class="showroom-line"></div>
+    </div>
+
+    <div class="slider-outer-wrapper">
+      <button class="slider-arrow prev" data-slider-arrow="prev" data-slider-target="magazine" aria-label="Anterior">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      
+      <div class="slider-viewport" data-slider-id="magazine">
+        <div class="slider-canvas">
+          {articles.map((article, idx) => (
+            <div class="magazine-slide-card" data-article-card-id={idx}>
+              <div class="magazine-slide-media-wrapper">
+                <div class="magazine-slide-slideshow">
+                  {article.slideshow.map((media, i) => (
+                    media.type === 'video' ? (
+                      <video src={media.url} class={`magazine-slide-media ${i === 0 ? 'active' : ''}`} muted playsinline loop autoplay></video>
+                    ) : (
+                      <img src={media.url} alt={`${article.title} slide ${i}`} class={`magazine-slide-media ${i === 0 ? 'active' : ''}`} loading="lazy" />
+                    )
+                  ))}
+                  <div class="magazine-slide-vignette"></div>
+                </div>
+              </div>
+              
+              <div class="magazine-slide-content">
+                <span class="magazine-slide-location">{article.location}</span>
+                <h3 class="magazine-slide-title">{article.title}</h3>
+                <p class="magazine-slide-excerpt">{article.excerpt}</p>
+                
+                <div class="magazine-slide-meta">
+                  <span class="magazine-slide-readtime">{article.readTime} LEER</span>
+                  <a href={article.link} class="magazine-slide-btn-read">
+                    <span class="btn-label">LEER</span>
+                    <span class="btn-line"></span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <button class="slider-arrow next" data-slider-arrow="next" data-slider-target="magazine" aria-label="Siguiente">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+  </section>
+</div>
+
+<style>
+  /* 🏛️ CONTENEDOR GENERAL DE SHOWROOM */
+  .lumas-showroom-container {
+    width: 100vw;
+    background-color: #0b0a09;
+    padding: 6rem 0;
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 8rem;
+  }
+
+  /* 🌌 Fondo sutil con halo de luz para separar los carruseles */
+  .lumas-showroom-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 20%, rgba(197, 160, 89, 0.03) 0%, transparent 60%),
+                radial-gradient(circle at 50% 80%, rgba(156, 122, 60, 0.02) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 🏷️ CABECERAS DE SECCIÓN */
+  .showroom-section {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+  }
+
+  .showroom-header {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding: 0 5%;
+  }
+
+  .showroom-tag {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #c5a059;
+    display: block;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+  }
+
+  .showroom-title {
+    font-family: var(--font-primary), serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 300;
+    letter-spacing: 4px;
+    color: #ffffff;
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  .showroom-line {
+    width: 60px;
+    height: 1px;
+    background-color: rgba(197, 160, 89, 0.3);
+    margin: 1.5rem auto 0;
+  }
+
+  /* 🎛️ CONTENEDORES EXTERNOS Y BOTONES */
+  .slider-outer-wrapper {
+    position: relative;
+    width: 100%;
+    padding: 0 4rem;
+    box-sizing: border-box;
+  }
+
+  .slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(28, 26, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 20;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0.8;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .slider-arrow.prev { left: 1rem; }
+  .slider-arrow.next { right: 1rem; }
+
+  .slider-arrow:hover {
+    background: #c5a059;
+    border-color: #c5a059;
+    color: #0b0a09;
+    transform: translateY(-50%) scale(1.08);
+    opacity: 1;
+    box-shadow: 0 10px 25px rgba(197, 160, 89, 0.3);
+  }
+
+  /* 📽️ VIEWPORTS Y LIENZO FLUIDO */
+  .slider-viewport {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-behavior: smooth;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-drag: none;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .slider-viewport::-webkit-scrollbar {
+    display: none; /* Safari / Chrome */
+  }
+
+  .slider-viewport:active {
+    cursor: grabbing;
+  }
+
+  .slider-canvas {
+    display: inline-flex;
+    gap: 3rem;
+    padding: 2rem 0;
+  }
+
+  /* 🖼️ FILA 1: TARJETA DE ARTE (ESTILO LUMAS MUSEUM) */
+  .gallery-artwork-card {
+    flex: 0 0 auto;
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 1.5rem;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gallery-artwork-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(197, 160, 89, 0.1);
+  }
+
+  .artwork-link {
+    text-decoration: none;
+    display: block;
+    -webkit-user-drag: none;
+  }
+
+  .artwork-frame {
+    position: relative;
+    height: 380px; /* Altura de exhibición fija */
+    width: auto;
+    background-color: #f7f4ef;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.1);
+  }
+
+  .artwork-image,
+  .artwork-mockup-image {
+    height: 100%;
+    width: auto;
+    object-fit: contain;
+    -webkit-user-drag: none;
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .artwork-mockup-image {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    opacity: 0;
+    z-index: 2;
+  }
+
+  .artwork-vignette {
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* Efecto Hover: Si tiene mockup, se muestra. Si no, solo zoom sutil */
+  .gallery-artwork-card:hover .artwork-image {
+    transform: scale(1.03);
+  }
+
+  .gallery-artwork-card:hover .artwork-mockup-image {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  /* BARRA DE METADATOS */
+  .artwork-info-bar {
+    width: 100%;
+    margin-top: 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    box-sizing: border-box;
+  }
+
+  .artwork-details {
+    flex: 1;
+    text-align: left;
+  }
+
+  .artwork-card-title {
+    font-family: var(--font-primary), serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1c1a17;
+    margin: 0 0 0.4rem;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .artwork-card-serie {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #9c7a3c;
+    margin: 0;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* BOTÓN DE FAVORITO */
+  .favorite-heart-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: #c0b9b0;
+  }
+
+  .favorite-heart-btn:hover {
+    transform: scale(1.2);
+    color: #e03c3c;
+  }
+
+  .heart-svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    transition: fill 0.3s ease, filter 0.3s ease;
+  }
+
+  .favorite-heart-btn.is-active {
+    color: #e03c3c;
+    animation: heartPulse 0.4s forwards;
+  }
+
+  .favorite-heart-btn.is-active .heart-svg {
+    filter: drop-shadow(0 0 6px rgba(224, 60, 60, 0.5));
+  }
+
+  @keyframes heartPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+
+  /* 📖 FILA 2: TARJETA DE REVISTA (ESTILO COTTON PAPER) */
+  .magazine-slide-card {
+    flex: 0 0 auto;
+    width: 520px;
+    height: 250px;
+    display: flex;
+    background-color: #f7f4ef;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    border: 1px solid rgba(28, 26, 23, 0.08);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    overflow: hidden;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.6s ease;
+  }
+
+  .magazine-slide-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.7);
+    border-color: rgba(197, 160, 89, 0.3);
+  }
+
+  .magazine-slide-media-wrapper {
+    flex: 0 0 45%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    background-color: #000;
+  }
+
+  .magazine-slide-slideshow {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  .magazine-slide-media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(15%) brightness(0.8);
+    opacity: 0;
+    transform: scale(1.02);
+    transition: opacity 1.5s ease, transform 8s ease, filter 1.5s ease;
+    z-index: 1;
+    mask-image: radial-gradient(circle, black 75%, transparent 100%);
+    -webkit-mask-image: radial-gradient(circle, black 75%, transparent 100%);
+  }
+
+  .magazine-slide-media.active {
+    opacity: 1;
+    filter: grayscale(0%) brightness(1);
+    transform: scale(1.06);
+    z-index: 2;
+  }
+
+  .magazine-slide-card:hover .magazine-slide-media.active {
+    transform: scale(1.1);
+  }
+
+  .magazine-slide-vignette {
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* CONTENIDO DE LA TARJETA DE REVISTA */
+  .magazine-slide-content {
+    flex: 1;
+    padding: 1.8rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .magazine-slide-location {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #9c7a3c;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+    display: block;
+  }
+
+  .magazine-slide-title {
+    font-family: var(--font-primary), serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #1c1a17;
+    margin: 0 0 0.5rem;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .magazine-slide-excerpt {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #4a453f;
+    margin: 0 0 1.2rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-weight: 400;
+  }
+
+  .magazine-slide-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(28, 26, 23, 0.1);
+    padding-top: 0.8rem;
+  }
+
+  .magazine-slide-readtime {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    color: #6e675f;
+    font-weight: 600;
+  }
+
+  /* BOTÓN DE LEER */
+  .magazine-slide-btn-read {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    color: #1c1a17;
+    text-decoration: none;
+    font-weight: 800;
+    letter-spacing: 2px;
+    font-size: 0.7rem;
+    transition: var(--transition-premium);
+    -webkit-user-drag: none;
+  }
+
+  .magazine-slide-btn-read .btn-label {
+    position: relative;
+    display: inline-block;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .magazine-slide-btn-read .btn-line {
+    width: 15px;
+    height: 1.5px;
+    background-color: #9c7a3c;
+    margin-top: 4px;
+    transition: width 0.4s ease;
+  }
+
+  .magazine-slide-btn-read:hover .btn-label {
+    color: #9c7a3c;
+    transform: translate3d(3px, 0, 0);
+  }
+
+  .magazine-slide-btn-read:hover .btn-line {
+    width: 100%;
+  }
+
+  /* RESPONSIVE DESIGN */
+  @media (max-width: 1024px) {
+    .lumas-showroom-container {
+      gap: 5rem;
+      padding: 4rem 0;
+    }
+
+    .slider-outer-wrapper {
+      padding: 0 2rem;
+    }
+
+    .slider-arrow {
+      display: none; /* Ocultar flechas en móvil, confiando en el deslizamiento táctil */
+    }
+
+    .artwork-frame {
+      height: 280px;
+    }
+
+    .magazine-slide-card {
+      width: 420px;
+      height: 220px;
+    }
+
+    .magazine-slide-excerpt {
+      -webkit-line-clamp: 2;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .slider-outer-wrapper {
+      padding: 0 1rem;
+    }
+
+    .slider-canvas {
+      gap: 1.5rem;
+    }
+
+    .artwork-frame {
+      height: 240px;
+    }
+
+    .magazine-slide-card {
+      width: 320px;
+      height: 200px;
+      flex-direction: column;
+    }
+
+    .magazine-slide-media-wrapper {
+      flex: 0 0 35%;
+      height: 35%;
+      width: 100%;
+    }
+
+    .magazine-slide-content {
+      flex: 1;
+      padding: 1rem;
+    }
+
+    .magazine-slide-excerpt {
+      display: none; /* Ocultar snippet en móviles ultra-pequeños */
+    }
+    
+    .magazine-slide-title {
+      font-size: 1rem;
+      -webkit-line-clamp: 2;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * MOTOR DE ACELERACIÓN E INTERACCIÓN DE CARRUSELES JAVIERMIX
+   * Soporta: Auto-drift continuo, pointer drag inercial, touch swipe y favoritos.
+   */
+  document.addEventListener('astro:page-load', () => {
+    // 🏛️ 1. GESTIÓN DE FAVORITOS (LOCALSTORAGE)
+    function initFavorites() {
+      const favButtons = document.querySelectorAll('[data-fav-btn]');
+      let favorites = JSON.parse(localStorage.getItem('javiermix_favorites') || '[]');
+
+      // Actualizar estado inicial
+      favButtons.forEach(btn => {
+        const id = btn.getAttribute('data-fav-btn');
+        if (id && favorites.includes(id)) {
+          btn.classList.add('is-active');
+        }
+      });
+
+      // Escuchar clicks
+      favButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = btn.getAttribute('data-fav-btn');
+          if (!id) return;
+
+          favorites = JSON.parse(localStorage.getItem('javiermix_favorites') || '[]');
+          
+          if (favorites.includes(id)) {
+            favorites = favorites.filter((favId: string) => favId !== id);
+            btn.classList.remove('is-active');
+          } else {
+            favorites.push(id);
+            btn.classList.add('is-active');
+          }
+
+          localStorage.setItem('javiermix_favorites', JSON.stringify(favorites));
+        });
+      });
+    }
+
+    // 🎥 2. GESTIÓN DE DIAPOSITIVAS INTERNAS EN LA TARJETA DE REVISTA
+    function initMagazineCardSlideshows() {
+      const cards = document.querySelectorAll('.magazine-slide-card');
+      cards.forEach(card => {
+        const media = card.querySelectorAll('.magazine-slide-media');
+        if (media.length <= 1) {
+          if (media[0]) media[0].classList.add('active');
+          return;
+        }
+
+        let current = 0;
+        const intervalId = setInterval(() => {
+          media[current].classList.remove('active');
+          current = (current + 1) % media.length;
+          media[current].classList.add('active');
+          
+          if (media[current].tagName === 'VIDEO') {
+            (media[current] as HTMLVideoElement).play().catch(() => {});
+          }
+        }, 5000);
+
+        // Limpieza automática si se desmonta el elemento
+        card.setAttribute('data-slideshow-interval', intervalId.toString());
+      });
+    }
+
+    // 🚀 3. MOTOR DE DESPLAZAMIENTO FLUIDO (AUTO-DRIFT + KINETIC DRAG)
+    function initSliderEngine(viewport: HTMLElement) {
+      if (!viewport) return;
+
+      const canvas = viewport.querySelector('.slider-canvas') as HTMLElement;
+      if (!canvas) return;
+
+      // Variables físicas y de control
+      let isDown = false;
+      let startX: number;
+      let scrollLeft: number;
+      
+      // Para arrastre inercial
+      let velX = 0;
+      let lastX = 0;
+      let lastTime = 0;
+      let animationFrameId: number;
+      
+      // Auto-drift
+      const driftSpeed = 0.4; // Píxeles por frame (~24px/segundo)
+      let isPaused = false;
+      let pauseTimeout: any;
+
+      // Iniciar el auto-drift hipnótico
+      function stepDrift() {
+        if (!isDown && !isPaused) {
+          // Desplazar lentamente a la izquierda
+          viewport.scrollLeft += driftSpeed;
+          
+          // Soporte de bucle infinito virtual:
+          // Si llegamos casi al final, volvemos sutilmente al inicio
+          const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+          if (viewport.scrollLeft >= maxScroll - 1) {
+            viewport.scrollLeft = 0;
+          }
+        }
+        animationFrameId = requestAnimationFrame(stepDrift);
+      }
+
+      // Iniciar ciclo de animación
+      animationFrameId = requestAnimationFrame(stepDrift);
+
+      // Eventos de ratón y pointer para drag inercial
+      viewport.addEventListener('pointerdown', (e: PointerEvent) => {
+        isDown = true;
+        isPaused = true;
+        clearTimeout(pauseTimeout);
+        
+        // Desactivar temporalmente transiciones suaves de scroll nativo para el arrastre
+        viewport.style.scrollBehavior = 'auto';
+
+        startX = e.pageX - viewport.offsetLeft;
+        scrollLeft = viewport.scrollLeft;
+        
+        lastX = e.pageX;
+        lastTime = performance.now();
+        velX = 0;
+      });
+
+      viewport.addEventListener('pointerleave', () => {
+        if (isDown) {
+          isDown = false;
+          applyInertia();
+        }
+        triggerResumeDrift(1500);
+      });
+
+      viewport.addEventListener('pointerup', () => {
+        isDown = false;
+        viewport.style.scrollBehavior = 'smooth';
+        applyInertia();
+        triggerResumeDrift(2000);
+      });
+
+      viewport.addEventListener('pointermove', (e: PointerEvent) => {
+        if (!isDown) return;
+        e.preventDefault();
+        
+        const x = e.pageX - viewport.offsetLeft;
+        const walk = (x - startX) * 1.5; // Multiplicador de sensibilidad de arrastre
+        viewport.scrollLeft = scrollLeft - walk;
+
+        // Calcular velocidad en tiempo real para inercia posterior
+        const now = performance.now();
+        const dt = now - lastTime;
+        if (dt > 0) {
+          const dx = e.pageX - lastX;
+          velX = dx / dt; // píxeles por milisegundo
+        }
+        
+        lastX = e.pageX;
+        lastTime = now;
+      });
+
+      // Pausa en hover
+      viewport.addEventListener('mouseenter', () => {
+        isPaused = true;
+        clearTimeout(pauseTimeout);
+      });
+
+      viewport.addEventListener('mouseleave', () => {
+        if (!isDown) {
+          triggerResumeDrift(1200);
+        }
+      });
+
+      // Soporte táctil móvil (prevenir recarga tirando hacia abajo si arrastramos de lado)
+      viewport.addEventListener('touchmove', (e) => {
+        isPaused = true;
+        clearTimeout(pauseTimeout);
+      }, { passive: true });
+
+      // Aplicar inercia al soltar
+      function applyInertia() {
+        if (Math.abs(velX) < 0.1) return;
+        
+        viewport.style.scrollBehavior = 'auto';
+        let speed = velX * 16; // Escalar velocidad a píxeles por fotograma aproximado (~60fps)
+        const friction = 0.94; // Factor de fricción (atenuación elástica)
+
+        function inertiaLoop() {
+          if (isDown || Math.abs(speed) < 0.2) {
+            viewport.style.scrollBehavior = 'smooth';
+            return;
+          }
+
+          viewport.scrollLeft -= speed;
+          speed *= friction;
+          
+          requestAnimationFrame(inertiaLoop);
+        }
+
+        requestAnimationFrame(inertiaLoop);
+      }
+
+      // Reanudar deriva automática tras una interacción
+      function triggerResumeDrift(delay: number) {
+        clearTimeout(pauseTimeout);
+        pauseTimeout = setTimeout(() => {
+          isPaused = false;
+        }, delay);
+      }
+
+      // Registrar botones de navegación de bloque (Flechas)
+      const arrows = document.querySelectorAll(`[data-slider-target="${viewport.dataset.sliderId}"]`);
+      arrows.forEach(arrow => {
+        arrow.addEventListener('click', (e) => {
+          e.preventDefault();
+          isPaused = true;
+          viewport.style.scrollBehavior = 'smooth';
+
+          const dir = arrow.getAttribute('data-slider-arrow');
+          const scrollAmount = viewport.clientWidth * 0.85; // Desplazar el 85% de la pantalla visible
+
+          if (dir === 'prev') {
+            viewport.scrollLeft -= scrollAmount;
+          } else {
+            viewport.scrollLeft += scrollAmount;
+          }
+
+          // Reanudar el autodesplazamiento lento tras 4 segundos
+          triggerResumeDrift(4000);
+        });
+      });
+
+      // Limpieza al cambiar de página
+      document.addEventListener('astro:before-preparation', () => {
+        cancelAnimationFrame(animationFrameId);
+        clearTimeout(pauseTimeout);
+      }, { once: true });
+    }
+
+    // Inicializar los motores de todos los viewports de sliders en la página
+    function initAllSliders() {
+      const viewports = document.querySelectorAll('.slider-viewport');
+      viewports.forEach(vp => initSliderEngine(vp as HTMLElement));
+    }
+
+    // Ejecutar inicializaciones
+    initFavorites();
+    initMagazineCardSlideshows();
+    initAllSliders();
+  });
+</script>
