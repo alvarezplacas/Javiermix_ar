@@ -1,7 +1,7 @@
 ---
 // src/components/Header.astro
 import CartNavButton from './ecommerce/CartNavButton.tsx';
-const { currentPath = '/', theme = 'dark' } = Astro.props;
+const { currentPath = '/', theme = 'dark', themeForce } = Astro.props;
 ---
 
 <header class={`site-header theme-${theme}`}>
@@ -15,6 +15,31 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
             <div class="cart-wrapper">
 			    <CartNavButton client:load />
             </div>
+
+			<!-- 🌓 Alternador de Tema Luz/Noche (Ocultado si themeForce está activo) -->
+			{!themeForce && (
+				<button 
+					id="theme-toggle-btn" 
+					class="theme-toggle-btn" 
+					aria-label="Cambiar tema de color" 
+					data-tooltip="Tema Luz / Noche"
+				>
+					<svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="12" cy="12" r="5"></circle>
+						<line x1="12" y1="1" x2="12" y2="3"></line>
+						<line x1="12" y1="21" x2="12" y2="23"></line>
+						<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+						<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+						<line x1="1" y1="12" x2="3" y2="12"></line>
+						<line x1="21" y1="12" x2="23" y2="12"></line>
+						<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+						<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+					</svg>
+					<svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+					</svg>
+				</button>
+			)}
 		</div>
 	</nav>
 </header>
@@ -46,7 +71,7 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 }
 
 .nav-links a {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-muted);
     text-decoration: none;
     font-family: 'Cormorant Garamond', serif;
     font-size: 0.9rem;
@@ -60,8 +85,50 @@ const { currentPath = '/', theme = 'dark' } = Astro.props;
 
 .nav-links a:hover, 
 .nav-links a.active {
-    color: var(--color-white);
+    color: var(--color-text);
     letter-spacing: 3px;
+}
+
+/* 🌓 Botón de Alternancia de Tema Premium */
+.theme-toggle-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-left: 1.5rem;
+    z-index: 3000;
+}
+
+.theme-toggle-btn:hover {
+    color: var(--color-accent);
+    transform: scale(1.1);
+}
+
+.theme-toggle-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Ocultar/Mostrar iconos SVG de acuerdo al tema cargado */
+html[data-theme="light"] .theme-toggle-btn .sun-icon {
+    display: none;
+}
+html[data-theme="light"] .theme-toggle-btn .moon-icon {
+    display: block;
+    color: var(--color-text);
+}
+
+html[data-theme="dark"] .theme-toggle-btn .sun-icon {
+    display: block;
+    color: var(--color-text);
+}
+html[data-theme="dark"] .theme-toggle-btn .moon-icon {
+    display: none;
 }
 
 /* Indicador inferior minimalista */

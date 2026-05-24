@@ -17,6 +17,7 @@ interface Props {
   keywords?: string[];
   noindex?: boolean;
   schema?: object;
+  themeForce?: 'dark' | 'light';
 }
 
 const {
@@ -30,11 +31,12 @@ const {
   keywords,
   noindex,
   schema,
+  themeForce,
 } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme-force={themeForce}>
 	<head>
 		<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 		<SEO
@@ -58,12 +60,54 @@ const {
 		<!-- Umami Analytics (Golden Master 2.0) -->
 		<script defer src="https://stats.javiermix.ar/script.js" data-website-id="d325c934-d7d1-439d-823f-bf250ebfc799"></script>
 
+		<!-- ⚡ Anti-Flash Theme Script (Premium JMX load) -->
+		<script is:inline>
+			(function() {
+				const htmlEl = document.documentElement;
+				const force = htmlEl.getAttribute('data-theme-force');
+				
+				const getTheme = () => {
+					if (force) return force;
+					if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+						return localStorage.getItem('theme');
+					}
+					return 'dark';
+				};
+				
+				const theme = getTheme();
+				htmlEl.setAttribute('data-theme', theme);
+			})();
+		</script>
+
 		<ClientRouter />
 	</head>
 	<body>
 		<slot />
 		<CartWidget client:only="preact" />
 		<MobileNav />
+
+		<!-- 🔄 Hydration for Theme Toggle (Supports View Transitions) -->
+		<script>
+			const setupThemeToggle = () => {
+				const toggleBtn = document.getElementById('theme-toggle-btn');
+				if (!toggleBtn) return;
+
+				toggleBtn.addEventListener('click', () => {
+					// Bypassed if the theme is strictly forced by layout context
+					if (document.documentElement.getAttribute('data-theme-force')) return;
+
+					const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+					const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+					
+					document.documentElement.setAttribute('data-theme', newTheme);
+					localStorage.setItem('theme', newTheme);
+					
+					window.dispatchEvent(new CustomEvent('theme-changed', { detail: newTheme }));
+				});
+			};
+
+			document.addEventListener('astro:page-load', setupThemeToggle);
+		</script>
 	</body>
 </html>
 

@@ -98,11 +98,12 @@ const artworks = artworksRaw
 <style is:global>
 /* 🌑 ESTILO LIMPIO Y FUNCIONAL */
 .gallery-clean-container {
-    background: #000;
-    color: #fff;
+    background: var(--color-bg);
+    color: var(--color-text);
     min-height: 100vh;
     padding-bottom: 5rem;
     font-family: 'Inter', sans-serif;
+    transition: var(--transition-premium);
 }
 
 /* 🎭 ARTISTIC HERO */
@@ -113,7 +114,8 @@ const artworks = artworksRaw
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: #000;
+    background: var(--color-bg);
+    transition: var(--transition-premium);
 }
 
 .immersive-hero-bg {
@@ -137,8 +139,9 @@ const artworks = artworksRaw
 .bg-overlay {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.5), #000);
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3), var(--color-bg));
     z-index: 2;
+    transition: var(--transition-premium);
 }
 
 .hero-content {
@@ -157,7 +160,7 @@ const artworks = artworksRaw
     margin: 0; 
     letter-spacing: 20px; 
     text-transform: uppercase;
-    color: #fff;
+    color: var(--color-text);
     opacity: 0.9;
 }
 
@@ -177,9 +180,9 @@ const artworks = artworksRaw
     position: relative;
     display: flex;
     align-items: center;
-    background: rgba(255,255,255,0.05);
+    background: var(--glass-bg);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--glass-border);
     border-radius: 50px;
     padding: 0.6rem 0.6rem 0.6rem 2.5rem;
     transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
@@ -187,7 +190,7 @@ const artworks = artworksRaw
 }
 
 .search-portal-wrapper:focus-within {
-    background: rgba(255,255,255,0.12);
+    background: var(--color-onyx-soft);
     border-color: var(--color-accent);
     transform: translateY(-5px);
     box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 5px rgba(197, 160, 89, 0.1);
@@ -197,7 +200,7 @@ const artworks = artworksRaw
     flex: 1;
     background: transparent;
     border: none;
-    color: #fff;
+    color: var(--color-text);
     padding: 1.2rem 0;
     font-size: 1.2rem;
     outline: none;
@@ -205,9 +208,9 @@ const artworks = artworksRaw
 }
 
 .series-toggle {
-    background: #222;
-    border: 1px solid rgba(255,255,255,0.05);
-    color: rgba(255,255,255,0.6);
+    background: var(--color-onyx-soft);
+    border: 1px solid var(--glass-border);
+    color: var(--color-text-muted);
     padding: 0.8rem 1.5rem;
     border-radius: 40px;
     font-size: 0.7rem;
@@ -221,12 +224,12 @@ const artworks = artworksRaw
 }
 
 .series-toggle .dot { width: 6px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 50%; transition: 0.3s; }
-.series-toggle.active { background: rgba(197, 160, 89, 0.1); border-color: var(--color-accent); color: #fff; }
+.series-toggle.active { background: rgba(197, 160, 89, 0.1); border-color: var(--color-accent); color: var(--color-text); }
 .series-toggle.active .dot { background: var(--color-accent); box-shadow: 0 0 10px var(--color-accent); }
 
 /* 🖼️ GRID MASONRY (RESPETO AL FORMATO) */
 .viewport { max-width: 1800px; margin: 0 auto; padding: 0 5%; }
-.results-meta { text-align: center; margin-bottom: 4rem; font-size: 0.8rem; color: rgba(255,255,255,0.4); letter-spacing: 2px; }
+.results-meta { text-align: center; margin-bottom: 4rem; font-size: 0.8rem; color: var(--color-text-muted); letter-spacing: 2px; }
 #mode-label { color: var(--color-accent); }
 
 .masonry-grid {
@@ -245,8 +248,8 @@ const artworks = artworksRaw
     flex-direction: column; /* Cambiado a columna para que entre bien en 2 col grid */
     justify-content: space-between;
     align-items: flex-start;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: var(--color-onyx-soft);
+    border: 1px solid var(--glass-border);
     padding: 2.5rem;
     margin-bottom: 2rem;
     text-decoration: none;
@@ -258,21 +261,21 @@ const artworks = artworksRaw
 }
 
 .series-card-result:hover {
-    background: rgba(255,255,255,0.05);
+    background: var(--color-onyx-charcoal);
     border-color: var(--color-accent);
     transform: translateY(-5px);
 }
 
 .series-info-side { flex: 1; padding-right: 0; width: 100%; margin-bottom: 2rem; }
-.s-name { font-size: 2.5rem; font-family: var(--font-primary); font-weight: 200; color: #fff; margin: 0; line-height: 1.1; }
+.s-name { font-size: 2.5rem; font-family: var(--font-primary); font-weight: 200; color: var(--color-text); margin: 0; line-height: 1.1; }
 .s-count { font-size: 0.65rem; letter-spacing: 3px; color: var(--color-accent); font-weight: 800; margin-top: 1rem; text-transform: uppercase; display: block; opacity: 0.8; }
-.s-teaser { font-size: 0.9rem; color: rgba(255,255,255,0.4); margin-top: 1.5rem; line-height: 1.6; max-width: 100%; font-weight: 300; }
+.s-teaser { font-size: 0.9rem; color: var(--color-text-muted); margin-top: 1.5rem; line-height: 1.6; max-width: 100%; font-weight: 300; }
 
 .series-photo-side { 
     width: 100%; 
     height: 250px; 
     overflow: hidden; 
-    border: 1px solid rgba(255,255,255,0.05); 
+    border: 1px solid var(--glass-border); 
     filter: grayscale(1) opacity(0.5); 
     transition: 0.8s cubic-bezier(0.23, 1, 0.32, 1); 
 }
@@ -285,7 +288,7 @@ const artworks = artworksRaw
     display: block;
     text-decoration: none;
     position: relative;
-    background: #080808;
+    background: var(--color-onyx-soft);
     overflow: hidden;
     opacity: 0;
     animation: fadeInScale 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
@@ -316,10 +319,10 @@ const artworks = artworksRaw
 
 .item-overlay {
     padding: 1.5rem;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-top: 1px solid var(--glass-border);
 }
 
-.art-title { font-size: 0.8rem; font-weight: 700; color: #fff; display: block; letter-spacing: 1px; text-transform: uppercase; }
+.art-title { font-size: 0.8rem; font-weight: 700; color: var(--color-text); display: block; letter-spacing: 1px; text-transform: uppercase; }
 .art-serie { font-size: 0.6rem; color: var(--color-accent); font-weight: 800; display: block; margin-top: 0.4rem; letter-spacing: 1px; }
 
 /* 📱 MOBILE */
