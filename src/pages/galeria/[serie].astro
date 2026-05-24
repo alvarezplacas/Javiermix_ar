@@ -506,8 +506,9 @@ const approvedModes = await getApprovedExhibitionModes();
     padding: 6rem 0;
     position: relative;
     z-index: 20;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border);
+    transition: border-color 0.5s ease;
 }
 
 .editorial-catalog-grid {
@@ -614,10 +615,12 @@ const approvedModes = await getApprovedExhibitionModes();
     font-size: 1.05rem; /* Tamaño de lectura de catálogo */
     line-height: 1.9;
     font-weight: 300;
-    color: rgba(255, 255, 255, 0.75); /* Contraste elegante y descansado */
+    color: var(--color-text); /* 🌟 Adaptive text color! */
+    opacity: 0.85; /* Dynamic opacity for a softer contrast on both themes */
     text-align: left;
     margin-bottom: 1.5rem;
     letter-spacing: 0.025em; /* Optical spacing for Montserrat fine art descriptions */
+    transition: color 0.5s ease;
 }
 
 .editorial-body :global(p:last-child) {
@@ -678,8 +681,10 @@ const approvedModes = await getApprovedExhibitionModes();
     .editorial-body :global(p) {
         font-size: 1rem;
         line-height: 1.7;
-        color: rgba(255, 255, 255, 0.8);
+        color: var(--color-text);
+        opacity: 0.9;
         text-align: left;
+        transition: color 0.5s ease;
     }
 }
 
@@ -699,11 +704,11 @@ const approvedModes = await getApprovedExhibitionModes();
     justify-content: center;
     gap: 0.8rem;
     padding: 1rem 2rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-text);
     font-family: var(--font-secondary);
     font-size: 0.75rem;
     font-weight: 700;
@@ -711,14 +716,14 @@ const approvedModes = await getApprovedExhibitionModes();
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.5s var(--ease-premium);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
 }
 
 .btn-glass-play:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-accent);
     border-color: var(--color-accent);
-    color: #fff;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    color: #000;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
 }
 
