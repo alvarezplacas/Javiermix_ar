@@ -78,16 +78,29 @@ const galleryItems = mainPhotos.map((file: any) => {
                 <!-- Columna Derecha: Narrativa y Lienzo Vintage -->
                 <div class="header-editorial">
                     <div class="vintage-canvas-card">
+                        <!-- Imagen real del catálogo en movimiento lento -->
+                        {photos.length > 0 && (
+                            <img 
+                                src={getAssetUrl(photos[0].id, { width: 1000, format: 'webp', quality: 80 })} 
+                                alt="Detalle de negativo escaneado" 
+                                class="panning-scan-img" 
+                                draggable="false"
+                            />
+                        )}
+                        
                         <div class="vintage-overlay"></div>
-                        <div class="canvas-inner">
-                            <svg class="lens-crosshair" width="40" height="40" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-                                <circle cx="50" cy="50" r="40" stroke-width="0.5" stroke-dasharray="2 3"/>
-                                <circle cx="50" cy="50" r="10" stroke-width="0.75"/>
-                                <line x1="50" y1="0" x2="50" y2="100" stroke-width="0.25" stroke-dasharray="5 5"/>
-                                <line x1="0" y1="50" x2="100" y2="50" stroke-width="0.25" stroke-dasharray="5 5"/>
+                        
+                        <!-- Lupa de inspección fija en el centro con refracción -->
+                        <div class="scanner-loupe">
+                            <div class="loupe-glass"></div>
+                            <svg class="lens-crosshair-fixed" width="30" height="30" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                                <circle cx="50" cy="50" r="4" fill="currentColor"/>
+                                <line x1="50" y1="15" x2="50" y2="85" stroke-width="1.5"/>
+                                <line x1="15" y1="50" x2="85" y2="50" stroke-width="1.5"/>
                             </svg>
-                            <span class="canvas-meta">CAMA DE ESCANER Nº 05-04 · RAW SCAN</span>
                         </div>
+                        
+                        <span class="canvas-meta">INSPECCIÓN DE DETALLES · SCAN INSPECT</span>
                     </div>
                     <p class="section-intro">
                         Digitalización profesional de negativos, diapositivas y copias impresas antiguas en alta resolución. Conservación y restauración digital meticulosa mediante retoque avanzado en Lightroom y Photoshop, devolviendo el contraste, la nitidez y la fidelidad cromática original a cada archivo familiar e histórico dañado por el paso del tiempo.
@@ -389,12 +402,44 @@ const galleryItems = mainPhotos.map((file: any) => {
         position: relative;
         width: 100%;
         height: 220px;
-        background: radial-gradient(circle at center, #1b1510 0%, #050505 100%);
+        background: #090909;
         border: 1px solid rgba(220, 177, 74, 0.15);
         border-radius: 6px;
         overflow: hidden;
         margin-bottom: 1.8rem;
-        box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 10px 40px rgba(0,0,0,0.6);
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 10px 40px rgba(0,0,0,0.6);
+    }
+
+    .panning-scan-img {
+        position: absolute;
+        top: -25%;
+        left: -25%;
+        width: 150%;
+        height: 150%;
+        object-fit: cover;
+        opacity: 0.35;
+        filter: sepia(0.45) contrast(1.15) brightness(0.75);
+        pointer-events: none;
+        animation: scan-pan 32s infinite ease-in-out;
+        will-change: transform;
+    }
+
+    @keyframes scan-pan {
+        0% {
+            transform: translate(0%, 0%) scale(1);
+        }
+        25% {
+            transform: translate(-12%, -8%) scale(1.08);
+        }
+        50% {
+            transform: translate(-18%, -15%) scale(1.02);
+        }
+        75% {
+            transform: translate(-6%, -18%) scale(1.08);
+        }
+        100% {
+            transform: translate(0%, 0%) scale(1);
+        }
     }
 
     .vintage-overlay {
@@ -404,33 +449,56 @@ const galleryItems = mainPhotos.map((file: any) => {
         opacity: 0.08;
         mix-blend-mode: overlay;
         pointer-events: none;
+        z-index: 2;
     }
 
-    .canvas-inner {
+    /* Lupa fija en el centro */
+    .scanner-loupe {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 105px;
+        height: 105px;
+        border-radius: 50%;
+        border: 2px solid var(--studio-accent);
+        box-shadow: 
+            0 10px 30px rgba(0,0,0,0.9), 
+            inset 0 0 20px rgba(255, 255, 255, 0.15);
+        z-index: 5;
+        overflow: hidden;
+        background: rgba(220, 177, 74, 0.02);
+    }
+
+    .loupe-glass {
         position: absolute;
         inset: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
+        border-radius: 50%;
+        backdrop-filter: contrast(1.5) brightness(1.35) saturate(1.25) blur(0.3px);
+        -webkit-backdrop-filter: contrast(1.5) brightness(1.35) saturate(1.25) blur(0.3px);
+        box-shadow: inset 0 0 15px rgba(220, 177, 74, 0.15);
+    }
+
+    .lens-crosshair-fixed {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         color: var(--studio-accent);
-        opacity: 0.45;
-    }
-
-    .lens-crosshair {
-        animation: rotate-crosshair 60s infinite linear;
-        margin-bottom: 1rem;
-    }
-
-    @keyframes rotate-crosshair {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        opacity: 0.65;
+        pointer-events: none;
+        z-index: 6;
     }
 
     .canvas-meta {
+        position: absolute;
+        bottom: 1.2rem;
+        left: 1.5rem;
         font-family: monospace;
         font-size: 0.55rem;
         letter-spacing: 3px;
+        color: rgba(255, 255, 255, 0.35);
+        z-index: 4;
         text-transform: uppercase;
     }
 
