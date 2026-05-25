@@ -77,12 +77,23 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
         <!-- ⏳ PRE-LOADER INMERSIVO -->
         <div id="gallery-loader" class="gallery-loader">
-            <div class="loader-content">
+            <!-- Sub-content 1: Cargando y Sincronizando -->
+            <div class="loader-content" id="loader-main-content">
                 <div class="loader-spinner"></div>
                 <p class="loader-text" id="loader-msg">INICIANDO SISTEMA</p>
                 <div class="loader-progress-info">
                     <span id="loader-count">0</span> de {artworks.length} OBRAS RECUPERADAS
                 </div>
+            </div>
+
+            <!-- Sub-content 2: Portal de Entrada Premium -->
+            <div class="loader-ready-content" id="loader-ready-content" style="display: none;">
+                <div class="loader-ready-logo">JMX ROYAL MUSEUM</div>
+                <div class="loader-ready-sub">EXHIBICIÓN INMERSIVA FINE ART</div>
+                <button id="btn-start-royal-experience" class="start-experience-btn">
+                    INICIAR EXPERIENCIA
+                </button>
+                <p class="loader-fullscreen-hint">Se activará el modo de pantalla completa nativo (F11).</p>
             </div>
         </div>
 
@@ -647,6 +658,74 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
     }
 
     .loader-content { text-align: center; }
+
+    .loader-ready-content {
+        text-align: center;
+        animation: loaderFadeIn 1s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    }
+
+    @keyframes loaderFadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .loader-ready-logo {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.2rem;
+        letter-spacing: 0.35em;
+        font-weight: 600;
+        color: var(--color-accent);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .loader-ready-sub {
+        font-family: var(--font-secondary);
+        font-size: 0.65rem;
+        letter-spacing: 4px;
+        color: rgba(255, 255, 255, 0.45);
+        margin-bottom: 3rem;
+        text-transform: uppercase;
+    }
+
+    .start-experience-btn {
+        background: var(--color-accent);
+        border: none;
+        color: #000;
+        font-family: var(--font-secondary);
+        font-size: 0.85rem;
+        font-weight: 800;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        padding: 1.2rem 3.5rem;
+        cursor: pointer;
+        transition: all 0.5s var(--ease-premium);
+        box-shadow: 0 15px 40px rgba(197, 160, 89, 0.25);
+        border-radius: 0;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+    }
+
+    .start-experience-btn:hover {
+        background: #ffffff;
+        color: #000;
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 25px 50px rgba(255, 255, 255, 0.25);
+    }
+
+    .start-experience-btn:active {
+        transform: translateY(-2px);
+    }
+
+    .loader-fullscreen-hint {
+        font-family: var(--font-secondary);
+        font-size: 0.55rem;
+        letter-spacing: 2px;
+        color: rgba(255, 255, 255, 0.25);
+        text-transform: uppercase;
+        margin: 0;
+    }
     .loader-spinner {
         width: 50px;
         height: 50px;
@@ -705,11 +784,39 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
             phraseIdx = (phraseIdx + 1) % loadingPhrases.length;
         }, 1500);
 
-        // Desbloqueo rápido garantizado
+        // 🏛️ Transición del Loader a Portal Listo
+        const loaderMain = document.getElementById('loader-main-content');
+        const loaderReady = document.getElementById('loader-ready-content');
+        const btnStart = document.getElementById('btn-start-royal-experience');
+
         setTimeout(() => {
-            loader?.classList.add('is-loaded');
             clearInterval(phraseInterval);
+            if (loaderMain && loaderReady) {
+                loaderMain.style.display = 'none';
+                loaderReady.style.display = 'block';
+            } else {
+                // Fallback si no existen los elementos
+                loader?.classList.add('is-loaded');
+            }
         }, 2000);
+
+        if (btnStart && loader) {
+            btnStart.addEventListener('click', () => {
+                // 🚀 Auto-forzado a Pantalla Completa F11
+                const docEl = document.documentElement;
+                const reqFs = docEl.requestFullscreen || 
+                              (docEl as any).webkitRequestFullscreen || 
+                              (docEl as any).mozRequestFullScreen || 
+                              (docEl as any).msRequestFullscreen;
+                
+                if (reqFs) {
+                    reqFs.call(docEl).catch(() => {});
+                }
+
+                // Desvanecer loader
+                loader.classList.add('is-loaded');
+            });
+        }
 
         // 🌙 Idle Management
         const resetIdleTimer = () => {

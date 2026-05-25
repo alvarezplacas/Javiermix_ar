@@ -1068,16 +1068,46 @@ const approvedModes = await getApprovedExhibitionModes();
                     overlay.classList.add('active');
                     showSlide(0);
                     startAutoPlay();
+
+                    // 🚀 Pantalla completa nativa (F11)
+                    const reqFs = overlay.requestFullscreen || 
+                                  (overlay as any).webkitRequestFullscreen || 
+                                  (overlay as any).mozRequestFullScreen || 
+                                  (overlay as any).msRequestFullscreen;
+                    if (reqFs) {
+                        reqFs.call(overlay).catch(() => {});
+                    }
                 }, 10);
             });
             
             const closeOverlay = () => {
                 stopAutoPlay();
                 overlay.classList.remove('active');
+
+                // 🚀 Salir de pantalla completa nativa si sigue activa
+                const exitFs = document.exitFullscreen || 
+                               (document as any).webkitExitFullscreen || 
+                               (document as any).mozCancelFullScreen || 
+                               (document as any).msExitFullscreen;
+                
+                if (exitFs && (document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement)) {
+                    exitFs.call(document).catch(() => {});
+                }
+
                 setTimeout(() => {
                     overlay.style.display = 'none';
                 }, 800); // Match transition duration
             };
+
+            // Escuchar el evento de salida nativo de pantalla completa (ej. si presionan ESC)
+            const handleFullscreenExit = () => {
+                if (!document.fullscreenElement && !(document as any).webkitFullscreenElement && !(document as any).mozFullScreenElement && overlay.classList.contains('active')) {
+                    closeOverlay();
+                }
+            };
+            document.addEventListener('fullscreenchange', handleFullscreenExit);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenExit);
+            document.addEventListener('mozfullscreenchange', handleFullscreenExit);
             
             closeBtn.addEventListener('click', closeOverlay);
             
