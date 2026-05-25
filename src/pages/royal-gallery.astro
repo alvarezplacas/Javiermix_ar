@@ -222,6 +222,11 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         --bg-ui: oklch(1 0 0 / 0.1);
         --glass-blur: blur(25px);
         --ease-premium: cubic-bezier(0.19, 1, 0.22, 1);
+
+        /* Variables adaptativas por defecto (Temas Claros) */
+        --text-primary: oklch(0.15 0.01 20);
+        --text-muted: oklch(0.15 0.01 20 / 0.5);
+        --border-label: oklch(0 0 0 / 0.08);
     }
 
     .royal-gallery-wrapper {
@@ -234,7 +239,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         background-attachment: fixed;
         background-size: cover;
         background-position: center;
-        color: oklch(0.1 0 0);
+        color: var(--text-primary);
         position: relative;
         transition: background 1s var(--ease-premium), color 1s linear;
         scrollbar-width: none;
@@ -294,6 +299,11 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                 url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='0.1'/%3E%3C/svg%3E"), /* Grano terciopelo */
                 linear-gradient(to bottom, rgba(0,0,0,0.2), transparent);
             &::before { background: radial-gradient(circle at 50% 10%, oklch(0.8 0.1 30 / 0.2) 0%, transparent 70%); }
+            
+            /* Contraste Adaptativo - Tema Oscuro Carmesí */
+            --text-primary: oklch(0.95 0.01 80);
+            --text-muted: oklch(0.95 0.01 80 / 0.55);
+            --border-label: oklch(1 0 0 / 0.12);
         }
 
         &.is-atmos-concrete { 
@@ -301,6 +311,11 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
             background-image: url("/img/textures/concrete_wall.png");
             background-blend-mode: multiply;
             &::before { background: radial-gradient(circle at 50% 10%, oklch(1 0 0 / 0.1) 0%, transparent 70%); }
+            
+            /* Contraste Adaptativo - Tema Oscuro Frío */
+            --text-primary: oklch(0.95 0.01 80);
+            --text-muted: oklch(0.95 0.01 80 / 0.55);
+            --border-label: oklch(1 0 0 / 0.15);
         }
 
         &.is-atmos-marble {
@@ -309,12 +324,36 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
                 radial-gradient(ellipse at 30% 30%, rgba(0,0,0,0.05) 0%, transparent 50%),
                 radial-gradient(ellipse at 70% 70%, rgba(0,0,0,0.03) 0%, transparent 60%);
             &::before { background: radial-gradient(circle at 50% 10%, oklch(1 0 0 / 0.15) 0%, transparent 60%); }
+            
+            /* Contraste Adaptativo - Tema Claro Mármol */
+            --text-primary: oklch(0.15 0.01 20);
+            --text-muted: oklch(0.15 0.01 20 / 0.5);
+            --border-label: oklch(0 0 0 / 0.08);
         }
 
         &.is-atmos-blue { 
             background-color: oklch(0.15 0.05 250); /* Azul Noche */
             background-image: linear-gradient(rgba(0,0,0,0.3), transparent);
             &::before { background: radial-gradient(circle at 50% 10%, oklch(0.8 0.1 240 / 0.2) 0%, transparent 70%); }
+            
+            /* Contraste Adaptativo - Tema Oscuro Azul */
+            --text-primary: oklch(0.95 0.01 80);
+            --text-muted: oklch(0.95 0.01 80 / 0.55);
+            --border-label: oklch(1 0 0 / 0.12);
+        }
+
+        &.is-atmos-night {
+            /* Contraste Adaptativo - Ladrillo Industrial (Tema Oscuro) */
+            --text-primary: oklch(0.95 0.01 80);
+            --text-muted: oklch(0.95 0.01 80 / 0.55);
+            --border-label: oklch(1 0 0 / 0.15);
+        }
+
+        &.is-atmos-gold {
+            /* Contraste Adaptativo - Oro Envejecido (Tema Oscuro) */
+            --text-primary: oklch(0.95 0.01 80);
+            --text-muted: oklch(0.95 0.01 80 / 0.55);
+            --border-label: oklch(1 0 0 / 0.15);
         }
     }
 
@@ -578,7 +617,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
 
     .museum-label {
         width: 220px;
-        border-left: 2px solid oklch(0 0 0 / 0.05);
+        border-left: 2px solid var(--border-label);
         padding-left: 2rem;
         
         /* 🎭 Oculto por defecto para que la obra brille sola */
@@ -605,7 +644,7 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
             letter-spacing: 0.05em; 
         }
         
-        p { font-size: 0.8rem; color: oklch(0 0 0 / 0.5); margin: 0.2rem 0; }
+        p { font-size: 0.8rem; color: var(--text-muted); margin: 0.2rem 0; }
         .specs { font-style: italic; opacity: 0.7; font-size: 0.7rem; }
         .serial { font-size: 0.6rem; letter-spacing: 0.2em; font-weight: 900; color: var(--color-accent); }
 
