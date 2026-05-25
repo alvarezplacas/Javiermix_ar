@@ -2,15 +2,25 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getSerieDetails, getApprovedExhibitionModes, getSerieSettings } from '@conexion/directus';
+import { getSerieDetails, getApprovedExhibitionModes, getSerieSettings, getSerieDetailsBySlugOrId } from '@conexion/directus';
 import { getArtworkLikes, hasLiked } from '@conexion/likes';
 import { getOptimizedImageURL } from '@utils/media';
 
 export const prerender = false;
 
-const { serie } = Astro.params; // Folder ID
-const { name, items } = await getSerieDetails(serie as string);
-const serieSettings = await getSerieSettings(serie as string);
+const { serie } = Astro.params; // Folder ID or Name Slug
+
+// Resolve Folder dynamically by UUID or name slug
+const serieData = await getSerieDetailsBySlugOrId(serie as string);
+
+// 301 HTTP Permanent Redirection if UUID was requested
+const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(serie as string);
+if (isUuid && serieData.slug) {
+    return Astro.redirect(`/galeria/${serieData.slug}`, 301);
+}
+
+const { name, items } = serieData;
+const serieSettings = await getSerieSettings(serieData.id || (serie as string));
 
 // 🧼 LIMPIEZA DE SALTOS DE LÍNEA MANUALES (FÓRMULA LUMAS PREMIUM)
 // Elimina los saltos de línea forzados del CMS para que el texto fluya de forma natural en el catálogo

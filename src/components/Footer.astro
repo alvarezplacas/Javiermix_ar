@@ -1,5 +1,5 @@
 ---
-import { getFooterSettings, getSeries, getArticles, getFooterColumns } from '@conexion/directus';
+import { getFooterSettings, getSeries, getArticles, getFooterColumns, slugify } from '@conexion/directus';
 
 const currentYear = new Date().getFullYear();
 const footerSettings = await getFooterSettings();
@@ -75,7 +75,7 @@ const singletonColumns = [
             <ul>
               <li><a href="/galeria">Ver Portfolio Completo</a></li>
               {footerSeries.map((serie: any) => (
-                <li><a href={`/galeria/${serie.name.replace(/ /g, '_')}`}>{serie.name}</a></li>
+                <li><a href={`/galeria/${slugify(serie.name)}`}>{serie.name}</a></li>
               ))}
               <li><a href="/galeria" class="link-all">→ Ver todas las series</a></li>
             </ul>

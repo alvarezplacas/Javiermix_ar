@@ -241,6 +241,58 @@ export async function getSeries() {
     } catch (e) { return []; }
 }
 
+export function slugify(text: string): string {
+    if (!text) return '';
+    return text
+        .toString()
+        .toLowerCase()
+        .normalize('NFD') // Descompone caracteres acentuados
+        .replace(/[\u0300-\u036f]/g, '') // Remueve tildes
+        .replace(/[^a-z0-9 -]/g, '') // Elimina caracteres raros
+        .replace(/\s+/g, '-') // Cambia espacios por guiones
+        .replace(/-+/g, '-') // Colapsa guiones múltiples
+        .trim();
+}
+
+export async function getSerieDetailsBySlugOrId(identifier: string) {
+    try {
+        const client = await DirectusManager.getClient();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier);
+        let folder = null;
+
+        if (isUuid) {
+            const folders = await client.request(readFolders({ filter: { id: { _eq: identifier } } as any, limit: 1 }));
+            folder = folders[0];
+        } else {
+            const catalogoFolders = await client.request(readFolders({ filter: { name: { _in: ['Catalogo', 'Catálogo', 'Coleccion', 'Colección'] } }, limit: 1 }));
+            const catalogoId = catalogoFolders[0]?.id;
+            
+            if (catalogoId) {
+                const seriesFolders = await client.request(readFolders({ filter: { parent: { _eq: catalogoId } }, limit: -1 }));
+                folder = seriesFolders.find((f: any) => slugify(f.name) === slugify(identifier));
+            }
+        }
+
+        if (!folder) return { id: null, name: 'Colección', slug: '', items: [] };
+
+        const files = await client.request(readFiles({ 
+            filter: { folder: { _eq: folder.id } }, 
+            sort: ['-filename_download'], 
+            limit: -1 
+        }));
+
+        return {
+            id: folder.id,
+            name: folder.name,
+            slug: slugify(folder.name),
+            items: files || []
+        };
+    } catch (e) {
+        console.error("[getSerieDetailsBySlugOrId] Error:", e);
+        return { id: null, name: 'Colección', slug: '', items: [] };
+    }
+}
+
 export async function getSerieDetails(folderId: string) {
     try {
         const client = await DirectusManager.getClient();
