@@ -52,15 +52,197 @@ import Footer from '@components/Footer.astro';
         <section class="curaduria-cta">
             <div class="cta-box">
                 <h2>Envío de Portfolios</h2>
-                <p>Las aplicaciones se revisan trimestralmente por Javier Mix. Por favor, envíe un enlace a su sitio web o un PDF con su serie más representativa.</p>
-                <a href="mailto:curaduria@javiermix.ar" class="btn-primary">ENVIAR PROPUESTA</a>
-                <p class="cta-note">Solo se contactará a los artistas seleccionados para una entrevista personal.</p>
+                <p class="cta-subtitle">Las aplicaciones se revisan de forma continua por Javier Mix. Por favor, completa los detalles de tu obra y adjunta tu portfolio en PDF.</p>
+                
+                <form id="curaduria-form" class="curaduria-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="nombre">Nombre Completo *</label>
+                            <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre artístico" />
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Correo Electrónico *</label>
+                            <input type="email" id="email" name="email" required placeholder="tu@email.com" />
+                        </div>
+                        <div class="form-group">
+                            <label for="sitio_web">Sitio Web / Portfolio Online</label>
+                            <input type="url" id="sitio_web" name="sitio_web" placeholder="https://tuweb.com" />
+                        </div>
+                        <div class="form-group">
+                            <label for="instagram">Instagram</label>
+                            <input type="text" id="instagram" name="instagram" placeholder="@tu_instagram" />
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mensaje">Mensaje / Concepto Artístico *</label>
+                        <textarea id="mensaje" name="mensaje" required rows="4" placeholder="Háblanos brevemente del concepto detrás de tus series..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="file-upload-wrapper">
+                            <label for="portfolio_pdf" class="file-upload-label" id="drop-zone">
+                                <span class="file-icon">📁</span>
+                                <span class="file-title">Carga tu Portfolio (PDF) *</span>
+                                <span class="file-subtitle">Arrastra tu archivo aquí o haz clic para buscar</span>
+                                <span class="file-info" id="file-info">Solo formato PDF · Tamaño máximo de 20MB</span>
+                                <input type="file" id="portfolio_pdf" name="portfolio_pdf" accept=".pdf" required style="display: none;" />
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="btn-submit-proposal">
+                        <span id="btn-text">ENVIAR PROPUESTA</span>
+                    </button>
+                    
+                    <div class="form-status-container" id="status-container" style="display: none;">
+                        <div class="status-spinner" id="status-spinner"></div>
+                        <p class="status-text" id="status-text">Iniciando envío...</p>
+                    </div>
+                </form>
+
+                <p class="cta-note">Solo se contactará a los artistas pre-seleccionados para una entrevista curatorial.</p>
             </div>
         </section>
     </main>
 
     <Footer />
 </Layout>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const form = document.getElementById('curaduria-form') as HTMLFormElement;
+        const fileInput = document.getElementById('portfolio_pdf') as HTMLInputElement;
+        const fileLabel = document.getElementById('drop-zone') as HTMLLabelElement;
+        const fileInfo = document.getElementById('file-info') as HTMLElement;
+        const btnSubmit = document.getElementById('btn-submit-proposal') as HTMLButtonElement;
+        const btnText = document.getElementById('btn-text') as HTMLElement;
+        const statusContainer = document.getElementById('status-container') as HTMLElement;
+        const statusText = document.getElementById('status-text') as HTMLElement;
+        const statusSpinner = document.getElementById('status-spinner') as HTMLElement;
+
+        if (!form) return;
+
+        // Visual Drag & Drop
+        if (fileLabel && fileInput) {
+            fileInput.addEventListener('change', () => {
+                const file = fileInput.files?.[0];
+                if (file) {
+                    if (file.size > 20 * 1024 * 1024) {
+                        alert('El archivo supera el límite de 20MB.');
+                        fileInput.value = '';
+                        fileInfo.innerText = 'Solo formato PDF · Tamaño máximo de 20MB';
+                        fileLabel.classList.remove('has-file');
+                        return;
+                    }
+                    fileInfo.innerHTML = `<strong style="color: var(--color-accent);">${file.name}</strong> (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+                    fileLabel.classList.add('has-file');
+                }
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                fileLabel.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    fileLabel.classList.add('drag-over');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                fileLabel.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    fileLabel.classList.remove('drag-over');
+                }, false);
+            });
+
+            fileLabel.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt?.files;
+                if (files && files.length > 0) {
+                    fileInput.files = files;
+                    fileInput.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nombre = (document.getElementById('nombre') as HTMLInputElement).value;
+            const email = (document.getElementById('email') as HTMLInputElement).value;
+            const sitio_web = (document.getElementById('sitio_web') as HTMLInputElement).value;
+            const instagram = (document.getElementById('instagram') as HTMLInputElement).value;
+            const mensaje = (document.getElementById('mensaje') as HTMLTextAreaElement).value;
+            const file = fileInput.files?.[0];
+
+            if (!file) {
+                alert('Por favor selecciona tu portfolio en PDF.');
+                return;
+            }
+
+            // Desactivar interfaz
+            btnSubmit.disabled = true;
+            btnSubmit.style.opacity = '0.3';
+            statusContainer.style.display = 'flex';
+            statusSpinner.style.display = 'block';
+
+            try {
+                // Paso 1: Subir el PDF a Directus
+                statusText.innerText = "SUBIENDO PORTFOLIO (PDF)...";
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const uploadResponse = await fetch('https://admin.javiermix.ar/files', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('Error al subir el archivo de portfolio a Directus.');
+                }
+
+                const uploadData = await uploadResponse.json();
+                const fileId = uploadData.data.id;
+
+                // Paso 2: Crear el registro de curaduría
+                statusText.innerText = "REGISTRANDO POSTULACIÓN EN JMX...";
+                
+                const payload = {
+                    nombre,
+                    email,
+                    sitio_web,
+                    instagram,
+                    mensaje,
+                    portfolio_pdf: fileId
+                };
+
+                const dbResponse = await fetch('https://admin.javiermix.ar/items/curaduria', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!dbResponse.ok) {
+                    throw new Error('Error al registrar la propuesta en la colección de Directus.');
+                }
+
+                // Éxito total
+                statusSpinner.style.display = 'none';
+                statusText.innerHTML = '<span style="color: var(--color-accent); font-size: 1.2rem; display: block; margin-bottom: 0.5rem;">✔ PROPUESTA RECIBIDA</span>¡Gracias por postularte! Tu portfolio ha sido recibido y archivado en el sistema de curaduría de Javier Mix.';
+                form.reset();
+                fileLabel.classList.remove('has-file');
+                fileInfo.innerText = 'Solo formato PDF · Tamaño máximo de 20MB';
+            } catch (error: any) {
+                console.error('[Curaduria Error]', error);
+                statusSpinner.style.display = 'none';
+                statusText.innerHTML = `<span style="color: #ff4444; font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">❌ ERROR EN EL ENVÍO</span>${error.message || 'No se pudo conectar con el servidor. Inténtalo de nuevo.'}`;
+                btnSubmit.disabled = false;
+                btnSubmit.style.opacity = '1';
+            }
+        });
+    });
+</script>
 
 <style>
     .curaduria-page {
@@ -180,8 +362,161 @@ import Footer from '@components/Footer.astro';
 
     .cta-box p {
         color: var(--color-text-muted);
-        margin-bottom: 3rem;
         line-height: 1.7;
+        margin: 0;
+    }
+
+    .cta-subtitle {
+        font-size: 1rem;
+        max-width: 600px;
+        margin: 0 auto 3rem !important;
+    }
+
+    .curaduria-form {
+        text-align: left;
+        margin-top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--color-accent);
+        font-weight: 700;
+    }
+
+    .form-group input, 
+    .form-group textarea {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        padding: 1rem;
+        font-size: 0.9rem;
+        font-family: inherit;
+        transition: all 0.3s ease;
+    }
+
+    .form-group input:focus, 
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 10px rgba(197, 160, 89, 0.1);
+    }
+
+    .file-upload-wrapper {
+        width: 100%;
+    }
+
+    .file-upload-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed rgba(255, 255, 255, 0.15);
+        padding: 3rem 2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.005);
+    }
+
+    .file-upload-label:hover,
+    .file-upload-label.drag-over {
+        border-color: var(--color-accent);
+        background: rgba(197, 160, 89, 0.02);
+    }
+
+    .file-upload-label.has-file {
+        border-style: solid;
+        border-color: var(--color-accent);
+        background: rgba(197, 160, 89, 0.05);
+    }
+
+    .file-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .file-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+    }
+
+    .file-subtitle {
+        font-size: 0.8rem;
+        opacity: 0.6;
+        margin-bottom: 0.8rem;
+    }
+
+    .file-info {
+        font-size: 0.7rem;
+        opacity: 0.4;
+        letter-spacing: 0.5px;
+    }
+
+    #btn-submit-proposal {
+        width: 100%;
+        border: none;
+        cursor: pointer;
+        padding: 1.2rem;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-status-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.01);
+        margin-top: 1rem;
+        animation: fadeIn 0.5s ease forwards;
+        text-align: center;
+        flex-direction: column;
+    }
+
+    .status-spinner {
+        width: 30px;
+        height: 30px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top-color: var(--color-accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .status-text {
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        color: #fff;
+        line-height: 1.6;
+        margin: 0 !important;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .btn-primary {
