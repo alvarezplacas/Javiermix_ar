@@ -47,13 +47,18 @@ const galleryItems = mainPhotos.map((file: any) => {
         </nav>
 
         <header class="studio-header">
+            <!-- Efecto Escáner Detrás del Contenido -->
+            <div class="scanner-bed-bg">
+                <div class="scanner-light-beam"></div>
+            </div>
+
             <div class="header-grid">
                 <!-- Columna Izquierda: Identidad y Título -->
                 <div class="header-main-info">
                     <div class="brand-meta">
-                        <span class="tech-badge">PROCESO ARCHIVÍSTICO</span>
+                        <span class="tech-badge">RETOQUE HIGH-END</span>
                         <span class="meta-dot">·</span>
-                        <span class="tech-spec">MICRO-EMULSIÓN & LUZ</span>
+                        <span class="tech-spec">CAPTURA 48-BIT DE RESOLUCIÓN</span>
                     </div>
                     
                     <h1 class="main-title">
@@ -62,11 +67,11 @@ const galleryItems = mainPhotos.map((file: any) => {
                     </h1>
                     
                     <div class="archival-labels">
-                        <span>CONSERVACIÓN HISTÓRICA</span>
+                        <span>DIGITALIZACIÓN DE NEGATIVOS</span>
                         <span>·</span>
-                        <span>QUÍMICA ARGENTA</span>
+                        <span>RESTAURACIÓN DIGITAL</span>
                         <span>·</span>
-                        <span>RECONSTRUCCIÓN DIGITAL</span>
+                        <span>LIGHTROOM & PHOTOSHOP</span>
                     </div>
                 </div>
 
@@ -81,11 +86,11 @@ const galleryItems = mainPhotos.map((file: any) => {
                                 <line x1="50" y1="0" x2="50" y2="100" stroke-width="0.25" stroke-dasharray="5 5"/>
                                 <line x1="0" y1="50" x2="100" y2="50" stroke-width="0.25" stroke-dasharray="5 5"/>
                             </svg>
-                            <span class="canvas-meta">REGISTRO DE RECUPERACIÓN Nº 05-04</span>
+                            <span class="canvas-meta">CAMA DE ESCANER Nº 05-04 · RAW SCAN</span>
                         </div>
                     </div>
                     <p class="section-intro">
-                        Preservación de la memoria visual mediante técnicas avanzadas de restauración físico-química y reconstrucción digital microscópica. Devolvemos el contraste, la nitidez y el alma a los archivos familiares e históricos dañados por el paso del tiempo.
+                        Digitalización profesional de negativos, diapositivas y copias impresas antiguas en alta resolución. Conservación y restauración digital meticulosa mediante retoque avanzado en Lightroom y Photoshop, devolviendo el contraste, la nitidez y la fidelidad cromática original a cada archivo familiar e histórico dañado por el paso del tiempo.
                     </p>
                 </div>
             </div>
@@ -253,6 +258,58 @@ const galleryItems = mainPhotos.map((file: any) => {
         max-width: 1400px;
         margin: 0 auto 6rem;
         position: relative;
+        padding: 4rem;
+        background: rgba(8, 8, 8, 0.55);
+        border: 1px solid rgba(220, 177, 74, 0.08);
+        border-radius: 12px;
+        overflow: hidden; /* Mantiene la luz del escáner dentro del contenedor */
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,255,255,0.01);
+    }
+
+    /* Contenedor de la luz del escáner en el fondo */
+    .scanner-bed-bg {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    /* Haz de luz de escáner */
+    .scanner-light-beam {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 6px;
+        background: #ffffff;
+        box-shadow: 
+            0 0 15px #ffffff, 
+            0 0 35px var(--studio-accent),
+            -20px 0 60px rgba(220, 177, 74, 0.15),
+            20px 0 60px rgba(220, 177, 74, 0.15);
+        opacity: 0.85;
+        left: -10%;
+        animation: scanner-sweep 12s infinite ease-in-out;
+    }
+
+    @keyframes scanner-sweep {
+        0% {
+            left: -5%;
+        }
+        45% {
+            left: 105%;
+        }
+        50% {
+            left: 105%;
+        }
+        95% {
+            left: -5%;
+        }
+        100% {
+            left: -5%;
+        }
     }
 
     .header-grid {
@@ -994,6 +1051,10 @@ const galleryItems = mainPhotos.map((file: any) => {
     @media (max-width: 768px) {
         .studio-wrapper { 
             padding: 6rem 1.2rem 7rem; /* Aumenta padding inferior para no solapar con la botonera flotante */
+        }
+        .studio-header {
+            padding: 2rem 1.5rem;
+            margin-bottom: 3.5rem;
         }
         .studio-nav {
             padding: 1.2rem 1.2rem;
