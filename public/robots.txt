@@ -11,4 +11,4 @@ Disallow: /_astro/
 Disallow: /node_modules/
 
 # Sitemap
-Sitemap: https://www.javiermix.com/sitemap.xml
+Sitemap: https://javiermix.ar/sitemap.xml
