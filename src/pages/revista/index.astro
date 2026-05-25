@@ -116,11 +116,14 @@ const articles = dbArticles.map(art => {
                 </div>
                 <div class="image-glare"></div>
               </div>
-              <span class="category-tag">{article.category}</span>
             </div>
 
             <div class="article-text">
-              <span class="article-location">{article.location}</span>
+              <div class="article-meta-header">
+                <span class="category-tag-inline">{article.category}</span>
+                <span class="separator">·</span>
+                <span class="article-location">{article.location}</span>
+              </div>
               <h2 class="article-headline">{article.title}</h2>
               <p class="article-excerpt">{article.excerpt}</p>
 
@@ -130,7 +133,6 @@ const articles = dbArticles.map(art => {
                 </div>
                 <a href={article.link} class="btn-leer">
                   LEER NOTA
-                  <span class="btn-underline"></span>
                 </a>
               </footer>
             </div>
@@ -174,39 +176,32 @@ const articles = dbArticles.map(art => {
             }, 5000);
         });
 
-        // 💡 EFECTO 3D MARCADO
-        const handleTilt = (e: MouseEvent) => {
-            const container = (e.target as HTMLElement).closest('[data-tilt-container]') as HTMLElement;
-            if (!container) return;
+        // 💡 EFECTO 3D MARCADO (AISLADO E INHIBIDO DE ERRORES GLOBALMENTE)
+        const tiltFrames = document.querySelectorAll('[data-tilt-container]');
+        tiltFrames.forEach(container => {
+            container.addEventListener('mousemove', (e: any) => {
+                const r = container.getBoundingClientRect();
+                const x = e.clientX - r.left; 
+                const y = e.clientY - r.top;
+                const rx = (y - r.height/2) / 20; // Rebajado a 20 para evitar distorsiones excesivas
+                const ry = (r.width/2 - x) / 20;
+                
+                (container as HTMLElement).style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.03, 1.03, 1.03)`;
+                
+                const glare = container.querySelector('.image-glare') as HTMLElement;
+                if (glare) {
+                    const px = (x / r.width) * 100;
+                    const py = (y / r.height) * 100;
+                    glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.18) 0%, transparent 75%)`;
+                    glare.style.opacity = "1";
+                }
+            });
 
-            const r = container.getBoundingClientRect();
-            const x = e.clientX - r.left; 
-            const y = e.clientY - r.top;
-            const rx = (y - r.height/2) / 10; // Más sensible
-            const ry = (r.width/2 - x) / 10;
-            
-            container.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.05, 1.05, 1.05)`;
-            
-            const glare = container.querySelector('.image-glare') as HTMLElement;
-            if (glare) {
-                const px = (x / r.width) * 100;
-                const py = (y / r.height) * 100;
-                glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.2) 0%, transparent 80%)`;
-                glare.style.opacity = "1";
-            }
-        };
-
-        const resetTilt = (e: MouseEvent) => {
-            const container = (e.target as HTMLElement).closest('[data-tilt-container]') as HTMLElement;
-            if (!container) return;
-            container.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-            const glare = container.querySelector('.image-glare') as HTMLElement;
-            if (glare) glare.style.opacity = "0";
-        };
-
-        document.querySelectorAll('.articles-wrapper').forEach(wrapper => {
-            wrapper.addEventListener('mousemove', (e:any) => handleTilt(e));
-            wrapper.addEventListener('mouseleave', (e:any) => resetTilt(e));
+            container.addEventListener('mouseleave', () => {
+                (container as HTMLElement).style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+                const glare = container.querySelector('.image-glare') as HTMLElement;
+                if (glare) glare.style.opacity = "0";
+            });
         });
     }
 
@@ -309,16 +304,18 @@ const articles = dbArticles.map(art => {
     height: 520px; 
     overflow: hidden; 
     position: relative; 
-    background: #0a0a0a; 
-    border: 16px solid var(--color-bg); /* Elegant adaptive paper mat */
-    outline: 1px solid var(--glass-border); /* Subtle frame edge */
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25), 0 15px 30px rgba(0, 0, 0, 0.15); 
-    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, border-color 0.5s ease, outline-color 0.5s ease;
+    background: #0d0d0c; 
+    border: 24px solid #f9f8f6; /* Elegant textured cotton paper mat */
+    box-shadow: 
+      0 30px 60px rgba(0, 0, 0, 0.5), 
+      inset 0 0 12px rgba(0, 0, 0, 0.18),
+      0 0 0 1px rgba(197, 160, 89, 0.2); 
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
     transform-style: preserve-3d;
   }
   
   .article-row:hover .tilt-frame {
-    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.35), 0 20px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 45px 90px rgba(0, 0, 0, 0.7), 0 0 15px rgba(197, 160, 89, 0.1);
   }
   
   .slideshow-wrapper { 
@@ -340,7 +337,7 @@ const articles = dbArticles.map(art => {
     height: 100%; 
     object-fit: cover; 
     filter: grayscale(15%) brightness(0.85); 
-    transition: opacity 1.5s ease, filter 0.8s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); 
+    transition: opacity 1.5s ease, filter 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); 
     opacity: 0;
     z-index: 1;
     mask-image: radial-gradient(circle, black 70%, transparent 100%);
@@ -354,7 +351,7 @@ const articles = dbArticles.map(art => {
   }
   
   .article-row:hover .article-media.active {
-    transform: scale(1.05);
+    transform: scale(1.04);
   }
   
   .image-glare { 
@@ -369,21 +366,6 @@ const articles = dbArticles.map(art => {
     transition: opacity 0.3s;
   }
   
-  .category-tag { 
-    position: absolute; 
-    bottom: -1rem; 
-    left: 2.5rem; 
-    background: var(--color-accent); 
-    color: #000; 
-    font-size: 0.65rem; 
-    font-weight: 700; 
-    letter-spacing: 3px; 
-    text-transform: uppercase; 
-    padding: 0.5rem 1.2rem; 
-    z-index: 10; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  }
-  
   /* 🕊️ Clean Floating Card-less Text Column */
   .article-text { 
     padding: 1rem 0; 
@@ -392,15 +374,35 @@ const articles = dbArticles.map(art => {
     justify-content: center;
   }
   
+  .article-meta-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .category-tag-inline {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #c5a059;
+    text-transform: uppercase;
+  }
+
+  .separator {
+    color: rgba(255, 255, 255, 0.15);
+    font-size: 0.8rem;
+  }
+
   .article-location { 
     display: block; 
-    font-size: 0.7rem; 
-    letter-spacing: 4px; 
+    font-size: 0.65rem; 
+    letter-spacing: 3px; 
     text-transform: uppercase; 
-    color: var(--color-accent); 
+    color: rgba(255, 255, 255, 0.5); 
     font-family: var(--font-secondary); 
     font-weight: 500; 
-    margin-bottom: 1.5rem; 
     transition: color 0.5s ease;
   }
   
@@ -409,14 +411,14 @@ const articles = dbArticles.map(art => {
     font-weight: 300; 
     font-style: italic; 
     color: var(--color-white); 
-    line-height: 1.2; 
+    line-height: 1.25; 
     margin-bottom: 2rem; 
     font-family: var(--font-primary); 
-    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.5s ease;
+    transition: color 0.4s ease;
   }
   
   .article-row:hover .article-headline {
-    transform: translateX(12px);
+    color: #c5a059;
   }
   
   .article-excerpt { 
@@ -452,24 +454,29 @@ const articles = dbArticles.map(art => {
     position: relative; 
     color: var(--color-white); 
     font-family: var(--font-secondary); 
-    font-size: 0.7rem; 
+    font-size: 0.75rem; 
     font-weight: 700; 
     letter-spacing: 3px; 
     text-decoration: none; 
-    transition: color 0.5s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    transition: color 0.4s ease;
   }
-  
-  .btn-underline { 
-    display: block; 
-    width: 30%; 
-    height: 1px; 
-    background-color: var(--color-accent); 
-    margin-top: 6px; 
-    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1); 
+
+  .btn-leer::after {
+    content: '→';
+    font-size: 0.95rem;
+    color: #c5a059;
+    transition: transform 0.3s ease;
   }
-  
-  .btn-leer:hover .btn-underline { 
-    width: 100%; 
+
+  .btn-leer:hover {
+    color: #c5a059;
+  }
+
+  .btn-leer:hover::after {
+    transform: translateX(5px);
   }
   
   .empty-state {
