@@ -204,6 +204,11 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
           <div class="intro-text" set:html={homeContent} />
         </header>
 
+        <!-- 🌌 Cita Editorial Destacada (JMX Golden Quote) -->
+        <blockquote class="jmx-editorial-quote">
+            <p class="quote-body">"No viajamos para escapar, viajamos para que no se nos escape la vida"</p>
+        </blockquote>
+
         <div class="home-closing">
             {famousQuote}
         </div>
@@ -628,9 +633,30 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
 .intro-text {
     font-size: 1.1rem;
     color: var(--color-travertine-light);
-    margin-bottom: 3.5rem;
+    margin-bottom: 2.5rem;
     max-width: 85%;
     line-height: 1.8;
+    font-weight: 300;
+}
+
+/* 🌌 JMX EDITORIAL GOLDEN QUOTE */
+.jmx-editorial-quote {
+    position: relative;
+    margin: 0 0 3rem 0;
+    padding: 1rem 2rem;
+    border-left: 2px solid var(--color-accent);
+    background: rgba(197, 160, 89, 0.02);
+    max-width: 85%;
+    box-sizing: border-box;
+}
+
+.jmx-editorial-quote .quote-body {
+    font-family: var(--font-primary), serif;
+    font-size: 1.3rem;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--color-travertine-light);
+    margin: 0;
     font-weight: 300;
 }
 
