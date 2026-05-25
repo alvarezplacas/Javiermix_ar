@@ -184,14 +184,12 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
                         <span class="btn-label">REVISTA ONLINE</span>
                         <span class="btn-hover-bg"></span>
                     </a>
+                    <a href="#showroom-anchor" class="glass-cta-btn explore">
+                        <span class="btn-label">EXPLORAR <span class="explore-arrow">↓</span></span>
+                        <span class="btn-hover-bg"></span>
+                    </a>
                 </div>
             </div>
-
-            {/* 4. Indicador de Scroll hacia Recomendados & Artículos */}
-            <a href="#showroom-anchor" class="showroom-scroll-indicator" aria-label="Ver recomendados y artículos">
-                <span class="scroll-arrow">↓</span>
-                <span class="scroll-text">EXPLORAR</span>
-            </a>
         </div>
       </aside>
 
@@ -448,7 +446,7 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
 /* Immersive CTA Styles */
 .immersive-cta-overlay {
     position: absolute;
-    bottom: 12%;
+    bottom: 8%; /* Slightly lowered to look perfectly proportioned */
     left: 0;
     right: 0;
     z-index: 100;
@@ -457,64 +455,39 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
     justify-content: center;
 }
 
-/* 🚀 SHOWROOM SCROLL DOWN INDICATOR */
-.showroom-scroll-indicator {
-    position: absolute;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 120;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.4rem;
-    text-decoration: none;
-    padding: 0.6rem 1.6rem;
-    background: rgba(11, 10, 9, 0.45);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(197, 160, 89, 0.2);
-    border-radius: 30px;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
+/* 🚀 SHOWROOM EXPLORE BUTTON UPGRADE */
+.glass-cta-btn.explore {
+    background: rgba(197, 160, 89, 0.05);
+    border-color: rgba(197, 160, 89, 0.2);
 }
 
-.showroom-scroll-indicator:hover {
-    border-color: #c5a059;
-    background: rgba(11, 10, 9, 0.75);
-    transform: translateX(-50%) translateY(-3px);
-    box-shadow: 0 15px 40px rgba(197, 160, 89, 0.12);
-}
-
-.showroom-scroll-indicator .scroll-arrow {
-    font-size: 1.1rem;
+.glass-cta-btn.explore .explore-arrow {
+    display: inline-block;
+    margin-left: 0.8rem;
     color: #c5a059;
-    font-weight: 300;
+    font-size: 1rem;
     line-height: 1;
-    animation: scrollBounce 2s infinite ease-in-out;
+    animation: scrollBounceSide 2s infinite ease-in-out;
 }
 
-.showroom-scroll-indicator .scroll-text {
-    font-family: var(--font-secondary), sans-serif;
-    font-size: 0.6rem;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    transition: color 0.3s ease;
+.glass-cta-btn.explore:hover {
+    border-color: var(--color-accent);
 }
 
-.showroom-scroll-indicator:hover .scroll-text {
-    color: #c5a059;
+.glass-cta-btn.explore:hover .btn-label {
+    color: var(--color-onyx-deep);
 }
 
-@keyframes scrollBounce {
+.glass-cta-btn.explore:hover .explore-arrow {
+    color: var(--color-onyx-deep);
+}
+
+@keyframes scrollBounceSide {
     0%, 100% {
         transform: translateY(0);
     }
     50% {
-        transform: translateY(5px);
+        transform: translateY(4px);
     }
 }
 
