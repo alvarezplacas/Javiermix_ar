@@ -7,6 +7,7 @@ import AddToCartButton from '@components/ecommerce/AddToCartButton';
 import FramingUpsell from '@components/ecommerce/FramingUpsell';
 import '@styles/atmospheres.css';
 import { getArtworkDetails, getAssetUrl, DirectusManager } from '@conexion/directus';
+import { getArtworkLikes, hasLiked } from '@conexion/likes';
 import { readFolders, readItems } from '@directus/sdk';
 
 const { id } = Astro.params;
@@ -69,6 +70,10 @@ if (meta?.size_large && meta?.precio_large) {
 
 const precio = sizes.length > 0 ? sizes[0].price : (meta?.price || 0);
 const etiqueta = "Fine Art Print";
+
+const likesCount = await getArtworkLikes(id as string);
+const clientIp = Astro.clientAddress || "unknown";
+const likedByUser = await hasLiked(id as string, clientIp);
 
 // --- PROPUESTA 4: SEO DINÁMICO (JSON-LD) ---
 const artworkSchema = {
@@ -144,7 +149,7 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
                 <i class="fas fa-crop-alt"></i>
             </button>
 
-            <button class="control-btn btn-like-glass" id="btn-like-premium" data-id={id}>
+            <button class={`control-btn btn-like-glass ${likedByUser ? 'liked' : ''}`} id="btn-like-premium" data-id={id}>
                 <svg class="heart-icon-glass" viewBox="0 0 24 24">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
@@ -179,7 +184,7 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
         <!-- Badge Superior de Visualizaciones -->
         <div class="social-feedback-badge">
              <i class="fas fa-eye"></i>
-             <span class="social-count" id="social-view-count">0 PERSONAS LES GUSTA ESTO</span>
+             <span class="social-count" id="social-view-count">{likesCount} PERSONAS LES GUSTA ESTO</span>
         </div>
 
         <div class="tags-container">

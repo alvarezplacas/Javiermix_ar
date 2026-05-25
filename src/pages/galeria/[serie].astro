@@ -3,7 +3,7 @@ import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import { getSerieDetails, getApprovedExhibitionModes, getSerieSettings } from '@conexion/directus';
-import { getArtworkLikes } from '@conexion/likes';
+import { getArtworkLikes, hasLiked } from '@conexion/likes';
 import { getOptimizedImageURL } from '@utils/media';
 
 export const prerender = false;
@@ -28,17 +28,21 @@ const mainImages = items.filter((f: any) => {
 	return !low.includes('_2.') && !low.includes(' 2.');
 });
 
+const clientIp = Astro.clientAddress || "unknown";
+
 const artworks = await Promise.all(mainImages.map(async (img: any) => {
 	const baseName = img.filename_download.split('.')[0].toLowerCase();
 	const hoverVariant = items.find((f: any) => f.filename_download.toLowerCase().startsWith(`${baseName}_2.`));
     const likes = await getArtworkLikes(img.id);
+    const likedByUser = await hasLiked(img.id, clientIp);
 	
 	return {
 		id: img.id,
 		title: img.title || "Obra Javier Mix",
 		mainUrl: getOptimizedImageURL(img.id),
 		hoverUrl: hoverVariant ? getOptimizedImageURL(hoverVariant.id) : null,
-        likes
+        likes,
+        likedByUser
 	};
 }));
 
@@ -183,7 +187,7 @@ const approvedModes = await getApprovedExhibitionModes();
 					
 					<div class="artwork-info-overlay">
 						<div class="interaction-bar">
-							<button class="like-btn" data-artwork-id={artwork.id}>
+							<button class={`like-btn ${artwork.likedByUser ? 'liked' : ''}`} data-artwork-id={artwork.id}>
 								<svg class="heart-svg" viewBox="0 0 24 24">
 									<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
 								</svg>

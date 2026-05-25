@@ -96,7 +96,15 @@ export const collectors = pgTable('collectors', {
     created_at: timestamp('created_at').defaultNow(),
 });
 
-// --- 2. CONNECTION POOL (Postgres) ---
+// --- 2. ARTWORK LIKES TRACKING ---
+export const artworkLikesTracking = pgTable('artwork_likes_tracking', {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    artwork_filename: varchar('artwork_filename', { length: 255 }).notNull(),
+    user_ip: varchar('user_ip', { length: 100 }).notNull(),
+    created_at: timestamp('created_at').defaultNow(),
+});
+
+// --- 3. CONNECTION POOL (Postgres) ---
 
 const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL || `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`,
@@ -104,5 +112,5 @@ const pool = new pg.Pool({
 });
 
 export const db = drizzle(pool, { 
-    schema: { artworks, magazine, orders, certificates, collectors }, 
+    schema: { artworks, magazine, orders, certificates, collectors, artworkLikesTracking }, 
 });
