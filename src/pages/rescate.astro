@@ -547,8 +547,8 @@ const galleryItems = mainPhotos.map((file: any) => {
         -ms-overflow-style: none;
         -webkit-overflow-scrolling: touch;
         /* Máscara lineal: desvanece los extremos cuando hay desborde horizontal */
-        mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
-        -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
+        mask-image: linear-gradient(to right, transparent 0%, #000 2.5%, #000 97.5%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 2.5%, #000 97.5%, transparent 100%);
     }
 
     .tabs-scroll-container::-webkit-scrollbar {
@@ -559,6 +559,7 @@ const galleryItems = mainPhotos.map((file: any) => {
         display: flex;
         gap: 0.8rem;
         white-space: nowrap;
+        padding: 0.2rem 2.5rem 0.2rem 1.5rem; /* Colchón lateral para evitar que la máscara difumine los extremos cuando no hay scroll */
     }
 
     .filter-tab {
