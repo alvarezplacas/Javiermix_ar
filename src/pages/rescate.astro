@@ -47,18 +47,66 @@ const galleryItems = mainPhotos.map((file: any) => {
         </nav>
 
         <header class="studio-header">
-            <div class="pre-title">ARCHIVOS RECUPERADOS</div>
-            <h1>Restauración & Memoria</h1>
-            <p class="section-intro">Preservación de la memoria visual mediante técnicas avanzadas de recuperación química y digital. Especialistas en archivos familiares e históricos.</p>
-            
-            <div class="filter-navigation">
-                <span class="filter-label">GRUPOS:</span>
-                <select id="session-filter" class="tag-selector">
-                    <option value="all">TODOS LOS ARCHIVOS</option>
-                    {uniqueSeries.map(s => (
-                        <option value={s}>{s.toUpperCase()}</option>
-                    ))}
-                </select>
+            <div class="header-grid">
+                <!-- Columna Izquierda: Identidad y Título -->
+                <div class="header-main-info">
+                    <div class="brand-meta">
+                        <span class="tech-badge">PROCESO ARCHIVÍSTICO</span>
+                        <span class="meta-dot">·</span>
+                        <span class="tech-spec">MICRO-EMULSIÓN & LUZ</span>
+                    </div>
+                    
+                    <h1 class="main-title">
+                        Restauración <br>
+                        <span class="gold-gradient">& Memoria</span>
+                    </h1>
+                    
+                    <div class="archival-labels">
+                        <span>CONSERVACIÓN HISTÓRICA</span>
+                        <span>·</span>
+                        <span>QUÍMICA ARGENTA</span>
+                        <span>·</span>
+                        <span>RECONSTRUCCIÓN DIGITAL</span>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Narrativa y Lienzo Vintage -->
+                <div class="header-editorial">
+                    <div class="vintage-canvas-card">
+                        <div class="vintage-overlay"></div>
+                        <div class="canvas-inner">
+                            <svg class="lens-crosshair" width="40" height="40" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                                <circle cx="50" cy="50" r="40" stroke-width="0.5" stroke-dasharray="2 3"/>
+                                <circle cx="50" cy="50" r="10" stroke-width="0.75"/>
+                                <line x1="50" y1="0" x2="50" y2="100" stroke-width="0.25" stroke-dasharray="5 5"/>
+                                <line x1="0" y1="50" x2="100" y2="50" stroke-width="0.25" stroke-dasharray="5 5"/>
+                            </svg>
+                            <span class="canvas-meta">REGISTRO DE RECUPERACIÓN Nº 05-04</span>
+                        </div>
+                    </div>
+                    <p class="section-intro">
+                        Preservación de la memoria visual mediante técnicas avanzadas de restauración físico-química y reconstrucción digital microscópica. Devolvemos el contraste, la nitidez y el alma a los archivos familiares e históricos dañados por el paso del tiempo.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Rediseño del Selector: Glassmorphic Pill-Tabs -->
+            <div class="filter-navigation-modern">
+                <span class="filter-label-modern">ARCHIVOS:</span>
+                <div class="tabs-scroll-container">
+                    <div class="filter-tabs-wrapper" role="tablist">
+                        <button class="filter-tab active" data-value="all" role="tab" aria-selected="true">
+                            TODOS LOS ARCHIVOS
+                            <span class="tab-count">{photos.filter((p: any) => !p.filename_download.toLowerCase().includes('_2')).length}</span>
+                        </button>
+                        {uniqueSeries.map(s => (
+                            <button class="filter-tab" data-value={s} role="tab" aria-selected="false">
+                                {s.toUpperCase()}
+                                <span class="tab-count">{galleryItems.filter(item => item.serie === s).length}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -202,66 +250,229 @@ const galleryItems = mainPhotos.map((file: any) => {
     }
 
     .studio-header {
-        max-width: 850px;
-        margin-bottom: 5rem;
+        max-width: 1400px;
+        margin: 0 auto 6rem;
+        position: relative;
     }
 
-    .pre-title {
-        font-size: 0.7rem;
-        letter-spacing: 4px;
+    .header-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 5rem;
+        align-items: center;
+        margin-bottom: 4rem;
+    }
+
+    .header-main-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .brand-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .tech-badge {
+        font-size: 0.6rem;
+        font-weight: 900;
         color: var(--studio-accent);
-        margin-bottom: 1rem;
-        font-weight: 800;
-        opacity: 0.8;
+        letter-spacing: 3px;
     }
 
-    h1 {
+    .meta-dot {
+        color: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem;
+    }
+
+    .tech-spec {
+        font-size: 0.55rem;
+        font-family: monospace;
+        color: rgba(255, 255, 255, 0.35);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .main-title {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 4rem;
-        margin-bottom: 0.5rem;
-        letter-spacing: -1px;
-        line-height: 1;
+        font-size: 5rem;
+        font-weight: 300;
+        line-height: 0.95;
+        letter-spacing: -2px;
+        margin: 1.5rem 0;
+        color: #ffffff;
+    }
+
+    .gold-gradient {
+        background: linear-gradient(135deg, #fff 30%, var(--studio-accent) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-style: italic;
+    }
+
+    .archival-labels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .header-editorial {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .vintage-canvas-card {
+        position: relative;
+        width: 100%;
+        height: 220px;
+        background: radial-gradient(circle at center, #1b1510 0%, #050505 100%);
+        border: 1px solid rgba(220, 177, 74, 0.15);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 1.8rem;
+        box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 10px 40px rgba(0,0,0,0.6);
+    }
+
+    .vintage-overlay {
+        position: absolute;
+        inset: 0;
+        background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+        opacity: 0.08;
+        mix-blend-mode: overlay;
+        pointer-events: none;
+    }
+
+    .canvas-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: var(--studio-accent);
+        opacity: 0.45;
+    }
+
+    .lens-crosshair {
+        animation: rotate-crosshair 60s infinite linear;
+        margin-bottom: 1rem;
+    }
+
+    @keyframes rotate-crosshair {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .canvas-meta {
+        font-family: monospace;
+        font-size: 0.55rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
     }
 
     .section-intro {
-        margin-top: 1.5rem;
         font-size: 0.9rem;
-        color: rgba(255,255,255,0.4);
+        color: rgba(255, 255, 255, 0.4);
         max-width: 600px;
         line-height: 1.6;
+        margin: 0;
     }
 
-    .filter-navigation {
-        margin-top: 3rem;
+    .filter-navigation-modern {
         display: flex;
         align-items: center;
-        gap: 1.5rem;
+        gap: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 1.5rem 0;
+        margin-top: 2rem;
     }
 
-    .filter-label {
+    .filter-label-modern {
         font-size: 0.6rem;
         font-weight: 900;
-        letter-spacing: 2px;
-        color: rgba(255,255,255,0.2);
+        letter-spacing: 3px;
+        color: rgba(255, 255, 255, 0.25);
     }
 
-    .tag-selector {
-        background: transparent;
-        border: none;
-        border-left: 2px solid var(--studio-accent);
-        color: var(--studio-accent);
-        font-size: 0.65rem;
-        font-weight: 900;
-        letter-spacing: 3px;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        outline: none;
-        appearance: none;
-        text-transform: uppercase;
-        transition: 0.3s;
+    .tabs-scroll-container {
+        overflow-x: auto;
+        flex: 1;
+        scrollbar-width: none; /* Ocultar en Firefox */
     }
-    .tag-selector:hover {
-        background: rgba(220, 177, 74, 0.05);
+
+    .tabs-scroll-container::-webkit-scrollbar {
+        display: none; /* Ocultar en Chrome/Safari */
+    }
+
+    .filter-tabs-wrapper {
+        display: flex;
+        gap: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .filter-tab {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.5);
+        padding: 0.6rem 1.2rem;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        border-radius: 30px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: inherit;
+        outline: none;
+    }
+
+    .filter-tab:hover {
+        background: rgba(220, 177, 74, 0.04);
+        border-color: rgba(220, 177, 74, 0.3);
+        color: #ffffff;
+        transform: translateY(-2px);
+    }
+
+    .filter-tab.active {
+        background: rgba(220, 177, 74, 0.1);
+        border-color: var(--studio-accent);
+        color: var(--studio-accent);
+        box-shadow: 0 4px 15px rgba(220, 177, 74, 0.15);
+    }
+
+    .tab-count {
+        font-size: 0.5rem;
+        font-family: monospace;
+        opacity: 0.6;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.1rem 0.4rem;
+        border-radius: 10px;
+        transition: background 0.4s;
+    }
+
+    .filter-tab.active .tab-count {
+        background: rgba(220, 177, 74, 0.2);
+        opacity: 1;
+    }
+
+    @media (max-width: 1024px) {
+        .header-grid {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+        .main-title {
+            font-size: 3.8rem;
+        }
     }
 
     .gallery-container {
@@ -805,7 +1016,7 @@ const galleryItems = mainPhotos.map((file: any) => {
     const viewerDate = document.getElementById('viewer-date');
     const closeBtn = document.getElementById('close-viewer');
     const comparisonStage = document.getElementById('comparison-stage');
-    const sessionFilter = document.getElementById('session-filter') as HTMLSelectElement;
+    const filterTabs = document.querySelectorAll('.filter-tab');
 
     // --- ESTADO GLOBAL ---
     let isTransitioning = false;
@@ -814,32 +1025,42 @@ const galleryItems = mainPhotos.map((file: any) => {
 
     const serieGroups = document.querySelectorAll('.serie-group');
 
-    sessionFilter?.addEventListener('change', () => {
-        const filter = sessionFilter.value;
-        serieGroups.forEach(group => {
-            const el = group as HTMLElement;
-            const serie = el.getAttribute('data-serie');
-            const shouldShow = filter === 'all' || serie === filter;
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Actualizar clase activa en los botones de pestañas
+            filterTabs.forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
 
-            if (shouldShow) {
-                el.style.display = 'block';
-                // Trigger layout reflow to allow transition
-                void el.offsetWidth;
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-            } else {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(15px)';
-                
-                // Clear any existing handler to prevent multi-triggering
-                el.ontransitionend = null;
-                el.ontransitionend = () => {
-                    if (el.style.opacity === '0') {
-                        el.style.display = 'none';
-                    }
+            const filter = tab.getAttribute('data-value');
+
+            // Filtrar grupos con la misma lógica dinámica ultra suave
+            serieGroups.forEach(group => {
+                const el = group as HTMLElement;
+                const serie = el.getAttribute('data-serie');
+                const shouldShow = filter === 'all' || serie === filter;
+
+                if (shouldShow) {
+                    el.style.display = 'block';
+                    void el.offsetWidth; // Reflow
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                } else {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(15px)';
+                    
                     el.ontransitionend = null;
-                };
-            }
+                    el.ontransitionend = () => {
+                        if (el.style.opacity === '0') {
+                            el.style.display = 'none';
+                        }
+                        el.ontransitionend = null;
+                    };
+                }
+            });
         });
     });
 
