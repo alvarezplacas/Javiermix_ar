@@ -66,13 +66,14 @@ const galleryItems = mainPhotos.map((file: any) => {
                         <span class="gold-gradient">& Memoria</span>
                     </h1>
                     
-                    <div class="archival-labels">
-                        <span>DIGITALIZACIÓN DE NEGATIVOS</span>
-                        <span>·</span>
-                        <span>RESTAURACIÓN DIGITAL</span>
-                        <span>·</span>
-                        <span>LIGHTROOM & PHOTOSHOP</span>
-                    </div>
+                    <!-- Lista Semántica para Googlebot / SEO -->
+                    <ul class="archival-labels-list">
+                        <li>DIGITALIZACIÓN DE NEGATIVOS</li>
+                        <li class="separator-dot">·</li>
+                        <li>RESTAURACIÓN DIGITAL</li>
+                        <li class="separator-dot">·</li>
+                        <li>LIGHTROOM & PHOTOSHOP</li>
+                    </ul>
                 </div>
 
                 <!-- Columna Derecha: Narrativa y Lienzo Vintage -->
@@ -103,13 +104,13 @@ const galleryItems = mainPhotos.map((file: any) => {
                         <span class="canvas-meta">INSPECCIÓN DE DETALLES · SCAN INSPECT</span>
                     </div>
                     <p class="section-intro">
-                        Digitalización profesional de negativos, diapositivas y copias impresas antiguas en alta resolución. Conservación y restauración digital meticulosa mediante retoque avanzado en Lightroom y Photoshop, devolviendo el contraste, la nitidez y la fidelidad cromática original a cada archivo familiar e histórico dañado por el paso del tiempo.
+                        Digitalización profesional de negativos, diapositivas y copias impresas antiguas en alta resolución. Conservación y restauración digital meticulosa mediante retoque avanzado en Lightroom y Photoshop, devolviendo el contraste, la nitidez and la fidelidad cromática original a cada archivo familiar e histórico dañado por el paso del tiempo.
                     </p>
                 </div>
             </div>
 
-            <!-- Rediseño del Selector: Glassmorphic Pill-Tabs -->
-            <div class="filter-navigation-modern">
+            <!-- Navegación Semántica del Selector: Glassmorphic Pill-Tabs con Máscara Apple-Style -->
+            <nav class="filter-navigation-modern" aria-label="Filtro de archivos por serie">
                 <span class="filter-label-modern">ARCHIVOS:</span>
                 <div class="tabs-scroll-container">
                     <div class="filter-tabs-wrapper" role="tablist">
@@ -125,7 +126,7 @@ const galleryItems = mainPhotos.map((file: any) => {
                         ))}
                     </div>
                 </div>
-            </div>
+            </nav>
         </header>
 
         {uniqueSeries.length === 0 ? (
@@ -285,7 +286,7 @@ const galleryItems = mainPhotos.map((file: any) => {
     .scanner-bed-bg {
         position: absolute;
         inset: 0;
-        z-index: -1;
+        z-index: 1; /* Al fondo del stacking context del header */
         pointer-events: none;
         overflow: hidden;
     }
@@ -331,6 +332,8 @@ const galleryItems = mainPhotos.map((file: any) => {
         gap: 5rem;
         align-items: center;
         margin-bottom: 4rem;
+        position: relative;
+        z-index: 2; /* Al frente, inmune a la luz de fondo */
     }
 
     .header-main-info {
@@ -382,7 +385,10 @@ const galleryItems = mainPhotos.map((file: any) => {
         font-style: italic;
     }
 
-    .archival-labels {
+    .archival-labels-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
         display: flex;
         flex-wrap: wrap;
         gap: 0.8rem;
@@ -390,6 +396,11 @@ const galleryItems = mainPhotos.map((file: any) => {
         font-weight: 800;
         letter-spacing: 2px;
         color: rgba(255, 255, 255, 0.3);
+    }
+
+    .separator-dot {
+        color: var(--studio-accent);
+        opacity: 0.5;
     }
 
     .header-editorial {
@@ -518,6 +529,8 @@ const galleryItems = mainPhotos.map((file: any) => {
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         padding: 1.5rem 0;
         margin-top: 2rem;
+        position: relative;
+        z-index: 2; /* Asegura estar en el frente de la luz */
     }
 
     .filter-label-modern {
@@ -530,11 +543,16 @@ const galleryItems = mainPhotos.map((file: any) => {
     .tabs-scroll-container {
         overflow-x: auto;
         flex: 1;
-        scrollbar-width: none; /* Ocultar en Firefox */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
+        /* Máscara lineal: desvanece los extremos cuando hay desborde horizontal */
+        mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
     }
 
     .tabs-scroll-container::-webkit-scrollbar {
-        display: none; /* Ocultar en Chrome/Safari */
+        display: none; /* Ocultar barra de scroll nativa */
     }
 
     .filter-tabs-wrapper {
