@@ -580,10 +580,21 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         width: 220px;
         border-left: 2px solid oklch(0 0 0 / 0.05);
         padding-left: 2rem;
-        opacity: 0.4;
-        transition: 0.6s var(--ease-premium);
+        
+        /* 🎭 Oculto por defecto para que la obra brille sola */
+        opacity: 0;
+        transform: translateX(-15px);
+        will-change: transform, opacity;
+        transition: opacity 0.8s var(--ease-premium), 
+                    transform 0.8s var(--ease-premium), 
+                    border-color 0.8s ease;
 
-        .artwork-station:hover & { opacity: 1; border-color: var(--color-accent); }
+        /* Revelado cinemático en hover de la estación */
+        .artwork-station:hover & { 
+            opacity: 1; 
+            transform: translateX(0);
+            border-color: var(--color-accent); 
+        }
 
         h3 { 
             font-family: 'Cormorant Garamond', serif; 
@@ -599,17 +610,28 @@ console.log(`[Royal Gallery] Cargando ${entornos.length} entornos dinámicos.`);
         .serial { font-size: 0.6rem; letter-spacing: 0.2em; font-weight: 900; color: var(--color-accent); }
 
         .buy-btn {
-            margin-top: 2rem;
-            padding: 0.8rem 1.5rem;
-            background: oklch(0.1 0 0);
-            color: oklch(1 0 0);
-            border: none;
-            font-size: 0.65rem;
-            font-weight: 900;
-            letter-spacing: 0.2em;
+            margin-top: 1.5rem;
+            padding: 0.6rem 1.2rem;
+            background: transparent;
+            color: inherit;
+            border: 1px solid currentColor;
+            opacity: 0.6;
+            font-size: 0.6rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             cursor: pointer;
-            transition: 0.4s;
-            &:hover { background: var(--color-accent); color: #000; }
+            transition: all 0.4s var(--ease-premium);
+            border-radius: 0;
+            
+            &:hover { 
+                background: var(--color-accent); 
+                border-color: var(--color-accent);
+                color: #000 !important; 
+                opacity: 1;
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(197, 160, 89, 0.2);
+            }
         }
     }
 
