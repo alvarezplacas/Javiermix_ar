@@ -17,6 +17,7 @@ import {
     getArticles
 } from '@conexion/directus';
 import { getOptimizedImageURL } from '@utils/media';
+import { hasLiked } from '@conexion/likes';
 
 let homeAssets = [];
 let homeSettings = null;
@@ -29,24 +30,29 @@ try {
         getHomeSettings(),
         getCatalogoFiles(),
         getArticles()
-    ]);
-    homeAssets = assets;
-    homeSettings = settings;
+      ]);
+      homeAssets = assets;
+      homeSettings = settings;
 
-    // 🎨 Procesar obras (estilo Lumas, filtrando muestras _2)
-    artworks = artworksRaw
-        .filter(file => file.id && file.id.length === 36 && !file.filename_download.toLowerCase().includes('_2'))
-        .map(file => {
-            const baseName = file.filename_download.split('.')[0];
-            const mockup = artworksRaw.find(f => f.filename_download.toLowerCase().startsWith(baseName.toLowerCase() + '_2'));
-            return {
-                id: file.id,
-                title: file.title || file.filename_download.split('.')[0],
-                serie: file.serie_name || 'Archivo General',
-                thumb: getOptimizedImageURL(file.id, { width: 800, format: 'webp', quality: 80 }),
-                mockup: mockup ? getOptimizedImageURL(mockup.id, { width: 800, format: 'webp', quality: 80 }) : null
-            };
-        });
+      const clientIp = Astro.clientAddress || "unknown";
+
+      // 🎨 Procesar obras (estilo Lumas, filtrando muestras _2)
+      const filteredArtworks = artworksRaw
+          .filter(file => file.id && file.id.length === 36 && !file.filename_download.toLowerCase().includes('_2'));
+
+      artworks = await Promise.all(filteredArtworks.map(async (file) => {
+          const baseName = file.filename_download.split('.')[0];
+          const mockup = artworksRaw.find(f => f.filename_download.toLowerCase().startsWith(baseName.toLowerCase() + '_2'));
+          const likedByUser = await hasLiked(file.id, clientIp);
+          return {
+              id: file.id,
+              title: file.title || file.filename_download.split('.')[0],
+              serie: file.serie_name || 'Archivo General',
+              thumb: getOptimizedImageURL(file.id, { width: 800, format: 'webp', quality: 80 }),
+              mockup: mockup ? getOptimizedImageURL(mockup.id, { width: 800, format: 'webp', quality: 80 }) : null,
+              likedByUser
+          };
+      }));
 
     // 📖 Procesar artículos de la revista en formato compacto horizontal
     const PUBLIC_DIRECTUS_URL = 'https://admin.javiermix.ar';
@@ -180,6 +186,12 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
                     </a>
                 </div>
             </div>
+
+            {/* 4. Indicador de Scroll hacia Recomendados & Artículos */}
+            <a href="#showroom-anchor" class="showroom-scroll-indicator" aria-label="Ver recomendados y artículos">
+                <span class="scroll-arrow">↓</span>
+                <span class="scroll-text">EXPLORAR</span>
+            </a>
         </div>
       </aside>
 
@@ -431,13 +443,74 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
 /* Immersive CTA Styles */
 .immersive-cta-overlay {
     position: absolute;
-    bottom: 10%;
+    bottom: 12%;
     left: 0;
     right: 0;
     z-index: 100;
     pointer-events: auto;
     display: flex;
     justify-content: center;
+}
+
+/* 🚀 SHOWROOM SCROLL DOWN INDICATOR */
+.showroom-scroll-indicator {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 120;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+    padding: 0.6rem 1.6rem;
+    background: rgba(11, 10, 9, 0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(197, 160, 89, 0.2);
+    border-radius: 30px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+}
+
+.showroom-scroll-indicator:hover {
+    border-color: #c5a059;
+    background: rgba(11, 10, 9, 0.75);
+    transform: translateX(-50%) translateY(-3px);
+    box-shadow: 0 15px 40px rgba(197, 160, 89, 0.12);
+}
+
+.showroom-scroll-indicator .scroll-arrow {
+    font-size: 1.1rem;
+    color: #c5a059;
+    font-weight: 300;
+    line-height: 1;
+    animation: scrollBounce 2s infinite ease-in-out;
+}
+
+.showroom-scroll-indicator .scroll-text {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: color 0.3s ease;
+}
+
+.showroom-scroll-indicator:hover .scroll-text {
+    color: #c5a059;
+}
+
+@keyframes scrollBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(5px);
+    }
 }
 
 .glass-cta-stack {

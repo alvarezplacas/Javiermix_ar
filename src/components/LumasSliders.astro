@@ -6,6 +6,7 @@ interface Artwork {
     serie: string;
     thumb: string;
     mockup: string | null;
+    likedByUser?: boolean;
 }
 
 interface Article {
@@ -25,7 +26,7 @@ interface Props {
 const { artworks = [], articles = [] } = Astro.props;
 ---
 
-<div class="lumas-showroom-container">
+<div class="lumas-showroom-container" id="showroom-anchor">
   <!-- 🎨 FILA 1: FOTOGRAFÍAS RECOMENDADAS (ESTILO LUMAS MUSEUM) -->
   <section class="showroom-section artworks-row-section">
     <div class="showroom-header">
@@ -57,11 +58,18 @@ const { artworks = [], articles = [] } = Astro.props;
                   <h3 class="artwork-card-title">{art.title}</h3>
                   <p class="artwork-card-serie">{art.serie}</p>
                 </div>
-                <button class="favorite-heart-btn" data-fav-btn={art.id} aria-label="Añadir a favoritos">
-                  <svg viewBox="0 0 24 24" class="heart-svg">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                  </svg>
-                </button>
+                <div class="artwork-card-actions">
+                  <button class="fullscreen-trigger-btn" data-fullscreen-url={art.thumb} data-title={art.title} data-serie={art.serie} aria-label="Ver en pantalla completa">
+                    <svg viewBox="0 0 24 24" class="action-svg">
+                      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <button class={`favorite-heart-btn ${art.likedByUser ? 'is-active' : ''}`} data-fav-btn={art.id} aria-label="Añadir a favoritos">
+                    <svg viewBox="0 0 24 24" class="heart-svg">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -127,6 +135,22 @@ const { artworks = [], articles = [] } = Astro.props;
       </button>
     </div>
   </section>
+
+  <!-- 🎭 LIGHTBOX/FULLSCREEN OVERLAY PREMIUM (ESTILO LUMAS SECURE) -->
+  <div class="lumas-fullscreen-overlay" id="lumas-fullscreen-overlay" style="display: none;">
+    <div class="fullscreen-vignette"></div>
+    <button class="close-fullscreen-btn" id="close-fullscreen-btn" aria-label="Cerrar pantalla completa">&times;</button>
+    
+    <div class="fullscreen-media-container" id="fullscreen-media-container">
+      <img src="" alt="" class="fullscreen-artwork-img" id="fullscreen-artwork-img" />
+      <div class="secure-mask"></div>
+    </div>
+    
+    <div class="fullscreen-caption">
+      <h3 id="fullscreen-caption-title"></h3>
+      <p id="fullscreen-caption-serie"></p>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -377,6 +401,37 @@ const { artworks = [], articles = [] } = Astro.props;
     text-transform: uppercase;
   }
 
+  /* 🔘 CONTENEDOR DE ACCIONES (FULLSCREEN + FAVORITO) */
+  .artwork-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    z-index: 10;
+  }
+
+  .fullscreen-trigger-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: #c0b9b0;
+  }
+
+  .fullscreen-trigger-btn:hover {
+    transform: scale(1.2);
+    color: #c5a059;
+  }
+
+  .action-svg {
+    width: 18px;
+    height: 18px;
+    transition: stroke 0.3s ease;
+  }
+
   /* BOTÓN DE FAVORITO */
   .favorite-heart-btn {
     background: none;
@@ -393,6 +448,105 @@ const { artworks = [], articles = [] } = Astro.props;
   .favorite-heart-btn:hover {
     transform: scale(1.2);
     color: #e03c3c;
+  }
+
+  /* 🎭 LIGHTBOX / FULLSCREEN OVERLAY */
+  .lumas-fullscreen-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background-color: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  .fullscreen-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .close-fullscreen-btn {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 3rem;
+    font-weight: 200;
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0.5;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    &:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
+
+  .fullscreen-media-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: zoom-in;
+  }
+
+  .fullscreen-artwork-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    z-index: 2;
+    transition: transform 0.15s ease-out;
+    pointer-events: auto;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.8);
+  }
+
+  .secure-mask {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .fullscreen-caption {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+    color: #fff;
+  }
+
+  #fullscreen-caption-title {
+    font-family: var(--font-primary), serif;
+    font-size: 1.5rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+  }
+
+  #fullscreen-caption-serie {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #c5a059;
+    margin: 0;
+    text-transform: uppercase;
   }
 
   .heart-svg {
@@ -662,38 +816,38 @@ const { artworks = [], articles = [] } = Astro.props;
    * Soporta: Auto-drift continuo, pointer drag inercial, touch swipe y favoritos.
    */
   document.addEventListener('astro:page-load', () => {
-    // 🏛️ 1. GESTIÓN DE FAVORITOS (LOCALSTORAGE)
+    // 🏛️ 1. GESTIÓN DE FAVORITOS (CONECTADO A LA API DE LIKES EN VIVO)
     function initFavorites() {
       const favButtons = document.querySelectorAll('[data-fav-btn]');
-      let favorites = JSON.parse(localStorage.getItem('javiermix_favorites') || '[]');
 
-      // Actualizar estado inicial
       favButtons.forEach(btn => {
-        const id = btn.getAttribute('data-fav-btn');
-        if (id && favorites.includes(id)) {
-          btn.classList.add('is-active');
-        }
-      });
-
-      // Escuchar clicks
-      favButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const id = btn.getAttribute('data-fav-btn');
-          if (!id) return;
+          const artworkId = btn.getAttribute('data-fav-btn');
+          if (!artworkId) return;
 
-          favorites = JSON.parse(localStorage.getItem('javiermix_favorites') || '[]');
-          
-          if (favorites.includes(id)) {
-            favorites = favorites.filter((favId: string) => favId !== id);
-            btn.classList.remove('is-active');
-          } else {
-            favorites.push(id);
-            btn.classList.add('is-active');
+          btn.classList.add('animating');
+          try {
+            const res = await fetch('/api/like', {
+              method: 'POST',
+              body: JSON.stringify({ artworkId })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              if (data.liked) {
+                btn.classList.add('is-active');
+              } else {
+                btn.classList.remove('is-active');
+              }
+            } else {
+              alert(data.message || "Error al registrar favorito");
+            }
+          } catch (err) {
+            console.error("Error liking:", err);
+          } finally {
+            setTimeout(() => btn.classList.remove('animating'), 400);
           }
-
-          localStorage.setItem('javiermix_favorites', JSON.stringify(favorites));
         });
       });
     }
@@ -719,7 +873,6 @@ const { artworks = [], articles = [] } = Astro.props;
           }
         }, 5000);
 
-        // Limpieza automática si se desmonta el elemento
         card.setAttribute('data-slideshow-interval', intervalId.toString());
       });
     }
@@ -731,30 +884,22 @@ const { artworks = [], articles = [] } = Astro.props;
       const canvas = viewport.querySelector('.slider-canvas') as HTMLElement;
       if (!canvas) return;
 
-      // Variables físicas y de control
       let isDown = false;
       let startX: number;
       let scrollLeft: number;
       
-      // Para arrastre inercial
       let velX = 0;
       let lastX = 0;
       let lastTime = 0;
       let animationFrameId: number;
       
-      // Auto-drift
-      const driftSpeed = 0.4; // Píxeles por frame (~24px/segundo)
+      const driftSpeed = 0.4; 
       let isPaused = false;
       let pauseTimeout: any;
 
-      // Iniciar el auto-drift hipnótico
       function stepDrift() {
         if (!isDown && !isPaused) {
-          // Desplazar lentamente a la izquierda
           viewport.scrollLeft += driftSpeed;
-          
-          // Soporte de bucle infinito virtual:
-          // Si llegamos casi al final, volvemos sutilmente al inicio
           const maxScroll = viewport.scrollWidth - viewport.clientWidth;
           if (viewport.scrollLeft >= maxScroll - 1) {
             viewport.scrollLeft = 0;
@@ -763,16 +908,12 @@ const { artworks = [], articles = [] } = Astro.props;
         animationFrameId = requestAnimationFrame(stepDrift);
       }
 
-      // Iniciar ciclo de animación
       animationFrameId = requestAnimationFrame(stepDrift);
 
-      // Eventos de ratón y pointer para drag inercial
       viewport.addEventListener('pointerdown', (e: PointerEvent) => {
         isDown = true;
         isPaused = true;
         clearTimeout(pauseTimeout);
-        
-        // Desactivar temporalmente transiciones suaves de scroll nativo para el arrastre
         viewport.style.scrollBehavior = 'auto';
 
         startX = e.pageX - viewport.offsetLeft;
@@ -803,22 +944,20 @@ const { artworks = [], articles = [] } = Astro.props;
         e.preventDefault();
         
         const x = e.pageX - viewport.offsetLeft;
-        const walk = (x - startX) * 1.5; // Multiplicador de sensibilidad de arrastre
+        const walk = (x - startX) * 1.5; 
         viewport.scrollLeft = scrollLeft - walk;
 
-        // Calcular velocidad en tiempo real para inercia posterior
         const now = performance.now();
         const dt = now - lastTime;
         if (dt > 0) {
           const dx = e.pageX - lastX;
-          velX = dx / dt; // píxeles por milisegundo
+          velX = dx / dt; 
         }
         
         lastX = e.pageX;
         lastTime = now;
       });
 
-      // Pausa en hover
       viewport.addEventListener('mouseenter', () => {
         isPaused = true;
         clearTimeout(pauseTimeout);
@@ -830,19 +969,17 @@ const { artworks = [], articles = [] } = Astro.props;
         }
       });
 
-      // Soporte táctil móvil (prevenir recarga tirando hacia abajo si arrastramos de lado)
       viewport.addEventListener('touchmove', (e) => {
         isPaused = true;
         clearTimeout(pauseTimeout);
       }, { passive: true });
 
-      // Aplicar inercia al soltar
       function applyInertia() {
         if (Math.abs(velX) < 0.1) return;
         
         viewport.style.scrollBehavior = 'auto';
-        let speed = velX * 16; // Escalar velocidad a píxeles por fotograma aproximado (~60fps)
-        const friction = 0.94; // Factor de fricción (atenuación elástica)
+        let speed = velX * 16; 
+        const friction = 0.94; 
 
         function inertiaLoop() {
           if (isDown || Math.abs(speed) < 0.2) {
@@ -859,7 +996,6 @@ const { artworks = [], articles = [] } = Astro.props;
         requestAnimationFrame(inertiaLoop);
       }
 
-      // Reanudar deriva automática tras una interacción
       function triggerResumeDrift(delay: number) {
         clearTimeout(pauseTimeout);
         pauseTimeout = setTimeout(() => {
@@ -867,7 +1003,6 @@ const { artworks = [], articles = [] } = Astro.props;
         }, delay);
       }
 
-      // Registrar botones de navegación de bloque (Flechas)
       const arrows = document.querySelectorAll(`[data-slider-target="${viewport.dataset.sliderId}"]`);
       arrows.forEach(arrow => {
         arrow.addEventListener('click', (e) => {
@@ -876,7 +1011,7 @@ const { artworks = [], articles = [] } = Astro.props;
           viewport.style.scrollBehavior = 'smooth';
 
           const dir = arrow.getAttribute('data-slider-arrow');
-          const scrollAmount = viewport.clientWidth * 0.85; // Desplazar el 85% de la pantalla visible
+          const scrollAmount = viewport.clientWidth * 0.85; 
 
           if (dir === 'prev') {
             viewport.scrollLeft -= scrollAmount;
@@ -884,19 +1019,112 @@ const { artworks = [], articles = [] } = Astro.props;
             viewport.scrollLeft += scrollAmount;
           }
 
-          // Reanudar el autodesplazamiento lento tras 4 segundos
           triggerResumeDrift(4000);
         });
       });
 
-      // Limpieza al cambiar de página
       document.addEventListener('astro:before-preparation', () => {
         cancelAnimationFrame(animationFrameId);
         clearTimeout(pauseTimeout);
       }, { once: true });
     }
 
-    // Inicializar los motores de todos los viewports de sliders en la página
+    // 🎭 4. GESTIÓN DE PANTALLA COMPLETA NATIVA (LIGHTBOX SEGURO - ESTILO LUMAS)
+    function initFullscreenLightbox() {
+      const overlay = document.getElementById('lumas-fullscreen-overlay');
+      const closeBtn = document.getElementById('close-fullscreen-btn');
+      const fullscreenImg = document.getElementById('fullscreen-artwork-img') as HTMLImageElement;
+      const captionTitle = document.getElementById('fullscreen-caption-title');
+      const captionSerie = document.getElementById('fullscreen-caption-serie');
+      const mediaContainer = document.getElementById('fullscreen-media-container');
+      
+      const triggers = document.querySelectorAll('[data-fullscreen-url]');
+      
+      if (!overlay || !closeBtn || !fullscreenImg || !captionTitle || !captionSerie || !mediaContainer) return;
+      
+      triggers.forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const url = trigger.getAttribute('data-fullscreen-url') || '';
+          const title = trigger.getAttribute('data-title') || '';
+          const serie = trigger.getAttribute('data-serie') || '';
+          
+          fullscreenImg.src = url;
+          captionTitle.textContent = title;
+          captionSerie.textContent = serie;
+          
+          overlay.style.display = 'flex';
+          
+          // Forzar F11 nativo
+          const reqFs = overlay.requestFullscreen || 
+                        (overlay as any).webkitRequestFullscreen || 
+                        (overlay as any).mozRequestFullScreen || 
+                        (overlay as any).msRequestFullscreen;
+          if (reqFs) {
+            reqFs.call(overlay).catch(() => {});
+          }
+        });
+      });
+      
+      const closeFullscreen = () => {
+        const exitFs = document.exitFullscreen || 
+                       (document as any).webkitExitFullscreen || 
+                       (document as any).mozCancelFullScreen || 
+                       (document as any).msExitFullscreen;
+        
+        if (exitFs && (document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement)) {
+          exitFs.call(document).catch(() => {});
+        }
+        overlay.style.display = 'none';
+        fullscreenImg.src = '';
+      };
+      
+      closeBtn.addEventListener('click', closeFullscreen);
+      
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.style.display === 'flex') {
+          closeFullscreen();
+        }
+      });
+      
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && overlay.style.display === 'flex') {
+          closeFullscreen();
+        }
+      });
+      
+      // Lupa de ampliación fluida
+      mediaContainer.addEventListener('mousemove', (e: MouseEvent) => {
+        const rect = mediaContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const pctX = (x / rect.width) * 100;
+        const pctY = (y / rect.height) * 100;
+        
+        fullscreenImg.style.transformOrigin = `${pctX}% ${pctY}%`;
+        fullscreenImg.style.transform = 'scale(2.2)';
+      });
+      
+      mediaContainer.addEventListener('mouseleave', () => {
+        fullscreenImg.style.transform = 'scale(1)';
+        fullscreenImg.style.transformOrigin = 'center center';
+      });
+      
+      // Bloquear click derecho
+      overlay.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      // Vaciar portapapeles en PrintScreen
+      window.addEventListener('keyup', (e) => {
+        if (e.key === 'PrintScreen') {
+          navigator.clipboard.writeText('');
+          alert('Captura protegida por derechos de autor - JMX');
+        }
+      });
+    }
+
     function initAllSliders() {
       const viewports = document.querySelectorAll('.slider-viewport');
       viewports.forEach(vp => initSliderEngine(vp as HTMLElement));
@@ -906,5 +1134,6 @@ const { artworks = [], articles = [] } = Astro.props;
     initFavorites();
     initMagazineCardSlideshows();
     initAllSliders();
+    initFullscreenLightbox();
   });
 </script>
