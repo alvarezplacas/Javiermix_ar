@@ -282,16 +282,16 @@ const galleryItems = mainPhotos.map((file: any) => {
         box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,255,255,0.01);
     }
 
-    /* Contenedor de la luz del escáner en el fondo */
+    /* Contenedor de la luz del escáner - Pasa por arriba de la foto y texto */
     .scanner-bed-bg {
         position: absolute;
         inset: 0;
-        z-index: 1; /* Al fondo del stacking context del header */
+        z-index: 4; /* Elevado a 4 para superponerse con realismo tridimensional sobre la foto y textos */
         pointer-events: none;
         overflow: hidden;
     }
 
-    /* Haz de luz de escáner */
+    /* Haz de luz de escáner - Incorpora inconsistencia eléctrica de alta fidelidad */
     .scanner-light-beam {
         position: absolute;
         top: 0;
@@ -305,7 +305,8 @@ const galleryItems = mainPhotos.map((file: any) => {
             20px 0 60px rgba(220, 177, 74, 0.15);
         opacity: 0.85;
         left: -10%;
-        animation: scanner-sweep 12s infinite ease-in-out;
+        /* Doble animación: Movimiento de barrido lento y parpadeo rápido realista */
+        animation: scanner-sweep 12s infinite ease-in-out, scanner-flicker 0.18s infinite linear;
     }
 
     @keyframes scanner-sweep {
@@ -323,6 +324,59 @@ const galleryItems = mainPhotos.map((file: any) => {
         }
         100% {
             left: -5%;
+        }
+    }
+
+    /* ⚡ Efecto de inconsistencia/parpadeo de gas-neon vintage */
+    @keyframes scanner-flicker {
+        0%, 100% {
+            opacity: 0.95;
+            box-shadow: 
+                0 0 12px rgba(255, 255, 255, 0.85),
+                0 0 25px rgba(220, 177, 74, 0.8),
+                0 0 50px rgba(220, 177, 74, 0.35);
+        }
+        15% {
+            opacity: 0.84;
+            box-shadow: 
+                0 0 8px rgba(255, 255, 255, 0.7),
+                0 0 18px rgba(220, 177, 74, 0.7),
+                0 0 45px rgba(220, 177, 74, 0.25);
+        }
+        30% {
+            opacity: 0.98;
+            box-shadow: 
+                0 0 15px rgba(255, 255, 255, 0.98),
+                0 0 30px rgba(220, 177, 74, 0.9),
+                0 0 60px rgba(220, 177, 74, 0.45);
+        }
+        45% {
+            opacity: 0.81;
+            box-shadow: 
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 16px rgba(220, 177, 74, 0.6),
+                0 0 40px rgba(220, 177, 74, 0.2);
+        }
+        60% {
+            opacity: 0.96;
+            box-shadow: 
+                0 0 11px rgba(255, 255, 255, 0.9),
+                0 0 27px rgba(220, 177, 74, 0.85),
+                0 0 55px rgba(220, 177, 74, 0.4);
+        }
+        75% {
+            opacity: 0.89;
+            box-shadow: 
+                0 0 9px rgba(255, 255, 255, 0.75),
+                0 0 21px rgba(220, 177, 74, 0.75),
+                0 0 48px rgba(220, 177, 74, 0.3);
+        }
+        90% {
+            opacity: 0.99;
+            box-shadow: 
+                0 0 14px rgba(255, 255, 255, 1),
+                0 0 32px rgba(220, 177, 74, 0.95),
+                0 0 65px rgba(220, 177, 74, 0.5);
         }
     }
 
@@ -922,31 +976,31 @@ const galleryItems = mainPhotos.map((file: any) => {
         top: 0;
         bottom: 0;
         left: 50%;
-        width: 14px;
-        background: #111; /* Color apagado */
+        width: 3px;
+        background: var(--studio-accent); /* Standby: Delicada línea ámbar de guía */
         z-index: 10;
         transform: translateX(-50%);
         pointer-events: none;
         transition: background 0.4s, box-shadow 0.4s, width 0.4s;
-        clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        box-shadow: 0 0 10px rgba(220, 177, 74, 0.6), 0 0 25px rgba(220, 177, 74, 0.3);
         display: none;
+        opacity: 0.85;
     }
 
     .slider-stage.has-comparison .curtain-line {
         display: block; /* Solo visible si hay par _2 */
     }
 
+    /* 🚀 REINVENCIÓN: El mismo haz de luz escáner blanco/oro con parpadeo eléctrico al arrastrar */
     .slider-stage.is-dragging .curtain-line {
-        background: linear-gradient(to bottom, #ff0000, #ff4e00, #dcb14a, #ff4e00, #ff0000);
-        background-size: 100% 200%;
-        animation: lava-flow 1s infinite linear;
-        box-shadow: 0 0 20px #ff0000, 0 0 40px #ff4e00;
-        width: 16px;
-    }
-
-    @keyframes lava-flow {
-        0% { background-position: 0% 0%; }
-        100% { background-position: 0% 200%; }
+        background: #ffffff !important;
+        width: 5px;
+        box-shadow: 
+            0 0 15px #ffffff, 
+            0 0 35px var(--studio-accent), 
+            0 0 70px rgba(220, 177, 74, 0.65) !important;
+        animation: scanner-flicker 0.12s infinite linear !important;
+        opacity: 1 !important;
     }
 
     .branding-label {
@@ -1153,7 +1207,13 @@ const galleryItems = mainPhotos.map((file: any) => {
         .photo-cell {
             margin-bottom: 2.5rem; /* Separación clara entre fotos */
         }
-        h1 { font-size: 2.8rem; }
+        /* 🚀 CORRECCIÓN CLAVE: Reducción del tamaño del título y control responsivo para evitar desborde en celular */
+        .main-title {
+            font-size: clamp(2.1rem, 9.5vw, 2.7rem) !important;
+            letter-spacing: -1.5px !important;
+            line-height: 1.05 !important;
+            margin: 1.2rem 0 !important;
+        }
     }
 </style>
 
@@ -1165,6 +1225,7 @@ const galleryItems = mainPhotos.map((file: any) => {
     const closeBtn = document.getElementById('close-viewer');
     const comparisonStage = document.getElementById('comparison-stage');
     const filterTabs = document.querySelectorAll('.filter-tab');
+    const lavaContainer = document.getElementById('lava-container');
 
     // --- ESTADO GLOBAL ---
     let isTransitioning = false;
@@ -1333,7 +1394,7 @@ const galleryItems = mainPhotos.map((file: any) => {
     comparisonStage?.addEventListener('pointercancel', endDragging);
     comparisonStage?.addEventListener('pointerleave', endDragging);
 
-    // --- SISTEMA DE GOTAS DE LAVA ---
+    // --- SISTEMA DE DESTELLOS DE LUZ (SPARKS) ---
     function spawnLavaDrop() {
         if (!isDragging || !lavaContainer || !comparisonStage?.classList.contains('has-comparison')) return;
         
@@ -1342,32 +1403,34 @@ const galleryItems = mainPhotos.map((file: any) => {
 
         const lineRect = activeLine.getBoundingClientRect();
         const drop = document.createElement('div');
-        const size = Math.random() * 5 + 2;
+        const size = Math.random() * 4 + 1.5;
         
         drop.style.position = 'absolute';
         drop.style.left = (lineRect.left + lineRect.width / 2) + 'px';
         drop.style.top = (lineRect.top + Math.random() * lineRect.height) + 'px';
         drop.style.width = size + 'px';
         drop.style.height = size + 'px';
-        drop.style.background = Math.random() > 0.5 ? '#ff0000' : '#ff4e00';
+        // Sparks de luz ámbar/blanca coherentes con el láser escáner
+        drop.style.background = Math.random() > 0.65 ? '#ffffff' : 'var(--studio-accent)';
         drop.style.borderRadius = '50%';
-        drop.style.filter = 'blur(1px)';
-        drop.style.boxShadow = '0 0 10px #ff0000';
+        drop.style.filter = 'blur(0.5px)';
+        drop.style.boxShadow = '0 0 6px var(--studio-accent), 0 0 12px #ffffff';
         drop.style.zIndex = '1000001';
         
         lavaContainer.appendChild(drop);
         
+        // Animación de dispersión radial rápida y enérgica en lugar de caída vertical
         const anim = drop.animate([
             { transform: `translate(0, 0) scale(1)`, opacity: 1 },
-            { transform: `translate(${(Math.random() - 0.5) * 40}px, ${50 + Math.random() * 100}px) scale(0)`, opacity: 0 }
+            { transform: `translate(${(Math.random() - 0.5) * 80}px, ${(Math.random() - 0.5) * 80}px) scale(0)`, opacity: 0 }
         ], {
-            duration: 800 + Math.random() * 600,
-            easing: 'cubic-bezier(0.4, 0, 1, 1)'
+            duration: 400 + Math.random() * 450,
+            easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
         });
         
         anim.onfinish = () => drop.remove();
     }
-    setInterval(spawnLavaDrop, 60);
+    setInterval(spawnLavaDrop, 45);
 
     // --- CONTROLES ---
     closeBtn?.addEventListener('click', () => {
