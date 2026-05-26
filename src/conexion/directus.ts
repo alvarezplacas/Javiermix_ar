@@ -579,3 +579,71 @@ export function getAssetUrl(id: string, options: { width?: number, format?: stri
 
 // 🚀 RESTAURADA: Función que pedía la Revista
 export const fetchFromDirectus = (path: string, options?: RequestInit) => DirectusManager.fetchShim(path, options);
+
+/**
+ * 👥 Funciones para Series Colaborativas / Participación del Público
+ */
+export async function getApprovedPublicSubmissions(folderId: string) {
+    try {
+        const res = await fetchFromDirectus(`/items/public_submissions?filter[folder_id][_eq]=${folderId}&filter[status][_eq]=approved&sort=-date_created`);
+        const json = await res.json();
+        return json.data || [];
+    } catch (e) {
+        console.error('[getApprovedPublicSubmissions] Error:', e);
+        return [];
+    }
+}
+
+export async function submitPublicSubmission(data: { name: string; email: string; socialLink: string; folderId: string; file: File }) {
+    try {
+        // 1. Subir archivo a Directus en la carpeta de la serie
+        const formData = new FormData();
+        formData.append('folder', data.folderId);
+        formData.append('file', data.file);
+
+        const uploadRes = await fetch(`${PUBLIC_URL}/files`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${STATIC_TOKEN}` },
+            body: formData
+        });
+        const uploadJson = await uploadRes.json();
+        if (uploadJson.errors) {
+            console.error('[submitPublicSubmission] Error al subir archivo:', uploadJson.errors);
+            return { success: false, message: 'Fallo al subir la imagen' };
+        }
+
+        const fileId = uploadJson.data?.id;
+        if (!fileId) {
+            return { success: false, message: 'No se obtuvo ID del archivo' };
+        }
+
+        // 2. Crear el registro en public_submissions
+        const submissionRes = await fetch(`${PUBLIC_URL}/items/public_submissions`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${STATIC_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: data.name,
+                email: data.email,
+                social_link: data.socialLink || '',
+                folder_id: data.folderId,
+                image: fileId,
+                status: 'pending'
+            })
+        });
+
+        const submissionJson = await submissionRes.json();
+        if (submissionJson.errors) {
+            console.error('[submitPublicSubmission] Error al crear public_submissions:', submissionJson.errors);
+            return { success: false, message: 'Error al registrar la participación' };
+        }
+
+        return { success: true, data: submissionJson.data };
+    } catch (e: any) {
+        console.error('[submitPublicSubmission] Error general:', e);
+        return { success: false, message: e.message || 'Error interno del servidor' };
+    }
+}
+

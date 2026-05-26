@@ -2,7 +2,14 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getSerieDetails, getApprovedExhibitionModes, getSerieSettings, getSerieDetailsBySlugOrId } from '@conexion/directus';
+import { 
+    getSerieDetails, 
+    getApprovedExhibitionModes, 
+    getSerieSettings, 
+    getSerieDetailsBySlugOrId,
+    getApprovedPublicSubmissions,
+    getAssetUrl
+} from '@conexion/directus';
 import { getArtworkLikes, hasLiked } from '@conexion/likes';
 import { getOptimizedImageURL } from '@utils/media';
 
@@ -51,12 +58,32 @@ const artworks = await Promise.all(mainImages.map(async (img: any) => {
 		title: img.title || "Obra Javier Mix",
 		mainUrl: getOptimizedImageURL(img.id),
 		hoverUrl: hoverVariant ? getOptimizedImageURL(hoverVariant.id) : null,
-        likes,
-        likedByUser
+		likes,
+		likedByUser
 	};
 }));
 
-const serieName = name;
+// Lógica de Participación del Público
+const isPublicSeries = name.toLowerCase().includes('_publico') || name.toLowerCase().endsWith('_publico');
+const displayTitle = name.replace(/_publico/gi, '').replace(/_/g, ' ').trim();
+
+let publicSubmissions: any[] = [];
+if (isPublicSeries && serieData.id) {
+    const rawSubmissions = await getApprovedPublicSubmissions(serieData.id);
+    publicSubmissions = rawSubmissions.map((sub: any) => ({
+        id: sub.id,
+        name: sub.name,
+        imageUrl: getAssetUrl(sub.image, { width: 800, quality: 80 }),
+        hasSocial: sub.social_link && sub.social_link.trim() !== '',
+        socialLink: sub.social_link || ''
+    }));
+}
+
+const invitationTitle = serieSettings?.invitation_title || "Sube tu imagen.";
+const invitationText = serieSettings?.invitation_text || "Deja tus rastros con los signos que te habitan.";
+const confirmationText = serieSettings?.confirmation_text || "Ahora un nuevo signo habita nuestro espacio.";
+
+const serieName = displayTitle;
 const coverOg = artworks[0]?.mainUrl || undefined;
 const approvedModes = await getApprovedExhibitionModes();
 ---
@@ -82,7 +109,7 @@ const approvedModes = await getApprovedExhibitionModes();
 				<span class="icon">&larr;</span>
 				<span class="label">Volver a Colecciones</span>
 			</a>
-			<h1 class="serie-title">{name}</h1>
+			<h1 class="serie-title">{displayTitle}</h1>
 			
 			<div class="serie-lab-suggestion">
 				<span class="suggestion-label">VER OBRAS EN:</span>
@@ -209,6 +236,107 @@ const approvedModes = await getApprovedExhibitionModes();
 				</div>
 			))}
 		</section>
+
+		{isPublicSeries && (
+			<div class="public-disparador-section">
+				<div class="disparador-divider">
+					<span class="d-line"></span>
+					<span class="d-mark">❖</span>
+					<span class="d-line"></span>
+				</div>
+				
+				<div class="disparador-content">
+					<h2 class="disparador-title">{invitationTitle}</h2>
+					<p class="disparador-text">{invitationText}</p>
+					
+					<form class="disparador-form" id="public-submission-form" enctype="multipart/form-data">
+						<input type="hidden" name="folder_id" value={serieData.id} />
+						
+						<div class="form-grid">
+							<div class="form-group">
+								<label for="p-name">Nombre *</label>
+								<input type="text" id="p-name" name="name" required placeholder="Tu nombre artístico o real" />
+							</div>
+							
+							<div class="form-group">
+								<label for="p-email">Email *</label>
+								<input type="email" id="p-email" name="email" required placeholder="tu@email.com (no se compartirá)" />
+							</div>
+							
+							<div class="form-group full-width">
+								<label for="p-social">Red Social o Sitio Web (Instagram, Facebook o Web - Opcional)</label>
+								<input type="url" id="p-social" name="social_link" placeholder="https://instagram.com/tuperfil" />
+								<span class="input-helper">Si es elegida para la serie, tu foto enlazará a este sitio. Si decides no colocarlo, la imagen no te llevará a ningún sitio.</span>
+							</div>
+						</div>
+
+						<div class="file-upload-wrapper">
+							<div class="file-upload-zone" id="file-drop-zone">
+								<svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+								</svg>
+								<p class="upload-text" id="upload-status-text">Arrastra tu imagen aquí o haz clic para explorar</p>
+								<p class="upload-limits">Formatos soportados: JPG, PNG, WEBP, AVIF. Máximo 10MB.</p>
+								<input type="file" id="p-file" name="file" accept="image/*" required style="display: none;" />
+							</div>
+						</div>
+						
+						<div class="form-submit-container">
+							<button type="submit" class="btn-premium-action" id="submit-rastro-btn">
+								Enviar Rastro
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		)}
+
+		{isPublicSeries && publicSubmissions.length > 0 && (
+			<div class="collaborative-grid-section">
+				<div class="collaborative-header">
+					<span class="collab-meta-label">El Eco Colectivo</span>
+					<h3 class="collab-title">La Huella Colectiva</h3>
+				</div>
+				
+				<div class="collaborative-masonry">
+					{publicSubmissions.map((sub) => (
+						sub.hasSocial ? (
+							<a href={sub.socialLink} target="_blank" rel="noopener noreferrer" class="collab-card-link">
+								<div class="collab-artwork-card">
+									<div class="collab-artwork-figure">
+										<img src={sub.imageUrl} alt={`Obra de ${sub.name}`} class="collab-img" loading="lazy" />
+										<div class="collab-info-overlay">
+											<span class="collab-submitter-name">Huella de {sub.name}</span>
+											<span class="collab-social-hint">Ver artista →</span>
+										</div>
+									</div>
+								</div>
+							</a>
+						) : (
+							<div class="collab-card-static">
+								<div class="collab-artwork-card">
+									<div class="collab-artwork-figure">
+										<img src={sub.imageUrl} alt={`Obra de ${sub.name}`} class="collab-img" loading="lazy" />
+										<div class="collab-info-overlay">
+											<span class="collab-submitter-name">Huella de {sub.name}</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						)
+					))}
+				</div>
+			</div>
+		)}
+
+		{isPublicSeries && (
+			<!-- 🎬 El Eco: Fullscreen Overlay Cinematográfico -->
+			<div class="eco-overlay" id="eco-confirmation-overlay">
+				<div class="eco-container">
+					<p class="eco-text font-serif-italic">{confirmationText}</p>
+				</div>
+			</div>
+		)}
 	</article>
 
 	<Footer />
@@ -967,34 +1095,395 @@ const approvedModes = await getApprovedExhibitionModes();
         text-align: center;
     }
 }
+
+/* 👥 SERIES COLABORATIVAS - CSS ESTÁNDAR JMX */
+.public-disparador-section {
+    max-width: 900px;
+    margin: 8rem auto 6rem;
+    padding: 0 2rem;
+    text-align: center;
+}
+
+.disparador-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+}
+
+.disparador-divider .d-line {
+    flex: 1;
+    max-width: 100px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1));
+}
+
+.disparador-divider .d-line:last-child {
+    background: linear-gradient(to left, transparent, rgba(255, 255, 255, 0.1));
+}
+
+.disparador-divider .d-mark {
+    font-size: 0.8rem;
+    color: var(--color-accent);
+    opacity: 0.6;
+}
+
+.disparador-title {
+    font-family: var(--font-primary);
+    font-size: 2.2rem;
+    font-weight: 300;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    letter-spacing: 1px;
+}
+
+.disparador-text {
+    font-family: var(--font-secondary);
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    max-width: 600px;
+    margin: 0 auto 3rem;
+    line-height: 1.7;
+    opacity: 0.8;
+}
+
+.disparador-form {
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 3rem;
+    border-radius: 4px;
+    text-align: left;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.form-group.full-width {
+    grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-group.full-width {
+        grid-column: span 1;
+    }
+}
+
+.form-group label {
+    font-family: var(--font-secondary);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+.form-group input {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.9rem 1.2rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+    color: #fff;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.input-helper {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.35);
+    line-height: 1.4;
+    margin-top: 0.2rem;
+}
+
+.file-upload-wrapper {
+    margin-bottom: 3rem;
+}
+
+.file-upload-zone {
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.005);
+    padding: 3rem 2rem;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+}
+
+.file-upload-zone:hover, .file-upload-zone.dragover {
+    border-color: var(--color-accent);
+    background: rgba(220, 177, 74, 0.02);
+}
+
+.upload-icon {
+    width: 36px;
+    height: 36px;
+    color: rgba(255, 255, 255, 0.25);
+    transition: color 0.3s;
+}
+
+.file-upload-zone:hover .upload-icon {
+    color: var(--color-accent);
+}
+
+.upload-text {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+}
+
+.upload-limits {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.form-submit-container {
+    display: flex;
+    justify-content: center;
+}
+
+.btn-premium-action {
+    background: transparent;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    padding: 1.1rem 3.5rem;
+    font-family: var(--font-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.5s var(--ease-premium);
+    border-radius: 2px;
+}
+
+.btn-premium-action:hover {
+    background: var(--color-accent);
+    color: #000;
+    box-shadow: 0 15px 45px rgba(220, 177, 74, 0.15);
+    transform: translateY(-2px);
+}
+
+/* 👥 LA GRILLA COLABORATIVA */
+.collaborative-grid-section {
+    max-width: 1400px;
+    margin: 8rem auto 4rem;
+    padding: 0 2rem;
+}
+
+.collaborative-header {
+    text-align: center;
+    margin-bottom: 5rem;
+}
+
+.collab-meta-label {
+    font-family: var(--font-secondary);
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+.collab-title {
+    font-family: var(--font-primary);
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.collaborative-masonry {
+    column-count: 4;
+    column-gap: 3rem;
+}
+
+@media (max-width: 1200px) {
+    .collaborative-masonry { column-count: 3; }
+}
+
+@media (max-width: 992px) {
+    .collaborative-masonry { column-count: 2; column-gap: 2rem; }
+}
+
+@media (max-width: 576px) {
+    .collaborative-masonry { column-count: 1; }
+}
+
+.collab-card-link, .collab-card-static {
+    display: block;
+    break-inside: avoid;
+    margin-bottom: 3rem;
+    background: rgba(255,255,255,0.005);
+    border: 1px solid rgba(255,255,255,0.01);
+    transition: all 0.5s var(--ease-premium);
+    overflow: hidden;
+}
+
+.collab-card-link {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.collab-card-link:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255,255,255,0.08);
+}
+
+.collab-artwork-figure {
+    position: relative;
+    width: 100%;
+}
+
+.collab-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.8s ease;
+}
+
+.collab-card-link:hover .collab-img {
+    transform: scale(1.03);
+}
+
+.collab-info-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 5;
+}
+
+.collab-card-link:hover .collab-info-overlay, .collab-card-static:hover .collab-info-overlay {
+    opacity: 1;
+}
+
+.collab-submitter-name {
+    font-family: var(--font-secondary);
+    font-size: 0.72rem;
+    color: #fff;
+    letter-spacing: 1px;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+.collab-social-hint {
+    font-family: var(--font-secondary);
+    font-size: 0.6rem;
+    color: var(--color-accent);
+    letter-spacing: 1px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* 🎬 EL ECO: FULLSCREEN CONFIRMATION OVERLAY */
+.eco-overlay {
+    position: fixed;
+    inset: 0;
+    background: #050505;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1), visibility 1.5s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.eco-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.eco-container {
+    text-align: center;
+    padding: 2rem;
+}
+
+.eco-text {
+    font-family: var(--font-primary);
+    font-size: clamp(1.2rem, 3.5vw, 2.2rem);
+    font-weight: 200;
+    color: #fff;
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 2s cubic-bezier(0.25, 1, 0.5, 1) 0.5s;
+}
+
+.eco-overlay.active .eco-text {
+    opacity: 0.7;
+    transform: translateY(0);
+}
+
+.font-serif-italic {
+    font-style: italic;
+    font-family: 'Cormorant Garamond', serif !important;
+}
 </style>
 
 <script>
 	document.addEventListener('astro:page-load', () => {
 		const header = document.querySelector('.immersive-header');
-		if (!header) return;
-		const artworks = JSON.parse(header.getAttribute('data-artworks') || '[]');
-		const slide1 = document.getElementById('slide-1');
-		const slide2 = document.getElementById('slide-2');
-		let currentSlide = 0;
-		let activeLayer = 1;
+		if (header) {
+			const artworks = JSON.parse(header.getAttribute('data-artworks') || '[]');
+			const slide1 = document.getElementById('slide-1');
+			const slide2 = document.getElementById('slide-2');
+			let currentSlide = 0;
+			let activeLayer = 1;
 
-		if (slide1 && artworks.length > 0) slide1.style.backgroundImage = `url(${artworks[0]})`;
-		
-		if (artworks.length > 1) {
-			setInterval(() => {
-				currentSlide = (currentSlide + 1) % artworks.length;
-				const nextUrl = artworks[currentSlide];
-				if (activeLayer === 1) {
-					if (slide2) { slide2.style.backgroundImage = `url(${nextUrl})`; slide2.classList.add('active'); }
-					if (slide1) slide1.classList.remove('active');
-					activeLayer = 2;
-				} else {
-					if (slide1) { slide1.style.backgroundImage = `url(${nextUrl})`; slide1.classList.add('active'); }
-					if (slide2) slide2.classList.remove('active');
-					activeLayer = 1;
-				}
-			}, 3000);
+			if (slide1 && artworks.length > 0) slide1.style.backgroundImage = `url(${artworks[0]})`;
+			
+			if (artworks.length > 1) {
+				setInterval(() => {
+					currentSlide = (currentSlide + 1) % artworks.length;
+					const nextUrl = artworks[currentSlide];
+					if (activeLayer === 1) {
+						if (slide2) { slide2.style.backgroundImage = `url(${nextUrl})`; slide2.classList.add('active'); }
+						if (slide1) slide1.classList.remove('active');
+						activeLayer = 2;
+					} else {
+						if (slide1) { slide1.style.backgroundImage = `url(${nextUrl})`; slide1.classList.add('active'); }
+						if (slide2) slide2.classList.remove('active');
+						activeLayer = 1;
+					}
+				}, 3000);
+			}
 		}
 
         // Lógica de Likes
@@ -1141,6 +1630,100 @@ const approvedModes = await getApprovedExhibitionModes();
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && overlay.classList.contains('active')) {
                     closeOverlay();
+                }
+            });
+        }
+
+        // 👥 Lógica de Participación del Público (Series Colaborativas)
+        const form = document.getElementById('public-submission-form');
+        const fileInput = document.getElementById('p-file') as HTMLInputElement;
+        const dropZone = document.getElementById('file-drop-zone');
+        const uploadStatusText = document.getElementById('upload-status-text');
+        const ecoOverlay = document.getElementById('eco-confirmation-overlay');
+        const submitBtn = document.getElementById('submit-rastro-btn');
+
+        if (form && fileInput && dropZone) {
+            // Click to browse
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Handle file selection
+            fileInput.addEventListener('change', () => {
+                const files = fileInput.files;
+                if (files && files.length > 0) {
+                    if (uploadStatusText) uploadStatusText.textContent = `Imagen seleccionada: ${files[0].name}`;
+                    dropZone.classList.add('selected');
+                }
+            });
+
+            // Drag over
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            // Drag leave
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            // Drop file
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const files = e.dataTransfer?.files;
+                if (files && files.length > 0) {
+                    fileInput.files = files;
+                    if (uploadStatusText) uploadStatusText.textContent = `Imagen seleccionada: ${files[0].name}`;
+                    dropZone.classList.add('selected');
+                }
+            });
+
+            // Form Submit
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!submitBtn) return;
+                
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Procesando signo...';
+                submitBtn.disabled = true;
+
+                const formData = new FormData(form as HTMLFormElement);
+
+                try {
+                    const res = await fetch('/api/submit-participation', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+
+                    if (res.ok && data.success) {
+                        // 🎬 Mostrar "El Eco" (Confirmación Cinematográfica)
+                        if (ecoOverlay) {
+                            ecoOverlay.classList.add('active');
+                            
+                            // Limpiar formulario
+                            (form as HTMLFormElement).reset();
+                            if (uploadStatusText) uploadStatusText.textContent = 'Arrastra tu imagen aquí o haz clic para explorar';
+                            dropZone.classList.remove('selected');
+
+                            // Desvanecer El Eco tras 6 segundos
+                            setTimeout(() => {
+                                ecoOverlay.classList.remove('active');
+                            }, 6000);
+                        } else {
+                            alert("¡Signo recibido con éxito! Pendiente de curaduría.");
+                        }
+                    } else {
+                        alert(data.message || "Fallo al enviar tu participación. Por favor, intenta de nuevo.");
+                    }
+                } catch (err) {
+                    console.error("Error submitting participation:", err);
+                    alert("Error de conexión al enviar el rastro.");
+                } finally {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
                 }
             });
         }
