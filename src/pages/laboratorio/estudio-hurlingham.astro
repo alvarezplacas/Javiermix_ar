@@ -58,25 +58,78 @@ const hasPrev = page > 1;
         </nav>
 
         <header class="studio-header">
-            <div class="header-pre-title">ARCHIVO DE INVESTIGACIÓN</div>
-            <h1>EXPLORACIÓN & CURACIÓN</h1>
+            <!-- Capa de fondo técnica (Light Table Grid) -->
+            <div class="light-table-grid"></div>
+
+            <div class="header-grid">
+                <!-- Columna Izquierda: Identidad y Título Colectivo -->
+                <div class="header-main-info">
+                    <div class="brand-meta">
+                        <span class="tech-badge">HURLINGHAM COLABORATIVO</span>
+                        <span class="meta-dot">·</span>
+                        <span class="tech-spec">COLECTIVO DE EXPLORACIÓN VISUAL</span>
+                    </div>
+                    
+                    <h1 class="main-title">
+                        Taller & <br>
+                        <span class="gold-gradient">Colectivo</span>
+                    </h1>
+
+                    <div class="technical-specs-table">
+                        <div class="spec-row">
+                            <span class="spec-key">ESPACIO //</span>
+                            <span class="spec-value">Laboratorio y Encuentro Fotográfico Experimental</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-key">TERRITORIO //</span>
+                            <span class="spec-value">Hurlingham, Buenos Aires</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-key">ENFOQUE //</span>
+                            <span class="spec-value">Procesos Analógicos, Químicos Alternativos & Curaduría de Autor</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Narrativa y Datos Técnicos -->
+                <div class="header-editorial">
+                    <div class="editorial-box">
+                        <p class="journalistic-text">
+                            Este es nuestro territorio de ensayo y diálogo visual en el municipio de Hurlingham. Nos reunimos con colegas, investigadores y autores para experimentar procesos físicos y químicos de revelado, debatir el límite del grano y la emulsión sensible, y curar de manera colectiva nuestras series fotográficas en desarrollo.
+                        </p>
+                        <p class="journalistic-subtext">
+                            Cada obra de este archivo actúa como un rastro de esa investigación compartida; un laboratorio abierto donde las imágenes se discuten, se exponen y se curan en comunidad para potenciar su autoría.
+                        </p>
+                    </div>
+                    
+                    <div class="taller-stats-dashboard">
+                        <div class="stat-card">
+                            <span class="stat-value">{photos.filter((p: any) => !p.filename_download.toLowerCase().includes('_2')).length}</span>
+                            <span class="stat-label">ARCHIVOS EXPUESTOS</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value">{uniqueSeries.length}</span>
+                            <span class="stat-label">SESIONES ACTIVAS</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value text-glow">ACTIVO</span>
+                            <span class="stat-label">TALLER GRUPAL</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="studio-controls">
                 <div class="filter-group">
-                    <span class="label">SISTEMA DE FILTRADO:</span>
+                    <span class="label">FILTRAR POR SESIÓN:</span>
                     <select id="session-filter" class="studio-select">
-                        <option value="all">TODAS LAS SESIONES</option>
+                        <option value="all">TODAS LAS SESIONES DE ESTUDIO</option>
                         {uniqueSeries.map(s => (
                             <option value={s}>{s.toUpperCase()}</option>
                         ))}
                     </select>
                 </div>
             </div>
-
-            <p class="journalistic-text">
-                Sector de estudio técnico y archivo visual. Las imágenes presentadas se encuentran en etapa de curaduría y forman parte del proceso creativo y la exploración fotográfica experimental. 
-                <br/>— <i>Muestra del proceso de investigación y estudio</i>.
-            </p>
         </header>
 
         {itemsToDisplay.length === 0 ? (
@@ -215,42 +268,175 @@ const hasPrev = page > 1;
     }
 
     .studio-header {
-        max-width: 800px;
-        margin-bottom: 5rem;
+        max-width: 1400px;
+        margin: 0 auto 6rem;
+        position: relative;
+        padding: 4rem;
+        background: rgba(8, 8, 8, 0.55);
+        border: 1px solid rgba(220, 177, 74, 0.08);
+        border-radius: 12px;
+        overflow: hidden;
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,255,255,0.01);
     }
 
-    h1 {
-        font-family: 'Inter', sans-serif;
-        font-size: 5rem;
+    .light-table-grid {
+        position: absolute;
+        inset: 0;
+        opacity: 0.04;
+        background-size: 40px 40px;
+        background-image: 
+            linear-gradient(to right, rgba(220, 177, 74, 0.5) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(220, 177, 74, 0.5) 1px, transparent 1px);
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .header-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 5rem;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .brand-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .tech-badge {
+        font-size: 0.6rem;
         font-weight: 900;
-        margin-bottom: 1.5rem;
-        letter-spacing: -3px;
-        line-height: 0.9;
-        text-transform: uppercase;
-        border-bottom: 15px solid var(--studio-accent);
-        display: inline-block;
-        padding-bottom: 0.5rem;
+        color: var(--studio-accent);
+        letter-spacing: 3px;
     }
 
-    .header-pre-title {
+    .meta-dot {
+        color: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem;
+    }
+
+    .tech-spec {
+        font-size: 0.55rem;
+        font-family: monospace;
+        color: rgba(255, 255, 255, 0.35);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .main-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 5rem;
+        font-weight: 300;
+        line-height: 0.95;
+        letter-spacing: -2px;
+        margin: 1.5rem 0;
+        color: #ffffff;
+    }
+
+    .gold-gradient {
+        background: linear-gradient(135deg, #fff 30%, var(--studio-accent) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-style: italic;
+    }
+
+    .technical-specs-table {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        margin-top: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 1.5rem;
+    }
+
+    .spec-row {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.7rem;
         font-family: 'Inter', sans-serif;
-        font-size: 0.8rem;
-        font-weight: 800;
-        letter-spacing: 5px;
+        letter-spacing: 1px;
+    }
+
+    .spec-key {
+        font-weight: 900;
         color: var(--studio-accent);
-        margin-bottom: 0.5rem;
+        opacity: 0.75;
+        width: 110px;
+        flex-shrink: 0;
+    }
+
+    .spec-value {
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 400;
+    }
+
+    .editorial-box {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
     }
 
     p.journalistic-text {
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.7;
+        font-size: 1.15rem;
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        margin: 0;
+        text-transform: none;
+        letter-spacing: 0;
+        opacity: 0.95;
+    }
+
+    .journalistic-subtext {
         color: var(--studio-text);
         line-height: 1.6;
-        font-size: 0.9rem;
-        max-width: 600px;
+        font-size: 0.78rem;
         font-family: 'Inter', sans-serif;
-        margin-top: 2rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        opacity: 0.8;
+        letter-spacing: 1.5px;
+        opacity: 0.65;
+        margin: 0;
+    }
+
+    .taller-stats-dashboard {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 2.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 1.5rem;
+    }
+
+    .stat-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .stat-value {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.2rem;
+        font-weight: 300;
+        color: var(--studio-accent);
+        line-height: 1;
+    }
+
+    .stat-value.text-glow {
+        text-shadow: 0 0 10px rgba(220, 177, 74, 0.4);
+    }
+
+    .stat-label {
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        color: rgba(255, 255, 255, 0.35);
+        text-transform: uppercase;
     }
 
     /* 🎞️ Contact Sheet Grid (Masonry / Tetris Style) */
@@ -715,15 +901,51 @@ const hasPrev = page > 1;
         color: var(--studio-accent);
     }
 
+    @media (max-width: 1024px) {
+        .header-grid {
+            grid-template-columns: 1fr;
+            gap: 3.5rem;
+        }
+        .main-title {
+            font-size: 3.8rem;
+        }
+    }
+
     @media (max-width: 900px) {
         .studio-controls { flex-direction: column; align-items: flex-start; }
         .play-btn { width: 100%; justify-content: center; }
     }
 
     @media (max-width: 768px) {
-        .studio-wrapper { padding: 6rem 2rem 2rem; }
-        .contact-sheet { grid-template-columns: 1fr; }
-        h1 { font-size: 2.5rem; }
+        .studio-wrapper { padding: 6rem 1.2rem 7rem; }
+        .studio-header {
+            padding: 2.5rem 1.5rem;
+            margin-bottom: 3.5rem;
+        }
+        .main-title {
+            font-size: clamp(2.2rem, 10vw, 3rem) !important;
+            letter-spacing: -1.5px !important;
+            line-height: 1.05 !important;
+            margin: 1.2rem 0 !important;
+        }
+        .technical-specs-table {
+            margin-top: 1.5rem;
+            padding-top: 1.2rem;
+        }
+        .spec-row {
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .spec-key {
+            width: auto;
+        }
+        .taller-stats-dashboard {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            padding-top: 1.2rem;
+        }
+        .contact-sheet { column-count: 1 !important; }
     }
 </style>
 
