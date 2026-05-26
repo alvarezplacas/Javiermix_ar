@@ -711,6 +711,44 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
         height: 65vh; /* 65% de la pantalla para el impacto visual */
         position: relative;
     }
+    /* 🚀 CORRECCIÓN CLAVE: El contenedor debe respetar la altura del panel visual (65vh) en lugar de heredar 100dvh */
+    .hero-visual-container {
+        height: 100% !important;
+    }
+    .immersive-cta-overlay {
+        bottom: 5% !important;
+    }
+    /* 🎨 Forma particular móvil: Grid premium 2x2 para acomodarse al espacio horizontal de celulares */
+    .glass-cta-stack {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.75rem !important;
+        width: 90% !important;
+        max-width: 480px !important;
+    }
+    .glass-cta-btn {
+        padding: 0.85rem 1.2rem !important;
+        border-radius: 40px !important; /* Forma redondeada/cápsula exclusiva para teléfono */
+        width: 100% !important;
+        transform: none !important; /* Desactivar desplazamiento lateral en pantallas táctiles */
+        background: rgba(13, 13, 13, 0.65) !important; /* Mayor contraste de vidrio sobre video */
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+    .glass-cta-btn:hover {
+        transform: scale(1.02) !important; /* Hover táctil sutil */
+    }
+    .glass-cta-btn .btn-label {
+        font-size: 0.75rem !important;
+        letter-spacing: 1.5px !important;
+    }
+    /* El botón explorar se ubica debajo centrado, unificando la cuadrícula con estética triangular */
+    .glass-cta-btn.explore {
+        grid-column: span 2 !important;
+        width: auto !important;
+        min-width: 150px !important;
+        justify-self: center !important;
+        padding: 0.65rem 1.5rem !important;
+    }
     .split-content {
         padding: 4rem 10% 6rem; /* Más aire para lectura móvil */
         border-left: none;
@@ -728,8 +766,23 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
         font-size: 1.1rem; /* Un punto más grande también aquí */
         max-width: 100%;
     }
+}
+
+/* 📱 Optimizaciones ultrafinas para celulares pequeños */
+@media (max-width: 480px) {
     .glass-cta-stack {
-        width: 85%; /* Botones más anchos en móvil */
+        gap: 0.5rem !important;
+        width: 92% !important;
+    }
+    .glass-cta-btn {
+        padding: 0.75rem 0.8rem !important;
+    }
+    .glass-cta-btn .btn-label {
+        font-size: 0.68rem !important;
+        letter-spacing: 1px !important;
+    }
+    .glass-cta-btn.explore {
+        padding: 0.55rem 1.2rem !important;
     }
 }
 </style>
