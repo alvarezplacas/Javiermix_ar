@@ -104,7 +104,28 @@ export const artworkLikesTracking = pgTable('artwork_likes_tracking', {
     created_at: timestamp('created_at').defaultNow(),
 });
 
-// --- 3. CONNECTION POOL (Postgres) ---
+// --- 3. MAGAZINE COMMENTS & RATINGS ---
+export const magazineComments = pgTable('magazine_comments', {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    article_id: integer('article_id').notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    email: varchar('email', { length: 255 }).notNull(),
+    instagram: varchar('instagram', { length: 255 }),
+    comment: text('comment').notNull(),
+    rating: integer('rating'),
+    status: varchar('status', { length: 50 }).default('approved'),
+    created_at: timestamp('created_at').defaultNow(),
+});
+
+export const magazineRatingsTracking = pgTable('magazine_ratings_tracking', {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    article_id: integer('article_id').notNull(),
+    user_ip: varchar('user_ip', { length: 100 }).notNull(),
+    rating: integer('rating').notNull(),
+    created_at: timestamp('created_at').defaultNow(),
+});
+
+// --- 4. CONNECTION POOL (Postgres) ---
 
 const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL || `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`,
@@ -112,5 +133,15 @@ const pool = new pg.Pool({
 });
 
 export const db = drizzle(pool, { 
-    schema: { artworks, magazine, orders, certificates, collectors, artworkLikesTracking }, 
+    schema: { 
+        artworks, 
+        magazine, 
+        orders, 
+        certificates, 
+        collectors, 
+        artworkLikesTracking,
+        magazineComments,
+        magazineRatingsTracking
+    }, 
 });
+

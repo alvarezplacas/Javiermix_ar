@@ -1,5 +1,7 @@
 ---
 // h:\Javiermix_web_v2\frontend\components\MagazineSection.astro
+import { fetchFromDirectus, slugify, getAssetUrl } from '@conexion/directus';
+
 const PUBLIC_DIRECTUS_URL = 'https://admin.javiermix.ar';
 const INTERNAL_DOCKER_URL = 'http://directus:8055';
 let connectionError = null;
@@ -38,6 +40,8 @@ function decodeHtml(str: string): string {
   if (!str) return '';
   return str
     .replace(/&aacute;/gi, 'á')
+    .replace(/&編ute;/gi, 'é')
+    .replace(/&ecute;/gi, 'é')
     .replace(/&eacute;/gi, 'é')
     .replace(/&iacute;/gi, 'í')
     .replace(/&oacute;/gi, 'ó')
@@ -60,9 +64,69 @@ function decodeHtml(str: string): string {
     .replace(/&deg;/g, '°');
 }
 
+// 📂 Búsqueda de Carpetas de Revista para asociar imágenes dinámicas automáticamente (Estándar JMX Oro)
+let folderMediaMap = new Map();
+try {
+  const parentRes = await fetchFromDirectus('/folders?filter[name][_eq]=Revista&limit=1');
+  const parentJson = await parentRes.json();
+  const parentFolder = parentJson.data?.[0];
+
+  if (parentFolder) {
+    const subRes = await fetchFromDirectus(`/folders?filter[parent][_eq]=${parentFolder.id}&limit=-1`);
+    const subJson = await subRes.json();
+    const subFolders = subJson.data || [];
+
+    // Mapear carpetas que coincidan con slugs
+    const matchingFolderIds = [];
+    const folderToSlugMap = new Map();
+
+    subFolders.forEach((f: any) => {
+      const normalizedFolderName = slugify(f.name);
+      folderToSlugMap.set(f.id, normalizedFolderName);
+      matchingFolderIds.push(f.id);
+    });
+
+    if (matchingFolderIds.length > 0) {
+      const filesRes = await fetchFromDirectus(`/files?filter[folder][_in]=${matchingFolderIds.join(',')}&sort=filename_download&limit=-1`);
+      const filesJson = await filesRes.json();
+      const files = filesJson.data || [];
+
+      // Agrupar archivos por el slug normalizado de su carpeta
+      files.forEach((file: any) => {
+        const folderId = file.folder;
+        const slugName = folderToSlugMap.get(folderId);
+        if (slugName) {
+          if (!folderMediaMap.has(slugName)) {
+            folderMediaMap.set(slugName, []);
+          }
+          folderMediaMap.get(slugName).push({
+            id: file.id,
+            type: file.type?.startsWith('video/') ? 'video' : 'image',
+            url: getAssetUrl(file.id, file.type?.startsWith('video/') ? { raw: true } : { width: 1600 })
+          });
+        }
+      });
+      console.log(`[RevistaHome-SSR] 📁 Escaneadas ${subFolders.length} carpetas. Asociadas a ${folderMediaMap.size} artículos de revista.`);
+    }
+  }
+} catch (e) {
+  console.error('[RevistaHome-SSR] Error al cargar multimedia dinámico por carpetas:', e);
+}
+
 const articles = fetchedArticles.map(a => {
+  // 1. Iniciar slideshow con la imagen de portada principal
   let slideshow = [resolveMedia(a.featured_image)];
-  if (a.media_json) {
+
+  // 2. Intentar buscar fotos dinámicas en la carpeta asociada al slug/título de la nota
+  const normalizedSlug = slugify(a.slug || a.title || '');
+  const dynamicPhotos = folderMediaMap.get(normalizedSlug) || [];
+
+  if (dynamicPhotos.length > 0) {
+    // Si existen fotos en la carpeta, las cargamos automáticamente
+    const mappedDynamic = dynamicPhotos.map(p => ({ url: p.url, type: p.type }));
+    slideshow = [...slideshow, ...mappedDynamic].slice(0, 5);
+  } else if (a.media_json) {
+    // Fallback: usar media_json si no hay carpeta o está vacía
     try {
         const extraRaw = typeof a.media_json === 'string' ? JSON.parse(a.media_json) : a.media_json;
         if (Array.isArray(extraRaw)) {
@@ -210,7 +274,7 @@ const articles = fetchedArticles.map(a => {
   .article-media { 
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; 
       filter: grayscale(20%) brightness(0.85); 
-      transition: opacity 1.5s ease, transform 12s cubic-bezier(0.1, 0.8, 0.2, 1), filter 1.5s ease; 
+      transition: opacity 2.5s ease, transform 12s cubic-bezier(0.1, 0.8, 0.2, 1), filter 2.5s ease; 
       opacity: 0;
       z-index: 2;
       transform: scale(1.02);
@@ -322,7 +386,7 @@ const articles = fetchedArticles.map(a => {
               if (media[current].tagName === 'VIDEO') {
                   (media[current] as HTMLVideoElement).play().catch(() => {});
               }
-          }, 5000);
+          }, 8000);
       });
 
       const handleTilt = (e: MouseEvent) => {

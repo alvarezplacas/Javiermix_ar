@@ -3,7 +3,8 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getArticleDetails, getAssetUrl, fetchFromDirectus } from '@conexion/directus';
+import { getArticleDetails, getAssetUrl, fetchFromDirectus, slugify } from '@conexion/directus';
+import { getArticleFeedback } from '@conexion/magazine_feedback';
 
 export const prerender = false;
 const { slug } = Astro.params;
@@ -11,6 +12,7 @@ const { slug } = Astro.params;
 // 1. Obtener datos con resiliencia total (Soporte Híbrido ID-Slug)
 let articulo = null;
 let connectionError = null;
+let feedback = { comments: [], averageRating: 0, ratingsCount: 0, hasRated: false };
 
 try {
     // Extraer el ID si el slug tiene formato "1-nombre"
@@ -21,9 +23,15 @@ try {
     if (!articulo) {
         articulo = await getArticleDetails(slug!);
     }
+
+    if (articulo) {
+        const clientIp = Astro.clientAddress || "unknown";
+        feedback = await getArticleFeedback(articulo.id, clientIp);
+    }
 } catch (e: any) {
     connectionError = `Error de conexión: ${e.message}`;
 }
+
 
 // 🛠️ Decodificador de entidades HTML para textos impecables (Estándar JMX Oro)
 function decodeHtml(html: string): string {
@@ -93,7 +101,7 @@ if (articulo) {
         }
     } catch (e) {}
 
-    // Búsqueda dinámica por carpeta
+    // Búsqueda dinámica por carpeta (Estándar JMX Oro - Autodetect robusto por Slug)
     let dynamicMedia = [];
     try {
         const parentRes = await fetchFromDirectus(`/folders?filter[name][_eq]=Revista&limit=1`);
@@ -101,9 +109,13 @@ if (articulo) {
         const parentFolder = parentData.data?.[0];
 
         if (parentFolder) {
-            const subRes = await fetchFromDirectus(`/folders?filter[parent][_eq]=${parentFolder.id}&filter[name][_in]=${articulo.title},${articulo.slug}`);
+            const subRes = await fetchFromDirectus(`/folders?filter[parent][_eq]=${parentFolder.id}&limit=-1`);
             const subData = await subRes.json();
-            const subFolder = subData.data?.[0];
+            const subFolders = subData.data || [];
+            
+            // Buscar carpeta cuyo nombre normalizado (slugified) coincida con el slug o el título normalizado
+            const targetSlug = slugify(articulo.slug || articulo.title || '');
+            const subFolder = subFolders.find((f: any) => slugify(f.name) === targetSlug);
             
             if (subFolder) {
                 const filesRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${subFolder.id}&sort=filename_download`);
@@ -113,9 +125,12 @@ if (articulo) {
                     src: getAssetUrl(f.id, f.type?.startsWith('video/') ? { raw: true } : { width: 1600 }),
                     caption: f.title || ''
                 }));
+                console.log(`[SSR-Revista] 📂 Cargadas automáticamente ${dynamicMedia.length} fotos de la carpeta: Revista/${subFolder.name}`);
             }
         }
-    } catch (e) {}
+    } catch (e) {
+        console.error('[SSR-Revista] Error al buscar carpeta dinámica:', e);
+    }
 
     const youtubeUrl = articulo.video_url?.includes('youtube.com') || articulo.video_url?.includes('youtu.be') 
         ? getYouTubeEmbed(articulo.video_url) 
@@ -165,7 +180,7 @@ if (articulo) {
             <aside class="visual-column">
                 <div class="media-stage">
                     {media.map((m, index) => (
-                        <div class={`media-layer ${index === 0 ? 'active' : ''}`}>
+                        <div class={`media-layer ${index === 0 ? 'active' : ''}`} data-index={index}>
                             {m.type === 'video' ? (
                                 <video src={m.src} class="media-video" muted autoplay loop playsinline></video>
                             ) : m.type === 'youtube' ? (
@@ -175,6 +190,20 @@ if (articulo) {
                             )}
                         </div>
                     ))}
+
+                    {media.length > 1 && (
+                        <div class="media-navigation" data-media-navigation>
+                            <button class="nav-btn prev-btn" id="media-prev" aria-label="Foto anterior">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            </button>
+                            <div class="media-indicator">
+                                <span id="media-current-num">1</span> <span class="divider">/</span> <span id="media-total-num">{media.length}</span>
+                            </div>
+                            <button class="nav-btn next-btn" id="media-next" aria-label="Foto siguiente">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </aside>
 
@@ -198,6 +227,24 @@ if (articulo) {
                             <span class="meta-label">LECTURA</span>
                             <span class="meta-value">{readingTime} MINUTOS</span>
                         </div>
+                        <div class="meta-item header-rating-item">
+                            <span class="meta-label">VALORACIÓN</span>
+                            <div class="header-rating-stars" id="header-average-rating-container" title={`Puntuación promedio de ${feedback.averageRating} estrellas`}>
+                                <span class="stars-span">
+                                    {Array.from({ length: 5 }).map((_, i) => {
+                                        const starNum = i + 1;
+                                        if (feedback.averageRating >= starNum) {
+                                            return <i class="fa-solid fa-star gold-star-icon"></i>;
+                                        } else if (feedback.averageRating >= starNum - 0.5) {
+                                            return <i class="fa-solid fa-star-half-stroke gold-star-icon"></i>;
+                                        } else {
+                                            return <i class="fa-regular fa-star gold-star-icon"></i>;
+                                        }
+                                    })}
+                                </span>
+                                <span class="rating-count-text" id="header-rating-count">({feedback.ratingsCount})</span>
+                            </div>
+                        </div>
                         
                         <button id="btn-listen" class="btn-listen-article" title="Escuchar artículo con IA">
                             <div class="btn-icon-wrapper">
@@ -220,6 +267,102 @@ if (articulo) {
                     </div>
                 )}
                 
+                <!-- SECCIÓN DE FEEDBACK (VALORACIONES Y COMENTARIOS) -->
+                <section class="article-feedback-section" id="comments-section" data-article-id={articulo.id}>
+                    <h3 class="feedback-main-title">Opiniones y Eco de los Lectores</h3>
+                    
+                    <div class="feedback-grid">
+                        <!-- Lado Izquierdo: Lista de comentarios -->
+                        <div class="feedback-comments-list">
+                            <h4 class="feedback-subtitle">Eco de los Lectores (<span id="comments-count-badge">{feedback.comments.length}</span>)</h4>
+                            <div class="comments-container" id="comments-list-container">
+                                {feedback.comments.length > 0 ? (
+                                    feedback.comments.map((comment) => (
+                                        <div class="comment-item">
+                                            <header class="comment-header">
+                                                <div class="comment-author-info">
+                                                    <span class="comment-author">{comment.name}</span>
+                                                    {comment.instagram && (
+                                                        <a href={`https://instagram.com/${comment.instagram.replace('@', '')}`} target="_blank" class="comment-instagram" rel="noopener noreferrer">
+                                                            <i class="fab fa-instagram"></i> @{comment.instagram.replace('@', '')}
+                                                        </a>
+                                                    )}
+                                                </div>
+                                                <span class="comment-date">
+                                                    {new Date(comment.created_at).toLocaleDateString('es-ES', {
+                                                        day: 'numeric', month: 'short', year: 'numeric'
+                                                    })}
+                                                </span>
+                                            </header>
+                                            {comment.rating && (
+                                                <div class="comment-rating-display">
+                                                    {Array.from({ length: 5 }).map((_, i) => (
+                                                        <i class={`${i < comment.rating ? 'fa-solid' : 'fa-regular'} fa-star gold-star-icon`}></i>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <p class="comment-body">{comment.comment}</p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div class="empty-comments">
+                                        <p>No hay opiniones aún. Sé el primero en compartir tu eco.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <!-- Lado Derecho: Formulario de opinión -->
+                        <div class="feedback-form-block">
+                            <h4 class="feedback-subtitle">Deja tu Huella</h4>
+                            
+                            <form id="feedback-form" class="feedback-premium-form">
+                                <div class="rating-input-wrapper">
+                                    <span class="rating-input-label">¿Qué te pareció esta crónica?</span>
+                                    <div class="rating-stars-input" id="stars-input-container">
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                            <button type="button" class="star-btn" data-star={i + 1} aria-label={`Calificar con ${i + 1} estrellas`}>
+                                                <i class="fa-regular fa-star interactive-star"></i>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <input type="hidden" name="rating" id="rating-hidden-value" value="" />
+                                    {feedback.hasRated && (
+                                        <span class="already-rated-warning">Ya has calificado esta crónica desde tu dirección IP. Solo puedes dejar un comentario sin una nueva calificación de estrellas.</span>
+                                    )}
+                                </div>
+
+                                <div class="form-group-grid">
+                                    <div class="form-group">
+                                        <input type="text" id="input-name" name="name" required placeholder=" " class="premium-input" />
+                                        <label for="input-name" class="premium-label">Nombre</label>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="email" id="input-email" name="email" required placeholder=" " class="premium-input" />
+                                        <label for="input-email" class="premium-label">Email</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <input type="text" id="input-instagram" name="instagram" placeholder=" " class="premium-input" />
+                                    <label for="input-instagram" class="premium-label">Instagram (Opcional)</label>
+                                </div>
+
+                                <div class="form-group">
+                                    <textarea id="input-comment" name="comment" required placeholder=" " rows="4" class="premium-textarea"></textarea>
+                                    <label for="input-comment" class="premium-label">Tu Opinión</label>
+                                </div>
+
+                                <button type="submit" class="btn-submit-feedback">
+                                    <span class="btn-label-text">ENVIAR OPINIÓN</span>
+                                    <div class="form-spinner"></div>
+                                </button>
+                                <div class="form-message" id="form-feedback-message"></div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+                
                 <div class="article-footer-nav">
                     <a href="/revista" class="back-link">← VOLVER A LA REVISTA</a>
                 </div>
@@ -234,13 +377,113 @@ if (articulo) {
 <script>
   document.addEventListener('astro:page-load', () => {
     const layers = document.querySelectorAll('.media-layer');
+    const prevBtn = document.getElementById('media-prev');
+    const nextBtn = document.getElementById('media-next');
+    const currentNum = document.getElementById('media-current-num');
+    
     if (layers.length > 1) {
         let current = 0;
-        setInterval(() => {
+        let autoplayTimer = null;
+
+        function showSlide(index) {
             layers[current].classList.remove('active');
-            current = (current + 1) % layers.length;
+            current = (index + layers.length) % layers.length;
             layers[current].classList.add('active');
-        }, 5000);
+            
+            if (currentNum) {
+                currentNum.innerText = (current + 1).toString();
+            }
+
+            const activeVideo = layers[current].querySelector('video');
+            if (activeVideo) {
+                activeVideo.play().catch(() => {});
+            }
+        }
+
+        function startAutoplay() {
+            stopAutoplay();
+            autoplayTimer = setInterval(() => {
+                showSlide(current + 1);
+            }, 7000); // Transiciones de exactamente 7 segundos
+        }
+
+        function stopAutoplay() {
+            if (autoplayTimer) {
+                clearInterval(autoplayTimer);
+            }
+        }
+
+        // Eventos para botones de la barra flotante
+        prevBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showSlide(current - 1);
+            startAutoplay();
+        });
+
+        nextBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showSlide(current + 1);
+            startAutoplay();
+        });
+
+        // Click en laterales de la columna visual completa
+        const visualColumn = document.querySelector('.visual-column');
+        visualColumn?.addEventListener('click', (e) => {
+            // Ignorar click si fue en el control flotante de navegación
+            if ((e.target as HTMLElement).closest('[data-media-navigation]')) {
+                return;
+            }
+            const rect = visualColumn.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const width = rect.width;
+            
+            if (clickX < width / 2) {
+                showSlide(current - 1);
+            } else {
+                showSlide(current + 1);
+            }
+            startAutoplay();
+        });
+
+        // Cambiar cursor según lado hovered para feedback visual premium
+        visualColumn?.addEventListener('mousemove', (e: any) => {
+            const rect = visualColumn.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const width = rect.width;
+            
+            if (x < width / 2) {
+                visualColumn.classList.add('cursor-left');
+                visualColumn.classList.remove('cursor-right');
+            } else {
+                visualColumn.classList.add('cursor-right');
+                visualColumn.classList.remove('cursor-left');
+            }
+        });
+
+        visualColumn?.addEventListener('mouseleave', () => {
+            visualColumn.classList.remove('cursor-left', 'cursor-right');
+        });
+
+        // Navegación por teclado (Flechas)
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowLeft') {
+                showSlide(current - 1);
+                startAutoplay();
+            } else if (e.key === 'ArrowRight') {
+                showSlide(current + 1);
+                startAutoplay();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+
+        // Limpieza de eventos al cambiar de página (Astro transitions)
+        document.addEventListener('astro:before-preparation', () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            stopAutoplay();
+        }, { once: true });
+
+        // Iniciar ciclo de 7 segundos
+        startAutoplay();
     }
 
     const progressBar = document.getElementById('reading-progress');
@@ -337,6 +580,234 @@ if (articulo) {
         }
     }
 
+    // 🏛️ Lógica del Sistema de Feedback (Estrellas + Comentarios)
+    const feedbackSection = document.getElementById('comments-section');
+    const articleId = feedbackSection ? parseInt(feedbackSection.dataset.articleId || '') : null;
+    const form = document.getElementById('feedback-form') as HTMLFormElement;
+    const starsContainer = document.getElementById('stars-input-container');
+    const ratingHidden = document.getElementById('rating-hidden-value') as HTMLInputElement;
+    const submitBtn = form?.querySelector('.btn-submit-feedback') as HTMLButtonElement;
+    const formMsg = document.getElementById('form-feedback-message') as HTMLElement;
+    const commentsListContainer = document.getElementById('comments-list-container');
+    const commentsCountBadge = document.getElementById('comments-count-badge');
+    const headerAverageRatingContainer = document.getElementById('header-average-rating-container');
+    
+    let selectedRating = 0;
+    
+    if (starsContainer && ratingHidden) {
+        const stars = starsContainer.querySelectorAll('.star-btn');
+        
+        stars.forEach(btn => {
+            const starValue = parseInt(btn.getAttribute('data-star') || '0');
+            
+            // Hover logic
+            btn.addEventListener('mouseenter', () => {
+                highlightStars(starValue);
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                highlightStars(selectedRating);
+            });
+            
+            // Click logic
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                selectedRating = starValue;
+                ratingHidden.value = starValue.toString();
+                highlightStars(starValue);
+            });
+        });
+        
+        function highlightStars(count: number) {
+            stars.forEach((btn, index) => {
+                const starIcon = btn.querySelector('.interactive-star');
+                if (starIcon) {
+                    if (index < count) {
+                        starIcon.className = 'fa-solid fa-star interactive-star active';
+                    } else {
+                        starIcon.className = 'fa-regular fa-star interactive-star';
+                    }
+                }
+            });
+        }
+    }
+    
+    // Auto-prepending "@" in Instagram input on change/blur
+    const inputInstagram = document.getElementById('input-instagram') as HTMLInputElement;
+    inputInstagram?.addEventListener('blur', () => {
+        let val = inputInstagram.value.trim();
+        if (val.length > 0 && !val.startsWith('@')) {
+            inputInstagram.value = '@' + val;
+        }
+    });
+
+    // Form submission
+    form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!articleId) return;
+
+        const formData = new FormData(form);
+        const name = formData.get('name')?.toString() || '';
+        const email = formData.get('email')?.toString() || '';
+        let instagram = formData.get('instagram')?.toString() || '';
+        const comment = formData.get('comment')?.toString() || '';
+        const rating = selectedRating > 0 ? selectedRating : null;
+
+        if (instagram.length > 0 && !instagram.startsWith('@')) {
+            instagram = '@' + instagram;
+        }
+
+        // Validate
+        if (!name.trim() || !email.trim() || !comment.trim()) {
+            showFormMessage('Por favor completa todos los campos requeridos', 'error');
+            return;
+        }
+
+        try {
+            // Start spinner & disable
+            form.classList.add('loading');
+            submitBtn.disabled = true;
+            showFormMessage('', '');
+
+            const response = await fetch('/api/magazine/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    articleId,
+                    name,
+                    email,
+                    instagram: instagram || null,
+                    comment,
+                    rating
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al enviar opinión');
+            }
+
+            // Success state
+            showFormMessage('¡Muchas gracias por dejar tu huella en nuestra revista!', 'success');
+            form.reset();
+            selectedRating = 0;
+            if (ratingHidden) ratingHidden.value = '';
+            if (starsContainer) {
+                const stars = starsContainer.querySelectorAll('.interactive-star');
+                stars.forEach(s => s.className = 'fa-regular fa-star interactive-star');
+            }
+
+            // Re-render comments list dynamically
+            if (commentsListContainer && data.comments) {
+                commentsListContainer.innerHTML = '';
+                if (data.comments.length > 0) {
+                    data.comments.forEach((c: any) => {
+                        const commentEl = document.createElement('div');
+                        commentEl.className = 'comment-item reveal-fade-in';
+                        
+                        let starHTML = '';
+                        if (c.rating) {
+                            starHTML = `<div class="comment-rating-display">`;
+                            for (let i = 0; i < 5; i++) {
+                                starHTML += `<i class="${i < c.rating ? 'fa-solid' : 'fa-regular'} fa-star gold-star-icon"></i>`;
+                            }
+                            starHTML += `</div>`;
+                        }
+
+                        let instagramHTML = '';
+                        if (c.instagram) {
+                            instagramHTML = `
+                                <a href="https://instagram.com/${c.instagram.replace('@', '')}" target="_blank" class="comment-instagram" rel="noopener noreferrer">
+                                    <i class="fab fa-instagram"></i> @${c.instagram.replace('@', '')}
+                                </a>
+                            `;
+                        }
+
+                        const commentDate = new Date(c.created_at).toLocaleDateString('es-ES', {
+                            day: 'numeric', month: 'short', year: 'numeric'
+                        });
+
+                        commentEl.innerHTML = `
+                            <header class="comment-header">
+                                <div class="comment-author-info">
+                                    <span class="comment-author">${c.name}</span>
+                                    ${instagramHTML}
+                                </div>
+                                <span class="comment-date">${commentDate}</span>
+                            </header>
+                            ${starHTML}
+                            <p class="comment-body">${c.comment}</p>
+                        `;
+                        commentsListContainer.appendChild(commentEl);
+                    });
+                } else {
+                    commentsListContainer.innerHTML = `
+                        <div class="empty-comments">
+                            <p>No hay opiniones aún. Sé el primero en compartir tu eco.</p>
+                        </div>
+                    `;
+                }
+            }
+
+            // Update comments badge
+            if (commentsCountBadge && data.comments) {
+                commentsCountBadge.innerText = data.comments.length.toString();
+            }
+
+            // Update header star rating
+            if (headerAverageRatingContainer && data.ratingsCount !== undefined) {
+                const starsSpan = headerAverageRatingContainer.querySelector('.stars-span');
+                const ratingCountSpan = document.getElementById('header-rating-count');
+                
+                if (starsSpan) {
+                    let headerStarsHTML = '';
+                    for (let i = 0; i < 5; i++) {
+                        const starNum = i + 1;
+                        if (data.averageRating >= starNum) {
+                            headerStarsHTML += `<i class="fa-solid fa-star gold-star-icon"></i>`;
+                        } else if (data.averageRating >= starNum - 0.5) {
+                            headerStarsHTML += `<i class="fa-solid fa-star-half-stroke gold-star-icon"></i>`;
+                        } else {
+                            headerStarsHTML += `<i class="fa-regular fa-star gold-star-icon"></i>`;
+                        }
+                    }
+                    starsSpan.innerHTML = headerStarsHTML;
+                }
+                
+                if (ratingCountSpan) {
+                    ratingCountSpan.innerText = `(${data.ratingsCount})`;
+                }
+                
+                headerAverageRatingContainer.title = `Puntuación promedio de ${data.averageRating} estrellas`;
+            }
+
+            // If they rated, disable stars since they've already rated
+            if (rating && !form.querySelector('.already-rated-warning')) {
+                const wrapper = form.querySelector('.rating-input-wrapper');
+                if (wrapper) {
+                    const warning = document.createElement('span');
+                    warning.className = 'already-rated-warning';
+                    warning.innerText = 'Ya has calificado esta crónica desde tu dirección IP. Solo puedes dejar un comentario sin una nueva calificación de estrellas.';
+                    wrapper.appendChild(warning);
+                }
+            }
+
+        } catch (err: any) {
+            console.error('Error submitting feedback:', err);
+            showFormMessage(err.message || 'Error al conectar con el servidor', 'error');
+        } finally {
+            form.classList.remove('loading');
+            submitBtn.disabled = false;
+        }
+    });
+
+    function showFormMessage(msg: string, type: 'success' | 'error' | '') {
+        if (!formMsg) return;
+        formMsg.innerText = msg;
+        formMsg.className = 'form-message ' + type;
+    }
+
     // 🛑 Seguridad: Detener audio si el usuario navega (Astro View Transitions)
     document.addEventListener('astro:before-preparation', () => {
         window.speechSynthesis.cancel();
@@ -400,7 +871,7 @@ if (articulo) {
     position: absolute; 
     inset: 2rem; 
     opacity: 0; 
-    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1); 
+    transition: opacity 2.5s cubic-bezier(0.4, 0, 0.2, 1); 
     display: flex; 
     align-items: center; 
     justify-content: center; 
@@ -428,6 +899,130 @@ if (articulo) {
     border-radius: 4px; 
     box-shadow: 0 40px 100px rgba(0,0,0,0.8); 
 }
+
+/* 🏛️ CONTROLES INTERACTIVOS DE FOTO DE REVISTA (ESTANDAR JMX ORO) */
+.media-navigation {
+    position: absolute;
+    bottom: 3.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    background: rgba(11, 10, 9, 0.7);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(220, 177, 74, 0.15);
+    padding: 0.5rem 1.2rem;
+    border-radius: 40px;
+    z-index: 50;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 20px 45px rgba(0,0,0,0.7), inset 0 0 15px rgba(255,255,255,0.02);
+}
+
+.media-navigation:hover {
+    background: rgba(11, 10, 9, 0.9);
+    border-color: rgba(220, 177, 74, 0.35);
+    transform: translateX(-50%) translateY(-3px);
+    box-shadow: 0 25px 55px rgba(0,0,0,0.85), 0 0 15px rgba(220, 177, 74, 0.1);
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 50%;
+}
+
+.nav-btn:hover {
+    color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.15);
+}
+
+.nav-btn:active {
+    transform: scale(0.92);
+}
+
+.media-indicator {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 55px;
+    justify-content: center;
+}
+
+#media-current-num {
+    color: #fff;
+    font-weight: 700;
+}
+
+.media-indicator .divider {
+    color: rgba(220, 177, 74, 0.4);
+}
+
+#media-total-num {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Indicadores de clicks en laterales */
+.visual-column::before,
+.visual-column::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 20%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    opacity: 0;
+}
+
+.visual-column::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.2), transparent);
+}
+
+.visual-column::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.2), transparent);
+}
+
+.visual-column:hover::before,
+.visual-column:hover::after {
+    opacity: 0.4;
+}
+
+/* Cursores interactivos según lado */
+.visual-column.cursor-left {
+    cursor: w-resize;
+}
+.visual-column.cursor-right {
+    cursor: e-resize;
+}
+
+/* Responsivo para el panel flotante */
+@media (max-width: 1024px) {
+    .media-navigation {
+        bottom: 2rem;
+        padding: 0.4rem 1rem;
+        gap: 0.9rem;
+    }
+}
+
 .eyebrow-row { 
     display: flex; 
     align-items: center; 
@@ -615,8 +1210,438 @@ if (articulo) {
     text-align: justify;
     transition: color 0.5s ease;
 }
+
+/* 🏛️ SECCIÓN DE VALORACIONES Y COMENTARIOS (ESTILO JMX FINE-ART) */
+.header-rating-item {
+    min-width: 140px;
+}
+.header-rating-stars {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.gold-star-icon {
+    color: #c5a059 !important;
+    font-size: 0.85rem;
+}
+.rating-count-text {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-left: 0.4rem;
+    font-weight: 500;
+}
+
+.article-feedback-section {
+    margin-top: 8rem;
+    padding-top: 5rem;
+    border-top: 1px solid var(--glass-border);
+    transition: border-color 0.5s ease;
+}
+
+.feedback-main-title {
+    font-family: var(--font-primary), serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-style: italic;
+    color: var(--color-white);
+    margin-bottom: 4rem;
+    letter-spacing: -0.5px;
+    border-left: 2px solid #c5a059;
+    padding-left: 1.5rem;
+}
+
+.feedback-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 5rem;
+}
+
+/* Lista de Comentarios (Fondo Papel de Algodón Fine Art) */
+.feedback-comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.feedback-subtitle {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #c5a059;
+    margin-bottom: 2rem;
+    border-bottom: 1px dashed rgba(197, 160, 89, 0.15);
+    padding-bottom: 0.8rem;
+}
+
+.comments-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-height: 700px;
+    overflow-y: auto;
+    padding-right: 1.5rem;
+}
+
+/* Custom Scrollbar for comments container */
+.comments-container::-webkit-scrollbar {
+    width: 3px;
+}
+.comments-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+.comments-container::-webkit-scrollbar-thumb {
+    background: rgba(197, 160, 89, 0.2);
+}
+.comments-container::-webkit-scrollbar-thumb:hover {
+    background: #c5a059;
+}
+
+.comment-item {
+    background-color: #f7f4ef;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    border: 1px solid rgba(28, 26, 23, 0.08);
+    padding: 2.2rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    transition: transform 0.4s ease, border-color 0.4s ease;
+}
+
+.comment-item:hover {
+    transform: translateY(-3px);
+    border-color: rgba(197, 160, 89, 0.3);
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.comment-author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.comment-author {
+    font-family: var(--font-primary), serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #1c1a17;
+}
+
+.comment-instagram {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.7rem;
+    color: #9c7a3c;
+    text-decoration: none;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: color 0.3s ease;
+}
+.comment-instagram:hover {
+    color: #1c1a17;
+}
+
+.comment-date {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.65rem;
+    color: #6e675f;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.comment-rating-display {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1.2rem;
+}
+.comment-rating-display .gold-star-icon {
+    font-size: 0.75rem;
+}
+
+.comment-body {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #4a453f;
+    margin: 0;
+    text-align: justify;
+    font-weight: 400;
+}
+
+.empty-comments {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    border: 1px dashed var(--glass-border);
+}
+
+/* Formulario Premium (Lado Derecho Velvet Red/Dark) */
+.feedback-form-block {
+    position: sticky;
+    top: 6rem;
+    height: fit-content;
+}
+
+.feedback-premium-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2.2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--glass-border);
+    padding: 3rem 2.5rem;
+    position: relative;
+    transition: border-color 0.5s ease;
+}
+
+.feedback-premium-form:hover {
+    border-color: rgba(197, 160, 89, 0.2);
+}
+
+.rating-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.rating-input-label {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.rating-stars-input {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 1.4rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.star-btn:hover {
+    transform: scale(1.25);
+}
+
+.interactive-star {
+    transition: color 0.3s ease;
+}
+
+.interactive-star.active {
+    color: #c5a059 !important;
+}
+
+.already-rated-warning {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.65rem;
+    color: #c94c4c;
+    line-height: 1.5;
+    letter-spacing: 0.5px;
+    margin-top: 0.4rem;
+}
+
+/* Floating Label Inputs */
+.form-group-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.form-group {
+    position: relative;
+    width: 100%;
+}
+
+.premium-input,
+.premium-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.8rem 0;
+    color: #fff;
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.9rem;
+    transition: border-color 0.4s ease;
+    box-sizing: border-box;
+}
+
+.premium-textarea {
+    resize: none;
+}
+
+.premium-input:focus,
+.premium-textarea:focus {
+    outline: none;
+    border-bottom-color: #c5a059;
+}
+
+.premium-label {
+    position: absolute;
+    left: 0;
+    top: 0.8rem;
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1px;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Floating behavior */
+.premium-input:focus ~ .premium-label,
+.premium-input:not(:placeholder-shown) ~ .premium-label,
+.premium-textarea:focus ~ .premium-label,
+.premium-textarea:not(:placeholder-shown) ~ .premium-label {
+    top: -1.2rem;
+    font-size: 0.6rem;
+    color: #c5a059;
+    letter-spacing: 2px;
+}
+
+.btn-submit-feedback {
+    background: none;
+    border: 1px solid rgba(197, 160, 89, 0.3);
+    color: #c5a059;
+    padding: 1.1rem;
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-submit-feedback:hover {
+    background: #c5a059;
+    color: #000;
+    border-color: #c5a059;
+}
+
+.btn-submit-feedback:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Spinner */
+.form-spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: currentColor;
+    animation: formSpin 0.8s linear infinite;
+    position: absolute;
+}
+
+@keyframes formSpin {
+    to { transform: rotate(360deg); }
+}
+
+.feedback-premium-form.loading .btn-label-text {
+    visibility: hidden;
+}
+
+.feedback-premium-form.loading .form-spinner {
+    display: block;
+}
+
+.form-message {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    line-height: 1.6;
+    margin-top: 1rem;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.4s ease;
+}
+
+.form-message.success,
+.form-message.error {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.form-message.success {
+    color: #c5a059;
+}
+
+.form-message.error {
+    color: #c94c4c;
+}
+
+/* CSS Dynamic animation for new comments */
+.reveal-fade-in {
+    animation: commentFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes commentFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsivo */
 @media (max-width: 1024px) {
   .split-layout { grid-template-columns: 1fr; }
   .visual-column { height: 50vh; }
+  .feedback-grid {
+      grid-template-columns: 1fr;
+      gap: 4rem;
+  }
+  .feedback-form-block {
+      position: relative;
+      top: 0;
+  }
+  .article-feedback-section {
+      margin-top: 5rem;
+      padding-top: 3rem;
+  }
+}
+@media (max-width: 480px) {
+    .form-group-grid {
+        grid-template-columns: 1fr;
+        gap: 2.2rem;
+    }
+    .feedback-premium-form {
+        padding: 2rem 1.5rem;
+    }
+    .comment-item {
+        padding: 1.5rem;
+    }
 }
 </style>
+

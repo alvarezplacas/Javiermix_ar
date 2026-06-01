@@ -39,3 +39,8 @@ tender-transit
 
 # 🛡️ ARCHIVOS QUE NO SE IGNORAN (ELIMINADOS DE AQUÍ)
 # README.md y /docs/ ahora se trackean correctamente.
+
+# Local resource folders and scratch files
+notas para la revista/
+Fotos sobre la composicion/
+scratch/
