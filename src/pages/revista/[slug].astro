@@ -186,10 +186,13 @@ if (articulo) {
                             ) : m.type === 'youtube' ? (
                                 <iframe src={m.src} class="media-iframe" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                             ) : (
-                                <img src={m.src} alt={articulo.title} class="media-img" loading="lazy" />
+                                <img src={m.src} alt={articulo.title} class="media-img" loading="lazy" crossorigin="anonymous" />
                             )}
                         </div>
                     ))}
+
+                    <!-- EXIF Overlay -->
+                    <div class="media-exif-overlay" id="media-exif-overlay"></div>
 
                     {media.length > 1 && (
                         <div class="media-navigation" data-media-navigation>
@@ -380,12 +383,54 @@ if (articulo) {
     const prevBtn = document.getElementById('media-prev');
     const nextBtn = document.getElementById('media-next');
     const currentNum = document.getElementById('media-current-num');
+    const exifOverlay = document.getElementById('media-exif-overlay');
     
-    if (layers.length > 1) {
-        let current = 0;
-        let autoplayTimer = null;
+    let current = 0;
+    let exifrModule: any = null;
 
-        function showSlide(index) {
+    async function updateExifForCurrentSlide() {
+        if (!exifOverlay) return;
+        exifOverlay.classList.remove('visible');
+        if (!exifrModule) return;
+
+        const activeLayer = layers[current] || document.querySelector('.media-layer');
+        const img = activeLayer?.querySelector('.media-img');
+        
+        if (!img) return;
+
+        try {
+            const exif = await exifrModule.parse(img);
+            if (exif && (exif.Artist || exif.Copyright || exif.ImageDescription)) {
+                let html = '';
+                if (exif.Artist) {
+                    html += `<div class="media-exif-line"><strong>Autor:</strong> ${exif.Artist}</div>`;
+                }
+                if (exif.Copyright) {
+                    html += `<div class="media-exif-line"><strong>Copyright:</strong> ${exif.Copyright}</div>`;
+                }
+                if (exif.ImageDescription) {
+                    html += `<div class="media-exif-desc">${exif.ImageDescription}</div>`;
+                }
+                exifOverlay.innerHTML = html;
+                exifOverlay.classList.add('visible');
+            }
+        } catch (e) {
+            // Silently ignore errors
+        }
+    }
+
+    // Dynamic import of exifr in the browser
+    import('https://cdn.jsdelivr.net/npm/exifr@4.1.3/dist/lite.esm.js')
+        .then(module => {
+            exifrModule = module.default;
+            updateExifForCurrentSlide();
+        })
+        .catch(err => console.error('Failed to load exifr:', err));
+
+    if (layers.length > 1) {
+        let autoplayTimer: any = null;
+
+        function showSlide(index: number) {
             layers[current].classList.remove('active');
             current = (index + layers.length) % layers.length;
             layers[current].classList.add('active');
@@ -398,6 +443,8 @@ if (articulo) {
             if (activeVideo) {
                 activeVideo.play().catch(() => {});
             }
+
+            updateExifForCurrentSlide();
         }
 
         function startAutoplay() {
@@ -898,6 +945,59 @@ if (articulo) {
     height: 100%; 
     border-radius: 4px; 
     box-shadow: 0 40px 100px rgba(0,0,0,0.8); 
+}
+
+/* 🏛️ OVERLAY EXIF DE FOTO (ESTILO JMX FINE-ART) */
+.media-exif-overlay {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 2.5rem;
+    max-width: 320px;
+    background: rgba(11, 10, 9, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    z-index: 40;
+    pointer-events: none; /* Dejar pasar los clicks a la visual-column */
+    opacity: 0;
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(10px);
+}
+
+.media-exif-overlay.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.media-exif-line {
+    font-family: var(--font-secondary), sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.media-exif-line strong {
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+.media-exif-desc {
+    margin-top: 0.3rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 0.3rem;
+    font-size: 0.58rem;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+/* Ocultar en pantallas de tablet o móvil (menores o iguales a 768px) */
+@media (max-width: 768px) {
+    .media-exif-overlay {
+        display: none !important;
+    }
 }
 
 /* 🏛️ CONTROLES INTERACTIVOS DE FOTO DE REVISTA (ESTANDAR JMX ORO) */

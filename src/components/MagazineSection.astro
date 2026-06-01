@@ -173,10 +173,12 @@ const articles = fetchedArticles.map(a => {
                         media.type === 'video' ? (
                             <video src={media.url} class={`article-media ${i === 0 ? 'active' : ''}`} muted playsinline loop autoplay></video>
                         ) : (
-                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" />
+                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" crossorigin="anonymous" />
                         )
                     ))}
                     <div class="vignette-overlay"></div>
+                    <!-- EXIF Overlay (Style Fine-Art) -->
+                    <div class="media-exif-overlay" data-exif-overlay></div>
                 </div>
                 <div class="image-glare"></div>
             </div>
@@ -268,6 +270,59 @@ const articles = fetchedArticles.map(a => {
       box-shadow: inset 0 0 80px rgba(0,0,0,0.8);
       pointer-events: none;
       z-index: 10;
+  }
+  
+  /* 🏛️ OVERLAY EXIF DE FOTO EN TARJETAS (ESTILO JMX FINE-ART) */
+  .media-exif-overlay {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      max-width: 250px;
+      background: rgba(11, 10, 9, 0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 0.5rem 0.8rem;
+      border-radius: 4px;
+      z-index: 40;
+      pointer-events: none; /* Dejar pasar los clicks */
+      opacity: 0;
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(8px);
+  }
+
+  .media-exif-overlay.visible {
+      opacity: 1;
+      transform: translateY(0);
+  }
+
+  .media-exif-line {
+      font-family: var(--font-secondary), sans-serif;
+      font-size: 0.55rem;
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.65);
+  }
+
+  .media-exif-line strong {
+      color: var(--color-accent);
+      font-weight: 600;
+  }
+
+  .media-exif-desc {
+      margin-top: 0.3rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 0.3rem;
+      font-size: 0.52rem;
+      line-height: 1.3;
+      color: rgba(255, 255, 255, 0.45);
+  }
+
+  /* Ocultar en pantallas de tablet o móvil (menores o iguales a 768px) */
+  @media (max-width: 768px) {
+      .media-exif-overlay {
+          display: none !important;
+      }
   }
   
   /* 🌟 Zoom cinemático lento e infinito */
@@ -370,15 +425,50 @@ const articles = fetchedArticles.map(a => {
     }, { threshold: 0.1 });
     reveals.forEach(r => observer.observe(r));
 
+    let exifrModule: any = null;
+
+    async function updateCardExif(imgEl: any, overlayEl: any) {
+        if (!overlayEl) return;
+        overlayEl.classList.remove('visible');
+        if (!exifrModule || !imgEl || imgEl.tagName === 'VIDEO') return;
+
+        try {
+            const exif = await exifrModule.parse(imgEl);
+            if (exif && (exif.Artist || exif.Copyright || exif.ImageDescription)) {
+                let html = '';
+                if (exif.Artist) {
+                    html += `<div class="media-exif-line"><strong>Autor:</strong> ${exif.Artist}</div>`;
+                }
+                if (exif.Copyright) {
+                    html += `<div class="media-exif-line"><strong>Copyright:</strong> ${exif.Copyright}</div>`;
+                }
+                if (exif.ImageDescription) {
+                    html += `<div class="media-exif-desc">${exif.ImageDescription}</div>`;
+                }
+                overlayEl.innerHTML = html;
+                overlayEl.classList.add('visible');
+            }
+        } catch (e) {
+            // Silently ignore errors
+        }
+    }
+
     function initHomeMagazine() {
       const articles = document.querySelectorAll('[data-article-card]');
       articles.forEach(art => {
           const media = art.querySelectorAll('.article-media');
+          const exifOverlay = art.querySelector('[data-exif-overlay]');
+          
           if (media.length <= 1) {
-              if(media[0]) media[0].classList.add('active');
+              if(media[0]) {
+                  media[0].classList.add('active');
+                  updateCardExif(media[0], exifOverlay);
+              }
               return;
           }
           let current = 0;
+          updateCardExif(media[current], exifOverlay);
+          
           setInterval(() => {
               media[current].classList.remove('active');
               current = (current + 1) % media.length;
@@ -386,6 +476,7 @@ const articles = fetchedArticles.map(a => {
               if (media[current].tagName === 'VIDEO') {
                   (media[current] as HTMLVideoElement).play().catch(() => {});
               }
+              updateCardExif(media[current], exifOverlay);
           }, 8000);
       });
 
@@ -420,6 +511,22 @@ const articles = fetchedArticles.map(a => {
           container.addEventListener('mouseleave', (e:any) => resetTilt(e));
       });
     }
+
+    // Dynamic import of exifr in the browser
+    import('https://cdn.jsdelivr.net/npm/exifr@4.1.3/dist/lite.esm.js')
+        .then(module => {
+            exifrModule = module.default;
+            // Trigger initial EXIF load for already active images
+            const cards = document.querySelectorAll('[data-article-card]');
+            cards.forEach(art => {
+                const activeMedia = art.querySelector('.article-media.active');
+                const exifOverlay = art.querySelector('[data-exif-overlay]');
+                if (activeMedia && exifOverlay) {
+                    updateCardExif(activeMedia, exifOverlay);
+                }
+            });
+        })
+        .catch(err => console.error('Failed to load exifr:', err));
 
     initHomeMagazine();
   });
