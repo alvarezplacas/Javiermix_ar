@@ -234,23 +234,23 @@ const articles = dbArticles.map(art => {
             }, 8000);
         });
 
-        // 💡 EFECTO 3D MARCADO (AISLADO E INHIBIDO DE ERRORES GLOBALMENTE)
+        // 💡 EFECTO 3D SUAVE Y AMORTIGUADO (ESTÁNDAR PREMIUM JMX)
         const tiltFrames = document.querySelectorAll('[data-tilt-container]');
         tiltFrames.forEach(container => {
             container.addEventListener('mousemove', (e: any) => {
                 const r = container.getBoundingClientRect();
                 const x = e.clientX - r.left; 
                 const y = e.clientY - r.top;
-                const rx = (y - r.height/2) / 20; // Rebajado a 20 para evitar distorsiones excesivas
-                const ry = (r.width/2 - x) / 20;
+                const rx = (y - r.height/2) / 60; // Reducido a 60 para una inclinación muy sutil y elegante
+                const ry = (r.width/2 - x) / 60; // Reducido a 60 para una inclinación muy sutil y elegante
                 
-                (container as HTMLElement).style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.03, 1.03, 1.03)`;
+                (container as HTMLElement).style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.015, 1.015, 1.015)`; // Escala reducida a 1.015 para evitar brincos bruscos
                 
                 const glare = container.querySelector('.image-glare') as HTMLElement;
                 if (glare) {
                     const px = (x / r.width) * 100;
                     const py = (y / r.height) * 100;
-                    glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.18) 0%, transparent 75%)`;
+                    glare.style.background = `radial-gradient(circle at ${px}% ${py}%, rgba(255,255,255,0.12) 0%, transparent 80%)`;
                     glare.style.opacity = "1";
                 }
             });
@@ -368,12 +368,13 @@ const articles = dbArticles.map(art => {
       0 30px 60px rgba(0, 0, 0, 0.5), 
       inset 0 0 12px rgba(0, 0, 0, 0.18),
       0 0 0 1px rgba(197, 160, 89, 0.2); 
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
     transform-style: preserve-3d;
   }
   
   .article-row:hover .tilt-frame {
     box-shadow: 0 45px 90px rgba(0, 0, 0, 0.7), 0 0 15px rgba(197, 160, 89, 0.1);
+    transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.6s ease; /* Transición ultra-rápida y amortiguada durante el hover */
   }
   
   .slideshow-wrapper { 

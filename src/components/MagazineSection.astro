@@ -255,11 +255,11 @@ const articles = fetchedArticles.map(a => {
       position: relative; width: 100%; height: 550px; background-color: #080808; 
       box-shadow: 0 30px 60px rgba(0,0,0,0.5); perspective: 1000px; overflow: hidden; 
       border: 1px solid rgba(220, 177, 74, 0.05);
-      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .magazine-card:hover .tilt-container {
       box-shadow: 0 45px 90px rgba(0,0,0,0.7);
-      transform: scale(1.01);
+      transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1); /* Respuesta fluida al cursor */
   }
   .slideshow-wrapper { 
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000;
@@ -486,9 +486,9 @@ const articles = fetchedArticles.map(a => {
           const r = container.getBoundingClientRect();
           const x = e.clientX - r.left; 
           const y = e.clientY - r.top;
-          const rx = (y - r.height/2) / 45; // Mucho más sutil
-          const ry = (r.width/2 - x) / 45;
-          container.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.02, 1.02, 1.02)`;
+          const rx = (y - r.height/2) / 60; // Inclinación súper sutil
+          const ry = (r.width/2 - x) / 60;
+          container.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.015, 1.015, 1.015)`; // Escala suavizada a 1.015
           const glare = container.querySelector('.image-glare') as HTMLElement;
           if (glare) {
               const px = (x / r.width) * 100;
