@@ -359,7 +359,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
 
         // ── Loop principal ─────────────────────────────────
         function animate() {
-            // Avance en auto-tour con pausas en cada obra
+            // Avance en auto-tour con pausas en cada obra (usando frames.length para evitar ReferenceError)
             if (isPlaying) {
                 if (pauseCounter > 0) {
                     pauseCounter--;
@@ -369,15 +369,12 @@ const SPACING = 900; // px entre cuadros en el eje Z
                     virtualScroll += AUTO_SPEED;
 
                     const progress = (window.scrollY + virtualScroll) * SCROLL_SPEED;
-                    // Detectar proximidad de la siguiente obra
-                    const nextArtworkIndex = Math.floor((progress + 150) / SPACING);
-                    if (nextArtworkIndex >= 0 && nextArtworkIndex < artworks.length) {
-                        if (nextArtworkIndex > lastPausedIndex) {
-                            const targetZ = (nextArtworkIndex + 1) * SPACING;
-                            if (progress >= targetZ - 30 && progress <= targetZ + 30) {
-                                pauseCounter = 120; // 120 frames ≈ 2 segundos a 60fps
-                                lastPausedIndex = nextArtworkIndex;
-                            }
+                    const nextPauseIndex = lastPausedIndex + 1;
+                    if (nextPauseIndex < frames.length) {
+                        const targetZ = (nextPauseIndex + 1) * SPACING;
+                        if (progress >= targetZ - 15 && progress <= targetZ + 15) {
+                            pauseCounter = 120; // 120 frames ≈ 2 segundos a 60fps
+                            lastPausedIndex = nextPauseIndex;
                         }
                     }
                 }
