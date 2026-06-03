@@ -40,7 +40,10 @@ const SPACING = 900; // px entre cuadros en el eje Z
                     <div
                         class="art-frame"
                         data-index={art.index}
-                        style={`transform: translate3d(${art.x}px, ${art.y}px, ${-(art.index + 1) * SPACING}px);`}
+                        data-x={art.x}
+                        data-y={art.y}
+                        data-z={-(art.index + 1) * SPACING}
+                        style={`transform: translate3d(-50%, -50%, 0) translate3d(${art.x}px, ${art.y}px, ${-(art.index + 1) * SPACING}px);`}
                     >
                         <img src={art.img} alt={art.title} loading="lazy" />
                         <div class="art-info">
@@ -95,7 +98,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
     .scene-wrapper {
         position: fixed;
         inset: 0;
-        perspective: 850px;
+        perspective: 750px;
         perspective-origin: 50% 45%;
         overflow: hidden;
         z-index: 2;
@@ -112,12 +115,10 @@ const SPACING = 900; // px entre cuadros en el eje Z
     /* ─── Cada cuadro, centrado en viewport ─── */
     .art-frame {
         position: absolute;
-        width: 520px;
+        width: 580px;
         /* Centrar en el viewport */
         left: 50%;
         top: 50%;
-        margin-left: -260px;
-        margin-top: -220px;
         transform-style: preserve-3d;
         /* transform inicial viene del style inline en el HTML */
         will-change: opacity, transform;
@@ -249,7 +250,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
     }
 
     @media (max-width: 768px) {
-        .art-frame { width: 85vw; margin-left: -42.5vw; }
+        .art-frame { width: 88vw; }
         .lab-controls { width: 90vw; gap: 1rem; }
         .depth-meter { display: none; }
     }
@@ -277,6 +278,8 @@ const SPACING = 900; // px entre cuadros en el eje Z
         let isPlaying     = false;
         let virtualScroll = 0;
         let lastScrollY   = 0;
+        let pauseCounter  = 0;
+        let lastPausedIndex = -1;
 
         // ── Audio ──────────────────────────────────────────
         soundManager.init();
@@ -304,7 +307,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
             if (isPlaying) scrollHint.style.opacity = '0';
         });
 
-        window.addEventListener('scroll', () => {
+        const onScroll = () => {
             if (Math.abs(window.scrollY - lastScrollY) > 8) {
                 if (isPlaying) {
                     isPlaying = false;
@@ -314,33 +317,71 @@ const SPACING = 900; // px entre cuadros en el eje Z
                 // Ocultar hint después del primer scroll
                 scrollHint.style.opacity = '0';
                 lastScrollY = window.scrollY;
+                
+                // Evitamos pausas automáticas bruscas si el usuario scrolló manualmente
+                const progress = (window.scrollY + virtualScroll) * SCROLL_SPEED;
+                lastPausedIndex = Math.floor(progress / SPACING);
             }
-        });
+        };
 
-        // ── Partículas ─────────────────────────────────────
+        window.addEventListener('scroll', onScroll);
+
+        // ── Partículas (Estrellas 3D radiales) ──────────────
         const ctx = canvas.getContext('2d')!;
-        const particles: { x: number; y: number; size: number; speed: number }[] = [];
+        const particles: { x: number; y: number; z: number; size: number; speed: number }[] = [];
 
-        const resize = () => {
+        const initParticles = () => {
+            particles.length = 0;
+            for (let i = 0; i < 180; i++) {
+                particles.push({
+                    x:     (Math.random() - 0.5) * canvas.width * 2,
+                    y:     (Math.random() - 0.5) * canvas.height * 2,
+                    z:     Math.random() * 1000,
+                    size:  Math.random() * 1.5 + 0.5,
+                    speed: Math.random() * 2 + 1,
+                });
+            }
+        };
+
+        const onResize = () => {
             canvas.width  = window.innerWidth;
             canvas.height = window.innerHeight;
+            initParticles();
         };
-        window.addEventListener('resize', resize);
-        resize();
+        window.addEventListener('resize', onResize);
+        onResize();
 
-        for (let i = 0; i < 180; i++) {
-            particles.push({
-                x:     Math.random() * canvas.width,
-                y:     Math.random() * canvas.height,
-                size:  Math.random() * 1.4 + 0.3,
-                speed: Math.random() * 0.6 + 0.15,
-            });
-        }
+        // Limpiar event listeners globales al destruir la vista
+        document.addEventListener('astro:before-preparation', () => {
+            window.removeEventListener('resize', onResize);
+            window.removeEventListener('scroll', onScroll);
+        }, { once: true });
 
         // ── Loop principal ─────────────────────────────────
         function animate() {
-            // Avance en auto-tour
-            if (isPlaying) virtualScroll += AUTO_SPEED;
+            // Avance en auto-tour con pausas en cada obra
+            if (isPlaying) {
+                if (pauseCounter > 0) {
+                    pauseCounter--;
+                    // Avance mínimo residual para no congelar del todo la UI (efecto premium de deriva)
+                    virtualScroll += AUTO_SPEED * 0.08;
+                } else {
+                    virtualScroll += AUTO_SPEED;
+
+                    const progress = (window.scrollY + virtualScroll) * SCROLL_SPEED;
+                    // Detectar proximidad de la siguiente obra
+                    const nextArtworkIndex = Math.floor((progress + 150) / SPACING);
+                    if (nextArtworkIndex >= 0 && nextArtworkIndex < artworks.length) {
+                        if (nextArtworkIndex > lastPausedIndex) {
+                            const targetZ = (nextArtworkIndex + 1) * SPACING;
+                            if (progress >= targetZ - 30 && progress <= targetZ + 30) {
+                                pauseCounter = 120; // 120 frames ≈ 2 segundos a 60fps
+                                lastPausedIndex = nextArtworkIndex;
+                            }
+                        }
+                    }
+                }
+            }
 
             // Progreso total de la "cámara"
             const progress = (window.scrollY + virtualScroll) * SCROLL_SPEED;
@@ -349,45 +390,80 @@ const SPACING = 900; // px entre cuadros en el eje Z
             depthVal.innerText = Math.floor(progress / 10).toString();
 
             // ── Mover el TÚNEL entero hacia la cámara ──
-            //    Esto es lo que da el efecto de caminar hacia los cuadros
             tunnel.style.transform = `translateZ(${progress}px)`;
 
-            // ── Gestionar opacidad de cada frame ──────────
+            // ── Gestionar opacidad y elevación dinámica de cada frame ──
             frames.forEach((frame) => {
-                const idx     = parseInt(frame.dataset.index ?? '0');
-                // Z original del frame en el mundo (negativo = adelante de la cámara)
-                const frameWorldZ = -(idx + 1) * SPACING;
-                // Z relativo a la cámara actual
-                const relZ = frameWorldZ + progress;
+                const idx = parseInt(frame.dataset.index ?? '0');
+                const x   = parseFloat(frame.dataset.x ?? '0');
+                const y   = parseFloat(frame.dataset.y ?? '0');
+                const z   = parseFloat(frame.dataset.z ?? '0');
 
-                // relZ ≈ 0  → el cuadro está justo frente a vos → opacidad 1
-                // relZ < -SPACING*2 → muy lejos → opacidad 0
-                // relZ > 300 → ya pasó la cámara → opacidad 0
+                // Z relativo a la cámara actual
+                const relZ = z + progress;
+
+                // Modificado para mantener la imagen en muestra durante más recorrido/tiempo
                 let opacity: number;
-                if (relZ > 350) {
-                    opacity = 0; // ya pasó
-                } else if (relZ > 0) {
-                    opacity = 1 - relZ / 350; // fade al pasar
+                if (relZ > 650) {
+                    opacity = 0; // ya pasó del todo y sale del campo de visión
+                } else if (relZ > 200) {
+                    opacity = 1 - (relZ - 200) / 450; // fade out al rebasar el visor
                 } else if (relZ > -SPACING * 2) {
-                    opacity = 1; // visible
+                    opacity = 1; // totalmente visible
                 } else {
-                    // fade cuando está muy lejos
+                    // fade in inicial desde la distancia
                     opacity = Math.max(0, 1 + (relZ + SPACING * 2) / SPACING);
                 }
 
                 frame.style.opacity = opacity.toFixed(3);
+
+                // Elevación dinámica al acercarse (sube en el eje Y para imponer presencia)
+                let elevation = 0;
+                if (relZ > -900) {
+                    const t = Math.min(1, Math.max(0, (relZ + 900) / 1200));
+                    const easeOutQuad = t * (2 - t);
+                    elevation = -90 * easeOutQuad; // Sube hasta 90px
+                }
+
+                const targetY = y + elevation;
+                frame.style.transform = `translate3d(-50%, calc(-50% + ${targetY.toFixed(1)}px), 0) translate3d(${x}px, 0px, ${z}px)`;
             });
 
-            // ── Partículas (estrellitas) ───────────────────
+            // ── Partículas (Estrellas 3D radiales) ──────────
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            const extra = isPlaying ? 0.8 : 0;
+            
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const focalLength = 300;
+            const extra = isPlaying ? 5 : 0.8;
+
             for (const p of particles) {
-                p.y -= p.speed + extra;
-                if (p.y < 0) p.y = canvas.height;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
+                p.z -= p.speed + extra;
+                
+                // Si pasa la cámara, reiniciarla al fondo (Z=1000)
+                if (p.z <= 0) {
+                    p.z = 1000;
+                    p.x = (Math.random() - 0.5) * canvas.width * 2;
+                    p.y = (Math.random() - 0.5) * canvas.height * 2;
+                }
+
+                // Proyección 3D a coordenadas 2D en pantalla
+                const px = cx + (p.x / p.z) * focalLength;
+                const py = cy + (p.y / p.z) * focalLength;
+                const psize = p.size * (focalLength / p.z);
+
+                // Variar opacidad según la profundidad
+                let alpha = 1 - p.z / 1000;
+                if (p.z < 100) {
+                    alpha = p.z / 100; // Desvanecer suavemente antes de pasar los límites de la pantalla
+                }
+
+                if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
+                    ctx.beginPath();
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
+                    ctx.arc(px, py, Math.max(0.1, psize), 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
 
             requestAnimationFrame(animate);
