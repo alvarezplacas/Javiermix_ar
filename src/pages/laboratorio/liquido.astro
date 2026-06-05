@@ -1,0 +1,1396 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCatalogoFiles, getAssetUrl } from '../../conexion/directus';
+
+let files = [];
+try {
+    files = await getCatalogoFiles();
+} catch (e) {
+    console.error("[Liquido Page] Error al cargar archivos de Directus:", e);
+}
+
+// Filtrar principales (excluyendo variantes _2)
+const mainFiles = files.filter((f: any) => !f.filename_download?.toLowerCase().includes('_2')) || [];
+
+// Agrupar archivos por nombre de serie
+const seriesMap: Record<string, any[]> = {};
+mainFiles.forEach((file: any) => {
+    const sName = file.serie_name || 'General';
+    if (!seriesMap[sName]) seriesMap[sName] = [];
+    seriesMap[sName].push({
+        id: file.id,
+        title: file.title || file.filename_download.split('.')[0] || 'Obra sin título',
+        src: getAssetUrl(file.id, { width: 1600, format: 'webp', quality: 90 }),
+        thumb: getAssetUrl(file.id, { width: 400, format: 'webp', quality: 70 }),
+        metadata: {
+            size: file.filesize ? (file.filesize / 1024 / 1024).toFixed(2) + ' MB' : 'N/A',
+            dim: file.width && file.height ? `${file.width} x ${file.height}px` : 'Resolución Variable',
+            date: file.uploaded_on ? new Date(file.uploaded_on).toLocaleDateString('es-AR') : 'N/A'
+        }
+    });
+});
+
+// Fallback por si Directus no tiene datos
+const fallbackSeries = {
+    'Serie Demostración JMX': [
+        {
+            id: 'demo1',
+            title: 'Rescate de Plata I',
+            src: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1600&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&q=70',
+            metadata: { size: '1.24 MB', dim: '3000 x 4000px', date: '04/06/2026' }
+        },
+        {
+            id: 'demo2',
+            title: 'Líneas de Paso II',
+            src: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=1600&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=400&q=70',
+            metadata: { size: '2.10 MB', dim: '3500 x 5000px', date: '04/06/2026' }
+        },
+        {
+            id: 'demo3',
+            title: 'Texturas de Mármol III',
+            src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1600&q=90',
+            thumb: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=70',
+            metadata: { size: '1.85 MB', dim: '4000 x 4000px', date: '04/06/2026' }
+        }
+    ]
+};
+
+if (Object.keys(seriesMap).length === 0) {
+    Object.assign(seriesMap, fallbackSeries);
+}
+
+const seriesNames = Object.keys(seriesMap);
+---
+
+<Layout title="Lienzo Derretido 3D | Laboratorio JMX" themeForce="dark">
+    <main class="shatter-container">
+        <div class="shatter-layout">
+            <!-- Columna Izquierda: Escenario WebGL -->
+            <div class="webgl-stage">
+                <!-- Navegación superior dentro de la stage -->
+                <nav class="shatter-nav">
+                    <a href="/laboratorio" class="back-link">← VOLVER AL GABINETE</a>
+                    <div class="shatter-badge">PROTOCOLO: LIENZO DERRETIDO 3D</div>
+                </nav>
+
+                <div class="light-table-grid"></div>
+                <div id="canvas-container" class="canvas-mount"></div>
+                <div class="interaction-hint">
+                    <span class="hint-click">DESLIZA EL MOUSE PARA DERRETIR LA OBRA</span>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Control de Datos Collapsible (Estilo Photoshop) -->
+            <aside class="sidebar-panel" id="sidebar">
+                <!-- Contenedor expandido -->
+                <div class="sidebar-expanded-content">
+                    <div class="sidebar-header-bar">
+                        <span class="panel-header-title">PROPIEDADES // FLUIDO</span>
+                        <button id="sidebar-collapse-btn" class="panel-action-btn" aria-label="Colapsar panel">
+                            <span class="btn-icon">»</span>
+                        </button>
+                    </div>
+
+                    <div class="sidebar-inner">
+                        <!-- Selector de Series -->
+                        <div class="control-group">
+                            <label for="series-select">COLECCIÓN FOTOGRÁFICA</label>
+                            <select id="series-select" class="jmx-select">
+                                {seriesNames.map(name => (
+                                    <option value={name}>{name.toUpperCase()}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <!-- Selector de Viscosidad -->
+                        <div class="control-group">
+                            <label for="viscosity-select">VISCOSIDAD DEL FLUIDO</label>
+                            <select id="viscosity-select" class="jmx-select">
+                                <option value="0.2">ACEITE VISCOSO (LENTO)</option>
+                                <option value="0.5" selected>ÓLEO INTERMEDIO</option>
+                                <option value="0.9">AGUA DE HALUROS (RÁPIDO)</option>
+                            </select>
+                        </div>
+
+                        <!-- Selector de Color de Luz Térmica -->
+                        <div class="control-group">
+                            <label for="light-color-select">COLOR DE LUZ CURSOR</label>
+                            <select id="light-color-select" class="jmx-select">
+                                <option value="gold">ORO TÉRMICO (#DCB14A)</option>
+                                <option value="cyan">CIAN CRIOGÉNICO (#00FFFF)</option>
+                                <option value="crimson">MAGMA VELVET (#FF0055)</option>
+                                <option value="white">BLANCO NEUTRO (#FFFFFF)</option>
+                            </select>
+                        </div>
+
+                        <!-- Configuración del Motor (Slider Físico) -->
+                        <div class="engine-settings">
+                            <div class="sheet-title">PARÁMETROS DE DERRETIMIENTO //</div>
+                            
+                            <div class="slider-item">
+                                <div class="slider-header">
+                                    <span>VELOCIDAD DE DERRAME (GRAVEDAD)</span>
+                                    <span id="val-flow">1.5</span>
+                                </div>
+                                <input type="range" id="param-flow" min="0.2" max="4.0" step="0.1" value="1.5" class="jmx-slider" />
+                            </div>
+
+                            <div class="slider-item">
+                                <div class="slider-header">
+                                    <span>GROSOR DEL ÓLEO (RELIEVE 3D)</span>
+                                    <span id="val-relief">0.6</span>
+                                </div>
+                                <input type="range" id="param-relief" min="0.1" max="1.5" step="0.05" value="0.6" class="jmx-slider" />
+                            </div>
+                        </div>
+
+                        <!-- Estado de la secuencia -->
+                        <div class="sequence-tracker">
+                            <div class="progress-bar">
+                                <div id="progress-indicator" class="progress-fill"></div>
+                            </div>
+                            <div class="tracker-text">
+                                <span>SECUENCIA DE LIENZO</span>
+                                <span id="tracker-count">01 / 01</span>
+                            </div>
+                        </div>
+
+                        <!-- Mini Footer Explicativo Retraído abajo -->
+                        <footer class="sidebar-mini-footer">
+                            <div class="mini-title">EXP-08 // DERRETIMIENTO VISCOSO</div>
+                            <p class="mini-desc">Simulación termodinámica de emulsión fotográfica. Al rozar el mouse, el lienzo se funde en un gel espeso 3D calculado por normales con brillos especulares.</p>
+                        </footer>
+                    </div>
+                </div>
+
+                <!-- Contenedor colapsado (Estilo Photoshop Strip) -->
+                <div class="sidebar-collapsed-strip">
+                    <button id="sidebar-expand-btn" class="panel-action-btn" aria-label="Expandir panel">
+                        <span class="btn-icon">«</span>
+                    </button>
+                    
+                    <div class="collapsed-icons">
+                        <!-- Iconos de Photoshop sutiles de color oro JMX -->
+                        <div class="collapsed-icon-item" title="Colección Fotográfica">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--jmx-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </div>
+                        <div class="collapsed-icon-item" title="Viscosidad del Fluido">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <div class="collapsed-icon-item" title="Luz de Calor">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="collapsed-vertical-title">
+                        <span>ÓLEO LÍQUIDO 3D</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Datos Serializados para el Cliente -->
+    <div id="series-data" data-series={JSON.stringify(seriesMap)} style="display: none;"></div>
+</Layout>
+
+<style>
+    :root {
+        --jmx-gold: #dcb14a;
+        --jmx-bg: #030303;
+        --jmx-text-dim: rgba(255, 255, 255, 0.4);
+        --transition-jmx: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .shatter-container {
+        min-height: 100vh;
+        background: var(--jmx-bg);
+        color: #fff;
+        font-family: 'Inter', system-ui, sans-serif;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* 🧭 Navegación Superior dentro de WebGL Stage */
+    .shatter-nav {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 2rem 2.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        background: linear-gradient(to bottom, rgba(6, 6, 6, 0.9) 0%, transparent 100%);
+        pointer-events: none;
+    }
+
+    .shatter-nav * {
+        pointer-events: auto;
+    }
+
+    .back-link {
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        opacity: 0.5;
+        transition: var(--transition-jmx);
+    }
+    .back-link:hover {
+        opacity: 1;
+        color: var(--jmx-gold);
+    }
+
+    .shatter-badge {
+        font-size: 0.55rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--jmx-gold);
+        border: 1px solid rgba(220, 177, 74, 0.3);
+        padding: 0.3rem 0.8rem;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(5px);
+    }
+
+    /* 🔲 Layout de Columnas Flexbox para animar el colapso */
+    .shatter-layout {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+    }
+
+    /* 🖥️ Escenario de Render */
+    .webgl-stage {
+        flex: 1;
+        height: 100%;
+        position: relative;
+        background: #060606;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .light-table-grid {
+        position: absolute;
+        inset: 0;
+        opacity: 0.03;
+        background-size: 40px 40px;
+        background-image: 
+            linear-gradient(to right, rgba(220, 177, 74, 0.5) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(220, 177, 74, 0.5) 1px, transparent 1px);
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .canvas-mount {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        cursor: crosshair;
+    }
+
+    .interaction-hint {
+        position: absolute;
+        bottom: 3rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .hint-click {
+        font-size: 0.65rem;
+        letter-spacing: 3px;
+        color: var(--jmx-text-dim);
+        font-weight: 800;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 0.8rem 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        animation: breath 2.5s infinite ease-in-out;
+    }
+
+    @keyframes breath {
+        0%, 100% { opacity: 0.4; transform: scale(0.98); }
+        50% { opacity: 0.9; transform: scale(1.02); color: var(--jmx-gold); }
+    }
+
+    /* aside Lateral Panel - Estilo Photoshop */
+    .sidebar-panel {
+        background: #0d0d0d;
+        border-left: 1px solid #1a1a1a;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        width: 340px;
+        flex-shrink: 0;
+        transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+    }
+
+    .sidebar-panel.collapsed {
+        width: 50px;
+    }
+
+    /* Contenido Expandido */
+    .sidebar-expanded-content {
+        width: 340px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: opacity 0.3s ease, transform 0.4s ease;
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .sidebar-panel.collapsed .sidebar-expanded-content {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(50px);
+    }
+
+    /* Cabecera del Panel (Photoshop style) */
+    .sidebar-header-bar {
+        height: 48px;
+        background: #141414;
+        border-bottom: 1px solid #1c1c1c;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .panel-header-title {
+        font-size: 0.6rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--jmx-gold);
+    }
+
+    .panel-action-btn {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.4);
+        cursor: pointer;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        padding: 0;
+    }
+
+    .panel-action-btn:hover {
+        color: var(--jmx-gold);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .sidebar-inner {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        height: calc(100% - 48px);
+        gap: 1.5rem;
+        overflow-y: auto;
+    }
+
+    /* Contenedor Colapsado (Photoshop Dock strip) */
+    .sidebar-collapsed-strip {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 50px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.6rem 0 1.5rem 0;
+        background: #101010;
+        border-left: 1px solid #1a1a1a;
+        transition: opacity 0.3s ease, transform 0.4s ease;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-50px);
+        z-index: 5;
+    }
+
+    .sidebar-panel.collapsed .sidebar-collapsed-strip {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(0);
+    }
+
+    .sidebar-collapsed-strip #sidebar-expand-btn {
+        margin-bottom: 2rem;
+    }
+
+    .collapsed-icons {
+        display: flex;
+        flex-direction: column;
+        gap: 1.8rem;
+        align-items: center;
+        width: 100%;
+    }
+
+    .collapsed-icon-item {
+        color: rgba(255, 255, 255, 0.35);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+    }
+
+    .collapsed-icon-item:hover {
+        color: var(--jmx-gold);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .collapsed-vertical-title {
+        margin-top: auto;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-size: 0.5rem;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: rgba(255, 255, 255, 0.15);
+        text-transform: uppercase;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+
+    /* Controles */
+    .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .control-group label {
+        font-size: 0.52rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--jmx-gold);
+    }
+
+    .jmx-select {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #fff;
+        padding: 0.7rem 1rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        outline: none;
+        cursor: pointer;
+        transition: var(--transition-jmx);
+    }
+
+    .jmx-select:hover, .jmx-select:focus {
+        border-color: var(--jmx-gold);
+        background: rgba(220, 177, 74, 0.05);
+    }
+
+    .jmx-select option {
+        background: #111;
+        color: #fff;
+    }
+
+    /* Sliders de Parámetros */
+    .engine-settings {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 1rem;
+    }
+
+    .sheet-title {
+        font-size: 0.55rem;
+        font-weight: 900;
+        color: var(--jmx-gold);
+        letter-spacing: 2px;
+        margin-bottom: 0.1rem;
+    }
+
+    .slider-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .slider-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.55rem;
+        font-weight: 900;
+        letter-spacing: 1px;
+        color: var(--jmx-text-dim);
+    }
+
+    .slider-header span:last-child {
+        color: var(--jmx-gold);
+    }
+
+    .jmx-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.1);
+        outline: none;
+        cursor: pointer;
+    }
+
+    .jmx-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 10px;
+        height: 10px;
+        background: var(--jmx-gold);
+        border-radius: 50%;
+        transition: 0.2s;
+    }
+
+    .jmx-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.4);
+        box-shadow: 0 0 10px var(--jmx-gold);
+    }
+
+    /* Tracker */
+    .sequence-tracker {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 1rem;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .progress-fill {
+        width: 0%;
+        height: 100%;
+        background: var(--jmx-gold);
+        box-shadow: 0 0 10px var(--jmx-gold);
+        transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tracker-text {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.55rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--jmx-text-dim);
+    }
+
+    .tracker-text span:last-child {
+        color: #fff;
+    }
+
+    /* Mini Footer Explicativo */
+    .sidebar-mini-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin-top: auto;
+    }
+
+    .mini-title {
+        font-size: 0.52rem;
+        font-weight: 900;
+        color: var(--jmx-gold);
+        letter-spacing: 1.5px;
+    }
+
+    .mini-desc {
+        font-size: 0.55rem;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.25);
+        margin: 0;
+    }
+
+    /* Responsivo (Celulares y Tablets) */
+    @media (max-width: 1000px) {
+        .shatter-layout {
+            flex-direction: column;
+        }
+
+        .sidebar-panel {
+            width: 100% !important;
+            height: 340px;
+            border-left: none;
+            border-top: 1px solid #1a1a1a;
+            transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .sidebar-panel.collapsed {
+            height: 48px;
+            width: 100% !important;
+        }
+
+        .sidebar-expanded-content {
+            width: 100% !important;
+        }
+
+        .sidebar-panel.collapsed .sidebar-expanded-content {
+            transform: translateY(48px);
+        }
+
+        .sidebar-inner {
+            padding: 1.2rem;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            overflow-y: auto;
+            height: calc(100% - 48px);
+        }
+
+        .sidebar-inner > div, .sidebar-inner > footer {
+            flex: 1 1 180px;
+        }
+
+        .sequence-tracker, .sidebar-mini-footer {
+            width: 100%;
+        }
+
+        .sidebar-collapsed-strip {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 48px;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            border-left: none;
+            border-bottom: 1px solid #1a1a1a;
+            transform: translateY(-48px);
+        }
+
+        .sidebar-panel.collapsed .sidebar-collapsed-strip {
+            transform: translateY(0);
+        }
+
+        .sidebar-collapsed-strip #sidebar-expand-btn {
+            margin-bottom: 0;
+        }
+
+        .collapsed-icons {
+            flex-direction: row;
+            gap: 1.5rem;
+            justify-content: center;
+            width: auto;
+        }
+
+        .collapsed-vertical-title {
+            margin-top: 0;
+            writing-mode: horizontal-tb;
+            font-size: 0.55rem;
+        }
+    }
+</style>
+
+<!-- Script de Cliente para el renderizado 3D WebGL -->
+<script>
+    import * as THREE from 'three';
+
+    // 🔬 Audio procedimental de fluidos gurgling/bubbling continuos
+    let audioCtx: AudioContext | null = null;
+    let mainGain: GainNode | null = null;
+    let filter: BiquadFilterNode | null = null;
+    let lfo: OscillatorNode | null = null;
+    let noiseSource: AudioBufferSourceNode | null = null;
+
+    function initAudio() {
+        if (audioCtx) return;
+        try {
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            audioCtx = new AudioContextClass();
+            
+            // Crear buffer de ruido para borboteo
+            const bufferSize = audioCtx.sampleRate * 2.0; 
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2.0 - 1.0;
+            }
+            
+            noiseSource = audioCtx.createBufferSource();
+            noiseSource.buffer = buffer;
+            noiseSource.loop = true;
+            
+            filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 350;
+            filter.Q.value = 12.0;
+            
+            lfo = audioCtx.createOscillator();
+            lfo.frequency.value = 7.5; // Frecuencia de borboteo rápido (7.5 Hz)
+            
+            const lfoGain = audioCtx.createGain();
+            lfoGain.gain.value = 180; // Modulación de frecuencia en filtro
+            
+            mainGain = audioCtx.createGain();
+            mainGain.gain.value = 0.0; // Silencio inicial
+            
+            // Conexiones
+            lfo.connect(lfoGain);
+            lfoGain.connect(filter.frequency);
+            
+            noiseSource.connect(filter);
+            filter.connect(mainGain);
+            mainGain.connect(audioCtx.destination);
+            
+            noiseSource.start();
+            lfo.start();
+        } catch (e) {
+            console.warn("AudioContext bloqueado o no soportado:", e);
+        }
+    }
+
+    function playMeltTransitionSound() {
+        if (!audioCtx) return;
+        try {
+            // Sonido de caída / drenaje de líquido pesado al cambiar la imagen
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(45, audioCtx.currentTime + 1.2);
+            
+            const lowpass = audioCtx.createBiquadFilter();
+            lowpass.type = 'lowpass';
+            lowpass.frequency.value = 250;
+            
+            osc.disconnect(gainNode);
+            osc.connect(lowpass);
+            lowpass.connect(gainNode);
+            
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.2);
+        } catch (e) {}
+    }
+
+    // --- VARIABLES Y SELECTORES ---
+    const dataEl = document.getElementById('series-data');
+    if (!dataEl) throw new Error("No series-data element found");
+    const seriesMap = JSON.parse(dataEl.getAttribute('data-series') || '{}');
+
+    const seriesSelect = document.getElementById('series-select') as HTMLSelectElement;
+    const viscositySelect = document.getElementById('viscosity-select') as HTMLSelectElement;
+    const lightColorSelect = document.getElementById('light-color-select') as HTMLSelectElement;
+    
+    const sidebar = document.getElementById('sidebar')!;
+    const sidebarCollapseBtn = document.getElementById('sidebar-collapse-btn');
+    const sidebarExpandBtn = document.getElementById('sidebar-expand-btn');
+    const sidebarCollapsedStrip = document.querySelector('.sidebar-collapsed-strip');
+    
+    const valFlow = document.getElementById('val-flow')!;
+    const valRelief = document.getElementById('val-relief')!;
+    
+    const paramFlow = document.getElementById('param-flow') as HTMLInputElement;
+    const paramRelief = document.getElementById('param-relief') as HTMLInputElement;
+    
+    const progressFill = document.getElementById('progress-indicator')!;
+    const trackerCount = document.getElementById('tracker-count')!;
+    const container = document.getElementById('canvas-container')!;
+
+    let currentSeriesName = seriesSelect.value;
+    let currentPhotos = seriesMap[currentSeriesName] || [];
+    let currentIndex = 0;
+
+    // Físicas configurables
+    let configViscosity = parseFloat(viscositySelect.value);
+    let configFlowSpeed = parseFloat(paramFlow.value);
+    let configRelief = parseFloat(paramRelief.value);
+    let configLightColor = lightColorSelect.value;
+
+    const colorMap: Record<string, number> = {
+        gold: 0xdcb14a,
+        cyan: 0x00ffff,
+        crimson: 0xff0055,
+        white: 0xffffff
+    };
+
+    const threeColorMap: Record<string, THREE.Color> = {
+        gold: new THREE.Color(0xdcb14a),
+        cyan: new THREE.Color(0x00ffff),
+        crimson: new THREE.Color(0xff0055),
+        white: new THREE.Color(0xffffff)
+    };
+
+    // --- BINDING DE CONTROLES ---
+    viscositySelect.addEventListener('change', () => {
+        configViscosity = parseFloat(viscositySelect.value);
+        if (customMaterial) {
+            customMaterial.uniforms.uViscosity.value = configViscosity;
+        }
+    });
+
+    paramFlow.addEventListener('input', () => {
+        configFlowSpeed = parseFloat(paramFlow.value);
+        valFlow.textContent = configFlowSpeed.toFixed(1);
+    });
+
+    paramRelief.addEventListener('input', () => {
+        configRelief = parseFloat(paramRelief.value);
+        valRelief.textContent = configRelief.toFixed(2);
+        if (customMaterial) {
+            customMaterial.uniforms.uRelief.value = configRelief;
+        }
+    });
+
+    lightColorSelect.addEventListener('change', () => {
+        configLightColor = lightColorSelect.value;
+        const color = threeColorMap[configLightColor] || threeColorMap.gold;
+        if (customMaterial) {
+            customMaterial.uniforms.uLightColor.value.copy(color);
+        }
+    });
+
+    // Toggle Collapsible Sidebar & Animate Canvas Resize
+    function toggleSidebar(e: Event) {
+        e.stopPropagation(); 
+        sidebar.classList.toggle('collapsed');
+        
+        const startTime = performance.now();
+        const duration = 450;
+        function resizeTransition() {
+            onResize();
+            if (performance.now() - startTime < duration) {
+                requestAnimationFrame(resizeTransition);
+            } else {
+                onResize();
+            }
+        }
+        requestAnimationFrame(resizeTransition);
+    }
+
+    if (sidebarCollapseBtn) sidebarCollapseBtn.addEventListener('click', toggleSidebar);
+    if (sidebarExpandBtn) sidebarExpandBtn.addEventListener('click', toggleSidebar);
+    if (sidebarCollapsedStrip) {
+        sidebarCollapsedStrip.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('collapsed') && e.target !== sidebarExpandBtn && !sidebarExpandBtn?.contains(e.target as Node)) {
+                toggleSidebar(e);
+            }
+        });
+    }
+
+    // --- CONFIGURACIÓN DEL SIMULADOR DE DERRETIMIENTO (MELT MAP CANVAS) ---
+    const meltCanvas = document.createElement('canvas');
+    meltCanvas.width = 512;
+    meltCanvas.height = 512;
+    const meltCtx = meltCanvas.getContext('2d')!;
+    
+    // Canvas temporal para desplazar los píxeles hacia abajo simulando flujo gravitacional
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 512;
+    tempCanvas.height = 512;
+    const tempCtx = tempCanvas.getContext('2d')!;
+
+    function clearMeltMap() {
+        meltCtx.fillStyle = '#000000';
+        meltCtx.fillRect(0, 0, 512, 512);
+        if (meltTexture) meltTexture.needsUpdate = true;
+    }
+    clearMeltMap();
+
+    // Textura de canvas en Three.js
+    const meltTexture = new THREE.CanvasTexture(meltCanvas);
+    meltTexture.wrapS = THREE.ClampToEdgeWrapping;
+    meltTexture.wrapT = THREE.ClampToEdgeWrapping;
+    meltTexture.minFilter = THREE.LinearFilter;
+
+    // Control de puntos fundidos para disparar la transición
+    let meltPoints = 0;
+    let isTransitioning = false;
+    let globalMeltVal = 0.0;
+    let opacityVal = 1.0;
+
+    function drawMeltBrush(uv: THREE.Vector2) {
+        initAudio();
+        
+        // Convertir UV (0 a 1) a píxeles de canvas de 512x512
+        const x = uv.x * 512;
+        const y = (1.0 - uv.y) * 512; // Invertir Y para coordenadas de canvas
+
+        const radius = 24;
+        const grad = meltCtx.createRadialGradient(x, y, 0, x, y, radius);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+        grad.addColorStop(0.4, 'rgba(255, 255, 255, 0.45)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+
+        meltCtx.fillStyle = grad;
+        meltCtx.beginPath();
+        meltCtx.arc(x, y, radius, 0, Math.PI * 2);
+        meltCtx.fill();
+
+        meltTexture.needsUpdate = true;
+        
+        // Sumar puntos de fundido
+        meltPoints++;
+
+        // Modular goteo y burbujas de audio
+        if (audioCtx && mainGain && filter) {
+            mainGain.gain.setTargetAtTime(0.12, audioCtx.currentTime, 0.05);
+            filter.frequency.setValueAtTime(320 + (1.0 - uv.y) * 650, audioCtx.currentTime);
+        }
+
+        // Si se supera el límite de derretimiento interactivo, fundir el lienzo por completo
+        if (meltPoints > 260 && !isTransitioning) {
+            triggerFullMeltOut();
+        }
+    }
+
+    // Apagar volumen cuando el mouse deja de moverse
+    let mouseIdleTimer: any = null;
+    function resetMouseIdleTimer() {
+        if (mouseIdleTimer) clearTimeout(mouseIdleTimer);
+        mouseIdleTimer = setTimeout(() => {
+            if (audioCtx && mainGain) {
+                mainGain.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.25);
+            }
+        }, 150);
+    }
+
+    // --- SHADERS PERSONALIZADOS DE FLUIDO VISCOSO ---
+    const vertexShader = `
+        varying vec2 vUv;
+        varying vec3 vWorldPosition;
+
+        void main() {
+            vUv = uv;
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPos.xyz;
+            gl_Position = projectionMatrix * viewMatrix * worldPos;
+        }
+    `;
+
+    const fragmentShader = `
+        uniform sampler2D uTexture;
+        uniform sampler2D uMeltMap;
+        uniform float uTime;
+        uniform float uGlobalMelt;
+        uniform float uViscosity;
+        uniform float uRelief;
+        uniform vec3 uLightColor;
+        uniform vec3 uLightPos;
+        uniform float uLightIntensity;
+        uniform float uOpacity;
+
+        varying vec2 vUv;
+        varying vec3 vWorldPosition;
+
+        void main() {
+            // Combinar mapa de derretimiento interactivo con la fundición global
+            float melt = texture2D(uMeltMap, vUv).r;
+            float totalMelt = clamp(melt + uGlobalMelt, 0.0, 1.0);
+
+            // Desplazar coordenadas UV
+            vec2 uv = vUv;
+            if (totalMelt > 0.0) {
+                // Escurrimiento vertical (Streaks)
+                uv.y += totalMelt * 0.38;
+                
+                // Ondas senoidales viscosas horizontales
+                float waveTime = uTime * (1.8 + uViscosity * 3.0);
+                float wiggle = sin(uv.y * (10.0 + uViscosity * 20.0) + waveTime) * 0.016 * totalMelt;
+                uv.x += wiggle;
+            }
+
+            // Muestrear textura
+            vec4 texColor = texture2D(uTexture, uv);
+
+            // Drenar fuera del lienzo (fade al salir del fondo)
+            if (uv.y > 0.99) {
+                float borderFade = 1.0 - smoothstep(0.99, 1.15, uv.y);
+                texColor.a *= borderFade;
+            }
+
+            // Calcular normales tridimensionales basadas en pendientes del mapa
+            float eps = 0.005;
+            float s = texture2D(uMeltMap, vUv).r + uGlobalMelt;
+            float s_r = texture2D(uMeltMap, vUv + vec2(eps, 0.0)).r + uGlobalMelt;
+            float s_u = texture2D(uMeltMap, vUv + vec2(0.0, eps)).r + uGlobalMelt;
+
+            float dMeltDx = s_r - s;
+            float dMeltDy = s_u - s;
+
+            // Perturbar el vector normal de la superficie plana (0,0,1)
+            vec3 normal = normalize(vec3(-dMeltDx * uRelief * 8.0, -dMeltDy * uRelief * 8.0, 1.0));
+
+            // Brillo Especular de Phong
+            vec3 toLight = normalize(uLightPos - vWorldPosition);
+            vec3 viewDir = normalize(vec3(0.0, 0.0, 9.5) - vWorldPosition); // Cámara z = 9.5
+            vec3 halfDir = normalize(toLight + viewDir);
+
+            float ndl = max(dot(normal, toLight), 0.0);
+            float ndh = max(dot(normal, halfDir), 0.0);
+            float spec = pow(ndh, 32.0) * totalMelt * uRelief;
+
+            // Reflexión de la luz térmica
+            vec3 lightReflection = uLightColor * spec * uLightIntensity * 0.25;
+
+            vec3 finalColor = texColor.rgb + lightReflection;
+            gl_FragColor = vec4(finalColor, texColor.a * uOpacity);
+        }
+    `;
+
+    // --- MOTOR 3D (THREE.JS) ---
+    let scene: THREE.Scene, 
+        camera: THREE.PerspectiveCamera, 
+        renderer: THREE.WebGLRenderer;
+        
+    let mesh: THREE.Mesh | null = null;
+    let customMaterial: THREE.ShaderMaterial | null = null;
+    
+    let currentTexture: THREE.Texture | null = null;
+    let nextTexture: THREE.Texture | null = null;
+
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.crossOrigin = 'anonymous';
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const pointLightPos = new THREE.Vector3(0, 0, 1.2);
+
+    // Inicializar Escenario
+    function init3D() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x030303, 0.04);
+
+        camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+        camera.position.z = 9.5; 
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        window.addEventListener('resize', onResize);
+        container.addEventListener('mousemove', onMouseMove);
+        container.addEventListener('mouseleave', onMouseLeave);
+
+        loadSlide(0);
+        animate();
+    }
+
+    function onResize() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    }
+
+    function onMouseMove(e: MouseEvent) {
+        const rect = container.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        // Situar la luz térmica del cursor sobre el plano
+        pointLightPos.x = x * 4.8;
+        pointLightPos.y = y * 3.4;
+        pointLightPos.z = 1.0;
+        
+        if (customMaterial) {
+            customMaterial.uniforms.uLightPos.value.copy(pointLightPos);
+        }
+
+        // Raycasting para detectar colisiones en el mesh y pintar derretimiento
+        mouse.x = x;
+        mouse.y = y;
+        
+        if (mesh && !isTransitioning) {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(mesh);
+            if (intersects.length > 0) {
+                const uv = intersects[0].uv!;
+                drawMeltBrush(uv);
+                resetMouseIdleTimer();
+            }
+        }
+    }
+
+    function onMouseLeave() {
+        if (audioCtx && mainGain) {
+            mainGain.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.25);
+        }
+    }
+
+    // --- CARGAR TEXTURAS E IMÁGENES ---
+    function loadSlide(index: number) {
+        if (currentPhotos.length === 0) return;
+
+        isTransitioning = false;
+        globalMeltVal = 0.0;
+        opacityVal = 1.0;
+        meltPoints = 0;
+        clearMeltMap();
+
+        const photo = currentPhotos[index];
+        updateUI(photo, index);
+
+        textureLoader.load(photo.src, (texture) => {
+            currentTexture = texture;
+            currentTexture.colorSpace = THREE.SRGBColorSpace;
+            setupMeltMesh(currentTexture);
+
+            // Pre-cargar la siguiente foto para suavidad
+            const nextIndex = (index + 1) % currentPhotos.length;
+            const nextPhoto = currentPhotos[nextIndex];
+            textureLoader.load(nextPhoto.src, (nTex) => {
+                nextTexture = nTex;
+                nextTexture.colorSpace = THREE.SRGBColorSpace;
+            });
+        });
+    }
+
+    function updateUI(photo: any, index: number) {
+        const total = currentPhotos.length;
+        trackerCount.textContent = `${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
+        progressFill.style.width = `${((index + 1) / total) * 100}%`;
+    }
+
+    function calculatePlaneSize(texture: THREE.Texture) {
+        const aspect = texture.image.width / texture.image.height;
+        const maxW = 7.6;
+        const maxH = 5.2;
+        let w = maxW;
+        let h = w / aspect;
+        if (h > maxH) {
+            h = maxH;
+            w = h * aspect;
+        }
+        return { w, h };
+    }
+
+    function setupMeltMesh(texture: THREE.Texture) {
+        if (mesh) {
+            scene.remove(mesh);
+            mesh.geometry.dispose();
+            if (customMaterial) customMaterial.dispose();
+        }
+
+        const size = calculatePlaneSize(texture);
+        const geom = new THREE.PlaneGeometry(size.w, size.h, 64, 64);
+        
+        customMaterial = new THREE.ShaderMaterial({
+            vertexShader,
+            fragmentShader,
+            transparent: true,
+            uniforms: {
+                uTexture: { value: texture },
+                uMeltMap: { value: meltTexture },
+                uTime: { value: 0.0 },
+                uGlobalMelt: { value: 0.0 },
+                uViscosity: { value: configViscosity },
+                uRelief: { value: configRelief },
+                uLightColor: { value: threeColorMap[configLightColor] || threeColorMap.gold },
+                uLightPos: { value: pointLightPos },
+                uLightIntensity: { value: 8.0 },
+                uOpacity: { value: 1.0 }
+            }
+        });
+
+        mesh = new THREE.Mesh(geom, customMaterial);
+        mesh.position.set(0, 0, 0);
+        scene.add(mesh);
+    }
+
+    // --- TRANSICIÓN: DERRETIMIENTO GLOBAL Y REINICIO ---
+    function triggerFullMeltOut() {
+        isTransitioning = true;
+        playMeltTransitionSound();
+
+        const startTime = performance.now();
+        const duration = 1600; // 1.6 segundos para disolución total
+
+        function animateMeltOut() {
+            const elapsed = performance.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1.0);
+
+            // Aumentar global melt para fundir el 100% de la imagen
+            globalMeltVal = progress * 1.5; 
+            // Apagar la opacidad del lienzo líquido suavemente al final
+            opacityVal = 1.0 - smoothstep(0.7, 1.0, progress);
+
+            if (customMaterial) {
+                customMaterial.uniforms.uGlobalMelt.value = globalMeltVal;
+                customMaterial.uniforms.uOpacity.value = opacityVal;
+            }
+
+            if (progress < 1.0) {
+                requestAnimationFrame(animateMeltOut);
+            } else {
+                // Cambiar al siguiente slide
+                currentIndex = (currentIndex + 1) % currentPhotos.length;
+                loadNextSlideWithFadeIn();
+            }
+        }
+
+        requestAnimationFrame(animateMeltOut);
+    }
+
+    function loadNextSlideWithFadeIn() {
+        isTransitioning = true;
+        clearMeltMap();
+        
+        globalMeltVal = 0.0;
+        opacityVal = 0.0;
+        meltPoints = 0;
+
+        if (customMaterial && nextTexture) {
+            customMaterial.uniforms.uTexture.value = nextTexture;
+            customMaterial.uniforms.uGlobalMelt.value = 0.0;
+            customMaterial.uniforms.uOpacity.value = 0.0;
+            
+            // Reajustar dimensiones si la siguiente foto posee diferente aspect ratio
+            const size = calculatePlaneSize(nextTexture);
+            if (mesh) {
+                mesh.geometry.dispose();
+                mesh.geometry = new THREE.PlaneGeometry(size.w, size.h, 64, 64);
+            }
+            
+            currentTexture = nextTexture;
+            nextTexture = null;
+
+            // Actualizar la interfaz
+            const photo = currentPhotos[currentIndex];
+            updateUI(photo, currentIndex);
+
+            // Iniciar fundido de entrada (Fade In)
+            const startTime = performance.now();
+            const duration = 1000;
+
+            function animateFadeIn() {
+                const elapsed = performance.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1.0);
+
+                opacityVal = progress;
+                if (customMaterial) {
+                    customMaterial.uniforms.uOpacity.value = opacityVal;
+                }
+
+                if (progress < 1.0) {
+                    requestAnimationFrame(animateFadeIn);
+                } else {
+                    isTransitioning = false;
+                    
+                    // Pre-cargar el siguiente slide
+                    const nextIdx = (currentIndex + 1) % currentPhotos.length;
+                    const nextPhoto = currentPhotos[nextIdx];
+                    textureLoader.load(nextPhoto.src, (nTex) => {
+                        nextTexture = nTex;
+                        nextTexture.colorSpace = THREE.SRGBColorSpace;
+                    });
+                }
+            }
+
+            requestAnimationFrame(animateFadeIn);
+        } else {
+            // Fallback si no está cargada la textura
+            loadSlide(currentIndex);
+        }
+    }
+
+    function smoothstep(min: number, max: number, value: number) {
+        const x = Math.max(0, Math.min(1, (value - min) / (max - min)));
+        return x * x * (3 - 2 * x);
+    }
+
+    // --- BUCLE DE ANIMACIÓN FÍSICA (TICK) ---
+    let lastTime = performance.now();
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        const now = performance.now();
+        const delta = Math.min((now - lastTime) / 16.666, 3);
+        lastTime = now;
+
+        // Actualizar el tiempo en el shader para ondulación
+        if (customMaterial) {
+            customMaterial.uniforms.uTime.value = now * 0.001;
+        }
+
+        // Simular gravedad/flujo viscoso en el meltMap
+        if (!isTransitioning) {
+            // Copiar el estado actual a tempCanvas
+            tempCtx.clearRect(0, 0, 512, 512);
+            tempCtx.drawImage(meltCanvas, 0, 0);
+
+            // Limpiar main canvas
+            meltCtx.fillStyle = '#000000';
+            meltCtx.fillRect(0, 0, 512, 512);
+
+            // Dibujar la textura desplazada verticalmente hacia abajo (gravitacional)
+            // Se reduce ligeramente el brillo en cada frame para simular que el aceite escurre y afina
+            meltCtx.globalAlpha = 0.994;
+            meltCtx.drawImage(tempCanvas, 0, configFlowSpeed * delta);
+            meltCtx.globalAlpha = 1.0;
+
+            meltTexture.needsUpdate = true;
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    seriesSelect.addEventListener('change', () => {
+        currentSeriesName = seriesSelect.value;
+        currentPhotos = seriesMap[currentSeriesName] || [];
+        currentIndex = 0;
+        loadSlide(0);
+    });
+
+    init3D();
+</script>
