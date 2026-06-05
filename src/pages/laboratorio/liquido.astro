@@ -733,6 +733,55 @@ const seriesNames = Object.keys(seriesMap);
 <script>
     import * as THREE from 'three';
 
+    // 🛠️ Consola de depuración en pantalla (Photoshop Style Overlay)
+    const debugDiv = document.createElement('div');
+    debugDiv.id = 'jmx-debug-console';
+    debugDiv.style.position = 'absolute';
+    debugDiv.style.top = '70px'; 
+    debugDiv.style.left = '20px';
+    debugDiv.style.background = 'rgba(10, 10, 10, 0.85)';
+    debugDiv.style.border = '1px solid rgba(220, 177, 74, 0.3)';
+    debugDiv.style.color = '#fff';
+    debugDiv.style.fontFamily = 'monospace';
+    debugDiv.style.fontSize = '9px';
+    debugDiv.style.padding = '8px';
+    debugDiv.style.zIndex = '9999';
+    debugDiv.style.maxHeight = '250px';
+    debugDiv.style.maxWidth = '400px';
+    debugDiv.style.overflowY = 'auto';
+    debugDiv.style.pointerEvents = 'none';
+    debugDiv.innerHTML = '<strong style="color:#dcb14a;">[DEBUG CONSOLE]</strong><br>';
+    document.body.appendChild(debugDiv);
+
+    const oldLog = console.log;
+    const oldError = console.error;
+    const oldWarn = console.warn;
+
+    console.log = function(...args) {
+        oldLog.apply(console, args);
+        debugDiv.innerHTML += `<span style="color:#aaa;">LOG: ${args.join(' ')}</span><br>`;
+        debugDiv.scrollTop = debugDiv.scrollHeight;
+    };
+    console.error = function(...args) {
+        oldError.apply(console, args);
+        debugDiv.innerHTML += `<span style="color:#ff5555;font-weight:bold;">ERR: ${args.join(' ')}</span><br>`;
+        debugDiv.scrollTop = debugDiv.scrollHeight;
+    };
+    console.warn = function(...args) {
+        oldWarn.apply(console, args);
+        debugDiv.innerHTML += `<span style="color:#ffaa00;">WRN: ${args.join(' ')}</span><br>`;
+        debugDiv.scrollTop = debugDiv.scrollHeight;
+    };
+
+    window.addEventListener('error', (e) => {
+        console.error(`${e.message} at ${e.filename}:${e.lineno}`);
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+        console.error(`Unhandled Rejection: ${e.reason}`);
+    });
+
+    console.log("Script cargado.");
+
     // 🔬 Audio procedimental de fluidos gurgling/bubbling continuos
     let audioCtx: AudioContext | null = null;
     let mainGain: GainNode | null = null;
