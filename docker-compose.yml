@@ -79,7 +79,7 @@ services:
       STORAGE_S3_ENDPOINT: "${STORAGE_S3_ENDPOINT}"
       STORAGE_S3_S3_FORCE_PATH_STYLE: "${STORAGE_S3_S3_FORCE_PATH_STYLE}"
       CORS_ENABLED: "true"
-      CORS_ORIGIN: "https://javiermix.ar, https://admin.javiermix.ar"
+      CORS_ORIGIN: "true"
     volumes:
       - /opt/javiermix/personal_files/directus/uploads:/directus/uploads
       - /opt/javiermix/personal_files/directus/extensions:/directus/extensions

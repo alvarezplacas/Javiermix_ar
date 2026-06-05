@@ -1065,6 +1065,42 @@ const seriesNames = Object.keys(seriesMap);
     }
 
     // --- CARGAR TEXTURAS E IMÁGENES ---
+    const unsplashFallbacks = [
+        'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1600&q=90',
+        'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=1600&q=90',
+        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1600&q=90'
+    ];
+
+    function loadTextureWithFallback(
+        url: string,
+        onLoad: (tex: THREE.Texture) => void,
+        fallbackUrl?: string
+    ) {
+        textureLoader.load(
+            url,
+            (tex) => {
+                onLoad(tex);
+            },
+            undefined,
+            (err) => {
+                console.error(`[WebGL TextureLoader] Error al cargar ${url}:`, err);
+                if (fallbackUrl && fallbackUrl !== url) {
+                    console.warn(`[WebGL TextureLoader] Intentando fallback: ${fallbackUrl}`);
+                    textureLoader.load(
+                        fallbackUrl,
+                        (tex) => {
+                            onLoad(tex);
+                        },
+                        undefined,
+                        (fallbackErr) => {
+                            console.error(`[WebGL TextureLoader] Error en fallback: ${fallbackUrl}`, fallbackErr);
+                        }
+                    );
+                }
+            }
+        );
+    }
+
     function loadSlide(index: number) {
         if (currentPhotos.length === 0) return;
 
@@ -1076,19 +1112,22 @@ const seriesNames = Object.keys(seriesMap);
         const photo = currentPhotos[index];
         updateUI(photo, index);
 
-        textureLoader.load(photo.src, (texture) => {
+        const fallbackUrl = unsplashFallbacks[index % unsplashFallbacks.length];
+
+        loadTextureWithFallback(photo.src, (texture) => {
             currentTexture = texture;
             currentTexture.colorSpace = THREE.SRGBColorSpace;
             setupActiveMesh(currentTexture);
 
             const nextIndex = (index + 1) % currentPhotos.length;
             const nextPhoto = currentPhotos[nextIndex];
-            textureLoader.load(nextPhoto.src, (nTex) => {
+            const nextFallback = unsplashFallbacks[nextIndex % unsplashFallbacks.length];
+            loadTextureWithFallback(nextPhoto.src, (nTex) => {
                 nextTexture = nTex;
                 nextTexture.colorSpace = THREE.SRGBColorSpace;
                 setupNextMesh(nextTexture);
-            });
-        });
+            }, nextFallback);
+        }, fallbackUrl);
     }
 
     function updateUI(photo: any, index: number) {
@@ -1259,11 +1298,12 @@ const seriesNames = Object.keys(seriesMap);
 
                 const nextIdx = (currentIndex + 1) % currentPhotos.length;
                 const nextPhoto = currentPhotos[nextIdx];
-                textureLoader.load(nextPhoto.src, (nTex) => {
+                const nextFallback = unsplashFallbacks[nextIdx % unsplashFallbacks.length];
+                loadTextureWithFallback(nextPhoto.src, (nTex) => {
                     nextTexture = nTex;
                     nextTexture.colorSpace = THREE.SRGBColorSpace;
                     setupNextMesh(nextTexture);
-                });
+                }, nextFallback);
             }
         }
 

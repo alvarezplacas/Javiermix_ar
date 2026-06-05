@@ -106,7 +106,7 @@ Write-Host ""
 
 # 4. Despliegue Remoto en el VPS
 Write-Host "Paso 4: Ordenando compilacion y reinicio en el VPS..." -ForegroundColor Cyan
-$remoteCommand = "cd /opt/javiermix/web_0504/ ; git fetch origin ; git reset --hard origin/master ; docker compose up -d --build web_javiermix"
+$remoteCommand = "cd /opt/javiermix/web_0504/ ; git fetch origin ; git reset --hard origin/master ; docker compose up -d --build"
 
 Write-Host "Construyendo imagen de Astro en contenedor Docker..." -ForegroundColor Yellow
 ssh -o StrictHostKeyChecking=no root@$targetIP $remoteCommand
