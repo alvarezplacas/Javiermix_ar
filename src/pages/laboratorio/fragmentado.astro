@@ -82,17 +82,14 @@ const seriesNames = Object.keys(seriesMap);
                 </div>
             </div>
 
-            <!-- Columna Derecha: Control de Datos y Metadatos -->
-            <aside class="sidebar-panel">
-                <div class="sidebar-inner">
-                    <div class="panel-header">
-                        <span class="tech-tag">EXPERIMENTO 07</span>
-                        <h2>Física de Lienzo</h2>
-                        <p class="summary-text">
-                            Simulación interactiva de tensión en emulsión. Al interactuar, la obra se fracciona físicamente en coordenadas tridimensionales de vidrio templado, bloques de piedra o polvo de haluros.
-                        </p>
-                    </div>
+            <!-- Columna Derecha: Control de Datos y Metadatos Collapsible -->
+            <aside class="sidebar-panel" id="sidebar">
+                <!-- Botón retráctil flotante en el borde izquierdo -->
+                <button id="sidebar-toggle" class="sidebar-toggle-btn" aria-label="Minimizar panel">
+                    <span class="toggle-icon">→</span>
+                </button>
 
+                <div class="sidebar-inner">
                     <!-- Selector de Series -->
                     <div class="control-group">
                         <label for="series-select">COLECCIÓN FOTOGRÁFICA</label>
@@ -185,6 +182,12 @@ const seriesNames = Object.keys(seriesMap);
                             <span id="tracker-count">01 / 01</span>
                         </div>
                     </div>
+
+                    <!-- Mini Footer Explicativo Retraído abajo -->
+                    <footer class="sidebar-mini-footer">
+                        <div class="mini-title">EXP-07 // FÍSICA DE LIENZO</div>
+                        <p class="mini-desc">Simulación interactiva de tensión en emulsión. Al hacer clic, la obra se fracciona en coordenadas 3D de vidrio, piedra o polvo de haluros.</p>
+                    </footer>
                 </div>
             </aside>
         </div>
@@ -253,19 +256,19 @@ const seriesNames = Object.keys(seriesMap);
         padding: 0.4rem 1rem;
     }
 
-    /* 🔲 Layout de Columnas */
+    /* 🔲 Layout de Columnas Flexbox para animar el colapso */
     .shatter-layout {
-        display: grid;
-        grid-template-columns: 1fr 400px;
+        display: flex;
         height: 100vh;
         width: 100vw;
+        overflow: hidden;
     }
 
     /* 🖥️ Escenario de Render */
     .webgl-stage {
-        position: relative;
+        flex: 1;
         height: 100%;
-        width: 100%;
+        position: relative;
         background: #060606;
         display: flex;
         align-items: center;
@@ -329,44 +332,64 @@ const seriesNames = Object.keys(seriesMap);
         box-shadow: -20px 0 50px rgba(0, 0, 0, 0.9);
         display: flex;
         flex-direction: column;
+        position: relative;
+        width: 400px;
+        flex-shrink: 0;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), margin-right 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .sidebar-panel.collapsed {
+        margin-right: -400px;
+        transform: translateX(100%);
+    }
+
+    /* Botón flotante para colapsar panel */
+    .sidebar-toggle-btn {
+        position: absolute;
+        top: 50%;
+        left: -32px;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 64px;
+        background: rgba(10, 10, 10, 0.85);
+        border: 1px solid rgba(220, 177, 74, 0.15);
+        border-right: none;
+        border-radius: 8px 0 0 8px;
+        color: var(--jmx-gold);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        z-index: 12;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .sidebar-toggle-btn:hover {
+        background: var(--jmx-gold);
+        color: #000;
+        border-color: var(--jmx-gold);
+        box-shadow: -5px 0 15px rgba(220, 177, 74, 0.25);
+    }
+
+    .sidebar-toggle-btn .toggle-icon {
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        display: inline-block;
+    }
+
+    .sidebar-panel.collapsed .sidebar-toggle-btn .toggle-icon {
+        transform: rotate(180deg);
     }
 
     .sidebar-inner {
-        padding: 8rem 2.5rem 3rem;
+        padding: 7rem 2.5rem 2.5rem;
         display: flex;
         flex-direction: column;
         height: 100%;
         justify-content: space-between;
-        gap: 1.5rem;
+        gap: 1.2rem;
         overflow-y: auto;
-    }
-
-    .panel-header {
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-    }
-
-    .tech-tag {
-        font-family: monospace;
-        font-size: 0.55rem;
-        color: var(--jmx-gold);
-        letter-spacing: 2px;
-    }
-
-    .panel-header h2 {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 2.2rem;
-        font-weight: 300;
-        letter-spacing: -1px;
-        margin: 0;
-    }
-
-    .summary-text {
-        font-size: 0.8rem;
-        line-height: 1.6;
-        color: var(--jmx-text-dim);
-        margin: 0;
     }
 
     /* Controles */
@@ -411,7 +434,7 @@ const seriesNames = Object.keys(seriesMap);
         flex-direction: column;
         gap: 0.8rem;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
-        padding-top: 1.5rem;
+        padding-top: 1.2rem;
     }
 
     .sheet-title {
@@ -419,7 +442,7 @@ const seriesNames = Object.keys(seriesMap);
         font-weight: 900;
         color: var(--jmx-gold);
         letter-spacing: 2px;
-        margin-bottom: 0.3rem;
+        margin-bottom: 0.2rem;
     }
 
     .spec-row {
@@ -488,10 +511,9 @@ const seriesNames = Object.keys(seriesMap);
     .sequence-tracker {
         display: flex;
         flex-direction: column;
-        gap: 0.8rem;
+        gap: 0.6rem;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
-        padding-top: 1.5rem;
-        margin-top: auto;
+        padding-top: 1.2rem;
     }
 
     .progress-bar {
@@ -521,16 +543,62 @@ const seriesNames = Object.keys(seriesMap);
         color: #fff;
     }
 
+    /* Mini Footer Explicativo */
+    .sidebar-mini-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin-top: 0.5rem;
+    }
+
+    .mini-title {
+        font-size: 0.55rem;
+        font-weight: 900;
+        color: var(--jmx-gold);
+        letter-spacing: 1.5px;
+    }
+
+    .mini-desc {
+        font-size: 0.6rem;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.25);
+        margin: 0;
+    }
+
     /* Responsivo */
     @media (max-width: 1000px) {
         .shatter-layout {
-            grid-template-columns: 1fr;
-            grid-template-rows: 1fr 380px;
+            flex-direction: column;
         }
 
         .sidebar-panel {
+            width: 100% !important;
+            height: 380px;
             border-left: none;
             border-top: 1px solid rgba(220, 177, 74, 0.08);
+            margin-right: 0 !important;
+            transform: none !important;
+        }
+
+        .sidebar-panel.collapsed {
+            margin-bottom: -380px;
+            transform: translateY(100%) !important;
+        }
+
+        .sidebar-toggle-btn {
+            top: -32px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-90deg);
+            width: 32px;
+            height: 64px;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .sidebar-panel.collapsed .sidebar-toggle-btn .toggle-icon {
+            transform: rotate(-90deg);
         }
 
         .sidebar-inner {
@@ -541,13 +609,12 @@ const seriesNames = Object.keys(seriesMap);
             overflow-y: auto;
         }
 
-        .sidebar-inner > div, .sidebar-inner > aside, .sidebar-inner > select {
+        .sidebar-inner > div, .sidebar-inner > aside, .sidebar-inner > select, .sidebar-inner > footer {
             flex: 1 1 200px;
         }
 
-        .sequence-tracker {
+        .sequence-tracker, .sidebar-mini-footer {
             width: 100%;
-            margin-top: 1rem;
         }
     }
 </style>
@@ -564,7 +631,6 @@ const seriesNames = Object.keys(seriesMap);
             const ctx = new AudioContext();
             
             if (type === 'glass') {
-                // Sonido de vidrio: altas frecuencias, tono cristalino metálico
                 const numNotes = 8 + Math.floor(Math.random() * 6);
                 for (let i = 0; i < numNotes; i++) {
                     const osc = ctx.createOscillator();
@@ -590,7 +656,6 @@ const seriesNames = Object.keys(seriesMap);
                     osc.stop(startTime + duration);
                 }
                 
-                // Ruido blanco filtrado para el golpe metálico
                 const bufferSize = ctx.sampleRate * 0.25; 
                 const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -615,7 +680,6 @@ const seriesNames = Object.keys(seriesMap);
                 noise.start();
 
             } else if (type === 'stone') {
-                // Sonido de piedra: bajas frecuencias, golpe sordo y pesado
                 const numRocks = 4 + Math.floor(Math.random() * 4);
                 for (let i = 0; i < numRocks; i++) {
                     const osc = ctx.createOscillator();
@@ -646,7 +710,6 @@ const seriesNames = Object.keys(seriesMap);
                     osc.stop(startTime + duration);
                 }
                 
-                // Ruido de impacto sordo
                 const bufferSize = ctx.sampleRate * 0.45;
                 const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -670,7 +733,6 @@ const seriesNames = Object.keys(seriesMap);
                 noise.start();
 
             } else if (type === 'dust') {
-                // Sonido de polvo: siseo largo de disolución gaseosa
                 const bufferSize = ctx.sampleRate * 0.8;
                 const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -709,6 +771,9 @@ const seriesNames = Object.keys(seriesMap);
     const shatterTypeSelect = document.getElementById('shatter-type-select') as HTMLSelectElement;
     const lightColorSelect = document.getElementById('light-color-select') as HTMLSelectElement;
     
+    const sidebar = document.getElementById('sidebar')!;
+    const sidebarToggle = document.getElementById('sidebar-toggle')!;
+    
     const metaTitle = document.getElementById('meta-title')!;
     const metaDim = document.getElementById('meta-dim')!;
     const metaSize = document.getElementById('meta-size')!;
@@ -734,8 +799,8 @@ const seriesNames = Object.keys(seriesMap);
     let configShards = parseInt(paramShards.value, 10);
     let configGravity = parseFloat(paramGravity.value);
     let configLightIntensity = parseFloat(paramLightIntensity.value);
-    let configShatterType = shatterTypeSelect.value; // 'glass' | 'stone' | 'dust'
-    let configLightColor = lightColorSelect.value;   // 'gold' | 'cyan' | 'crimson' | 'white'
+    let configShatterType = shatterTypeSelect.value;
+    let configLightColor = lightColorSelect.value;
 
     const colorMap: Record<string, number> = {
         gold: 0xdcb14a,
@@ -771,6 +836,25 @@ const seriesNames = Object.keys(seriesMap);
         configShatterType = shatterTypeSelect.value;
     });
 
+    // Toggle Collapsible Sidebar & Animate Canvas Resize
+    sidebarToggle.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evita clicks en el lienzo
+        sidebar.classList.toggle('collapsed');
+        
+        // Bucle de redimensionamiento de 600ms para Three.js fluida
+        const startTime = performance.now();
+        const duration = 600;
+        function resizeTransition() {
+            onResize();
+            if (performance.now() - startTime < duration) {
+                requestAnimationFrame(resizeTransition);
+            } else {
+                onResize();
+            }
+        }
+        requestAnimationFrame(resizeTransition);
+    });
+
     // --- MOTOR 3D (THREE.JS) ---
     let scene: THREE.Scene, 
         camera: THREE.PerspectiveCamera, 
@@ -779,11 +863,9 @@ const seriesNames = Object.keys(seriesMap);
     let solidMesh: THREE.Mesh | null = null;
     let nextMesh: THREE.Mesh | null = null;
     
-    // Shards
     let activeShardsGroup: THREE.Group | null = null;
     let activeShardsList: THREE.Mesh[] = [];
 
-    // Dust (Point Cloud)
     let activePoints: THREE.Points | null = null;
     let activePointsVelocities: THREE.Vector3[] = [];
     let activePointsOpacity = 1.0;
@@ -808,14 +890,13 @@ const seriesNames = Object.keys(seriesMap);
         scene.fog = new THREE.FogExp2(0x030303, 0.05);
 
         camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
-        camera.position.z = 9.5; // Un poco más cerca para que la foto se vea más grande
+        camera.position.z = 9.5; 
 
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        // Luces
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
@@ -823,16 +904,13 @@ const seriesNames = Object.keys(seriesMap);
         dirLight.position.set(0, 8, 10);
         scene.add(dirLight);
 
-        // Configuración de la luz del cursor
         pointLight.position.set(0, 0, 1.8);
         scene.add(pointLight);
 
-        // Eventos
         window.addEventListener('resize', onResize);
         container.addEventListener('click', onStageClick);
         container.addEventListener('mousemove', onMouseMove);
 
-        // Cargar primera obra
         loadSlide(0);
         animate();
     }
@@ -850,7 +928,6 @@ const seriesNames = Object.keys(seriesMap);
         const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-        // Mapear luz interactiva
         pointLight.position.x = x * 5.5;
         pointLight.position.y = y * 4.2;
         pointLight.position.z = 1.6;
@@ -868,13 +945,11 @@ const seriesNames = Object.keys(seriesMap);
         const photo = currentPhotos[index];
         updateUI(photo, index);
 
-        // Cargar textura principal
         textureLoader.load(photo.src, (texture) => {
             currentTexture = texture;
             currentTexture.colorSpace = THREE.SRGBColorSpace;
             setupActiveMesh(currentTexture);
 
-            // Pre-cargar la textura siguiente
             const nextIndex = (index + 1) % currentPhotos.length;
             const nextPhoto = currentPhotos[nextIndex];
             textureLoader.load(nextPhoto.src, (nTex) => {
@@ -896,7 +971,6 @@ const seriesNames = Object.keys(seriesMap);
         progressFill.style.width = `${((index + 1) / total) * 100}%`;
     }
 
-    // Aumentamos dimensiones máximas del lienzo (para que se vea más grande)
     function calculatePlaneSize(texture: THREE.Texture) {
         const aspect = texture.image.width / texture.image.height;
         const maxW = 7.6;
@@ -956,7 +1030,6 @@ const seriesNames = Object.keys(seriesMap);
     }
 
     function clearActiveSimulation() {
-        // Limpiar shards
         if (activeShardsGroup) {
             scene.remove(activeShardsGroup);
             activeShardsList.forEach(s => {
@@ -967,7 +1040,6 @@ const seriesNames = Object.keys(seriesMap);
             activeShardsGroup = null;
         }
 
-        // Limpiar partículas de polvo
         if (activePoints) {
             scene.remove(activePoints);
             activePoints.geometry.dispose();
@@ -977,7 +1049,6 @@ const seriesNames = Object.keys(seriesMap);
         }
     }
 
-    // --- ACCIÓN DE ROTURA (CLICK) ---
     function onStageClick(e: MouseEvent) {
         if (isShattered || isTransitioning || !solidMesh || !currentTexture) return;
 
@@ -998,13 +1069,11 @@ const seriesNames = Object.keys(seriesMap);
         isShattered = true;
         isTransitioning = true;
 
-        // Reproducir audio procedimental específico
         playShatterSound(configShatterType);
 
         const size = calculatePlaneSize(currentTexture!);
 
         if (configShatterType === 'dust') {
-            // --- MODO POLVO (PARTÍCULAS POINT CLOUD) ---
             const dustData = createDustParticles(currentTexture!, size.w, size.h, impactPoint);
             if (dustData) {
                 activePoints = dustData.points;
@@ -1013,17 +1082,14 @@ const seriesNames = Object.keys(seriesMap);
                 scene.add(activePoints);
             }
         } else {
-            // --- MODO FRACTURA FÍSICA (VIDRIO O PIEDRA) ---
             const shardData = createShards3D(currentTexture!, size.w, size.h, impactPoint, configShatterType);
             activeShardsGroup = shardData.group;
             activeShardsList = shardData.shards;
             scene.add(activeShardsGroup);
         }
 
-        // Ocultar lienzo plano
         if (solidMesh) solidMesh.visible = false;
 
-        // Animación de entrada suave del siguiente slide
         let startSlideTime = performance.now();
         const slideDuration = 1500;
 
@@ -1034,9 +1100,8 @@ const seriesNames = Object.keys(seriesMap);
             const elapsed = now - startSlideTime;
             const progress = Math.min(elapsed / slideDuration, 1);
 
-            const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+            const ease = 1 - Math.pow(1 - progress, 3); 
 
-            // Deslizar desde el fondo y escalar
             nextMesh.position.z = -3.5 + (ease * 3.5);
             const currentScale = 0.65 + (ease * 0.35);
             nextMesh.scale.set(currentScale, currentScale, currentScale);
@@ -1045,7 +1110,6 @@ const seriesNames = Object.keys(seriesMap);
             if (progress < 1) {
                 requestAnimationFrame(animateSlideIn);
             } else {
-                // Finaliza transición y avanza secuencia
                 currentIndex = (currentIndex + 1) % currentPhotos.length;
                 
                 solidMesh = nextMesh;
@@ -1062,7 +1126,6 @@ const seriesNames = Object.keys(seriesMap);
                 const photo = currentPhotos[currentIndex];
                 updateUI(photo, currentIndex);
 
-                // Pre-cargar la textura que le sigue
                 const nextIdx = (currentIndex + 1) % currentPhotos.length;
                 const nextPhoto = currentPhotos[nextIdx];
                 textureLoader.load(nextPhoto.src, (nTex) => {
@@ -1081,20 +1144,17 @@ const seriesNames = Object.keys(seriesMap);
         const group = new THREE.Group();
         const shards: THREE.Mesh[] = [];
 
-        // Reducimos cantidad de shards para Piedra (bloques más grandes y pesados)
         const totalTarget = (mode === 'stone') ? Math.round(configShards * 0.55) : configShards;
         const ratio = width / height;
         const rows = Math.max(3, Math.round(THREE.MathUtils.lerp(3, 12, Math.sqrt(totalTarget / ratio) / 10)));
         const cols = Math.max(3, Math.round(rows * ratio));
 
-        // Rejilla de nodos con ruido orgánico
         const nodes: THREE.Vector2[] = [];
         for (let r = 0; r <= rows; r++) {
             for (let c = 0; c <= cols; c++) {
                 let x = (c / cols) - 0.5;
                 let y = (r / rows) - 0.5;
 
-                // Añadir ruido a nodos internos
                 if (c > 0 && c < cols && r > 0 && r < rows) {
                     const noise = (mode === 'stone') ? 0.48 : 0.44;
                     x += (Math.random() - 0.5) * (1 / cols) * noise;
@@ -1110,7 +1170,6 @@ const seriesNames = Object.keys(seriesMap);
         function addShard(p1: THREE.Vector2, p2: THREE.Vector2, p3: THREE.Vector2) {
             const geom = new THREE.BufferGeometry();
 
-            // Vértices 3D
             const vertices = new Float32Array([
                 p1.x, p1.y, 0,
                 p2.x, p2.y, 0,
@@ -1118,7 +1177,6 @@ const seriesNames = Object.keys(seriesMap);
             ]);
             geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-            // UVs mapeadas exactas
             const uvs = new Float32Array([
                 (p1.x / width) + 0.5, (p1.y / height) + 0.5,
                 (p2.x / width) + 0.5, (p2.y / height) + 0.5,
@@ -1128,7 +1186,6 @@ const seriesNames = Object.keys(seriesMap);
 
             geom.computeVertexNormals();
 
-            // Material JMX adaptado al tipo de elemento
             let mat;
             if (mode === 'stone') {
                 mat = new THREE.MeshPhongMaterial({
@@ -1136,9 +1193,9 @@ const seriesNames = Object.keys(seriesMap);
                     side: THREE.DoubleSide,
                     transparent: true,
                     opacity: 1,
-                    shininess: 3,                   // Opaco / mate
+                    shininess: 3, 
                     specular: new THREE.Color(0x111111),
-                    color: 0x858585,                // Oscurecer ligeramente como cemento
+                    color: 0x858585,
                     reflectivity: 0.05
                 });
             } else {
@@ -1147,7 +1204,7 @@ const seriesNames = Object.keys(seriesMap);
                     side: THREE.DoubleSide,
                     transparent: true,
                     opacity: 1,
-                    shininess: 95,                  // Vidrio cristalino
+                    shininess: 95, 
                     specular: new THREE.Color(colorMap[configLightColor]),
                     reflectivity: 0.8
                 });
@@ -1155,16 +1212,13 @@ const seriesNames = Object.keys(seriesMap);
 
             const mesh = new THREE.Mesh(geom, mat);
 
-            // Baricentro del fragmento
             const cx = (p1.x + p2.x + p3.x) / 3;
             const cy = (p1.y + p2.y + p3.y) / 3;
 
-            // Distancia del impacto
             const dx = cx - impactPoint.x;
             const dy = cy - impactPoint.y;
             const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
 
-            // Físicas: Piedra es pesada y no rebota hacia adelante (Z)
             const forceBase = (mode === 'stone') ? 1.7 : 2.5;
             const force = Math.max(0.1, forceBase / (dist + 0.4));
 
@@ -1172,14 +1226,13 @@ const seriesNames = Object.keys(seriesMap);
             if (mode === 'stone') {
                 vx = (dx / dist) * force * 0.08 + (Math.random() - 0.5) * 0.02;
                 vy = (dy / dist) * force * 0.08 + (Math.random() - 0.5) * 0.02;
-                vz = (Math.random() * 0.03 + 0.005) * force; // Caída casi plana
+                vz = (Math.random() * 0.03 + 0.005) * force; 
             } else {
                 vx = (dx / dist) * force * 0.16 + (Math.random() - 0.5) * 0.05;
                 vy = (dy / dist) * force * 0.16 + (Math.random() - 0.5) * 0.05;
-                vz = (Math.random() * 0.13 + 0.05) * force;  // Pop hacia el usuario
+                vz = (Math.random() * 0.13 + 0.05) * force;  
             }
 
-            // Piedra rota más despacio
             const rotFactor = (mode === 'stone') ? 0.04 : 0.18;
 
             mesh.userData = {
@@ -1197,7 +1250,6 @@ const seriesNames = Object.keys(seriesMap);
             shards.push(mesh);
         }
 
-        // Dividir celdas quad
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const n00 = nodes[getNodeIdx(c, r)];
@@ -1223,12 +1275,10 @@ const seriesNames = Object.keys(seriesMap);
         const img = texture.image;
         if (!img || !img.width) return null;
 
-        // Resolucion del point cloud
         const pCols = 100;
         const pRows = Math.round(pCols / (img.width / img.height)) || 80;
         const numPoints = pCols * pRows;
 
-        // Lienzo oculto temporal para extraer la crominancia y luminancia del pixel
         const canvas = document.createElement('canvas');
         canvas.width = pCols;
         canvas.height = pRows;
@@ -1240,7 +1290,6 @@ const seriesNames = Object.keys(seriesMap);
         try {
             imgData = ctx.getImageData(0, 0, pCols, pRows).data;
         } catch (e) {
-            // Por si ocurre algún bloqueo de origen de imagen cruzado, rellenamos con colores aleatorios
             imgData = new Uint8Array(numPoints * 4);
             for (let i = 0; i < numPoints * 4; i += 4) {
                 imgData[i] = 180 + Math.random() * 75;
@@ -1268,7 +1317,6 @@ const seriesNames = Object.keys(seriesMap);
                 positions[index * 3 + 1] = y;
                 positions[index * 3 + 2] = z;
 
-                // Canvas lee coordenadas de arriba hacia abajo, WebGL de abajo hacia arriba
                 const canvasY = pRows - 1 - r;
                 const pixelIndex = (canvasY * pCols + c) * 4;
 
@@ -1276,7 +1324,6 @@ const seriesNames = Object.keys(seriesMap);
                 colors[index * 3 + 1] = imgData[pixelIndex + 1] / 255;
                 colors[index * 3 + 2] = imgData[pixelIndex + 2] / 255;
 
-                // Vector de impulso físico radial
                 const dx = x - impactPoint.x;
                 const dy = y - impactPoint.y;
                 const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
@@ -1318,9 +1365,7 @@ const seriesNames = Object.keys(seriesMap);
         const delta = Math.min((now - lastTime) / 16.666, 3);
         lastTime = now;
 
-        // 1. Animación Física de Shards (Vidrio o Piedra)
         if (activeShardsList.length > 0) {
-            // Gravedad aumentada para piedra
             const gravityMultiplier = (configShatterType === 'stone') ? 1.45 : 1.0;
             const gravityAcc = (configGravity / 1000) * gravityMultiplier * delta;
             
@@ -1338,14 +1383,11 @@ const seriesNames = Object.keys(seriesMap);
                 shard.rotation.y += shard.userData.angularVelocity.y * delta;
                 shard.rotation.z += shard.userData.angularVelocity.z * delta;
 
-                // Aplicar aceleración gravitatoria
                 shard.userData.velocity.y -= gravityAcc;
 
-                // Fricción
                 shard.userData.velocity.multiplyScalar(Math.pow(0.978, delta));
                 shard.userData.angularVelocity.multiplyScalar(Math.pow(0.978, delta));
 
-                // Opacidad decreciente
                 shard.userData.opacity -= ((configShatterType === 'stone') ? 0.012 : 0.007) * delta;
                 const mat = shard.material as THREE.MeshPhongMaterial;
                 mat.opacity = Math.max(0, shard.userData.opacity);
@@ -1356,7 +1398,6 @@ const seriesNames = Object.keys(seriesMap);
             }
         }
 
-        // 2. Animación Física de Polvo (Drifting Point Cloud)
         if (activePoints && activePointsVelocities.length > 0) {
             const posAttr = activePoints.geometry.getAttribute('position') as THREE.BufferAttribute;
             const positions = posAttr.array as Float32Array;
@@ -1365,23 +1406,18 @@ const seriesNames = Object.keys(seriesMap);
             for (let i = 0; i < activePointsVelocities.length; i++) {
                 const vel = activePointsVelocities[i];
 
-                // Mover posiciones
                 positions[i * 3] += vel.x * delta;
                 positions[i * 3 + 1] += vel.y * delta;
                 positions[i * 3 + 2] += vel.z * delta;
 
-                // Flotabilidad ascendente (humo/polvo)
                 vel.y += 0.0002 * delta;
 
-                // Viento senoidal lateral
                 positions[i * 3] += Math.sin(time + i) * 0.0012 * delta;
 
-                // Resistencia del aire
                 vel.multiplyScalar(Math.pow(0.975, delta));
             }
             posAttr.needsUpdate = true;
 
-            // Desvanecimiento rápido de partículas
             activePointsOpacity -= 0.0065 * delta;
             (activePoints.material as THREE.PointsMaterial).opacity = Math.max(0, activePointsOpacity);
             if (activePointsOpacity <= 0) {
@@ -1392,7 +1428,6 @@ const seriesNames = Object.keys(seriesMap);
         renderer.render(scene, camera);
     }
 
-    // --- INTERFACING DE SELECCIÓN DE SERIES ---
     seriesSelect.addEventListener('change', () => {
         currentSeriesName = seriesSelect.value;
         currentPhotos = seriesMap[currentSeriesName] || [];
@@ -1408,6 +1443,5 @@ const seriesNames = Object.keys(seriesMap);
         loadSlide(0);
     });
 
-    // Arrancar
     init3D();
 </script>
