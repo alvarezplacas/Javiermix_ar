@@ -121,28 +121,6 @@ const seriesNames = Object.keys(seriesMap);
                         </select>
                     </div>
 
-                    <!-- Ficha Técnica Activa -->
-                    <div class="technical-sheet">
-                        <div class="sheet-title">FICHA TÉCNICA //</div>
-                        
-                        <div class="spec-row">
-                            <span class="spec-key">TÍTULO</span>
-                            <span id="meta-title" class="spec-value">-</span>
-                        </div>
-                        <div class="spec-row">
-                            <span class="spec-key">RESOLUCIÓN</span>
-                            <span id="meta-dim" class="spec-value">-</span>
-                        </div>
-                        <div class="spec-row">
-                            <span class="spec-key">PESO</span>
-                            <span id="meta-size" class="spec-value">-</span>
-                        </div>
-                        <div class="spec-row">
-                            <span class="spec-key">SUBIDA</span>
-                            <span id="meta-date" class="spec-value">-</span>
-                        </div>
-                    </div>
-
                     <!-- Configuración del Motor (Slider Físico) -->
                     <div class="engine-settings">
                         <div class="sheet-title">PARÁMETROS DEL MOTOR //</div>
@@ -180,6 +158,28 @@ const seriesNames = Object.keys(seriesMap);
                         <div class="tracker-text">
                             <span>SECUENCIA EN EJECUCIÓN</span>
                             <span id="tracker-count">01 / 01</span>
+                        </div>
+                    </div>
+
+                    <!-- Ficha Técnica Activa en el Footer -->
+                    <div class="technical-sheet compact">
+                        <div class="sheet-title">FICHA TÉCNICA //</div>
+                        
+                        <div class="spec-row">
+                            <span class="spec-key">TÍTULO</span>
+                            <span id="meta-title" class="spec-value">-</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-key">RESOLUCIÓN</span>
+                            <span id="meta-dim" class="spec-value">-</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-key">PESO</span>
+                            <span id="meta-size" class="spec-value">-</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-key">SUBIDA</span>
+                            <span id="meta-date" class="spec-value">-</span>
                         </div>
                     </div>
 
@@ -435,6 +435,10 @@ const seriesNames = Object.keys(seriesMap);
         gap: 0.8rem;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
         padding-top: 1.2rem;
+    }
+
+    .technical-sheet.compact {
+        margin-top: auto;
     }
 
     .sheet-title {
