@@ -89,7 +89,7 @@ const seriesNames = Object.keys(seriesMap);
                         <span class="tech-tag">EXPERIMENTO 07</span>
                         <h2>Física de Lienzo</h2>
                         <p class="summary-text">
-                            Simulación interactiva de tensión en emulsión. Al interactuar, la obra se fracciona físicamente en coordenadas tridimensionales de vidrio templado.
+                            Simulación interactiva de tensión en emulsión. Al interactuar, la obra se fracciona físicamente en coordenadas tridimensionales de vidrio templado, bloques de piedra o polvo de haluros.
                         </p>
                     </div>
 
@@ -100,6 +100,27 @@ const seriesNames = Object.keys(seriesMap);
                             {seriesNames.map(name => (
                                 <option value={name}>{name.toUpperCase()}</option>
                             ))}
+                        </select>
+                    </div>
+
+                    <!-- Selector de Tipo de Rotura -->
+                    <div class="control-group">
+                        <label for="shatter-type-select">TIPO DE FRACTURA FÍSICA</label>
+                        <select id="shatter-type-select" class="jmx-select">
+                            <option value="glass">VIDRIO TEMPLADO (SHARDS)</option>
+                            <option value="stone">BLOQUES DE PIEDRA (MATE)</option>
+                            <option value="dust">POLVO DE PLATA (PARTÍCULAS)</option>
+                        </select>
+                    </div>
+
+                    <!-- Selector de Color de Luz -->
+                    <div class="control-group">
+                        <label for="light-color-select">COLOR DE LUZ INTERACTIVA</label>
+                        <select id="light-color-select" class="jmx-select">
+                            <option value="gold">ORO JMX (#DCB14A)</option>
+                            <option value="cyan">CIAN NEÓN (#00FFFF)</option>
+                            <option value="crimson">VELVET RED (#FF0055)</option>
+                            <option value="white">BLANCO NEUTRO (#FFFFFF)</option>
                         </select>
                     </div>
 
@@ -131,7 +152,7 @@ const seriesNames = Object.keys(seriesMap);
                         
                         <div class="slider-item">
                             <div class="slider-header">
-                                <span>CANTIDAD DE SHARDS</span>
+                                <span>CANTIDAD DE SHARDS / DENSIDAD</span>
                                 <span id="val-shards">63</span>
                             </div>
                             <input type="range" id="param-shards" min="20" max="150" value="63" class="jmx-slider" />
@@ -143,6 +164,14 @@ const seriesNames = Object.keys(seriesMap);
                                 <span id="val-gravity">9.8</span>
                             </div>
                             <input type="range" id="param-gravity" min="0" max="25" step="0.5" value="9.8" class="jmx-slider" />
+                        </div>
+
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span>INTENSIDAD LUZ CURSOR</span>
+                                <span id="val-light-intensity">8</span>
+                            </div>
+                            <input type="range" id="param-light-intensity" min="0" max="25" step="1" value="8" class="jmx-slider" />
                         </div>
                     </div>
 
@@ -308,14 +337,14 @@ const seriesNames = Object.keys(seriesMap);
         flex-direction: column;
         height: 100%;
         justify-content: space-between;
-        gap: 2.5rem;
+        gap: 1.5rem;
         overflow-y: auto;
     }
 
     .panel-header {
         display: flex;
         flex-direction: column;
-        gap: 0.8rem;
+        gap: 0.6rem;
     }
 
     .tech-tag {
@@ -344,7 +373,7 @@ const seriesNames = Object.keys(seriesMap);
     .control-group {
         display: flex;
         flex-direction: column;
-        gap: 0.6rem;
+        gap: 0.5rem;
     }
 
     .control-group label {
@@ -390,7 +419,7 @@ const seriesNames = Object.keys(seriesMap);
         font-weight: 900;
         color: var(--jmx-gold);
         letter-spacing: 2px;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.3rem;
     }
 
     .spec-row {
@@ -509,6 +538,7 @@ const seriesNames = Object.keys(seriesMap);
             flex-direction: row;
             flex-wrap: wrap;
             gap: 1.5rem;
+            overflow-y: auto;
         }
 
         .sidebar-inner > div, .sidebar-inner > aside, .sidebar-inner > select {
@@ -526,64 +556,145 @@ const seriesNames = Object.keys(seriesMap);
 <script>
     import * as THREE from 'three';
 
-    // 🔬 Audio procedimental para simular la rotura del vidrio
-    function playShatterSound() {
+    // 🔬 Audio procedimental específico para cada modo de rotura
+    function playShatterSound(type: string) {
         try {
             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
             if (!AudioContext) return;
             const ctx = new AudioContext();
             
-            // Sonido metálico/vidrio rompiéndose
-            const numNotes = 8 + Math.floor(Math.random() * 6);
-            for (let i = 0; i < numNotes; i++) {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+            if (type === 'glass') {
+                // Sonido de vidrio: altas frecuencias, tono cristalino metálico
+                const numNotes = 8 + Math.floor(Math.random() * 6);
+                for (let i = 0; i < numNotes; i++) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    const freq = 1800 + Math.random() * 2500;
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150 + Math.random() * 400, ctx.currentTime + 0.1 + Math.random() * 0.2);
+                    
+                    osc.type = Math.random() > 0.5 ? 'triangle' : 'sine';
+                    
+                    const startTime = ctx.currentTime + Math.random() * 0.06;
+                    const duration = 0.15 + Math.random() * 0.25;
+                    
+                    gain.gain.setValueAtTime(0, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.12 / numNotes, startTime + 0.005);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+                    
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                }
                 
-                osc.connect(gain);
-                gain.connect(ctx.destination);
+                // Ruido blanco filtrado para el golpe metálico
+                const bufferSize = ctx.sampleRate * 0.25; 
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
                 
-                const freq = 1800 + Math.random() * 2500;
-                osc.frequency.setValueAtTime(freq, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(150 + Math.random() * 400, ctx.currentTime + 0.1 + Math.random() * 0.2);
+                const noiseFilter = ctx.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.value = 3500;
+                noiseFilter.Q.value = 1.5;
                 
-                osc.type = Math.random() > 0.5 ? 'triangle' : 'sine';
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.15, ctx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
                 
-                const startTime = ctx.currentTime + Math.random() * 0.06;
-                const duration = 0.15 + Math.random() * 0.25;
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                noise.start();
+
+            } else if (type === 'stone') {
+                // Sonido de piedra: bajas frecuencias, golpe sordo y pesado
+                const numRocks = 4 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < numRocks; i++) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'sawtooth';
+                    
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 350;
+                    
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    const freq = 110 + Math.random() * 90;
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(35, ctx.currentTime + 0.2 + Math.random() * 0.25);
+                    
+                    const startTime = ctx.currentTime + Math.random() * 0.08;
+                    const duration = 0.3 + Math.random() * 0.3;
+                    
+                    gain.gain.setValueAtTime(0, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.35 / numRocks, startTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+                    
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                }
                 
-                gain.gain.setValueAtTime(0, ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.12 / numNotes, startTime + 0.005);
-                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+                // Ruido de impacto sordo
+                const bufferSize = ctx.sampleRate * 0.45;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
                 
-                osc.start(startTime);
-                osc.stop(startTime + duration);
+                const noiseFilter = ctx.createBiquadFilter();
+                noiseFilter.type = 'lowpass';
+                noiseFilter.frequency.value = 160;
+                
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.45, ctx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
+                
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                noise.start();
+
+            } else if (type === 'dust') {
+                // Sonido de polvo: siseo largo de disolución gaseosa
+                const bufferSize = ctx.sampleRate * 0.8;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
+                
+                const noiseFilter = ctx.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.setValueAtTime(4500, ctx.currentTime);
+                noiseFilter.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.65);
+                noiseFilter.Q.value = 0.7;
+                
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.25, ctx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.75);
+                
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                noise.start();
             }
-            
-            // Ruido blanco para el impacto sordo inicial
-            const bufferSize = ctx.sampleRate * 0.25; 
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1;
-            }
-            
-            const noise = ctx.createBufferSource();
-            noise.buffer = buffer;
-            
-            const noiseFilter = ctx.createBiquadFilter();
-            noiseFilter.type = 'bandpass';
-            noiseFilter.frequency.value = 3500;
-            noiseFilter.Q.value = 1.5;
-            
-            const noiseGain = ctx.createGain();
-            noiseGain.gain.setValueAtTime(0.15, ctx.currentTime);
-            noiseGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
-            
-            noise.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(ctx.destination);
-            
-            noise.start();
         } catch (e) {
             console.warn("AudioContext bloqueado o no soportado por el navegador:", e);
         }
@@ -595,14 +706,22 @@ const seriesNames = Object.keys(seriesMap);
     const seriesMap = JSON.parse(dataEl.getAttribute('data-series') || '{}');
 
     const seriesSelect = document.getElementById('series-select') as HTMLSelectElement;
+    const shatterTypeSelect = document.getElementById('shatter-type-select') as HTMLSelectElement;
+    const lightColorSelect = document.getElementById('light-color-select') as HTMLSelectElement;
+    
     const metaTitle = document.getElementById('meta-title')!;
     const metaDim = document.getElementById('meta-dim')!;
     const metaSize = document.getElementById('meta-size')!;
     const metaDate = document.getElementById('meta-date')!;
+    
     const valShards = document.getElementById('val-shards')!;
     const valGravity = document.getElementById('val-gravity')!;
+    const valLightIntensity = document.getElementById('val-light-intensity')!;
+    
     const paramShards = document.getElementById('param-shards') as HTMLInputElement;
     const paramGravity = document.getElementById('param-gravity') as HTMLInputElement;
+    const paramLightIntensity = document.getElementById('param-light-intensity') as HTMLInputElement;
+    
     const progressFill = document.getElementById('progress-indicator')!;
     const trackerCount = document.getElementById('tracker-count')!;
     const container = document.getElementById('canvas-container')!;
@@ -614,7 +733,18 @@ const seriesNames = Object.keys(seriesMap);
     // Físicas configurables
     let configShards = parseInt(paramShards.value, 10);
     let configGravity = parseFloat(paramGravity.value);
+    let configLightIntensity = parseFloat(paramLightIntensity.value);
+    let configShatterType = shatterTypeSelect.value; // 'glass' | 'stone' | 'dust'
+    let configLightColor = lightColorSelect.value;   // 'gold' | 'cyan' | 'crimson' | 'white'
 
+    const colorMap: Record<string, number> = {
+        gold: 0xdcb14a,
+        cyan: 0x00ffff,
+        crimson: 0xff0055,
+        white: 0xffffff
+    };
+
+    // --- BINDING DE CONTROLES ---
     paramShards.addEventListener('input', () => {
         configShards = parseInt(paramShards.value, 10);
         valShards.textContent = configShards.toString();
@@ -625,6 +755,22 @@ const seriesNames = Object.keys(seriesMap);
         valGravity.textContent = configGravity.toFixed(1);
     });
 
+    paramLightIntensity.addEventListener('input', () => {
+        configLightIntensity = parseFloat(paramLightIntensity.value);
+        valLightIntensity.textContent = configLightIntensity.toString();
+        pointLight.intensity = configLightIntensity;
+    });
+
+    lightColorSelect.addEventListener('change', () => {
+        configLightColor = lightColorSelect.value;
+        const hex = colorMap[configLightColor] || 0xdcb14a;
+        pointLight.color.setHex(hex);
+    });
+
+    shatterTypeSelect.addEventListener('change', () => {
+        configShatterType = shatterTypeSelect.value;
+    });
+
     // --- MOTOR 3D (THREE.JS) ---
     let scene: THREE.Scene, 
         camera: THREE.PerspectiveCamera, 
@@ -632,8 +778,15 @@ const seriesNames = Object.keys(seriesMap);
         
     let solidMesh: THREE.Mesh | null = null;
     let nextMesh: THREE.Mesh | null = null;
+    
+    // Shards
     let activeShardsGroup: THREE.Group | null = null;
     let activeShardsList: THREE.Mesh[] = [];
+
+    // Dust (Point Cloud)
+    let activePoints: THREE.Points | null = null;
+    let activePointsVelocities: THREE.Vector3[] = [];
+    let activePointsOpacity = 1.0;
     
     let isShattered = false;
     let isTransitioning = false;
@@ -644,7 +797,7 @@ const seriesNames = Object.keys(seriesMap);
     textureLoader.crossOrigin = 'anonymous';
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    const pointLight = new THREE.PointLight(0xdcb14a, 8, 15);
+    const pointLight = new THREE.PointLight(colorMap[configLightColor], configLightIntensity, 18);
 
     // Inicializar Escenario
     function init3D() {
@@ -654,8 +807,8 @@ const seriesNames = Object.keys(seriesMap);
         scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x030303, 0.05);
 
-        camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-        camera.position.z = 10;
+        camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+        camera.position.z = 9.5; // Un poco más cerca para que la foto se vea más grande
 
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(width, height);
@@ -663,16 +816,15 @@ const seriesNames = Object.keys(seriesMap);
         container.appendChild(renderer.domElement);
 
         // Luces
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
-        // Luz direccional suave
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.35);
-        dirLight.position.set(0, 10, 10);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        dirLight.position.set(0, 8, 10);
         scene.add(dirLight);
 
-        // Luz puntual de cursor interactiva
-        pointLight.position.set(0, 0, 2);
+        // Configuración de la luz del cursor
+        pointLight.position.set(0, 0, 1.8);
         scene.add(pointLight);
 
         // Eventos
@@ -698,10 +850,10 @@ const seriesNames = Object.keys(seriesMap);
         const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-        // Mapear luz puntual interactiva
-        pointLight.position.x = x * 5;
-        pointLight.position.y = y * 4;
-        pointLight.position.z = 1.5;
+        // Mapear luz interactiva
+        pointLight.position.x = x * 5.5;
+        pointLight.position.y = y * 4.2;
+        pointLight.position.z = 1.6;
     }
 
     // --- CARGAR TEXTURAS E IMÁGENES ---
@@ -711,8 +863,7 @@ const seriesNames = Object.keys(seriesMap);
         isShattered = false;
         isTransitioning = false;
         
-        // Limpieza de shards anteriores
-        clearShards();
+        clearActiveSimulation();
 
         const photo = currentPhotos[index];
         updateUI(photo, index);
@@ -723,7 +874,7 @@ const seriesNames = Object.keys(seriesMap);
             currentTexture.colorSpace = THREE.SRGBColorSpace;
             setupActiveMesh(currentTexture);
 
-            // Pre-cargar la textura siguiente para transiciones inmediatas
+            // Pre-cargar la textura siguiente
             const nextIndex = (index + 1) % currentPhotos.length;
             const nextPhoto = currentPhotos[nextIndex];
             textureLoader.load(nextPhoto.src, (nTex) => {
@@ -745,10 +896,11 @@ const seriesNames = Object.keys(seriesMap);
         progressFill.style.width = `${((index + 1) / total) * 100}%`;
     }
 
+    // Aumentamos dimensiones máximas del lienzo (para que se vea más grande)
     function calculatePlaneSize(texture: THREE.Texture) {
         const aspect = texture.image.width / texture.image.height;
-        const maxW = 5.8;
-        const maxH = 4.0;
+        const maxW = 7.6;
+        const maxH = 5.2;
         let w = maxW;
         let h = w / aspect;
         if (h > maxH) {
@@ -798,25 +950,30 @@ const seriesNames = Object.keys(seriesMap);
         });
 
         nextMesh = new THREE.Mesh(geom, mat);
-        // Colocar detrás y escalado hacia abajo
-        nextMesh.position.set(0, 0, -3);
+        nextMesh.position.set(0, 0, -3.5);
         nextMesh.scale.set(0.65, 0.65, 0.65);
         scene.add(nextMesh);
     }
 
-    function clearShards() {
+    function clearActiveSimulation() {
+        // Limpiar shards
         if (activeShardsGroup) {
             scene.remove(activeShardsGroup);
             activeShardsList.forEach(s => {
                 s.geometry.dispose();
-                if (Array.isArray(s.material)) {
-                    s.material.forEach(m => m.dispose());
-                } else {
-                    s.material.dispose();
-                }
+                (s.material as THREE.Material).dispose();
             });
             activeShardsList = [];
             activeShardsGroup = null;
+        }
+
+        // Limpiar partículas de polvo
+        if (activePoints) {
+            scene.remove(activePoints);
+            activePoints.geometry.dispose();
+            (activePoints.material as THREE.Material).dispose();
+            activePoints = null;
+            activePointsVelocities = [];
         }
     }
 
@@ -832,7 +989,6 @@ const seriesNames = Object.keys(seriesMap);
         const intersects = raycaster.intersectObject(solidMesh);
 
         if (intersects.length > 0) {
-            // Punto de impacto en la geometría local
             const impact = intersects[0].point;
             shatterAndSlide(impact);
         }
@@ -842,36 +998,46 @@ const seriesNames = Object.keys(seriesMap);
         isShattered = true;
         isTransitioning = true;
 
-        // Sonido procedimental
-        playShatterSound();
+        // Reproducir audio procedimental específico
+        playShatterSound(configShatterType);
 
-        // 1. Generar Shards 3D
         const size = calculatePlaneSize(currentTexture!);
-        const shardData = createShards3D(currentTexture!, size.w, size.h, impactPoint);
 
-        activeShardsGroup = shardData.group;
-        activeShardsList = shardData.shards;
-        scene.add(activeShardsGroup);
+        if (configShatterType === 'dust') {
+            // --- MODO POLVO (PARTÍCULAS POINT CLOUD) ---
+            const dustData = createDustParticles(currentTexture!, size.w, size.h, impactPoint);
+            if (dustData) {
+                activePoints = dustData.points;
+                activePointsVelocities = dustData.velocities;
+                activePointsOpacity = 1.0;
+                scene.add(activePoints);
+            }
+        } else {
+            // --- MODO FRACTURA FÍSICA (VIDRIO O PIEDRA) ---
+            const shardData = createShards3D(currentTexture!, size.w, size.h, impactPoint, configShatterType);
+            activeShardsGroup = shardData.group;
+            activeShardsList = shardData.shards;
+            scene.add(activeShardsGroup);
+        }
 
-        // 2. Ocultar lienzo plano
+        // Ocultar lienzo plano
         if (solidMesh) solidMesh.visible = false;
 
-        // 3. Animación de entrada suave del siguiente slide
-        let startSlideTime = document.timeline ? document.timeline.currentTime as number : performance.now();
-        const slideDuration = 1400; // ms
+        // Animación de entrada suave del siguiente slide
+        let startSlideTime = performance.now();
+        const slideDuration = 1500;
 
         function animateSlideIn() {
             if (!nextMesh) return;
 
-            const now = document.timeline ? document.timeline.currentTime as number : performance.now();
+            const now = performance.now();
             const elapsed = now - startSlideTime;
             const progress = Math.min(elapsed / slideDuration, 1);
 
-            // Curva Bézier fluida de desaceleración (easeOutCubic)
-            const ease = 1 - Math.pow(1 - progress, 3);
+            const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
 
-            // Animar propiedades
-            nextMesh.position.z = -3 + (ease * 3);
+            // Deslizar desde el fondo y escalar
+            nextMesh.position.z = -3.5 + (ease * 3.5);
             const currentScale = 0.65 + (ease * 0.35);
             nextMesh.scale.set(currentScale, currentScale, currentScale);
             (nextMesh.material as THREE.Material).opacity = ease;
@@ -879,10 +1045,9 @@ const seriesNames = Object.keys(seriesMap);
             if (progress < 1) {
                 requestAnimationFrame(animateSlideIn);
             } else {
-                // Finaliza transición
+                // Finaliza transición y avanza secuencia
                 currentIndex = (currentIndex + 1) % currentPhotos.length;
                 
-                // El siguiente pasa a ser el activo
                 solidMesh = nextMesh;
                 solidMesh.position.set(0, 0, 0);
                 solidMesh.scale.set(1, 1, 1);
@@ -894,11 +1059,10 @@ const seriesNames = Object.keys(seriesMap);
                 isShattered = false;
                 isTransitioning = false;
 
-                // Cargar metadatos del actual
                 const photo = currentPhotos[currentIndex];
                 updateUI(photo, currentIndex);
 
-                // Cargar de fondo la que sigue
+                // Pre-cargar la textura que le sigue
                 const nextIdx = (currentIndex + 1) % currentPhotos.length;
                 const nextPhoto = currentPhotos[nextIdx];
                 textureLoader.load(nextPhoto.src, (nTex) => {
@@ -912,32 +1076,29 @@ const seriesNames = Object.keys(seriesMap);
         requestAnimationFrame(animateSlideIn);
     }
 
-    // --- ALGORITMO DE FRACTURA ---
-    function createShards3D(texture: THREE.Texture, width: number, height: number, impactPoint: THREE.Vector3) {
+    // --- ALGORITMO DE FRACTURA DE COMPONENTES ---
+    function createShards3D(texture: THREE.Texture, width: number, height: number, impactPoint: THREE.Vector3, mode: string) {
         const group = new THREE.Group();
         const shards: THREE.Mesh[] = [];
 
-        // Generamos rejilla con ruido
-        // Adaptar columnas y filas según el número de shards deseados
-        const totalTarget = configShards;
+        // Reducimos cantidad de shards para Piedra (bloques más grandes y pesados)
+        const totalTarget = (mode === 'stone') ? Math.round(configShards * 0.55) : configShards;
         const ratio = width / height;
-        const rows = Math.round(Math.sqrt(totalTarget / ratio));
-        const cols = Math.round(rows * ratio);
+        const rows = Math.max(3, Math.round(THREE.MathUtils.lerp(3, 12, Math.sqrt(totalTarget / ratio) / 10)));
+        const cols = Math.max(3, Math.round(rows * ratio));
 
-        const cellW = width / cols;
-        const cellH = height / rows;
-
-        // Guardar nodos
+        // Rejilla de nodos con ruido orgánico
         const nodes: THREE.Vector2[] = [];
         for (let r = 0; r <= rows; r++) {
             for (let c = 0; c <= cols; c++) {
                 let x = (c / cols) - 0.5;
                 let y = (r / rows) - 0.5;
 
-                // Añadir ruido a los nodos internos
+                // Añadir ruido a nodos internos
                 if (c > 0 && c < cols && r > 0 && r < rows) {
-                    x += (Math.random() - 0.5) * (1 / cols) * 0.45;
-                    y += (Math.random() - 0.5) * (1 / rows) * 0.45;
+                    const noise = (mode === 'stone') ? 0.48 : 0.44;
+                    x += (Math.random() - 0.5) * (1 / cols) * noise;
+                    y += (Math.random() - 0.5) * (1 / rows) * noise;
                 }
 
                 nodes.push(new THREE.Vector2(x * width, y * height));
@@ -949,7 +1110,7 @@ const seriesNames = Object.keys(seriesMap);
         function addShard(p1: THREE.Vector2, p2: THREE.Vector2, p3: THREE.Vector2) {
             const geom = new THREE.BufferGeometry();
 
-            // Mapeo en 3D
+            // Vértices 3D
             const vertices = new Float32Array([
                 p1.x, p1.y, 0,
                 p2.x, p2.y, 0,
@@ -957,7 +1118,7 @@ const seriesNames = Object.keys(seriesMap);
             ]);
             geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-            // UVs
+            // UVs mapeadas exactas
             const uvs = new Float32Array([
                 (p1.x / width) + 0.5, (p1.y / height) + 0.5,
                 (p2.x / width) + 0.5, (p2.y / height) + 0.5,
@@ -967,52 +1128,76 @@ const seriesNames = Object.keys(seriesMap);
 
             geom.computeVertexNormals();
 
-            const mat = new THREE.MeshPhongMaterial({
-                map: texture,
-                side: THREE.DoubleSide,
-                transparent: true,
-                opacity: 1,
-                shininess: 90,
-                specular: new THREE.Color(0xdcb14a),
-                reflectivity: 0.8
-            });
+            // Material JMX adaptado al tipo de elemento
+            let mat;
+            if (mode === 'stone') {
+                mat = new THREE.MeshPhongMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 1,
+                    shininess: 3,                   // Opaco / mate
+                    specular: new THREE.Color(0x111111),
+                    color: 0x858585,                // Oscurecer ligeramente como cemento
+                    reflectivity: 0.05
+                });
+            } else {
+                mat = new THREE.MeshPhongMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 1,
+                    shininess: 95,                  // Vidrio cristalino
+                    specular: new THREE.Color(colorMap[configLightColor]),
+                    reflectivity: 0.8
+                });
+            }
 
             const mesh = new THREE.Mesh(geom, mat);
 
-            // Calcular baricentro
+            // Baricentro del fragmento
             const cx = (p1.x + p2.x + p3.x) / 3;
             const cy = (p1.y + p2.y + p3.y) / 3;
 
-            // Físicas del estallido
+            // Distancia del impacto
             const dx = cx - impactPoint.x;
             const dy = cy - impactPoint.y;
             const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
 
-            // Fuerza decae con la distancia
-            const force = Math.max(0.1, 2.5 / (dist + 0.4));
+            // Físicas: Piedra es pesada y no rebota hacia adelante (Z)
+            const forceBase = (mode === 'stone') ? 1.7 : 2.5;
+            const force = Math.max(0.1, forceBase / (dist + 0.4));
 
-            // Velocidad 3D
-            const vx = (dx / dist) * force * 0.15 + (Math.random() - 0.5) * 0.05;
-            const vy = (dy / dist) * force * 0.15 + (Math.random() - 0.5) * 0.05;
-            const vz = (Math.random() * 0.12 + 0.05) * force;
+            let vx, vy, vz;
+            if (mode === 'stone') {
+                vx = (dx / dist) * force * 0.08 + (Math.random() - 0.5) * 0.02;
+                vy = (dy / dist) * force * 0.08 + (Math.random() - 0.5) * 0.02;
+                vz = (Math.random() * 0.03 + 0.005) * force; // Caída casi plana
+            } else {
+                vx = (dx / dist) * force * 0.16 + (Math.random() - 0.5) * 0.05;
+                vy = (dy / dist) * force * 0.16 + (Math.random() - 0.5) * 0.05;
+                vz = (Math.random() * 0.13 + 0.05) * force;  // Pop hacia el usuario
+            }
+
+            // Piedra rota más despacio
+            const rotFactor = (mode === 'stone') ? 0.04 : 0.18;
 
             mesh.userData = {
                 velocity: new THREE.Vector3(vx, vy, vz),
                 angularVelocity: new THREE.Vector3(
-                    (Math.random() - 0.5) * 0.18,
-                    (Math.random() - 0.5) * 0.18,
-                    (Math.random() - 0.5) * 0.18
+                    (Math.random() - 0.5) * rotFactor,
+                    (Math.random() - 0.5) * rotFactor,
+                    (Math.random() - 0.5) * rotFactor
                 ),
                 opacity: 1,
-                // Breve retardo en la reacción según distancia para efecto de grieta
-                delay: dist * 8
+                delay: dist * ((mode === 'stone') ? 14 : 7)
             };
 
             group.add(mesh);
             shards.push(mesh);
         }
 
-        // Armar quads
+        // Dividir celdas quad
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const n00 = nodes[getNodeIdx(c, r)];
@@ -1020,7 +1205,6 @@ const seriesNames = Object.keys(seriesMap);
                 const n01 = nodes[getNodeIdx(c, r + 1)];
                 const n11 = nodes[getNodeIdx(c + 1, r + 1)];
 
-                // Rotura aleatoria en diagonales
                 if (Math.random() > 0.5) {
                     addShard(n00, n10, n01);
                     addShard(n10, n11, n01);
@@ -1034,6 +1218,96 @@ const seriesNames = Object.keys(seriesMap);
         return { group, shards };
     }
 
+    // --- ALGORITMO DE FRACTURA DE POLVO (PARTÍCULAS POINT CLOUD) ---
+    function createDustParticles(texture: THREE.Texture, width: number, height: number, impactPoint: THREE.Vector3) {
+        const img = texture.image;
+        if (!img || !img.width) return null;
+
+        // Resolucion del point cloud
+        const pCols = 100;
+        const pRows = Math.round(pCols / (img.width / img.height)) || 80;
+        const numPoints = pCols * pRows;
+
+        // Lienzo oculto temporal para extraer la crominancia y luminancia del pixel
+        const canvas = document.createElement('canvas');
+        canvas.width = pCols;
+        canvas.height = pRows;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.drawImage(img, 0, 0, pCols, pRows);
+        
+        let imgData;
+        try {
+            imgData = ctx.getImageData(0, 0, pCols, pRows).data;
+        } catch (e) {
+            // Por si ocurre algún bloqueo de origen de imagen cruzado, rellenamos con colores aleatorios
+            imgData = new Uint8Array(numPoints * 4);
+            for (let i = 0; i < numPoints * 4; i += 4) {
+                imgData[i] = 180 + Math.random() * 75;
+                imgData[i+1] = 160 + Math.random() * 60;
+                imgData[i+2] = 120 + Math.random() * 50;
+                imgData[i+3] = 255;
+            }
+        }
+
+        const positions = new Float32Array(numPoints * 3);
+        const colors = new Float32Array(numPoints * 3);
+        const velocities: THREE.Vector3[] = [];
+
+        let index = 0;
+        for (let r = 0; r < pRows; r++) {
+            for (let c = 0; c < pCols; c++) {
+                const pctX = c / (pCols - 1);
+                const pctY = r / (pRows - 1);
+
+                const x = (pctX - 0.5) * width;
+                const y = (pctY - 0.5) * height;
+                const z = 0;
+
+                positions[index * 3] = x;
+                positions[index * 3 + 1] = y;
+                positions[index * 3 + 2] = z;
+
+                // Canvas lee coordenadas de arriba hacia abajo, WebGL de abajo hacia arriba
+                const canvasY = pRows - 1 - r;
+                const pixelIndex = (canvasY * pCols + c) * 4;
+
+                colors[index * 3] = imgData[pixelIndex] / 255;
+                colors[index * 3 + 1] = imgData[pixelIndex + 1] / 255;
+                colors[index * 3 + 2] = imgData[pixelIndex + 2] / 255;
+
+                // Vector de impulso físico radial
+                const dx = x - impactPoint.x;
+                const dy = y - impactPoint.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
+
+                const force = Math.max(0.05, 1.8 / (dist + 0.3));
+
+                const vx = (dx / dist) * force * 0.04 + (Math.random() - 0.5) * 0.012;
+                const vy = (dy / dist) * force * 0.04 + (Math.random() - 0.5) * 0.012;
+                const vz = (Math.random() * 0.06 + 0.01) * force;
+
+                velocities.push(new THREE.Vector3(vx, vy, vz));
+                index++;
+            }
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.038,
+            vertexColors: true,
+            transparent: true,
+            opacity: 1,
+            sizeAttenuation: true
+        });
+
+        const points = new THREE.Points(geometry, material);
+        return { points, velocities };
+    }
+
     // --- BUCLE DE ANIMACIÓN (TICK) ---
     let lastTime = performance.now();
 
@@ -1041,46 +1315,77 @@ const seriesNames = Object.keys(seriesMap);
         requestAnimationFrame(animate);
 
         const now = performance.now();
-        const delta = Math.min((now - lastTime) / 16.666, 3); // normalizado a 60fps
+        const delta = Math.min((now - lastTime) / 16.666, 3);
         lastTime = now;
 
-        // 1. Simulación física de shards
+        // 1. Animación Física de Shards (Vidrio o Piedra)
         if (activeShardsList.length > 0) {
-            const gravityAcc = (configGravity / 1000) * delta;
+            // Gravedad aumentada para piedra
+            const gravityMultiplier = (configShatterType === 'stone') ? 1.45 : 1.0;
+            const gravityAcc = (configGravity / 1000) * gravityMultiplier * delta;
             
             for (let i = 0; i < activeShardsList.length; i++) {
                 const shard = activeShardsList[i];
                 
-                // Retardo de onda de impacto
                 if (shard.userData.delay > 0) {
                     shard.userData.delay -= 16.666 * delta;
                     continue;
                 }
 
-                // Aplicar posición
                 shard.position.addScaledVector(shard.userData.velocity, delta);
 
-                // Aplicar rotación
                 shard.rotation.x += shard.userData.angularVelocity.x * delta;
                 shard.rotation.y += shard.userData.angularVelocity.y * delta;
                 shard.rotation.z += shard.userData.angularVelocity.z * delta;
 
-                // Aplicar aceleración por gravedad (Y decreciente)
+                // Aplicar aceleración gravitatoria
                 shard.userData.velocity.y -= gravityAcc;
 
-                // Rozamiento del aire sutil
-                shard.userData.velocity.multiplyScalar(Math.pow(0.975, delta));
-                shard.userData.angularVelocity.multiplyScalar(Math.pow(0.975, delta));
+                // Fricción
+                shard.userData.velocity.multiplyScalar(Math.pow(0.978, delta));
+                shard.userData.angularVelocity.multiplyScalar(Math.pow(0.978, delta));
 
-                // Desvanecimiento
-                shard.userData.opacity -= 0.008 * delta;
+                // Opacidad decreciente
+                shard.userData.opacity -= ((configShatterType === 'stone') ? 0.012 : 0.007) * delta;
                 const mat = shard.material as THREE.MeshPhongMaterial;
                 mat.opacity = Math.max(0, shard.userData.opacity);
 
-                // Desactivar sombras si es invisible
                 if (shard.userData.opacity <= 0) {
                     shard.visible = false;
                 }
+            }
+        }
+
+        // 2. Animación Física de Polvo (Drifting Point Cloud)
+        if (activePoints && activePointsVelocities.length > 0) {
+            const posAttr = activePoints.geometry.getAttribute('position') as THREE.BufferAttribute;
+            const positions = posAttr.array as Float32Array;
+            const time = now * 0.0016;
+
+            for (let i = 0; i < activePointsVelocities.length; i++) {
+                const vel = activePointsVelocities[i];
+
+                // Mover posiciones
+                positions[i * 3] += vel.x * delta;
+                positions[i * 3 + 1] += vel.y * delta;
+                positions[i * 3 + 2] += vel.z * delta;
+
+                // Flotabilidad ascendente (humo/polvo)
+                vel.y += 0.0002 * delta;
+
+                // Viento senoidal lateral
+                positions[i * 3] += Math.sin(time + i) * 0.0012 * delta;
+
+                // Resistencia del aire
+                vel.multiplyScalar(Math.pow(0.975, delta));
+            }
+            posAttr.needsUpdate = true;
+
+            // Desvanecimiento rápido de partículas
+            activePointsOpacity -= 0.0065 * delta;
+            (activePoints.material as THREE.PointsMaterial).opacity = Math.max(0, activePointsOpacity);
+            if (activePointsOpacity <= 0) {
+                activePoints.visible = false;
             }
         }
 
@@ -1093,10 +1398,9 @@ const seriesNames = Object.keys(seriesMap);
         currentPhotos = seriesMap[currentSeriesName] || [];
         currentIndex = 0;
         
-        // Reset completo del escenario
         if (solidMesh) scene.remove(solidMesh);
         if (nextMesh) scene.remove(nextMesh);
-        clearShards();
+        clearActiveSimulation();
         
         solidMesh = null;
         nextMesh = null;
