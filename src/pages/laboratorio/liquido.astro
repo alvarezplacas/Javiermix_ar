@@ -984,18 +984,18 @@ const seriesNames = Object.keys(seriesMap);
     tempCanvas.height = 512;
     const tempCtx = tempCanvas.getContext('2d')!;
 
+    // Textura de canvas en Three.js
+    const meltTexture = new THREE.CanvasTexture(meltCanvas);
+    meltTexture.wrapS = THREE.ClampToEdgeWrapping;
+    meltTexture.wrapT = THREE.ClampToEdgeWrapping;
+    meltTexture.minFilter = THREE.LinearFilter;
+
     function clearMeltMap() {
         meltCtx.fillStyle = '#000000';
         meltCtx.fillRect(0, 0, 512, 512);
         if (meltTexture) meltTexture.needsUpdate = true;
     }
     clearMeltMap();
-
-    // Textura de canvas en Three.js
-    const meltTexture = new THREE.CanvasTexture(meltCanvas);
-    meltTexture.wrapS = THREE.ClampToEdgeWrapping;
-    meltTexture.wrapT = THREE.ClampToEdgeWrapping;
-    meltTexture.minFilter = THREE.LinearFilter;
 
     // Control de puntos fundidos para disparar la transición
     let meltPoints = 0;
