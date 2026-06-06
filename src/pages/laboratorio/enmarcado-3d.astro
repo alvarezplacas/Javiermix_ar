@@ -80,6 +80,12 @@ if (artworks.length === 0) {
                     <h2 id="hud-title">{artworks[0].title}</h2>
                     <span id="hud-dim">{artworks[0].dim} · FINE-ART EDITION</span>
                 </div>
+
+                <div class="stage-controls">
+                    <button id="play-tour-btn" class="tour-btn">
+                        <span class="play-icon">▶</span> INICIAR TOUR
+                    </button>
+                </div>
             </div>
 
             <!-- Columna Derecha: Panel de Controles (Photoshop Style) -->
@@ -240,6 +246,8 @@ if (artworks.length === 0) {
         overflow: hidden;
         transition: background 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         padding: 3rem;
+        perspective: 1500px;
+        transform-style: preserve-3d;
     }
 
     /* Diferentes muros de fondo */
@@ -291,9 +299,11 @@ if (artworks.length === 0) {
     .frame-shadow-wrapper {
         position: relative;
         z-index: 10;
-        transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.1s ease;
         max-width: 90%;
         max-height: 70vh;
+        will-change: transform;
+        transform-style: preserve-3d;
     }
 
     /* Proyección de sombras realista según el ángulo de la luz */
@@ -389,6 +399,35 @@ if (artworks.length === 0) {
         display: block;
         margin-top: 0.2rem;
         text-transform: uppercase;
+    }
+
+    /* Controles de Tour */
+    .stage-controls {
+        position: absolute;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 30;
+    }
+
+    .tour-btn {
+        background: rgba(0, 0, 0, 0.65);
+        border: 1px solid var(--jmx-gold);
+        color: var(--jmx-gold);
+        padding: 0.6rem 1.4rem;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 20px;
+    }
+
+    .tour-btn:hover, .tour-btn.active {
+        background: var(--jmx-gold);
+        color: #000;
+        box-shadow: 0 0 15px rgba(220, 177, 74, 0.4);
     }
 
     /* Columna Derecha - Panel de Controles */
@@ -587,11 +626,13 @@ if (artworks.length === 0) {
         const hudDim = document.getElementById('hud-dim');
         const paspartuSlider = document.getElementById('paspartu-slider') as HTMLInputElement;
         const paspartuVal = document.getElementById('paspartu-val');
+        const frameShadowBox = document.getElementById('frame-shadow-box');
+        const playTourBtn = document.getElementById('play-tour-btn');
 
         const optionBtns = document.querySelectorAll('.option-btn');
         const carouselItems = document.querySelectorAll('.carousel-item');
 
-        if (!wallBg || !frameMolding || !paspartuBox || !framerImg) return;
+        if (!wallBg || !frameMolding || !paspartuBox || !framerImg || !frameShadowBox) return;
 
         // 1. Manejo del Muro, Marco y Luces
         optionBtns.forEach(btn => {
@@ -636,8 +677,120 @@ if (artworks.length === 0) {
                 if (framerImg) framerImg.src = img;
                 if (hudTitle) hudTitle.innerText = title;
                 if (hudDim) hudDim.innerText = `${dim} · FINE-ART EDITION`;
+
+                // Si está activado el tour, reiniciar el temporizador para dar tiempo a ver la seleccionada
+                if (isTourPlaying) {
+                    startTour();
+                }
             });
         });
+
+        // 4. Efecto de Movimiento 3D en el Muro (Parallax del Cuadro)
+        let targetX = 0;
+        let targetY = 0;
+        let lastX = 0;
+        let lastY = 0;
+
+        wallBg.addEventListener('mousemove', (e) => {
+            const rect = wallBg.getBoundingClientRect();
+            // Calcular coordenadas normales (-1.0 a 1.0) relativas al centro del muro
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            targetX = (e.clientX - cx) / (rect.width / 2);
+            targetY = (e.clientY - cy) / (rect.height / 2);
+        });
+
+        wallBg.addEventListener('mouseleave', () => {
+            targetX = 0;
+            targetY = 0;
+        });
+
+        function update3DEffect() {
+            lastX += (targetX - lastX) * 0.08;
+            lastY += (targetY - lastY) * 0.08;
+
+            const rotX = -lastY * 16; // Inclinación vertical máx 16°
+            const rotY = lastX * 16;  // Inclinación horizontal máx 16°
+
+            frameShadowBox.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
+
+            // Ajustar dinámicamente la sombra en base a la luz seleccionada y la rotación 3D
+            const light = wallBg.getAttribute('data-light') || 'center';
+            let lightOffset = 0;
+            if (light === 'left') lightOffset = 30;
+            if (light === 'right') lightOffset = -30;
+
+            const shadX = -lastX * 25 + lightOffset;
+            const shadY = -lastY * 20 + 35; // 35px vertical offset por defecto
+            const shadBlur = 80 - (Math.abs(lastX) + Math.abs(lastY)) * 10;
+
+            frameShadowBox.style.boxShadow = `${shadX.toFixed(1)}px ${shadY.toFixed(1)}px ${shadBlur}px rgba(0,0,0,0.85)`;
+
+            requestAnimationFrame(update3DEffect);
+        }
+
+        update3DEffect();
+
+        // Giroscopio en dispositivos móviles
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', (e) => {
+                if (e.beta !== null && e.gamma !== null) {
+                    targetX = Math.min(1.0, Math.max(-1.0, e.gamma / 45));
+                    targetY = Math.min(1.0, Math.max(-1.0, (e.beta - 45) / 45));
+                }
+            });
+        }
+
+        // 5. Motor de Auto-Tour (Recorrido de Museo)
+        let isTourPlaying = false;
+        let tourInterval: any = null;
+
+        function startTour() {
+            if (tourInterval) clearInterval(tourInterval);
+            tourInterval = setInterval(() => {
+                const activeItem = document.querySelector('.carousel-item.active');
+                const items = Array.from(document.querySelectorAll('.carousel-item'));
+                if (items.length <= 1) return;
+                
+                const currentIdx = items.indexOf(activeItem);
+                const nextIdx = (currentIdx + 1) % items.length;
+                
+                // Efecto de desvanecimiento corto al cambiar de obra en tour
+                framerImg.style.transition = 'opacity 0.4s ease';
+                framerImg.style.opacity = '0';
+                
+                setTimeout(() => {
+                    (items[nextIdx] as HTMLElement).click();
+                    framerImg.style.opacity = '1';
+                }, 400);
+
+            }, 5500); // Pasar de obra cada 5.5 segundos
+        }
+
+        function stopTour() {
+            if (tourInterval) {
+                clearInterval(tourInterval);
+                tourInterval = null;
+            }
+        }
+
+        playTourBtn?.addEventListener('click', () => {
+            isTourPlaying = !isTourPlaying;
+            playTourBtn.classList.toggle('active', isTourPlaying);
+            
+            if (isTourPlaying) {
+                playTourBtn.innerHTML = '<span class="play-icon">⏸</span> DETENER TOUR';
+                startTour();
+            } else {
+                playTourBtn.innerHTML = '<span class="play-icon">▶</span> INICIAR TOUR';
+                stopTour();
+            }
+        });
+
+        // Limpieza de intervalos al cambiar de vista
+        document.addEventListener('astro:before-preparation', () => {
+            stopTour();
+        }, { once: true });
 
         // Valores por defecto en carga
         wallBg.setAttribute('data-wall', 'museum');
