@@ -1,244 +1,647 @@
 ---
 // d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\enmarcado-3d.astro
 import Layout from '@layouts/Layout.astro';
+import { getCatalogoFiles } from '@conexion/directus';
+import { getOptimizedImageURL } from '@utils/media';
+
+export const prerender = false;
+
+let artworks = [];
+try {
+    const artworksRaw = await getCatalogoFiles();
+    artworks = artworksRaw
+        .filter(file => file.id && !file.filename_download.toLowerCase().includes('_2'))
+        .slice(0, 12)
+        .map((file, index) => ({
+            id: file.id,
+            title: file.title || `Obra ${index + 1}`,
+            img: getOptimizedImageURL(file.id, { width: 1200, format: 'webp', quality: 90 }),
+            thumb: getOptimizedImageURL(file.id, { width: 300, format: 'webp', quality: 70 }),
+            serie: file.serie_name || 'Archivo General',
+            dim: file.width && file.height ? `${file.width} x ${file.height} px` : 'Dimensiones Variables'
+        }));
+} catch (e) {
+    console.error("Error al cargar catálogo en enmarcado-3d:", e);
+}
+
+// Fallback por si falla la base de datos
+if (artworks.length === 0) {
+    artworks = [
+        {
+            id: 'demo1',
+            title: 'Obra de Prueba JMX I',
+            img: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1200&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=300&q=70',
+            serie: 'Serie Prueba',
+            dim: '3000 x 4000 px'
+        },
+        {
+            id: 'demo2',
+            title: 'Obra de Prueba JMX II',
+            img: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=1200&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=300&q=70',
+            serie: 'Serie Prueba',
+            dim: '3500 x 5000 px'
+        }
+    ];
+}
 ---
 
-<Layout title="Simulador de Enmarcado JMX | Laboratorio JMX" themeForce="dark">
-    <main class="lab-coming-soon">
-        <div class="grid-overlay"></div>
-        <div class="glow-orb"></div>
+<Layout title="Simulador de Enmarcado 3D | Laboratorio JMX" themeForce="dark">
+    <main class="framer-container" id="framer-root">
+        <div class="grain-overlay"></div>
 
-        <section class="panel-box">
-            <div class="panel-header">
-                <span class="badge">EXP-11 // EN PLAN</span>
-                <div class="status-indicator">
-                    <span class="pulse-dot"></span>
-                    PLANIFICANDO ESCENA 3D
+        <!-- Barra de navegación -->
+        <nav class="framer-nav">
+            <a href="/laboratorio" class="back-link">← GABINETE</a>
+            <div class="framer-title">PROTOCOLO EXP-11: CONFIGURADOR DE ESPACIOS</div>
+            <div class="system-tag">JMX PRO-RENDER v2.0</div>
+        </nav>
+
+        <div class="framer-layout">
+            <!-- Columna Izquierda: Escenario de Render con Muro y Cuadro -->
+            <div class="render-stage" id="wall-bg">
+                <!-- Capa de sombra de luz direccional -->
+                <div class="wall-ambient-shadow" id="ambient-light-overlay"></div>
+
+                <!-- El Cuadro Completo -->
+                <div class="frame-shadow-wrapper" id="frame-shadow-box">
+                    <div class="frame-molding" id="frame-molding-box" data-style="black">
+                        <div class="paspartu-matte" id="paspartu-box" style="padding: 3.5rem;">
+                            <!-- El Cristal con reflejos -->
+                            <div class="glare-glass-overlay"></div>
+                            <!-- Imagen de la obra real -->
+                            <img id="framer-img" src={artworks[0].img} alt={artworks[0].title} crossorigin="anonymous" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="artwork-hud">
+                    <h2 id="hud-title">{artworks[0].title}</h2>
+                    <span id="hud-dim">{artworks[0].dim} · FINE-ART EDITION</span>
                 </div>
             </div>
 
-            <div class="panel-content">
-                <h1>Simulador de Enmarcado <br/><span>Configurador 3D</span></h1>
-                <p class="summary">
-                    Una herramienta interactiva para que coleccionistas visualicen obras enmarcadas en diferentes ambientes y condiciones de iluminación.
-                </p>
-
-                <div class="blueprint">
-                    <div class="blueprint-line"><span>PROTOCOLO:</span> Modelado en 3D de marcos físicos (roble, nogal, bronce) y proyección de sombras.</div>
-                    <div class="blueprint-line"><span>MECÁNICA:</span> Selección interactiva de texturas de pared (mármol, ladrillo, velvet) e inclinación de luz ambiental.</div>
-                    <div class="blueprint-line"><span>TECNOLOGÍA:</span> Three.js WebGL Renderer + Shadow Mapping + Custom Canvas UI.</div>
+            <!-- Columna Derecha: Panel de Controles (Photoshop Style) -->
+            <aside class="control-sidebar">
+                <div class="sidebar-header">
+                    <h3>CONFIGURACIÓN DE ACABADOS</h3>
                 </div>
 
-                <div class="status-meter">
-                    <div class="meter-label">
-                        <span>PROGRESO DE DISEÑO</span>
-                        <span>10%</span>
+                <div class="sidebar-content">
+                    <!-- 1. Textura del Muro -->
+                    <div class="control-section">
+                        <label>TEXTURA DEL MURO</label>
+                        <div class="options-grid">
+                            <button class="option-btn active" data-config="wall" data-val="museum" style="background: #121212; border-color: #222;" title="Yeso de Museo">MUSEO</button>
+                            <button class="option-btn" data-config="wall" data-val="marble" style="background: url('https://images.unsplash.com/photo-1618220179428-22790b461013?w=100&q=50'); background-size: cover;" title="Mármol Carrara">MÁRMOL</button>
+                            <button class="option-btn" data-config="wall" data-val="velvet" style="background: #3a080d;" title="Terciopelo Velvet">VELVET</button>
+                            <button class="option-btn" data-config="wall" data-val="brick" style="background: url('https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=100&q=50'); background-size: cover;" title="Ladrillo Rústico">LADRILLO</button>
+                        </div>
                     </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill" style="width: 10%"></div>
+
+                    <!-- 2. Moldura del Marco -->
+                    <div class="control-section">
+                        <label>MATERIAL DEL MARCO</label>
+                        <div class="options-grid cols-2">
+                            <button class="option-btn active" data-config="frame" data-val="black">
+                                <span class="color-dot" style="background: #000;"></span> ALUMINIO NEGRO
+                            </button>
+                            <button class="option-btn" data-config="frame" data-val="oak">
+                                <span class="color-dot" style="background: #d4b285;"></span> ROBLE NATURAL
+                            </button>
+                            <button class="option-btn" data-config="frame" data-val="walnut">
+                                <span class="color-dot" style="background: #4e3629;"></span> NOGAL CLÁSICO
+                            </button>
+                            <button class="option-btn" data-config="frame" data-val="gold">
+                                <span class="color-dot" style="background: #d4af37;"></span> ORO ENVEJECIDO
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Tamaño del Paspartú -->
+                    <div class="control-section">
+                        <div class="label-header">
+                            <label>ANCHO PASPARTÚ (CM)</label>
+                            <span id="paspartu-val">4.5 cm</span>
+                        </div>
+                        <input type="range" id="paspartu-slider" min="1.5" max="8.0" step="0.5" value="4.5" class="jmx-range" />
+                    </div>
+
+                    <!-- 4. Ángulo e Incidencia de Luz -->
+                    <div class="control-section">
+                        <label>INCIDENCIA DE LUZ DE GALERÍA</label>
+                        <div class="options-grid">
+                            <button class="option-btn" data-config="light" data-val="left">IZQUIERDA</button>
+                            <button class="option-btn active" data-config="light" data-val="center">CENTRAL</button>
+                            <button class="option-btn" data-config="light" data-val="right">DERECHA</button>
+                        </div>
+                    </div>
+
+                    <!-- 5. Obras disponibles -->
+                    <div class="control-section flex-expand">
+                        <label>FOTOGRAFÍA A ENMARCAR //</label>
+                        <div class="stage-carousel">
+                            {artworks.map((art, idx) => (
+                                <button class={`carousel-item ${idx === 0 ? 'active' : ''}`} data-index={idx} data-img={art.img} data-title={art.title} data-dim={art.dim}>
+                                    <img src={art.thumb} alt={art.title} />
+                                    <div class="item-meta">
+                                        <span class="item-title">{art.title}</span>
+                                        <span class="item-dim">{art.dim}</span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <footer class="panel-footer">
-                <a href="/laboratorio" class="btn-back">
-                    <span class="arrow">←</span> RETORNAR AL GABINETE
-                </a>
-            </footer>
-        </section>
+            </aside>
+        </div>
     </main>
 </Layout>
 
 <style>
-    .lab-coming-soon {
-        background: #030303;
-        color: #fff;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        font-family: 'Inter', system-ui, sans-serif;
-        overflow: hidden;
-        padding: 2rem;
+    :root {
+        --jmx-gold: #dcb14a;
+        --sidebar-bg: #090909;
+        --stage-bg: #141414;
     }
 
-    .grid-overlay {
+    .framer-container {
+        min-height: 100vh;
+        background: #020202;
+        color: #fff;
+        font-family: 'Inter', system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .grain-overlay {
         position: absolute;
         inset: 0;
-        background-image: linear-gradient(rgba(220, 177, 74, 0.02) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(220, 177, 74, 0.02) 1px, transparent 1px);
-        background-size: 40px 40px;
+        background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+        opacity: 0.03;
         pointer-events: none;
-        z-index: 1;
+        z-index: 5;
+        mix-blend-mode: overlay;
     }
 
-    .glow-orb {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 600px;
-        height: 600px;
-        background: radial-gradient(circle, rgba(220, 177, 74, 0.05) 0%, transparent 70%);
-        pointer-events: none;
-        z-index: 2;
-        filter: blur(50px);
-    }
-
-    .panel-box {
-        max-width: 600px;
-        width: 100%;
-        background: rgba(15, 15, 15, 0.65);
-        border: 1px solid rgba(220, 177, 74, 0.15);
-        backdrop-filter: blur(30px);
-        border-radius: 4px;
-        padding: 3rem;
-        position: relative;
-        z-index: 10;
-        box-shadow: 0 40px 100px rgba(0,0,0,0.8);
-    }
-
-    .panel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 3rem;
+    .framer-nav {
+        height: 64px;
+        background: #000;
         border-bottom: 1px solid rgba(255,255,255,0.05);
-        padding-bottom: 1rem;
-    }
-
-    .badge {
-        font-size: 0.55rem;
-        font-weight: 900;
-        color: #dcb14a;
-        letter-spacing: 2px;
-        border: 1px solid rgba(220, 177, 74, 0.3);
-        padding: 0.3rem 0.8rem;
-    }
-
-    .status-indicator {
-        font-family: monospace;
-        font-size: 0.55rem;
-        color: rgba(255,255,255,0.4);
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-    }
-
-    .pulse-dot {
-        width: 6px;
-        height: 6px;
-        background: #dcb14a;
-        border-radius: 50%;
-        box-shadow: 0 0 8px #dcb14a;
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.5); opacity: 0.4; }
-        100% { transform: scale(1); opacity: 1; }
-    }
-
-    h1 {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: clamp(2rem, 5vw, 3rem);
-        line-height: 1.1;
-        margin-bottom: 1.5rem;
-        text-transform: uppercase;
-        letter-spacing: -1px;
-    }
-
-    h1 span {
-        color: #dcb14a;
-        font-size: 0.7em;
-        font-style: italic;
-    }
-
-    .summary {
-        color: rgba(255,255,255,0.5);
-        font-size: 0.9rem;
-        line-height: 1.6;
-        margin-bottom: 2.5rem;
-        font-weight: 300;
-    }
-
-    .blueprint {
-        background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(255,255,255,0.03);
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        margin-bottom: 2.5rem;
-    }
-
-    .blueprint-line {
-        font-size: 0.7rem;
-        line-height: 1.4;
-        color: rgba(255,255,255,0.7);
-    }
-
-    .blueprint-line span {
-        color: #dcb14a;
-        font-weight: 700;
-        margin-right: 8px;
-    }
-
-    .status-meter {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .meter-label {
         display: flex;
         justify-content: space-between;
-        font-size: 0.55rem;
-        font-weight: 800;
-        color: rgba(255,255,255,0.4);
-        letter-spacing: 1.5px;
+        align-items: center;
+        padding: 0 2rem;
+        z-index: 100;
     }
 
-    .meter-bar {
-        width: 100%;
-        height: 2px;
-        background: rgba(255,255,255,0.05);
-    }
-
-    .meter-fill {
-        height: 100%;
-        background: #dcb14a;
-        box-shadow: 0 0 8px #dcb14a;
-    }
-
-    .panel-footer {
-        margin-top: 3.5rem;
-        border-top: 1px solid rgba(255,255,255,0.05);
-        padding-top: 2rem;
-        text-align: center;
-    }
-
-    .btn-back {
+    .back-link {
         color: rgba(255,255,255,0.4);
         text-decoration: none;
         font-size: 0.65rem;
         font-weight: 800;
-        letter-spacing: 3px;
+        letter-spacing: 2px;
+        transition: 0.3s;
+    }
+    .back-link:hover { color: var(--jmx-gold); }
+
+    .framer-title {
+        font-size: 0.6rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--jmx-gold);
+    }
+
+    .system-tag {
+        font-family: monospace;
+        font-size: 0.55rem;
+        color: rgba(255,255,255,0.3);
+    }
+
+    /* Layout principal split */
+    .framer-layout {
+        display: flex;
+        flex: 1;
+        height: calc(100vh - 64px);
+    }
+
+    /* Columna Izquierda - Stage de Render */
+    .render-stage {
+        flex: 1;
+        background: var(--stage-bg);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        transition: background 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        padding: 3rem;
+    }
+
+    /* Diferentes muros de fondo */
+    .render-stage[data-wall="museum"] {
+        background: #141414;
+        background-image: radial-gradient(circle at 50% 50%, #1f1f1f 0%, #101010 100%);
+    }
+
+    .render-stage[data-wall="marble"] {
+        background: url('https://images.unsplash.com/photo-1618220179428-22790b461013?w=1600&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .render-stage[data-wall="velvet"] {
+        background: #1b0204;
+        background-image: radial-gradient(circle at 50% 50%, #290408 0%, #110002 100%);
+    }
+
+    .render-stage[data-wall="brick"] {
+        background: url('https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=1600&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .wall-ambient-shadow {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.12) 0%, rgba(0,0,0,0.85) 100%);
+        pointer-events: none;
+        z-index: 2;
+        transition: background 0.5s ease;
+    }
+
+    /* Luces direccionales */
+    .render-stage[data-light="left"] .wall-ambient-shadow {
+        background: radial-gradient(circle at 10% 20%, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.9) 100%);
+    }
+
+    .render-stage[data-light="center"] .wall-ambient-shadow {
+        background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.12) 0%, rgba(0,0,0,0.85) 100%);
+    }
+
+    .render-stage[data-light="right"] .wall-ambient-shadow {
+        background: radial-gradient(circle at 90% 20%, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.9) 100%);
+    }
+
+    /* Marco y Sombra del Cuadro */
+    .frame-shadow-wrapper {
+        position: relative;
+        z-index: 10;
+        transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        max-width: 90%;
+        max-height: 70vh;
+    }
+
+    /* Proyección de sombras realista según el ángulo de la luz */
+    .render-stage[data-light="center"] .frame-shadow-wrapper {
+        box-shadow: 0 40px 90px rgba(0,0,0,0.9);
+    }
+    .render-stage[data-light="left"] .frame-shadow-wrapper {
+        box-shadow: 25px 35px 80px rgba(0,0,0,0.9);
+    }
+    .render-stage[data-light="right"] .frame-shadow-wrapper {
+        box-shadow: -25px 35px 80px rgba(0,0,0,0.9);
+    }
+
+    .frame-molding {
+        padding: 18px; /* El grosor físico de la moldura */
+        background: #080808;
+        border: 1px solid #141414;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Estilos de marcos */
+    .frame-molding[data-style="black"] {
+        background: #0d0d0d;
+        border: 2px solid #181818;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.9);
+    }
+    .frame-molding[data-style="oak"] {
+        background: #cca97e;
+        border: 2px solid #b69265;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.5), inset 2px 2px 5px rgba(255,255,255,0.2);
+    }
+    .frame-molding[data-style="walnut"] {
+        background: #3a251a;
+        border: 2px solid #27160d;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.7), inset 1px 1px 3px rgba(255,255,255,0.1);
+    }
+    .frame-molding[data-style="gold"] {
+        background: linear-gradient(135deg, #c5a059 0%, #ecd39d 50%, #9e7d3b 100%);
+        border: 2px solid #8e6d2c;
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+    }
+
+    .paspartu-matte {
+        background: #fcfbf9; /* Crema lino */
+        box-shadow: 
+            inset 0 0 12px rgba(0,0,0,0.2),
+            0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        transition: padding 0.3s ease;
+    }
+
+    #framer-img {
+        max-height: 50vh;
+        max-width: 100%;
+        width: auto;
+        display: block;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        z-index: 10;
+        position: relative;
+    }
+
+    /* Brillo/reflejo del cristal */
+    .glare-glass-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 12;
+        background: linear-gradient(125deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 35%, transparent 50%);
+        pointer-events: none;
+    }
+
+    .artwork-hud {
+        position: absolute;
+        bottom: 2rem;
+        left: 2rem;
+        z-index: 20;
+        color: rgba(255,255,255,0.8);
+    }
+    .artwork-hud h2 {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.6rem;
+        margin: 0;
+    }
+    .artwork-hud span {
+        font-size: 0.55rem;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        display: block;
+        margin-top: 0.2rem;
+        text-transform: uppercase;
+    }
+
+    /* Columna Derecha - Panel de Controles */
+    .control-sidebar {
+        width: 380px;
+        background: var(--sidebar-bg);
+        border-left: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+    }
+
+    .sidebar-header {
+        height: 60px;
+        background: #101010;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        padding: 0 2rem;
+    }
+
+    .sidebar-header h3 {
+        font-size: 0.65rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--jmx-gold);
+        margin: 0;
+    }
+
+    .sidebar-content {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .control-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .control-section label {
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        color: rgba(255,255,255,0.4);
+    }
+
+    .label-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .label-header span {
+        font-size: 0.6rem;
+        font-family: monospace;
+        color: var(--jmx-gold);
+        font-weight: 800;
+    }
+
+    /* Grilla de opciones */
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+
+    .options-grid.cols-2 {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .option-btn {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.6);
+        padding: 0.8rem 0.5rem;
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        text-align: center;
+        border-radius: 2px;
+    }
+
+    .option-btn:hover {
+        border-color: rgba(255,255,255,0.3);
+        color: #fff;
+    }
+
+    .option-btn.active {
+        border-color: var(--jmx-gold);
+        color: var(--jmx-gold);
+        background: rgba(220, 177, 74, 0.05);
+    }
+
+    .color-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* Rango deslizante */
+    .jmx-range {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 2px;
+        background: rgba(255,255,255,0.1);
+        outline: none;
+    }
+    .jmx-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--jmx-gold);
+        cursor: pointer;
+    }
+
+    /* Carrusel de Obras */
+    .flex-expand {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stage-carousel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        overflow-y: auto;
+        max-height: 250px;
+        padding-right: 0.4rem;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .carousel-item {
+        background: #060606;
+        border: 1px solid rgba(255,255,255,0.05);
+        padding: 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
         transition: all 0.3s ease;
     }
 
-    .btn-back:hover {
-        color: #dcb14a;
+    .carousel-item img {
+        width: 50px;
+        height: 40px;
+        object-fit: cover;
+        opacity: 0.5;
+        transition: 0.3s;
     }
 
-    .arrow {
-        display: inline-block;
-        transition: transform 0.3s ease;
-    }
+    .carousel-item:hover { border-color: rgba(255,255,255,0.2); }
+    .carousel-item:hover img { opacity: 0.8; }
 
-    .btn-back:hover .arrow {
-        transform: translateX(-5px);
+    .carousel-item.active {
+        border-color: var(--jmx-gold);
+        background: rgba(220,177,74,0.03);
+    }
+    .carousel-item.active img { opacity: 1; }
+
+    .item-meta { display: flex; flex-direction: column; gap: 0.2rem; }
+    .item-title { font-size: 0.65rem; font-weight: 700; color: #fff; }
+    .item-dim { font-size: 0.55rem; color: rgba(255,255,255,0.3); }
+    .carousel-item.active .item-title { color: var(--jmx-gold); }
+
+    @media (max-width: 1024px) {
+        .framer-layout { flex-direction: column; height: auto; }
+        .control-sidebar { width: 100%; border-left: none; border-top: 1px solid rgba(255,255,255,0.05); }
+        .render-stage { min-height: 60vh; }
     }
 </style>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const wallBg = document.getElementById('wall-bg');
+        const frameMolding = document.getElementById('frame-molding-box');
+        const paspartuBox = document.getElementById('paspartu-box');
+        const framerImg = document.getElementById('framer-img') as HTMLImageElement;
+        const hudTitle = document.getElementById('hud-title');
+        const hudDim = document.getElementById('hud-dim');
+        const paspartuSlider = document.getElementById('paspartu-slider') as HTMLInputElement;
+        const paspartuVal = document.getElementById('paspartu-val');
+
+        const optionBtns = document.querySelectorAll('.option-btn');
+        const carouselItems = document.querySelectorAll('.carousel-item');
+
+        if (!wallBg || !frameMolding || !paspartuBox || !framerImg) return;
+
+        // 1. Manejo del Muro, Marco y Luces
+        optionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const configGroup = btn.getAttribute('data-config');
+                const val = btn.getAttribute('data-val') || '';
+
+                // Activar visualmente el botón
+                document.querySelectorAll(`.option-btn[data-config="${configGroup}"]`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                if (configGroup === 'wall') {
+                    wallBg.setAttribute('data-wall', val);
+                } else if (configGroup === 'frame') {
+                    frameMolding.setAttribute('data-style', val);
+                } else if (configGroup === 'light') {
+                    wallBg.setAttribute('data-light', val);
+                }
+            });
+        });
+
+        // 2. Control dinámico del Paspartú
+        paspartuSlider?.addEventListener('input', (e) => {
+            const val = (e.target as HTMLInputElement).value;
+            if (paspartuVal) paspartuVal.innerText = `${val} cm`;
+            
+            // Mapeamos el valor deslizante (1.5 a 8) a un padding físico de CSS (de 1.5rem a 6rem)
+            const paddingRem = (parseFloat(val) * 0.9).toFixed(2);
+            paspartuBox.style.padding = `${paddingRem}rem`;
+        });
+
+        // 3. Carousel de Obras
+        carouselItems.forEach(item => {
+            item.addEventListener('click', () => {
+                carouselItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                const img = item.getAttribute('data-img') || '';
+                const title = item.getAttribute('data-title') || '';
+                const dim = item.getAttribute('data-dim') || '';
+
+                if (framerImg) framerImg.src = img;
+                if (hudTitle) hudTitle.innerText = title;
+                if (hudDim) hudDim.innerText = `${dim} · FINE-ART EDITION`;
+            });
+        });
+
+        // Valores por defecto en carga
+        wallBg.setAttribute('data-wall', 'museum');
+        wallBg.setAttribute('data-light', 'center');
+        frameMolding.setAttribute('data-style', 'black');
+    });
+</script>
