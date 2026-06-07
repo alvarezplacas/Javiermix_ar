@@ -87,6 +87,27 @@ const SPACING = 900; // px entre cuadros en el eje Z
                         </button>
                     </div>
                 </div>
+
+                <!-- Controles específicos de Niebla (se muestran dinámicamente) -->
+                <div class="sub-controls-group" id="fog-sub-controls" style="display: none; margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.5rem;">
+                    <div class="control-row">
+                        <label class="control-label">DENSIDAD DE NIEBLA</label>
+                        <div class="range-wrapper">
+                            <input type="range" id="fog-density-slider" min="0.1" max="0.9" step="0.05" value="0.5" class="premium-range">
+                            <span class="range-val" id="fog-density-val">50%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-row" style="margin-top: 1.5rem;">
+                        <label class="control-label">TONALIDAD DE NIEBLA</label>
+                        <div class="color-presets">
+                            <button class="color-preset active" data-color="40,40,40" data-bg="10,10,10" style="background: #282828;" title="Gris"></button>
+                            <button class="color-preset" data-color="80,50,20" data-bg="20,10,5" style="background: #503214;" title="Ámbar"></button>
+                            <button class="color-preset" data-color="20,40,80" data-bg="5,10,20" style="background: #142850;" title="Azul"></button>
+                            <button class="color-preset" data-color="60,10,20" data-bg="15,2,5" style="background: #3c0a14;" title="Escarlata"></button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -586,6 +607,73 @@ const SPACING = 900; // px entre cuadros en el eje Z
     }
 
     /* ─── Responsive ─── */
+    /* ─── Sub-Controls specific to fog ─── */
+    .control-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+    .control-label {
+        font-size: 0.5rem !important;
+        font-weight: 900;
+        color: rgba(255,255,255,0.4);
+        letter-spacing: 2px;
+        margin-bottom: 0 !important;
+    }
+    .range-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .premium-range {
+        flex: 1;
+        -webkit-appearance: none;
+        background: rgba(255,255,255,0.1);
+        height: 3px;
+        border-radius: 2px;
+        outline: none;
+    }
+    .premium-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #dcb14a;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .premium-range::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+    }
+    .range-val {
+        font-size: 0.6rem;
+        font-family: monospace;
+        color: #dcb14a;
+        min-width: 30px;
+        text-align: right;
+    }
+    .color-presets {
+        display: flex;
+        gap: 0.8rem;
+    }
+    .color-preset {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.1);
+        cursor: pointer;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+    .color-preset:hover {
+        transform: scale(1.1);
+    }
+    .color-preset.active {
+        transform: scale(1.2);
+        border-color: #dcb14a;
+        box-shadow: 0 0 10px rgba(220,177,74,0.3);
+    }
+
+    /* ─── Responsive ─── */
     @media (max-width: 768px) {
         .art-frame { width: 88vw; }
         .lab-controls { width: 90vw; gap: 1rem; }
@@ -713,6 +801,14 @@ const SPACING = 900; // px entre cuadros en el eje Z
         };
         document.addEventListener('click', closePanelOutside);
 
+        // ── Fog Controls References ──
+        const fogSubControls = document.getElementById('fog-sub-controls') as HTMLElement;
+        const fogDensitySlider = document.getElementById('fog-density-slider') as HTMLInputElement;
+        const fogDensityVal = document.getElementById('fog-density-val') as HTMLElement;
+        const colorPresets = document.querySelectorAll('.color-preset');
+        let fogDensity = 0.5;
+        let fogColorRGB = '40, 40, 40';
+
         // Switch atmosphere
         atmosOptions.forEach(option => {
             option.addEventListener('click', () => {
@@ -722,7 +818,43 @@ const SPACING = 900; // px entre cuadros en el eje Z
                 currentAtmos = atmos;
                 container.setAttribute('data-atmos', atmos);
                 
+                // Show/hide sub-controls group for fog
+                if (fogSubControls) {
+                    fogSubControls.style.display = (atmos === 'fog') ? 'block' : 'none';
+                }
+                
                 // Adjust particles setup for selected atmosphere
+                initParticles();
+            });
+        });
+
+        // Density Slider listener
+        fogDensitySlider?.addEventListener('input', () => {
+            const val = parseFloat(fogDensitySlider.value);
+            fogDensity = val;
+            if (fogDensityVal) {
+                fogDensityVal.innerText = `${Math.round(val * 100)}%`;
+            }
+            container.style.setProperty('--fog-density', val.toString());
+            
+            // Re-init particles to update count and size based on density
+            initParticles();
+        });
+
+        // Color Presets listener
+        colorPresets.forEach(preset => {
+            preset.addEventListener('click', () => {
+                colorPresets.forEach(p => p.classList.remove('active'));
+                preset.classList.add('active');
+                
+                const color = preset.getAttribute('data-color') || '40,40,40';
+                const bg = preset.getAttribute('data-bg') || '10,10,10';
+                fogColorRGB = color.replace(/,/g, ', ');
+                
+                container.style.setProperty('--fog-color', color);
+                container.style.setProperty('--fog-bg-color', bg);
+                
+                // Re-init particles to update their color in real-time
                 initParticles();
             });
         });
@@ -776,7 +908,9 @@ const SPACING = 900; // px entre cuadros en el eje Z
             if (currentAtmos === 'void') return; // no particles in absolute void
 
             let count = 180;
-            if (currentAtmos === 'fog') count = 60; // fewer particles for fog puff simulation
+            if (currentAtmos === 'fog') {
+                count = Math.floor(120 * fogDensity); // Cantidad según la densidad elegida
+            }
             if (currentAtmos === 'light') count = 120;
 
             for (let i = 0; i < count; i++) {
@@ -785,9 +919,10 @@ const SPACING = 900; // px entre cuadros en el eje Z
                 let color = '255, 255, 255'; // default white
 
                 if (currentAtmos === 'fog') {
-                    size = Math.random() * 30 + 15; // large blurry puffs
-                    speed = Math.random() * 0.5 + 0.2; // slow drift
-                    color = '150, 150, 150';
+                    // Puffs más grandes a mayor densidad
+                    size = Math.random() * (40 * fogDensity) + (10 * fogDensity + 10);
+                    speed = Math.random() * 0.4 + 0.1; // slow drift
+                    color = fogColorRGB;
                 } else if (currentAtmos === 'light') {
                     color = '220, 177, 74'; // luxury gold particles
                     size = Math.random() * 2.0 + 0.8;
@@ -852,9 +987,10 @@ const SPACING = 900; // px entre cuadros en el eje Z
                 // Opacidades según atmósfera (desvanecimiento continuo y lento antes de rebasar)
                 let opacity = 0;
                 if (currentAtmos === 'fog') {
-                    // En niebla, las obras se desvanecen mucho antes en la distancia (fade in/out más corto)
-                    if (relZ > 450) opacity = 0;
-                    else if (relZ > 0) opacity = 1 - (relZ / 450);
+                    // La niebla oculta las fotos lejanas. A mayor densidad, se ocultan más rápido (se desvanecen antes).
+                    const visibilityDistance = 750 - (fogDensity * 500); 
+                    if (relZ > visibilityDistance) opacity = 0;
+                    else if (relZ > 0) opacity = 1 - (relZ / visibilityDistance);
                     else if (relZ > -SPACING * 0.8) opacity = 1;
                     else opacity = Math.max(0, 1 + (relZ + SPACING * 0.8) / (SPACING * 0.8));
                 } else {
