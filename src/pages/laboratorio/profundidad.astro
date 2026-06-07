@@ -81,6 +81,10 @@ const SPACING = 900; // px entre cuadros en el eje Z
                             <span class="atmos-title">Haz de Luz</span>
                             <span class="atmos-desc">Foco de iluminación cenital y partículas doradas en suspensión.</span>
                         </button>
+                        <button class="atmos-option" data-atmos="glass">
+                            <span class="atmos-title">Vidrios de Colores</span>
+                            <span class="atmos-desc">Paneles flotantes traslúcidos que viajan de forma inversa hacia el infinito.</span>
+                        </button>
                         <button class="atmos-option" data-atmos="void">
                             <span class="atmos-title">Vacío Absoluto</span>
                             <span class="atmos-desc">Sin luces ni partículas. Solo la pureza de la obra en el vacío.</span>
@@ -118,6 +122,34 @@ const SPACING = 900; // px entre cuadros en el eje Z
             .art-frame     → posiciones fijas en Z, centradas en X/Y
         -->
         <div class="scene-wrapper">
+            <!-- Túnel de Vidrios de Colores (Dirección Inversa) -->
+            <div class="glass-tunnel" id="glass-tunnel">
+                {Array.from({ length: 12 }).map((_, i) => {
+                    const colors = [
+                        'rgba(220, 177, 74, 0.18)',  // Luxury Gold
+                        'rgba(20, 150, 220, 0.18)',   // Glass Blue
+                        'rgba(220, 70, 70, 0.18)',    // Velvet Crimson
+                        'rgba(70, 220, 120, 0.18)',   // Forest Green
+                        'rgba(180, 70, 220, 0.18)',   // Deep Violet
+                        'rgba(240, 100, 20, 0.18)',   // Orange Amber
+                        'rgba(20, 220, 200, 0.18)'    // Teal
+                    ];
+                    const color = colors[i % colors.length];
+                    const x = Math.round(Math.sin(i * 1.5) * 450);
+                    const y = Math.round(Math.cos(i * 2.2) * 250);
+                    const w = Math.round((i % 3) * 60 + 130); // 130px a 250px
+                    const h = Math.round(((i + 1) % 3) * 100 + 220); // 220px a 420px
+                    return (
+                        <div 
+                            class="glass-panel" 
+                            data-x={x}
+                            data-y={y}
+                            style={`position: absolute; width: ${w}px; height: ${h}px; background: ${color}; border: 1px solid rgba(255,255,255,0.18); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 30px 70px rgba(0,0,0,0.4), inset 0 0 20px rgba(255,255,255,0.1); left: 50%; top: 50%; transform: translate3d(-50%, -50%, 0) translate3d(${x}px, ${y}px, 0px); pointer-events: none; opacity: 0; will-change: transform, opacity;`}
+                        />
+                    );
+                })}
+            </div>
+
             <div class="tunnel" id="tunnel">
                 {artworks.map((art) => (
                     <div
@@ -555,6 +587,18 @@ const SPACING = 900; // px entre cuadros en el eje Z
     }
 
     /* ─── Atmospheric Overlays ─── */
+    .glass-tunnel {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+        pointer-events: none;
+        display: none;
+        z-index: 2;
+    }
+    .infinity-container[data-atmos="glass"] .glass-tunnel {
+        display: block;
+    }
+
     .fog-overlay {
         position: fixed;
         inset: 0;
@@ -697,6 +741,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
         const soundBtn  = document.getElementById('sound-btn') as HTMLButtonElement;
         const depthVal  = document.getElementById('depth-val') as HTMLElement;
         const scrollHint = document.getElementById('scroll-hint') as HTMLElement;
+        const glassPanels = document.querySelectorAll<HTMLElement>('.glass-panel');
 
         if (!tunnel || !canvas || !playBtn || !soundBtn || !depthVal || !scrollHint || !container) return;
 
@@ -905,7 +950,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
 
         const initParticles = () => {
             particles.length = 0;
-            if (currentAtmos === 'void') return; // no particles in absolute void
+            if (currentAtmos === 'void' || currentAtmos === 'glass') return; // no particles in absolute void or glass mode
 
             let count = 180;
             if (currentAtmos === 'fog') {
@@ -974,6 +1019,45 @@ const SPACING = 900; // px entre cuadros en el eje Z
 
             // Mover el túnel entero
             tunnel.style.transform = `translateZ(${progress}px)`;
+
+            // Animación de los paneles de vidrio en dirección inversa
+            if (currentAtmos === 'glass') {
+                const startZ = 750;
+                const endZ = -8000;
+                const travel = startZ - endZ; // 8750px
+
+                glassPanels.forEach((panel, idx) => {
+                    const x = parseFloat(panel.getAttribute('data-x') ?? '0');
+                    const y = parseFloat(panel.getAttribute('data-y') ?? '0');
+                    
+                    // Modulo positivo para soportar scroll bidireccional
+                    const offset = (idx / glassPanels.length) * travel;
+                    const val = (progress + offset) % travel;
+                    const positiveVal = val < 0 ? val + travel : val;
+                    const zPos = startZ - positiveVal;
+
+                    // Calcular opacidad para fade-in cerca de la cámara y fade-out al fondo
+                    const norm = (zPos - endZ) / travel; // 1.0 (startZ) a 0.0 (endZ)
+                    
+                    let glassOpacity = 0;
+                    if (norm > 0.85) {
+                        // Desvanecer cerca del espectador/cámara
+                        glassOpacity = (1 - norm) / 0.15;
+                    } else if (norm < 0.2) {
+                        // Desvanecer hacia el infinito
+                        glassOpacity = norm / 0.2;
+                    } else {
+                        glassOpacity = 1;
+                    }
+
+                    panel.style.transform = `translate3d(-50%, -50%, 0) translate3d(${x}px, ${y}px, ${zPos.toFixed(1)}px)`;
+                    panel.style.opacity = glassOpacity.toFixed(3);
+                });
+            } else {
+                glassPanels.forEach(panel => {
+                    panel.style.opacity = '0';
+                });
+            }
 
             // Aplicar estilos, opacidad y transformaciones sin Layout Thrashing (Removido offetHeight)
             activeFrames.forEach((frame, idx) => {
