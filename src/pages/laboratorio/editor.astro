@@ -1,0 +1,1402 @@
+---
+// d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\editor.astro
+import Layout from '@layouts/Layout.astro';
+---
+
+<Layout title="Estudio Editor 3D/IA | Laboratorio JMX" themeForce="dark">
+    <main class="editor-portal">
+        <!-- 🧭 Top Navigation -->
+        <nav class="editor-nav">
+            <a href="/laboratorio" class="back-link">
+                <span class="nav-icon">←</span>
+                VOLVER AL GABINETE
+            </a>
+            <div class="system-status">
+                <span class="status-dot animate-pulse"></span>
+                ESTUDIO DIGITAL JMX: v.2.5
+            </div>
+        </nav>
+
+        <!-- 🎛️ Editor Layout -->
+        <div class="editor-layout">
+            <!-- 🛠️ Left Toolbar -->
+            <aside class="left-toolbar">
+                <div class="tool-group">
+                    <button class="tool-btn active" data-tool="pointer" title="Puntero / Navegar (V)">
+                        <span class="icon">➔</span>
+                        <span class="tooltip">Mover Capas / Inspeccionar</span>
+                    </button>
+                    <button class="tool-btn" data-tool="adjust" title="Revelado Digital (C)">
+                        <span class="icon">☀️</span>
+                        <span class="tooltip">Ajustar Brillo, Contraste y Exposición</span>
+                    </button>
+                    <button class="tool-btn" data-tool="filter" title="Filtros Artísticos (F)">
+                        <span class="icon">🎨</span>
+                        <span class="tooltip">Aplicar tonalidades de autor</span>
+                    </button>
+                    <button class="tool-btn" data-tool="depth3d" title="Relieve 3D (D)">
+                        <span class="icon">🧊</span>
+                        <span class="tooltip">Pintar o generar relieve 3D interactivo</span>
+                    </button>
+                    <button class="tool-btn" data-tool="text" title="Añadir Texto (T)">
+                        <span class="icon">T</span>
+                        <span class="tooltip">Capas tipográficas personalizadas</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- 🖥️ Central Canvas Viewport -->
+            <section class="canvas-viewport" id="drop-zone">
+                <div class="canvas-container">
+                    <canvas id="main-webgl-canvas"></canvas>
+                    <div class="upload-overlay" id="upload-prompt">
+                        <div class="upload-icon">📂</div>
+                        <h3>ARRASTRÁ UNA IMAGEN AQUÍ</h3>
+                        <p>o haz clic para buscar un archivo local</p>
+                        <span class="badge-limits">Formatos soportados: JPG, PNG, WEBP, AVIF</span>
+                    </div>
+                </div>
+                <!-- Mini barra de estado del lienzo -->
+                <div class="canvas-status">
+                    <span id="image-dimensions">Resolución: N/A</span>
+                    <span id="active-tool-status">Herramienta: Puntero</span>
+                </div>
+            </section>
+
+            <!-- ⚙️ Right Properties Panel -->
+            <aside class="right-panel">
+                <div class="panel-section">
+                    <h3>PROPIEDADES</h3>
+                    <div class="properties-content">
+                        <!-- Ajustes de Revelado -->
+                        <div class="tool-settings" id="adjust-settings" style="display: none;">
+                            <label class="setting-title">Revelado Digital</label>
+                            
+                            <div class="setting-row">
+                                <label>Brillo</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="brightness-slider" min="50" max="150" value="100" class="editor-range">
+                                    <span class="slider-val" id="brightness-val">100%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-row">
+                                <label>Contraste</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="contrast-slider" min="50" max="150" value="100" class="editor-range">
+                                    <span class="slider-val" id="contrast-val">100%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-row">
+                                <label>Saturación</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="saturation-slider" min="0" max="200" value="100" class="editor-range">
+                                    <span class="slider-val" id="saturation-val">100%</span>
+                                </div>
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Exposición</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="exposure-slider" min="50" max="150" value="100" class="editor-range">
+                                    <span class="slider-val" id="exposure-val">100%</span>
+                                </div>
+                            </div>
+                            <button class="btn-action secondary reset-btn" id="reset-adjusts">Restaurar Valores</button>
+                        </div>
+
+                        <!-- Filtros Artísticos -->
+                        <div class="tool-settings" id="filter-settings" style="display: none;">
+                            <label class="setting-title">Filtros Creativos</label>
+                            <div class="filter-presets">
+                                <button class="filter-preset active" data-filter="none">Ninguno</button>
+                                <button class="filter-preset" data-filter="crimson">Velvet Crimson</button>
+                                <button class="filter-preset" data-filter="sepia">Golden Sepia</button>
+                                <button class="filter-preset" data-filter="emerald">Esmeralda</button>
+                                <button class="filter-preset" data-filter="monochrome">Gris Platinado</button>
+                                <button class="filter-preset" data-filter="glitch">Glitch Azulado</button>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de Relieve 3D -->
+                        <div class="tool-settings" id="depth3d-settings" style="display: none;">
+                            <label class="setting-title">Relieve 3D e IA</label>
+                            
+                            <div class="setting-row">
+                                <label>Intensidad de Parallax</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="depth-intensity-slider" min="0" max="100" value="30" class="editor-range">
+                                    <span class="slider-val" id="depth-intensity-val">30%</span>
+                                </div>
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Mapa de Profundidad</label>
+                                <select id="depth-map-preset" class="editor-select">
+                                    <option value="brush">Pincel (Pintar Relieve)</option>
+                                    <option value="sphere">Cúpula Central (Esfera)</option>
+                                    <option value="tunnel">Efecto Túnel (Radial)</option>
+                                    <option value="horizon">Gradiente de Horizonte</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row" id="brush-settings">
+                                <label>Tamaño del Pincel</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="brush-size-slider" min="10" max="200" value="60" class="editor-range">
+                                    <span class="slider-val" id="brush-size-val">60px</span>
+                                </div>
+                            </div>
+
+                            <div class="checkbox-row">
+                                <input type="checkbox" id="toggle-visualize-depth" class="editor-checkbox">
+                                <label for="toggle-visualize-depth">Visualizar Mapa de Calor</label>
+                            </div>
+                            
+                            <div class="info-box">
+                                <p>💡 <strong>¿Cómo funciona?</strong> Mueve el mouse sobre la imagen para ver el relieve 3D. El blanco indica cercanía y el negro lejanía.</p>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de Texto -->
+                        <div class="tool-settings" id="text-settings" style="display: none;">
+                            <label class="setting-title">Añadir Capas de Texto</label>
+                            <div class="setting-row">
+                                <label>Texto de la Capa</label>
+                                <input type="text" id="text-input" placeholder="Escribe algo..." class="editor-input">
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Tamaño de Letra</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="text-size-slider" min="16" max="120" value="48" class="editor-range">
+                                    <span class="slider-val" id="text-size-val">48px</span>
+                                </div>
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Color de Texto</label>
+                                <input type="color" id="text-color" value="#ffffff" class="editor-color">
+                            </div>
+
+                            <button class="btn-action gold" id="add-text-btn">Añadir Capa</button>
+                        </div>
+
+                        <!-- Carga Inicial -->
+                        <div class="tool-settings" id="pointer-settings">
+                            <label class="setting-title">Capas y Proyecto</label>
+                            <div class="layers-list">
+                                <div class="layer-item active" id="background-layer-item">
+                                    <span class="layer-visible">👁️</span>
+                                    <span class="layer-name">Imagen de Fondo</span>
+                                </div>
+                                <div id="dynamic-layers-container">
+                                    <!-- Aquí irán dinámicamente las capas agregadas -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💾 File Management Buttons -->
+                <div class="panel-section file-management">
+                    <input type="file" id="image-loader" accept="image/*" class="hidden">
+                    <button class="btn-action" id="btn-load-trigger">Cargar Imagen</button>
+                    <button class="btn-action gold disabled" id="btn-export" disabled>Exportar Obra</button>
+                </div>
+            </aside>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    :root {
+        --color-editor-bg: #030303;
+        --color-editor-panel: rgba(15, 15, 15, 0.9);
+        --color-editor-border: rgba(255, 255, 255, 0.08);
+        --color-editor-accent: #dcb14a;
+        --color-editor-text-muted: rgba(255, 255, 255, 0.4);
+        --transition-editor: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .editor-portal {
+        min-height: 100vh;
+        background: var(--color-editor-bg);
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* 🧭 Navigation */
+    .editor-nav {
+        height: 60px;
+        border-bottom: 1px solid var(--color-editor-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 2rem;
+        background: rgba(10, 10, 10, 0.95);
+        backdrop-filter: blur(10px);
+        z-index: 10;
+        flex-shrink: 0;
+    }
+
+    .back-link {
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        opacity: 0.6;
+        transition: var(--transition-editor);
+    }
+
+    .back-link:hover {
+        opacity: 1;
+        color: var(--color-editor-accent);
+    }
+
+    .system-status {
+        font-family: monospace;
+        font-size: 0.6rem;
+        color: var(--color-editor-text-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        background: #00ff88;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #00ff88;
+    }
+
+    /* 🎛️ Layout Grid */
+    .editor-layout {
+        display: flex;
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* 🛠️ Left Toolbar */
+    .left-toolbar {
+        width: 60px;
+        border-right: 1px solid var(--color-editor-border);
+        background: var(--color-editor-panel);
+        backdrop-filter: blur(20px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem 0;
+        z-index: 5;
+        flex-shrink: 0;
+    }
+
+    .tool-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        width: 100%;
+        align-items: center;
+    }
+
+    .tool-btn {
+        width: 44px;
+        height: 44px;
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--color-editor-text-muted);
+        border-radius: 6px;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.1rem;
+        transition: var(--transition-editor);
+    }
+
+    .tool-btn:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    .tool-btn.active {
+        color: var(--color-editor-accent);
+        background: rgba(220, 177, 74, 0.08);
+        border-color: rgba(220, 177, 74, 0.3);
+        box-shadow: inset 0 0 10px rgba(220, 177, 74, 0.05);
+    }
+
+    .tool-btn .tooltip {
+        position: absolute;
+        left: 70px;
+        top: 50%;
+        transform: translateY(-50%) translateX(10px);
+        background: #121212;
+        border: 1px solid var(--color-editor-border);
+        color: #fff;
+        padding: 0.5rem 1rem;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        border-radius: 4px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s, transform 0.3s;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        text-transform: uppercase;
+    }
+
+    .tool-btn:hover .tooltip {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+
+    /* 🖥️ Viewport central */
+    .canvas-viewport {
+        flex: 1;
+        background: #0d0d0d;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .canvas-container {
+        flex: 1;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    }
+
+    #main-webgl-canvas {
+        max-width: 100%;
+        max-height: 100%;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95);
+        border: 1px solid rgba(255,255,255,0.05);
+        background-image: linear-gradient(45deg, #151515 25%, transparent 25%),
+                          linear-gradient(-45deg, #151515 25%, transparent 25%),
+                          linear-gradient(45deg, transparent 75%, #151515 75%),
+                          linear-gradient(-45deg, transparent 75%, #151515 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        display: none;
+    }
+
+    .upload-overlay {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border: 2px dashed rgba(220, 177, 74, 0.25);
+        border-radius: 12px;
+        padding: 4rem;
+        background: rgba(15, 15, 15, 0.85);
+        backdrop-filter: blur(15px);
+        width: 80%;
+        max-width: 500px;
+        cursor: pointer;
+        transition: var(--transition-editor);
+    }
+
+    .upload-overlay:hover {
+        border-color: var(--color-editor-accent);
+        box-shadow: 0 0 40px rgba(220, 177, 74, 0.08);
+        transform: translateY(-4px);
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .upload-overlay h3 {
+        font-size: 0.9rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        margin-bottom: 0.5rem;
+        color: #fff;
+    }
+
+    .upload-overlay p {
+        font-size: 0.75rem;
+        color: var(--color-editor-text-muted);
+        margin-bottom: 2rem;
+    }
+
+    .badge-limits {
+        font-size: 0.55rem;
+        color: var(--color-editor-accent);
+        border: 1px solid rgba(220, 177, 74, 0.3);
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        letter-spacing: 1px;
+    }
+
+    .canvas-status {
+        height: 35px;
+        border-top: 1px solid var(--color-editor-border);
+        background: var(--color-editor-panel);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 1.5rem;
+        font-family: monospace;
+        font-size: 0.6rem;
+        color: var(--color-editor-text-muted);
+        flex-shrink: 0;
+    }
+
+    /* ⚙️ Right Panel */
+    .right-panel {
+        width: 320px;
+        border-left: 1px solid var(--color-editor-border);
+        background: var(--color-editor-panel);
+        backdrop-filter: blur(20px);
+        display: flex;
+        flex-direction: column;
+        z-index: 5;
+        flex-shrink: 0;
+    }
+
+    .panel-section {
+        padding: 2rem;
+        border-bottom: 1px solid var(--color-editor-border);
+    }
+
+    .panel-section h3 {
+        font-size: 0.68rem;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: var(--color-editor-accent);
+        margin-bottom: 1.5rem;
+        text-transform: uppercase;
+    }
+
+    .properties-content {
+        flex: 1;
+    }
+
+    .tool-settings {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .setting-title {
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        color: #fff;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+    }
+
+    .setting-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .setting-row label {
+        font-size: 0.58rem;
+        font-weight: 900;
+        color: var(--color-editor-text-muted);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+
+    .slider-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .editor-range {
+        flex: 1;
+        -webkit-appearance: none;
+        background: rgba(255,255,255,0.08);
+        height: 3px;
+        border-radius: 2px;
+        outline: none;
+    }
+
+    .editor-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--color-editor-accent);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .editor-range::-webkit-slider-thumb:hover {
+        transform: scale(1.25);
+    }
+
+    .slider-val {
+        font-family: monospace;
+        font-size: 0.6rem;
+        color: var(--color-editor-accent);
+        min-width: 35px;
+        text-align: right;
+    }
+
+    .editor-select, .editor-input {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #fff;
+        padding: 0.6rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        outline: none;
+        transition: var(--transition-editor);
+    }
+
+    .editor-select:focus, .editor-input:focus {
+        border-color: var(--color-editor-accent);
+        background: rgba(255,255,255,0.05);
+    }
+
+    .editor-color {
+        -webkit-appearance: none;
+        border: 1px solid rgba(255,255,255,0.08);
+        width: 100%;
+        height: 38px;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        border-radius: 4px;
+    }
+
+    .editor-color::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+    .editor-color::-webkit-color-swatch {
+        border: none;
+        border-radius: 4px;
+    }
+
+    .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .editor-checkbox {
+        accent-color: var(--color-editor-accent);
+        cursor: pointer;
+    }
+
+    .checkbox-row label {
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+    }
+
+    .info-box {
+        background: rgba(220, 177, 74, 0.05);
+        border: 1px solid rgba(220, 177, 74, 0.15);
+        padding: 1rem;
+        border-radius: 4px;
+    }
+    .info-box p {
+        font-size: 0.6rem;
+        color: rgba(255,255,255,0.6);
+        line-height: 1.5;
+    }
+
+    /* Preset list filters */
+    .filter-presets {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+    }
+
+    .filter-preset {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 4px;
+        padding: 0.7rem 0.5rem;
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: var(--color-editor-text-muted);
+        cursor: pointer;
+        transition: var(--transition-editor);
+        text-align: center;
+    }
+
+    .filter-preset:hover {
+        border-color: rgba(255,255,255,0.15);
+        color: #fff;
+    }
+
+    .filter-preset.active {
+        background: rgba(220, 177, 74, 0.08);
+        border-color: var(--color-editor-accent);
+        color: var(--color-editor-accent);
+    }
+
+    /* Layers List */
+    .layers-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .layer-item {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 4px;
+        padding: 0.8rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-size: 0.65rem;
+        cursor: grab;
+        transition: var(--transition-editor);
+    }
+
+    .layer-item.active {
+        border-color: rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.04);
+    }
+
+    .layer-item:hover {
+        background: rgba(255,255,255,0.05);
+    }
+
+    .layer-visible {
+        cursor: pointer;
+        font-size: 0.75rem;
+    }
+
+    .layer-name {
+        flex: 1;
+        font-weight: 600;
+    }
+
+    /* File actions buttons */
+    .file-management {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        border-bottom: none;
+    }
+
+    .btn-action {
+        width: 100%;
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #fff;
+        padding: 1rem;
+        border-radius: 6px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.8rem;
+        transition: var(--transition-editor);
+    }
+
+    .btn-action:hover:not(.disabled) {
+        background: rgba(255,255,255,0.05);
+        border-color: #fff;
+    }
+
+    .btn-action.gold {
+        background: var(--color-editor-accent);
+        border-color: var(--color-editor-accent);
+        color: #000;
+        font-weight: 900;
+    }
+
+    .btn-action.gold:hover:not(.disabled) {
+        background: #fff;
+        border-color: #fff;
+        color: #000;
+        box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-action.disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+    }
+
+    .btn-action.secondary {
+        padding: 0.6rem;
+        font-size: 0.55rem;
+        letter-spacing: 1.5px;
+    }
+
+    @media (max-width: 1024px) {
+        .editor-layout {
+            flex-direction: column;
+        }
+        .left-toolbar {
+            width: 100%;
+            height: 50px;
+            flex-direction: row;
+            justify-content: center;
+            border-right: none;
+            border-bottom: 1px solid var(--color-editor-border);
+            padding: 0;
+        }
+        .tool-group {
+            flex-direction: row;
+            justify-content: center;
+            height: 100%;
+            gap: 0.5rem;
+        }
+        .tool-btn {
+            height: 38px;
+            width: 38px;
+        }
+        .tool-btn .tooltip {
+            left: 50%;
+            top: 60px;
+            transform: translateX(-50%) translateY(-10px);
+        }
+        .tool-btn:hover .tooltip {
+            transform: translateX(-50%) translateY(0);
+        }
+        .right-panel {
+            width: 100%;
+            border-left: none;
+            border-top: 1px solid var(--color-editor-border);
+        }
+        .canvas-container {
+            height: 50vh;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        initEditor();
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initEditor);
+    } else {
+        initEditor();
+    }
+
+    function initEditor() {
+        const dropZone = document.getElementById('drop-zone');
+        const imgLoader = document.getElementById('image-loader') as HTMLInputElement;
+        const btnLoadTrigger = document.getElementById('btn-load-trigger');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const canvas = document.getElementById('main-webgl-canvas') as HTMLCanvasElement;
+        const btnExport = document.getElementById('btn-export') as HTMLButtonElement;
+        
+        // Tool Buttons
+        const toolBtns = document.querySelectorAll('.tool-btn');
+        const activeToolLabel = document.getElementById('active-tool-status');
+        const dimensionLabel = document.getElementById('image-dimensions');
+        
+        // Setting Panels
+        const adjustPanel = document.getElementById('adjust-settings');
+        const filterPanel = document.getElementById('filter-settings');
+        const depthPanel  = document.getElementById('depth3d-settings');
+        const textPanel   = document.getElementById('text-settings');
+        const pointerPanel = document.getElementById('pointer-settings');
+
+        // Form settings references
+        const brightnessSlider = document.getElementById('brightness-slider') as HTMLInputElement;
+        const contrastSlider = document.getElementById('contrast-slider') as HTMLInputElement;
+        const saturationSlider = document.getElementById('saturation-slider') as HTMLInputElement;
+        const exposureSlider = document.getElementById('exposure-slider') as HTMLInputElement;
+        const resetAdjusts = document.getElementById('reset-adjusts');
+        const presetBtns = document.querySelectorAll('.filter-preset');
+        const textInput = document.getElementById('text-input') as HTMLInputElement;
+        const textSizeSlider = document.getElementById('text-size-slider') as HTMLInputElement;
+        const textColorPicker = document.getElementById('text-color') as HTMLInputElement;
+        const addTextBtn = document.getElementById('add-text-btn');
+        const dynamicLayersContainer = document.getElementById('dynamic-layers-container');
+
+        // 3D Depth Map elements
+        const depthIntensitySlider = document.getElementById('depth-intensity-slider') as HTMLInputElement;
+        const depthIntensityVal = document.getElementById('depth-intensity-val');
+        const depthPresetSelect = document.getElementById('depth-map-preset') as HTMLSelectElement;
+        const brushSettingsRow = document.getElementById('brush-settings');
+        const brushSizeSlider = document.getElementById('brush-size-slider') as HTMLInputElement;
+        const brushSizeVal = document.getElementById('brush-size-val');
+        const visualizeDepthCheckbox = document.getElementById('toggle-visualize-depth') as HTMLInputElement;
+
+        if (!canvas) return;
+
+        let activeTool = 'pointer';
+        let originalImage: HTMLImageElement | null = null;
+        
+        // Offscreen buffers to handle rendering logic
+        const offscreenImage = document.createElement('canvas');
+        const offscreenCtx = offscreenImage.getContext('2d')!;
+        const offscreenDepth = document.createElement('canvas');
+        const offscreenDepthCtx = offscreenDepth.getContext('2d')!;
+
+        // Editor States
+        let adjustments = { brightness: 100, contrast: 100, saturation: 100, exposure: 100 };
+        let activeFilter = 'none';
+        let textLayers: { id: string; text: string; size: number; color: string; x: number; y: number }[] = [];
+        let dragTextIndex = -1;
+
+        // Brush parameters for depth painting
+        let isPaintingDepth = false;
+        let brushSize = 60;
+        let depthIntensity = 0.3;
+        let selectedDepthPreset = 'brush';
+        let visualizeDepthMap = false;
+
+        // WebGL displacement variables
+        let gl: WebGLRenderingContext | null = null;
+        let program: WebGLProgram | null = null;
+        let imageTexture: WebGLTexture | null = null;
+        let depthTexture: WebGLTexture | null = null;
+        let mouseX = 0.5, mouseY = 0.5;
+        let targetMouseX = 0.5, targetMouseY = 0.5;
+
+        // Slider real-time updates
+        const updateSliderVal = (slider: HTMLInputElement, targetId: string, suffix = '') => {
+            const el = document.getElementById(targetId);
+            if (el) el.innerText = `${slider.value}${suffix}`;
+        };
+
+        brightnessSlider?.addEventListener('input', () => { updateSliderVal(brightnessSlider, 'brightness-val', '%'); adjustments.brightness = parseInt(brightnessSlider.value); applyAdjustments(); });
+        contrastSlider?.addEventListener('input', () => { updateSliderVal(contrastSlider, 'contrast-val', '%'); adjustments.contrast = parseInt(contrastSlider.value); applyAdjustments(); });
+        saturationSlider?.addEventListener('input', () => { updateSliderVal(saturationSlider, 'saturation-val', '%'); adjustments.saturation = parseInt(saturationSlider.value); applyAdjustments(); });
+        exposureSlider?.addEventListener('input', () => { updateSliderVal(exposureSlider, 'exposure-val', '%'); adjustments.exposure = parseInt(exposureSlider.value); applyAdjustments(); });
+        
+        depthIntensitySlider?.addEventListener('input', () => {
+            const val = parseFloat(depthIntensitySlider.value);
+            depthIntensity = val / 100;
+            if (depthIntensityVal) depthIntensityVal.innerText = `${Math.round(val)}%`;
+        });
+        brushSizeSlider?.addEventListener('input', () => {
+            const val = parseInt(brushSizeSlider.value);
+            brushSize = val;
+            if (brushSizeVal) brushSizeVal.innerText = `${val}px`;
+        });
+        textSizeSlider?.addEventListener('input', () => {
+            updateSliderVal(textSizeSlider, 'text-size-val', 'px');
+        });
+
+        visualizeDepthCheckbox?.addEventListener('change', () => {
+            visualizeDepthMap = visualizeDepthCheckbox.checked;
+        });
+
+        depthPresetSelect?.addEventListener('change', () => {
+            selectedDepthPreset = depthPresetSelect.value;
+            brushSettingsRow!.style.display = selectedDepthPreset === 'brush' ? 'block' : 'none';
+            generateDepthPreset();
+        });
+
+        resetAdjusts?.addEventListener('click', () => {
+            adjustments = { brightness: 100, contrast: 100, saturation: 100, exposure: 100 };
+            brightnessSlider.value = '100';
+            contrastSlider.value = '100';
+            saturationSlider.value = '100';
+            exposureSlider.value = '100';
+            updateSliderVal(brightnessSlider, 'brightness-val', '%');
+            updateSliderVal(contrastSlider, 'contrast-val', '%');
+            updateSliderVal(saturationSlider, 'saturation-val', '%');
+            updateSliderVal(exposureSlider, 'exposure-val', '%');
+            applyAdjustments();
+        });
+
+        // 🔘 Tool Selection
+        toolBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                toolBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                activeTool = btn.getAttribute('data-tool') || 'pointer';
+                if (activeToolLabel) activeToolLabel.innerText = `Herramienta: ${activeTool.toUpperCase()}`;
+
+                // Show corresponding property panel
+                adjustPanel!.style.display = activeTool === 'adjust' ? 'flex' : 'none';
+                filterPanel!.style.display = activeTool === 'filter' ? 'flex' : 'none';
+                depthPanel!.style.display  = activeTool === 'depth3d' ? 'flex' : 'none';
+                textPanel!.style.display   = activeTool === 'text' ? 'flex' : 'none';
+                pointerPanel!.style.display = activeTool === 'pointer' ? 'flex' : 'none';
+            });
+        });
+
+        // 📁 Load Image Action
+        btnLoadTrigger?.addEventListener('click', () => imgLoader.click());
+        uploadPrompt?.addEventListener('click', () => imgLoader.click());
+
+        imgLoader?.addEventListener('change', (e: any) => {
+            const file = e.target.files[0];
+            if (file) loadImageFile(file);
+        });
+
+        // Arrastrar y Soltar (Drag & Drop)
+        dropZone?.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        dropZone?.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+        dropZone?.addEventListener('drop', (e: any) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file) loadImageFile(file);
+        });
+
+        function loadImageFile(file: File) {
+            const reader = new FileReader();
+            reader.onload = (event: any) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    
+                    // Setup offscreen canvas image sizes
+                    offscreenImage.width = img.width;
+                    offscreenImage.height = img.height;
+                    offscreenDepth.width = img.width;
+                    offscreenDepth.height = img.height;
+
+                    // Initialize depth map to black (deep background)
+                    offscreenDepthCtx.fillStyle = '#000000';
+                    offscreenDepthCtx.fillRect(0, 0, img.width, img.height);
+                    
+                    // Resize WebGL viewport canvas
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    canvas.style.display = 'block';
+
+                    if (uploadPrompt) uploadPrompt.style.display = 'none';
+                    if (dimensionLabel) dimensionLabel.innerText = `Resolución: ${img.width}x${img.height}`;
+
+                    // Enable export button
+                    btnExport.classList.remove('disabled');
+                    btnExport.disabled = false;
+
+                    // Reset adjustments
+                    applyAdjustments();
+                    initWebGL();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Apply visual modifications (brightness, filters, text overlays) to Offscreen
+        function applyAdjustments() {
+            if (!originalImage) return;
+
+            offscreenCtx.clearRect(0, 0, offscreenImage.width, offscreenImage.height);
+
+            // 1. Apply contrast/brightness/exposure filters
+            const exposure = adjustments.exposure / 100;
+            const filterStr = `
+                brightness(${adjustments.brightness * exposure}%)
+                contrast(${adjustments.contrast}%)
+                saturate(${adjustments.saturation}%)
+            `;
+            offscreenCtx.filter = filterStr.trim();
+            offscreenCtx.drawImage(originalImage, 0, 0, offscreenImage.width, offscreenImage.height);
+            offscreenCtx.filter = 'none'; // reset filter for overlays
+
+            // 2. Apply artistic color presets
+            if (activeFilter !== 'none') {
+                offscreenCtx.save();
+                if (activeFilter === 'crimson') {
+                    offscreenCtx.fillStyle = 'rgba(220, 70, 70, 0.12)';
+                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
+                } else if (activeFilter === 'sepia') {
+                    offscreenCtx.fillStyle = 'rgba(220, 177, 74, 0.15)';
+                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
+                } else if (activeFilter === 'emerald') {
+                    offscreenCtx.fillStyle = 'rgba(20, 180, 120, 0.15)';
+                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
+                } else if (activeFilter === 'monochrome') {
+                    // Simular monocromo
+                    offscreenCtx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
+                } else if (activeFilter === 'glitch') {
+                    // Simular aberración cromática canal azul desplazado
+                    offscreenCtx.drawImage(offscreenImage, 8, 4, offscreenImage.width - 8, offscreenImage.height - 4, 0, 0, offscreenImage.width, offscreenImage.height);
+                    offscreenCtx.fillStyle = 'rgba(20, 150, 220, 0.08)';
+                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
+                }
+                offscreenCtx.restore();
+            }
+
+            // 3. Draw text layers
+            textLayers.forEach(layer => {
+                offscreenCtx.fillStyle = layer.color;
+                offscreenCtx.font = `bold ${layer.size * (offscreenImage.width / 800)}px 'Cormorant Garamond', serif`;
+                offscreenCtx.textAlign = 'center';
+                offscreenCtx.fillText(layer.text, layer.x * offscreenImage.width, layer.y * offscreenImage.height);
+            });
+
+            // Update WebGL source texture
+            updateWebGLTexture();
+        }
+
+        // Preset button triggers
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                presetBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeFilter = btn.getAttribute('data-filter') || 'none';
+                applyAdjustments();
+            });
+        });
+
+        // ➕ Add text Layer
+        addTextBtn?.addEventListener('click', () => {
+            const text = textInput.value.trim();
+            if (!text || !originalImage) return;
+
+            const size = parseInt(textSizeSlider.value);
+            const color = textColorPicker.value;
+
+            // Add text layer placed in the middle
+            const newLayer = {
+                id: `layer-${Date.now()}`,
+                text,
+                size,
+                color,
+                x: 0.5,
+                y: 0.5
+            };
+
+            textLayers.push(newLayer);
+            textInput.value = '';
+            applyAdjustments();
+            renderLayersUI();
+        });
+
+        function renderLayersUI() {
+            if (!dynamicLayersContainer) return;
+            dynamicLayersContainer.innerHTML = textLayers.map((layer, index) => `
+                <div class="layer-item" data-id="${layer.id}">
+                    <span class="layer-visible">👁️</span>
+                    <span class="layer-name">Texto: "${layer.text.substring(0, 12)}..."</span>
+                    <button class="delete-layer-btn" style="background:transparent; border:none; color:#f44336; cursor:pointer;" data-idx="${index}">&times;</button>
+                </div>
+            `).join('');
+
+            // Delete listener
+            document.querySelectorAll('.delete-layer-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt((btn as HTMLElement).getAttribute('data-idx') ?? '0');
+                    textLayers.splice(idx, 1);
+                    applyAdjustments();
+                    renderLayersUI();
+                });
+            });
+        }
+
+        // Generate depth map presets automatically
+        function generateDepthPreset() {
+            if (!originalImage) return;
+
+            const w = offscreenDepth.width;
+            const h = offscreenDepth.height;
+            
+            offscreenDepthCtx.fillStyle = '#000000';
+            offscreenDepthCtx.fillRect(0, 0, w, h);
+
+            if (selectedDepthPreset === 'sphere') {
+                const grad = offscreenDepthCtx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h)/2);
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(1, '#000000');
+                offscreenDepthCtx.fillStyle = grad;
+                offscreenDepthCtx.fillRect(0, 0, w, h);
+            } else if (selectedDepthPreset === 'tunnel') {
+                const grad = offscreenDepthCtx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h)/2);
+                grad.addColorStop(0, '#000000');
+                grad.addColorStop(0.7, '#666666');
+                grad.addColorStop(1, '#ffffff');
+                offscreenDepthCtx.fillStyle = grad;
+                offscreenDepthCtx.fillRect(0, 0, w, h);
+            } else if (selectedDepthPreset === 'horizon') {
+                const grad = offscreenDepthCtx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, '#000000');
+                grad.addColorStop(0.5, '#ffffff');
+                grad.addColorStop(1, '#000000');
+                offscreenDepthCtx.fillStyle = grad;
+                offscreenDepthCtx.fillRect(0, 0, w, h);
+            }
+
+            updateWebGLDepthTexture();
+        }
+
+        // 🖥️ WebGL Displacement Pipeline Setup
+        function initWebGL() {
+            gl = canvas.getContext('webgl')!;
+            if (!gl) return;
+
+            // Vertex Shader source
+            const vsSource = `
+                attribute vec2 position;
+                varying vec2 vUv;
+                void main() {
+                    vUv = position * 0.5 + 0.5;
+                    vUv.y = 1.0 - vUv.y;
+                    gl_Position = vec4(position, 0.0, 1.0);
+                }
+            `;
+
+            // Fragment Shader source (Displacement shader)
+            const fsSource = `
+                precision mediump float;
+                varying vec2 vUv;
+                uniform sampler2D uImage;
+                uniform sampler2D uDepthMap;
+                uniform vec2 uMouseOffset;
+                uniform float uDepthIntensity;
+                uniform bool uVisualizeDepth;
+
+                void main() {
+                    if (uVisualizeDepth) {
+                        gl_FragColor = texture2D(uDepthMap, vUv);
+                    } else {
+                        float depth = texture2D(uDepthMap, vUv).r;
+                        vec2 displacedUv = vUv + uMouseOffset * depth * uDepthIntensity;
+                        displacedUv = clamp(displacedUv, 0.001, 0.999);
+                        gl_FragColor = texture2D(uImage, displacedUv);
+                    }
+                }
+            `;
+
+            // Create WebGL program
+            const vs = gl.createShader(gl.VERTEX_SHADER)!;
+            gl.shaderSource(vs, vsSource);
+            gl.compileShader(vs);
+
+            const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
+            gl.shaderSource(fs, fsSource);
+            gl.compileShader(fs);
+
+            program = gl.createProgram()!;
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+            gl.useProgram(program);
+
+            // Buffer vertices (a quad that covers the screen)
+            const vertices = new Float32Array([
+                -1, -1,
+                 1, -1,
+                -1,  1,
+                -1,  1,
+                 1, -1,
+                 1,  1,
+            ]);
+
+            const buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            const positionLoc = gl.getAttribLocation(program, 'position');
+            gl.enableVertexAttribArray(positionLoc);
+            gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
+
+            // Setup Textures
+            imageTexture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, imageTexture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+            depthTexture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+            updateWebGLTexture();
+            updateWebGLDepthTexture();
+
+            // Set uniform samplers
+            const uImageLoc = gl.getUniformLocation(program, 'uImage');
+            const uDepthMapLoc = gl.getUniformLocation(program, 'uDepthMap');
+            gl.uniform1i(uImageLoc, 0);
+            gl.uniform1i(uDepthMapLoc, 1);
+
+            requestAnimationFrame(drawLoop);
+        }
+
+        function updateWebGLTexture() {
+            if (!gl || !imageTexture) return;
+            gl.activeTexture(gl.TEXTURE_0);
+            gl.bindTexture(gl.TEXTURE_2D, imageTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, offscreenImage);
+        }
+
+        function updateWebGLDepthTexture() {
+            if (!gl || !depthTexture) return;
+            gl.activeTexture(gl.TEXTURE_1);
+            gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, offscreenDepth);
+        }
+
+        // WebGL continuous render loop
+        function drawLoop() {
+            if (!originalImage || !gl || !program) return;
+
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            // Interpolate mouse movement to make it incredibly smooth
+            mouseX += (targetMouseX - mouseX) * 0.08;
+            mouseY += (targetMouseY - mouseY) * 0.08;
+
+            // Offset coordinate math
+            const uMouseOffsetLoc = gl.getUniformLocation(program, 'uMouseOffset');
+            const uDepthIntensityLoc = gl.getUniformLocation(program, 'uDepthIntensity');
+            const uVisualizeDepthLoc = gl.getUniformLocation(program, 'uVisualizeDepth');
+
+            // Set offset parameters (Limit displacement to +/- 0.03 range)
+            const offX = (mouseX - 0.5) * 0.04;
+            const offY = -(mouseY - 0.5) * 0.04;
+
+            // If depth map visualizer or depth3d tool is not active, force 0 displacement
+            const finalIntensity = (activeTool === 'depth3d' || activeTool === 'pointer') ? depthIntensity : 0.0;
+
+            gl.uniform2f(uMouseOffsetLoc, offX, offY);
+            gl.uniform1f(uDepthIntensityLoc, finalIntensity);
+            gl.uniform1i(uVisualizeDepthLoc, visualizeDepthMap ? 1 : 0);
+
+            // Draw textures
+            gl.activeTexture(gl.TEXTURE_0);
+            gl.bindTexture(gl.TEXTURE_2D, imageTexture);
+            gl.activeTexture(gl.TEXTURE_1);
+            gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            requestAnimationFrame(drawLoop);
+        }
+
+        // 🖱️ Canvas Mouse Tracking & Painting Actions
+        canvas.addEventListener('mousemove', (e) => {
+            if (!originalImage) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const xNorm = (e.clientX - rect.left) / rect.width;
+            const yNorm = (e.clientY - rect.top) / rect.height;
+
+            // Update destination coordinates for 3D displacement
+            targetMouseX = xNorm;
+            targetMouseY = yNorm;
+
+            // Handle depth painting brush
+            if (activeTool === 'depth3d' && selectedDepthPreset === 'brush' && isPaintingDepth) {
+                paintDepthBrush(xNorm * offscreenDepth.width, yNorm * offscreenDepth.height);
+            }
+
+            // Handle text dragging
+            if (activeTool === 'pointer' && dragTextIndex !== -1) {
+                textLayers[dragTextIndex].x = xNorm;
+                textLayers[dragTextIndex].y = yNorm;
+                applyAdjustments();
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!originalImage) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const xNorm = (e.clientX - rect.left) / rect.width;
+            const yNorm = (e.clientY - rect.top) / rect.height;
+
+            if (activeTool === 'depth3d' && selectedDepthPreset === 'brush') {
+                isPaintingDepth = true;
+                paintDepthBrush(xNorm * offscreenDepth.width, yNorm * offscreenDepth.height);
+            }
+
+            if (activeTool === 'pointer') {
+                // Check if user clicked on any text layer (radius based selection)
+                dragTextIndex = textLayers.findIndex(layer => {
+                    const dist = Math.hypot(layer.x - xNorm, layer.y - yNorm);
+                    return dist < 0.08; // threshold radius
+                });
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isPaintingDepth = false;
+            dragTextIndex = -1;
+        });
+
+        function paintDepthBrush(x: number, y: number) {
+            offscreenDepthCtx.save();
+            const grad = offscreenDepthCtx.createRadialGradient(x, y, 0, x, y, brushSize);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.15)'); // Soft additive white
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+            
+            offscreenDepthCtx.fillStyle = grad;
+            offscreenDepthCtx.beginPath();
+            offscreenDepthCtx.arc(x, y, brushSize, 0, Math.PI * 2);
+            offscreenDepthCtx.fill();
+            offscreenDepthCtx.restore();
+
+            updateWebGLDepthTexture();
+        }
+
+        // 💾 Export Image
+        btnExport?.addEventListener('click', () => {
+            if (!originalImage || btnExport.classList.contains('disabled')) return;
+
+            // Create temporary export canvas to composite WebGL render result or offscreen layers
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = canvas.width;
+            exportCanvas.height = canvas.height;
+            const exportCtx = exportCanvas.getContext('2d')!;
+
+            // Draw WebGL result onto export canvas
+            exportCtx.drawImage(canvas, 0, 0);
+
+            // Generate file download link
+            const url = exportCanvas.toDataURL('image/jpeg', 0.95);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `JMX_Obra_Modificada_${Date.now()}.jpg`;
+            a.click();
+        });
+    }
+</script>

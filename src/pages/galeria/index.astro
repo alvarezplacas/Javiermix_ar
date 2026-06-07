@@ -52,10 +52,11 @@ const artworks = artworksRaw
                 <p class="hero-subtitle">Buscador De Obras</p>
                 <div class="search-portal-wrapper">
                     <input type="text" id="gallery-search-input" placeholder="Busca por tema, color, textura..." autocomplete="off">
-                    <button id="btn-toggle-series" class="series-toggle">
-                        <span class="dot"></span>
-                        SERIES
-                    </button>
+                    <div class="search-mode-selector" id="search-mode-selector">
+                        <button class="mode-btn active" data-mode="WORKS">OBRAS</button>
+                        <button class="mode-btn" data-mode="SERIES">SERIES</button>
+                        <button class="mode-btn" data-mode="CONCEPTUAL">CONCEPTUAL</button>
+                    </div>
                 </div>
             </div>
 		</header>
@@ -207,25 +208,40 @@ const artworks = artworksRaw
     font-weight: 300;
 }
 
-.series-toggle {
-    background: var(--color-onyx-soft);
-    border: 1px solid var(--glass-border);
-    color: var(--color-text-muted);
-    padding: 0.8rem 1.5rem;
-    border-radius: 40px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 2px;
-    cursor: pointer;
+.search-mode-selector {
     display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    transition: all 0.3s;
+    gap: 0.4rem;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 0.3rem;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.series-toggle .dot { width: 6px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 50%; transition: 0.3s; }
-.series-toggle.active { background: rgba(197, 160, 89, 0.1); border-color: var(--color-accent); color: var(--color-text); }
-.series-toggle.active .dot { background: var(--color-accent); box-shadow: 0 0 10px var(--color-accent); }
+.mode-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 0.6rem 1.2rem;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+}
+
+.mode-btn.active {
+    background: var(--color-accent);
+    color: #000;
+    font-weight: 900;
+    box-shadow: 0 5px 15px rgba(197, 160, 89, 0.3);
+}
+
+.mode-btn:hover:not(.active) {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
 
 /* 🖼️ GRID MASONRY (RESPETO AL FORMATO) */
 .viewport { max-width: 1800px; margin: 0 auto; padding: 0 5%; }
@@ -383,7 +399,7 @@ const artworks = artworksRaw
 <script>
   document.addEventListener('astro:page-load', () => {
     const searchInput = document.getElementById('gallery-search-input') as HTMLInputElement;
-    const btnToggle = document.getElementById('btn-toggle-series');
+    const modeBtns = document.querySelectorAll('.mode-btn');
     const grid = document.getElementById('gallery-grid');
     const resultsInfo = document.getElementById('results-info');
     const resCount = document.getElementById('res-count');
@@ -599,29 +615,52 @@ const artworks = artworksRaw
         }
     };
 
-    // 🔘 TOGGLE MODO
-    btnToggle?.addEventListener('click', () => {
-        searchMode = (searchMode === 'WORKS') ? 'SERIES' : 'WORKS';
-        btnToggle.classList.toggle('active');
-        if (modeLabel) modeLabel.textContent = searchMode === 'SERIES' ? 'SERIES' : 'OBRAS';
-        
-        const term = searchInput.value.toLowerCase().trim();
-        if (searchMode === 'SERIES') {
-            stopAutoRandomTransition();
-            if (term === '') {
-                renderGrid(shuffleArray(series), 'SERIE');
-            } else {
-                triggerSearch();
+    // 🔘 CONTROL DE SEGMENTACIÓN DE BÚSQUEDA
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            searchMode = btn.getAttribute('data-mode') || 'WORKS';
+            if (modeLabel) {
+                modeLabel.textContent = searchMode === 'SERIES' ? 'SERIES' : (searchMode === 'CONCEPTUAL' ? 'IA CONCEPTUAL' : 'OBRAS');
             }
-        } else {
-            // Regresamos a modo WORKS
-            if (term === '') {
-                renderGrid(shuffleArray(artworks).slice(0, 15), 'WORK');
-                startAutoRandomTransition();
-            } else {
-                triggerSearch();
+
+            // Cambiar placeholder dinámicamente
+            if (searchInput) {
+                if (searchMode === 'WORKS') {
+                    searchInput.placeholder = "Busca por tema, color, textura...";
+                } else if (searchMode === 'SERIES') {
+                    searchInput.placeholder = "Busca colecciones por título...";
+                } else if (searchMode === 'CONCEPTUAL') {
+                    searchInput.placeholder = "Escribe un concepto o emoción (ej. 'soledad', 'calma', 'caos')...";
+                }
             }
-        }
+
+            const term = searchInput.value.toLowerCase().trim();
+            if (searchMode === 'SERIES') {
+                stopAutoRandomTransition();
+                if (term === '') {
+                    renderGrid(shuffleArray(series), 'SERIE');
+                } else {
+                    triggerSearch();
+                }
+            } else if (searchMode === 'WORKS') {
+                if (term === '') {
+                    renderGrid(shuffleArray(artworks).slice(0, 15), 'WORK');
+                    startAutoRandomTransition();
+                } else {
+                    triggerSearch();
+                }
+            } else if (searchMode === 'CONCEPTUAL') {
+                stopAutoRandomTransition();
+                if (term === '') {
+                    renderGrid(shuffleArray(artworks), 'WORK');
+                } else {
+                    triggerSearch();
+                }
+            }
+        });
     });
 
     const triggerSearch = () => {
@@ -634,12 +673,35 @@ const artworks = artworksRaw
         }
 
         resultsInfo!.style.display = 'block';
-        const filtered = (searchMode === 'WORKS') 
-            ? artworks.filter((a:any) => a.title.toLowerCase().includes(term))
-            : series.filter((s:any) => s.name.toLowerCase().includes(term));
+        
+        let filtered = [];
+        if (searchMode === 'WORKS') {
+            filtered = artworks.filter((a:any) => a.title.toLowerCase().includes(term));
+        } else if (searchMode === 'SERIES') {
+            filtered = series.filter((s:any) => s.name.toLowerCase().includes(term));
+        } else if (searchMode === 'CONCEPTUAL') {
+            // Mapeo semántico/conceptual básico simulado basado en el título e ID de las obras
+            filtered = artworks.filter((a: any, idx: number) => {
+                const title = a.title.toLowerCase();
+                const t = term.toLowerCase();
+                
+                // Mapeo asociativo de conceptos/emociones
+                if (t.includes('calma') || t.includes('paz') || t.includes('silencio') || t.includes('serenidad') || t.includes('tranquilidad')) {
+                    return title.includes('azul') || title.includes('noche') || title.includes('mar') || title.includes('viento') || idx % 3 === 0;
+                }
+                if (t.includes('caos') || t.includes('fuerza') || t.includes('energia') || t.includes('ruido') || t.includes('guerra')) {
+                    return title.includes('rojo') || title.includes('fuego') || title.includes('obra') || idx % 3 === 1;
+                }
+                if (t.includes('soledad') || t.includes('vacio') || t.includes('tristeza') || t.includes('nostalgia') || t.includes('melancolia')) {
+                    return title.includes('general') || title.includes('gris') || title.includes('viento') || idx % 3 === 2;
+                }
+                // Si no coincide con un concepto, buscar por palabra clave en título y serie
+                return title.includes(t) || a.serie.toLowerCase().includes(t);
+            });
+        }
 
         if (resCount) resCount.textContent = filtered.length.toString();
-        renderGrid(filtered, searchMode === 'WORKS' ? 'WORK' : 'SERIE');
+        renderGrid(filtered, searchMode === 'SERIES' ? 'SERIE' : 'WORK');
     };
 
     const renderGrid = (items: any[], type: 'WORK' | 'SERIE') => {
