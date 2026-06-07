@@ -9,7 +9,7 @@ export const prerender = false;
 const artworksRaw = await getCatalogoFiles();
 const artworks = artworksRaw
     .filter(file => !file.filename_download.toLowerCase().includes('_2'))
-    .slice(0, 15)
+    .slice(0, 100) // Límite expandido para permitir filtrado real de series
     .map((file, index) => ({
         id: file.id,
         title: file.title || `Obra ${index + 1}`,
@@ -17,16 +17,78 @@ const artworks = artworksRaw
         x: Math.round((Math.random() - 0.5) * 300),
         y: Math.round((Math.random() - 0.5) * 150),
         index,
+        serie: file.serie_name || 'Archivo General',
     }));
 
+const uniqueSeries = [...new Set(artworks.map(art => art.serie))].filter(Boolean).sort();
 const SPACING = 900; // px entre cuadros en el eje Z
 ---
 
 <Layout title="Infinity Gallery 3D | Laboratorio JMX" themeForce="dark">
-    <main class="infinity-container">
+    <main class="infinity-container" data-atmos="cosmic">
 
         <!-- 🌌 Fondo de Partículas -->
         <canvas id="dust-canvas"></canvas>
+
+        <!-- 🌫️ Capas Atmosféricas Creativas -->
+        <div class="fog-overlay" id="fog-overlay"></div>
+        <div class="spotlight-overlay" id="spotlight-overlay"></div>
+
+        <!-- Controles arriba a la izquierda (Salir + Selector de Series) -->
+        <div class="top-left-container">
+            <a href="/laboratorio" class="back-btn">← GABINETE</a>
+            <div class="dropdown-wrapper">
+                <button class="dropdown-trigger" id="dropdown-trigger">
+                    <span>TODAS LAS SERIES</span>
+                    <svg class="chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5H7z" fill="currentColor"/></svg>
+                </button>
+                <ul class="dropdown-menu" id="dropdown-menu">
+                    <li class="dropdown-item active" data-value="all">TODAS LAS SERIES</li>
+                    {uniqueSeries.map((serie) => (
+                        <li class="dropdown-item" data-value={serie}>{serie}</li>
+                    ))}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Botón disparador del panel derecho -->
+        <button class="panel-trigger" id="panel-trigger" title="Configuración de Ambiente">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </button>
+
+        <!-- Panel lateral derecho de atmósferas -->
+        <div class="atmosphere-panel" id="atmosphere-panel">
+            <div class="panel-header">
+                <h3>ATMÓSFERA</h3>
+                <button class="panel-close" id="panel-close">&times;</button>
+            </div>
+            <div class="panel-content">
+                <div class="atmos-group">
+                    <label>ELEGIR AMBIENTE</label>
+                    <div class="atmos-options">
+                        <button class="atmos-option active" data-atmos="cosmic">
+                            <span class="atmos-title">Polvo Cósmico</span>
+                            <span class="atmos-desc">Estrellas finas doradas y blancas flotando en la inmensidad.</span>
+                        </button>
+                        <button class="atmos-option" data-atmos="fog">
+                            <span class="atmos-title">Niebla Mística</span>
+                            <span class="atmos-desc">Bruma en movimiento que envuelve las fotos a la distancia.</span>
+                        </button>
+                        <button class="atmos-option" data-atmos="light">
+                            <span class="atmos-title">Haz de Luz</span>
+                            <span class="atmos-desc">Foco de iluminación cenital y partículas doradas en suspensión.</span>
+                        </button>
+                        <button class="atmos-option" data-atmos="void">
+                            <span class="atmos-title">Vacío Absoluto</span>
+                            <span class="atmos-desc">Sin luces ni partículas. Solo la pureza de la obra en el vacío.</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!--
             ✅ ARQUITECTURA 3D CORRECTA:
@@ -43,6 +105,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
                         data-x={art.x}
                         data-y={art.y}
                         data-z={-(art.index + 1) * SPACING}
+                        data-serie={art.serie}
                         style={`transform: translate3d(-50%, -50%, 0) translate3d(${art.x}px, ${art.y}px, ${-(art.index + 1) * SPACING}px);`}
                     >
                         <img src={art.img} alt={art.title} loading="lazy" />
@@ -71,8 +134,6 @@ const SPACING = 900; // px entre cuadros en el eje Z
             </button>
             <div class="depth-meter">DEPTH: <span id="depth-val">0</span>m</div>
         </div>
-
-        <a href="/laboratorio" class="back-btn">← SALIR AL GABINETE</a>
     </main>
 </Layout>
 
@@ -82,6 +143,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
         height: 700vh;
         background: #000;
         color: #fff;
+        transition: background 1.5s ease;
     }
 
     /* ─── Canvas partículas ─── */
@@ -92,6 +154,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
         pointer-events: none;
         z-index: 1;
         opacity: 0.35;
+        transition: opacity 1.5s ease;
     }
 
     /* ─── Wrapper con PERSPECTIVE (fixed = cubre viewport) ─── */
@@ -194,20 +257,6 @@ const SPACING = 900; // px entre cuadros en el eje Z
         100% { opacity: 0; top: 22px; }
     }
 
-    /* ─── Back btn ─── */
-    .back-btn {
-        position: fixed;
-        top: 1.8rem; left: 1.8rem;
-        z-index: 100;
-        color: rgba(255,255,255,0.5);
-        text-decoration: none;
-        font-size: 0.65rem;
-        letter-spacing: 3px;
-        font-weight: 900;
-        transition: 0.3s;
-    }
-    .back-btn:hover { color: #dcb14a; opacity: 1; }
-
     /* ─── Controls bar ─── */
     .lab-controls {
         position: fixed;
@@ -249,17 +298,310 @@ const SPACING = 900; // px entre cuadros en el eje Z
         letter-spacing: 1px;
     }
 
+    /* ─── Top Left Controls ─── */
+    .top-left-container {
+        position: fixed;
+        top: 2rem;
+        left: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        z-index: 100;
+    }
+    .back-btn {
+        color: rgba(255,255,255,0.4);
+        text-decoration: none;
+        font-size: 0.6rem;
+        letter-spacing: 3px;
+        font-weight: 900;
+        transition: 0.3s;
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 0.6rem 1.2rem;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(10px);
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+    .back-btn:hover {
+        color: #dcb14a;
+        border-color: rgba(220,177,74,0.4);
+        box-shadow: 0 0 15px rgba(220,177,74,0.1);
+    }
+    .dropdown-wrapper {
+        position: relative;
+    }
+    .dropdown-trigger {
+        background: rgba(0,0,0,0.6);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.8);
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        padding: 0.6rem 1.4rem;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        transition: 0.3s;
+        backdrop-filter: blur(10px);
+        text-transform: uppercase;
+    }
+    .dropdown-trigger:hover, .dropdown-wrapper.open .dropdown-trigger {
+        border-color: #dcb14a;
+        color: #fff;
+        box-shadow: 0 0 15px rgba(220,177,74,0.1);
+    }
+    .dropdown-trigger .chevron {
+        width: 12px;
+        height: 12px;
+        transition: transform 0.3s;
+    }
+    .dropdown-wrapper.open .dropdown-trigger .chevron {
+        transform: rotate(180deg);
+    }
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 0.5rem;
+        background: rgba(10, 10, 10, 0.95);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 4px;
+        list-style: none;
+        padding: 0.5rem 0;
+        min-width: 220px;
+        max-height: 300px;
+        overflow-y: auto;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+        z-index: 101;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        backdrop-filter: blur(20px);
+    }
+    .dropdown-wrapper.open .dropdown-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    .dropdown-item {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: rgba(255,255,255,0.6);
+        cursor: pointer;
+        transition: 0.2s;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    .dropdown-item:hover {
+        background: rgba(220,177,74,0.08);
+        color: #dcb14a;
+        padding-left: 1.5rem;
+    }
+    .dropdown-item.active {
+        color: #dcb14a;
+        background: rgba(220,177,74,0.12);
+        border-left: 2px solid #dcb14a;
+    }
+
+    /* ─── Atmosphere Panel (Right Drawer) ─── */
+    .panel-trigger {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 100;
+        background: rgba(0,0,0,0.6);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.6);
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: 0.3s;
+        backdrop-filter: blur(10px);
+    }
+    .panel-trigger:hover {
+        color: #dcb14a;
+        border-color: rgba(220,177,74,0.4);
+        transform: rotate(45deg);
+        box-shadow: 0 0 15px rgba(220,177,74,0.15);
+    }
+    .atmosphere-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 340px;
+        background: rgba(10, 10, 10, 0.96);
+        border-left: 1px solid rgba(255,255,255,0.08);
+        z-index: 1000;
+        transform: translateX(100%);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: -20px 0 50px rgba(0,0,0,0.8);
+        backdrop-filter: blur(30px);
+        display: flex;
+        flex-direction: column;
+    }
+    .atmosphere-panel.open {
+        transform: translateX(0);
+    }
+    .panel-header {
+        padding: 2rem;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .panel-header h3 {
+        font-size: 0.75rem;
+        letter-spacing: 3px;
+        font-weight: 900;
+        color: #dcb14a;
+        margin: 0;
+    }
+    .panel-close {
+        background: transparent;
+        border: none;
+        color: rgba(255,255,255,0.4);
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: 0.2s;
+        line-height: 1;
+    }
+    .panel-close:hover {
+        color: #fff;
+    }
+    .panel-content {
+        padding: 2rem;
+        flex: 1;
+        overflow-y: auto;
+    }
+    .atmos-group label {
+        font-size: 0.55rem;
+        font-weight: 900;
+        color: rgba(255,255,255,0.4);
+        letter-spacing: 2px;
+        display: block;
+        margin-bottom: 1.5rem;
+    }
+    .atmos-options {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+    .atmos-option {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 4px;
+        padding: 1.2rem;
+        text-align: left;
+        cursor: pointer;
+        transition: 0.3s;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+    .atmos-option:hover {
+        background: rgba(255,255,255,0.04);
+        border-color: rgba(255,255,255,0.12);
+        transform: translateY(-2px);
+    }
+    .atmos-option.active {
+        background: rgba(220,177,74,0.06);
+        border-color: #dcb14a;
+        box-shadow: 0 0 20px rgba(220,177,74,0.1);
+    }
+    .atmos-title {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: 1px;
+    }
+    .atmos-option.active .atmos-title {
+        color: #dcb14a;
+    }
+    .atmos-desc {
+        font-size: 0.6rem;
+        color: rgba(255,255,255,0.45);
+        line-height: 1.4;
+        font-weight: 400;
+    }
+
+    /* ─── Atmospheric Overlays ─── */
+    .fog-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 3;
+        background: linear-gradient(to bottom, transparent 30%, rgba(10,10,10,0.4) 75%, rgba(0,0,0,0.95) 100%);
+        opacity: 0;
+        transition: opacity 1.5s ease;
+    }
+    .infinity-container[data-atmos="fog"] .fog-overlay {
+        opacity: 1;
+    }
+    .fog-overlay::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='fog'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015' numOctaves='3'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 1  0 1 0 0 1  0 0 1 0 1  0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23fog)'/%3E%3C/svg%3E");
+        opacity: 0.25;
+        mix-blend-mode: screen;
+        animation: driftFog 150s linear infinite;
+    }
+    @keyframes driftFog {
+        from { background-position: 0 0; }
+        to { background-position: 800px 800px; }
+    }
+
+    .spotlight-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 3;
+        background: radial-gradient(circle at 50% 15%, rgba(220,177,74,0.12) 0%, transparent 60%);
+        opacity: 0;
+        transition: opacity 1.5s ease;
+    }
+    .infinity-container[data-atmos="light"] .spotlight-overlay {
+        opacity: 1;
+    }
+    .spotlight-overlay::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60vw;
+        height: 100vh;
+        background: linear-gradient(180deg, rgba(220,177,74,0.06) 0%, transparent 80%);
+        clip-path: polygon(35% 0, 65% 0, 100% 100%, 0 100%);
+        opacity: 0.6;
+    }
+
+    /* ─── Responsive ─── */
     @media (max-width: 768px) {
         .art-frame { width: 88vw; }
         .lab-controls { width: 90vw; gap: 1rem; }
         .depth-meter { display: none; }
+        .top-left-container { top: 1rem; left: 1rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        .panel-trigger { top: 1rem; right: 1rem; }
+        .atmosphere-panel { width: 100vw; }
     }
 </style>
 
 <script>
     import { soundManager } from '../../utils/SoundManager';
 
-    document.addEventListener('astro:page-load', () => {
+    // Función de inicialización única
+    function initializeProfundidad() {
+        const container = document.querySelector('.infinity-container') as HTMLElement;
         const tunnel    = document.getElementById('tunnel') as HTMLElement;
         const frames    = document.querySelectorAll<HTMLElement>('.art-frame');
         const canvas    = document.getElementById('dust-canvas') as HTMLCanvasElement;
@@ -268,7 +610,7 @@ const SPACING = 900; // px entre cuadros en el eje Z
         const depthVal  = document.getElementById('depth-val') as HTMLElement;
         const scrollHint = document.getElementById('scroll-hint') as HTMLElement;
 
-        if (!tunnel || !canvas) return;
+        if (!tunnel || !canvas || !playBtn || !soundBtn || !depthVal || !scrollHint || !container) return;
 
         const SPACING      = 900;   // debe coincidir con el valor en el frontmatter
         const SCROLL_SPEED = 1.0;   // px de avance por px de scroll
@@ -280,6 +622,114 @@ const SPACING = 900; // px entre cuadros en el eje Z
         let lastScrollY   = 0;
         let pauseCounter  = 0;
         let lastPausedIndex = -1;
+        let currentAtmos  = 'cosmic';
+
+        // ── Series Filtering ───────────────────────────────
+        const dropdownTrigger = document.getElementById('dropdown-trigger');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const dropdownItems = document.querySelectorAll('.dropdown-item');
+        let selectedSerie = 'all';
+
+        // Toggle dropdown open/close
+        const handleTriggerClick = (e: MouseEvent) => {
+            e.stopPropagation();
+            dropdownTrigger?.parentElement?.classList.toggle('open');
+        };
+        dropdownTrigger?.addEventListener('click', handleTriggerClick);
+
+        // Close dropdown when clicking outside
+        const closeDropdown = () => {
+            dropdownTrigger?.parentElement?.classList.remove('open');
+        };
+        document.addEventListener('click', closeDropdown);
+
+        // Filter functionality
+        dropdownItems.forEach((item) => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const value = item.getAttribute('data-value') || 'all';
+                selectedSerie = value;
+                
+                // Update active state in UI
+                dropdownItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                const label = item.textContent || 'TODAS LAS SERIES';
+                const triggerText = dropdownTrigger?.querySelector('span');
+                if (triggerText) triggerText.textContent = label;
+
+                // Close dropdown
+                closeDropdown();
+
+                // Reset camera and scroll position
+                virtualScroll = 0;
+                lastPausedIndex = -1;
+                pauseCounter = 0;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                // Apply filter class to frames
+                updateActiveFrames();
+            });
+        });
+
+        let activeFrames: HTMLElement[] = Array.from(frames);
+
+        function updateActiveFrames() {
+            activeFrames = Array.from(frames).filter(frame => {
+                const frameSerie = frame.getAttribute('data-serie') || '';
+                const matches = selectedSerie === 'all' || frameSerie === selectedSerie;
+                if (matches) {
+                    frame.style.display = 'block';
+                } else {
+                    frame.style.display = 'none';
+                    frame.style.opacity = '0';
+                }
+                return matches;
+            });
+
+            // Ajustar altura del scroll dinámicamente según la cantidad de obras activas
+            const newHeight = Math.max(150, 100 + activeFrames.length * 45);
+            container.style.height = `${newHeight}vh`;
+        }
+        updateActiveFrames(); // initial run
+
+        // ── Atmosphere Panel ───────────────────────────────
+        const panelTrigger = document.getElementById('panel-trigger');
+        const atmospherePanel = document.getElementById('atmosphere-panel');
+        const panelClose = document.getElementById('panel-close');
+        const atmosOptions = document.querySelectorAll('.atmos-option');
+
+        panelTrigger?.addEventListener('click', () => {
+            atmospherePanel?.classList.add('open');
+        });
+
+        panelClose?.addEventListener('click', () => {
+            atmospherePanel?.classList.remove('open');
+        });
+
+        // Close panel when clicking outside of it
+        const closePanelOutside = (e: MouseEvent) => {
+            if (atmospherePanel?.classList.contains('open') && 
+                !atmospherePanel.contains(e.target as Node) && 
+                !panelTrigger?.contains(e.target as Node)) {
+                atmospherePanel.classList.remove('open');
+            }
+        };
+        document.addEventListener('click', closePanelOutside);
+
+        // Switch atmosphere
+        atmosOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                atmosOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                const atmos = option.getAttribute('data-atmos') || 'cosmic';
+                currentAtmos = atmos;
+                container.setAttribute('data-atmos', atmos);
+                
+                // Adjust particles setup for selected atmosphere
+                initParticles();
+            });
+        });
 
         // ── Audio ──────────────────────────────────────────
         soundManager.init();
@@ -314,11 +764,9 @@ const SPACING = 900; // px entre cuadros en el eje Z
                     playBtn.innerHTML = '<span class="icon">▶</span> PLAY TOUR';
                     playBtn.classList.remove('active');
                 }
-                // Ocultar hint después del primer scroll
                 scrollHint.style.opacity = '0';
                 lastScrollY = window.scrollY;
                 
-                // Evitamos pausas automáticas bruscas si el usuario scrolló manualmente
                 const progress = (window.scrollY + virtualScroll) * SCROLL_SPEED;
                 lastPausedIndex = Math.floor(progress / SPACING);
             }
@@ -326,19 +774,39 @@ const SPACING = 900; // px entre cuadros en el eje Z
 
         window.addEventListener('scroll', onScroll);
 
-        // ── Partículas (Estrellas 3D radiales) ──────────────
+        // ── Partículas (Estrellas 3D radiales adaptadas) ──
         const ctx = canvas.getContext('2d')!;
-        const particles: { x: number; y: number; z: number; size: number; speed: number }[] = [];
+        const particles: { x: number; y: number; z: number; size: number; speed: number; color: string }[] = [];
 
         const initParticles = () => {
             particles.length = 0;
-            for (let i = 0; i < 180; i++) {
+            if (currentAtmos === 'void') return; // no particles in absolute void
+
+            let count = 180;
+            if (currentAtmos === 'fog') count = 60; // fewer particles for fog puff simulation
+            if (currentAtmos === 'light') count = 120;
+
+            for (let i = 0; i < count; i++) {
+                let size = Math.random() * 1.5 + 0.5;
+                let speed = Math.random() * 2 + 1;
+                let color = '255, 255, 255'; // default white
+
+                if (currentAtmos === 'fog') {
+                    size = Math.random() * 30 + 15; // large blurry puffs
+                    speed = Math.random() * 0.5 + 0.2; // slow drift
+                    color = '150, 150, 150';
+                } else if (currentAtmos === 'light') {
+                    color = '220, 177, 74'; // luxury gold particles
+                    size = Math.random() * 2.0 + 0.8;
+                }
+
                 particles.push({
                     x:     (Math.random() - 0.5) * canvas.width * 2,
                     y:     (Math.random() - 0.5) * canvas.height * 2,
                     z:     Math.random() * 1000,
-                    size:  Math.random() * 1.5 + 0.5,
-                    speed: Math.random() * 2 + 1,
+                    size,
+                    speed,
+                    color
                 });
             }
         };
@@ -351,29 +819,34 @@ const SPACING = 900; // px entre cuadros en el eje Z
         window.addEventListener('resize', onResize);
         onResize();
 
-        // Limpiar event listeners globales al destruir la vista
+        // Clean up global handlers when leaving
         document.addEventListener('astro:before-preparation', () => {
             window.removeEventListener('resize', onResize);
             window.removeEventListener('scroll', onScroll);
+            document.removeEventListener('click', closeDropdown);
+            document.removeEventListener('click', closePanelOutside);
+            soundManager.stopMusic();
         }, { once: true });
 
         // ── Loop principal ─────────────────────────────────
         function animate() {
-            // Avance en auto-tour con pausas en cada obra (usando frames.length para evitar ReferenceError)
+            // DETENER EL BUCLE SI SE DESCONECTÓ EL ELEMENTO DEL DOM (Evita memory leaks)
+            if (!tunnel.isConnected) return;
+
+            // Avance en auto-tour con pausas en cada obra activa
             if (isPlaying) {
                 if (pauseCounter > 0) {
                     pauseCounter--;
-                    // Avance mínimo residual para no congelar del todo la UI (efecto premium de deriva)
                     virtualScroll += AUTO_SPEED * 0.08;
                 } else {
                     virtualScroll += AUTO_SPEED;
 
                     const progress = (window.scrollY + virtualScroll) * SCROLL_SPEED;
                     const nextPauseIndex = lastPausedIndex + 1;
-                    if (nextPauseIndex < frames.length) {
+                    if (nextPauseIndex < activeFrames.length) {
                         const targetZ = (nextPauseIndex + 1) * SPACING;
                         if (progress >= targetZ - 15 && progress <= targetZ + 15) {
-                            pauseCounter = 120; // 120 frames ≈ 2 segundos a 60fps
+                            pauseCounter = 120; // ~2 segundos a 60fps
                             lastPausedIndex = nextPauseIndex;
                         }
                     }
@@ -386,85 +859,87 @@ const SPACING = 900; // px entre cuadros en el eje Z
             // Actualizar profundidad en UI
             depthVal.innerText = Math.floor(progress / 10).toString();
 
-            // ── Mover el TÚNEL entero hacia la cámara ──
+            // Mover el túnel entero
             tunnel.style.transform = `translateZ(${progress}px)`;
 
-            // 1. Leer todas las alturas en lote primero para evitar Layout Thrashing
-            const heights = Array.from(frames).map(frame => frame.offsetHeight);
-
-            // 2. Aplicar estilos, opacidad y centrado vertical exacto en píxeles
-            frames.forEach((frame, idx) => {
-                const x   = parseFloat(frame.dataset.x ?? '0');
-                const y   = parseFloat(frame.dataset.y ?? '0');
-                const z   = parseFloat(frame.dataset.z ?? '0');
-                const height = heights[idx] || 0;
-
-                // Z relativo a la cámara actual
+            // Aplicar estilos, opacidad y transformaciones sin Layout Thrashing (Removido offetHeight)
+            activeFrames.forEach((frame, idx) => {
+                const x = parseFloat(frame.dataset.x ?? '0');
+                const y = parseFloat(frame.dataset.y ?? '0');
+                
+                // Posicionar dinámicamente en Z según el índice activo para que se vea continuo tras filtrar
+                const z = -(idx + 1) * SPACING;
                 const relZ = z + progress;
 
-                // Modificado para mantener la imagen en muestra durante más recorrido/tiempo
-                let opacity: number;
-                if (relZ > 650) {
-                    opacity = 0; // ya pasó del todo y sale del campo de visión
-                } else if (relZ > 200) {
-                    opacity = 1 - (relZ - 200) / 450; // fade out al rebasar el visor
-                } else if (relZ > -SPACING * 2) {
-                    opacity = 1; // totalmente visible
+                // Opacidades según atmósfera
+                let opacity = 0;
+                if (currentAtmos === 'fog') {
+                    // En niebla, las obras se desvanecen mucho antes en la distancia (fade in/out más corto)
+                    if (relZ > 500) opacity = 0;
+                    else if (relZ > 100) opacity = 1 - (relZ - 100) / 400;
+                    else if (relZ > -SPACING * 0.8) opacity = 1;
+                    else opacity = Math.max(0, 1 + (relZ + SPACING * 0.8) / (SPACING * 0.8));
                 } else {
-                    // fade in inicial desde la distancia
-                    opacity = Math.max(0, 1 + (relZ + SPACING * 2) / SPACING);
+                    // Comportamiento normal
+                    if (relZ > 650) opacity = 0;
+                    else if (relZ > 200) opacity = 1 - (relZ - 200) / 450;
+                    else if (relZ > -SPACING * 2) opacity = 1;
+                    else opacity = Math.max(0, 1 + (relZ + SPACING * 2) / SPACING);
                 }
 
                 frame.style.opacity = opacity.toFixed(3);
 
-                // Elevación dinámica al acercarse (sube en el eje Y para imponer presencia)
+                // Elevación dinámica (sube en el eje Y al acercarse para imponer presencia)
                 let elevation = 0;
                 if (relZ > -900) {
                     const t = Math.min(1, Math.max(0, (relZ + 900) / 1200));
                     const easeOutQuad = t * (2 - t);
-                    elevation = -90 * easeOutQuad; // Sube hasta 90px
+                    elevation = -90 * easeOutQuad;
                 }
 
                 const targetY = y + elevation;
-                // Centrado exacto basado en la altura física del elemento (obras horizontales y verticales)
-                const centerYOffset = -height / 2 + targetY;
-                frame.style.transform = `translate3d(-50%, ${centerYOffset.toFixed(1)}px, 0) translate3d(${x}px, 0px, ${z}px)`;
+
+                // OPTIMIZACIÓN CRÍTICA: Centrado -50% nativo 3D que previene forzar recálculos de offsetHeight
+                frame.style.transform = `translate3d(-50%, -50%, 0) translate3d(${x}px, ${targetY.toFixed(1)}px, ${z}px)`;
             });
 
-            // ── Partículas (Estrellas 3D radiales) ──────────
+            // ── Renderizado de Partículas ──
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            const focalLength = 300;
-            const extra = isPlaying ? 5 : 0.8;
+            if (currentAtmos !== 'void') {
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                const focalLength = 300;
+                const extra = isPlaying ? 5 : 0.8;
 
-            for (const p of particles) {
-                p.z -= p.speed + extra;
-                
-                // Si pasa la cámara, reiniciarla al fondo (Z=1000)
-                if (p.z <= 0) {
-                    p.z = 1000;
-                    p.x = (Math.random() - 0.5) * canvas.width * 2;
-                    p.y = (Math.random() - 0.5) * canvas.height * 2;
-                }
+                for (const p of particles) {
+                    p.z -= p.speed + extra;
+                    
+                    if (p.z <= 0) {
+                        p.z = 1000;
+                        p.x = (Math.random() - 0.5) * canvas.width * 2;
+                        p.y = (Math.random() - 0.5) * canvas.height * 2;
+                    }
 
-                // Proyección 3D a coordenadas 2D en pantalla
-                const px = cx + (p.x / p.z) * focalLength;
-                const py = cy + (p.y / p.z) * focalLength;
-                const psize = p.size * (focalLength / p.z);
+                    const px = cx + (p.x / p.z) * focalLength;
+                    const py = cy + (p.y / p.z) * focalLength;
+                    const psize = p.size * (focalLength / p.z);
 
-                // Variar opacidad según la profundidad
-                let alpha = 1 - p.z / 1000;
-                if (p.z < 100) {
-                    alpha = p.z / 100; // Desvanecer suavemente antes de pasar los límites de la pantalla
-                }
+                    let alpha = 1 - p.z / 1000;
+                    if (p.z < 100) {
+                        alpha = p.z / 100;
+                    }
 
-                if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
-                    ctx.beginPath();
-                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
-                    ctx.arc(px, py, Math.max(0.1, psize), 0, Math.PI * 2);
-                    ctx.fill();
+                    if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
+                        ctx.beginPath();
+                        if (currentAtmos === 'fog') {
+                            ctx.fillStyle = `rgba(${p.color}, ${(alpha * 0.08).toFixed(2)})`;
+                        } else {
+                            ctx.fillStyle = `rgba(${p.color}, ${alpha.toFixed(2)})`;
+                        }
+                        ctx.arc(px, py, Math.max(0.1, psize), 0, Math.PI * 2);
+                        ctx.fill();
+                    }
                 }
             }
 
@@ -472,5 +947,13 @@ const SPACING = 900; // px entre cuadros en el eje Z
         }
 
         animate();
-    });
+    }
+
+    // Registrar listener único de astro:page-load para evitar fugas de listeners
+    if (!(window as any).jmxProfundidadLoadedRegistered) {
+        (window as any).jmxProfundidadLoadedRegistered = true;
+        document.addEventListener('astro:page-load', () => {
+            initializeProfundidad();
+        });
+    }
 </script>

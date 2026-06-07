@@ -88,6 +88,13 @@ class SoundManager {
         }, 100);
     }
 
+    setVolume(volume: number) {
+        const music = this.sounds.get('music');
+        if (music) {
+            music.volume = Math.max(0, Math.min(0.15, volume * 0.15));
+        }
+    }
+
     stopMusic() {
         const music = this.sounds.get('music');
         if (music) {
