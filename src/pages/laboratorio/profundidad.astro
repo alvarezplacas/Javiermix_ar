@@ -614,14 +614,12 @@ const SPACING = 900; // px entre cuadros en el eje Z
 
         const SPACING      = 900;   // debe coincidir con el valor en el frontmatter
         const SCROLL_SPEED = 1.0;   // px de avance por px de scroll
-        const AUTO_SPEED   = 1.8;   // px por frame en auto-tour
+        const AUTO_SPEED   = 0.55;  // px por frame en auto-tour (reducida para traslado lento y continuo)
 
         let soundEnabled  = false;
         let isPlaying     = false;
         let virtualScroll = 0;
         let lastScrollY   = 0;
-        let pauseCounter  = 0;
-        let lastPausedIndex = -1;
         let currentAtmos  = 'cosmic';
 
         // ── Series Filtering ───────────────────────────────
@@ -663,8 +661,6 @@ const SPACING = 900; // px entre cuadros en el eje Z
 
                 // Reset camera and scroll position
                 virtualScroll = 0;
-                lastPausedIndex = -1;
-                pauseCounter = 0;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
 
                 // Apply filter class to frames
@@ -766,9 +762,6 @@ const SPACING = 900; // px entre cuadros en el eje Z
                 }
                 scrollHint.style.opacity = '0';
                 lastScrollY = window.scrollY;
-                
-                const progress = (window.scrollY + virtualScroll) * SCROLL_SPEED;
-                lastPausedIndex = Math.floor(progress / SPACING);
             }
         };
 
@@ -833,24 +826,9 @@ const SPACING = 900; // px entre cuadros en el eje Z
             // DETENER EL BUCLE SI SE DESCONECTÓ EL ELEMENTO DEL DOM (Evita memory leaks)
             if (!tunnel.isConnected) return;
 
-            // Avance en auto-tour con pausas en cada obra activa
+            // Avance continuo en auto-tour sin paradas
             if (isPlaying) {
-                if (pauseCounter > 0) {
-                    pauseCounter--;
-                    virtualScroll += AUTO_SPEED * 0.08;
-                } else {
-                    virtualScroll += AUTO_SPEED;
-
-                    const progress = (window.scrollY + virtualScroll) * SCROLL_SPEED;
-                    const nextPauseIndex = lastPausedIndex + 1;
-                    if (nextPauseIndex < activeFrames.length) {
-                        const targetZ = (nextPauseIndex + 1) * SPACING;
-                        if (progress >= targetZ - 15 && progress <= targetZ + 15) {
-                            pauseCounter = 120; // ~2 segundos a 60fps
-                            lastPausedIndex = nextPauseIndex;
-                        }
-                    }
-                }
+                virtualScroll += AUTO_SPEED;
             }
 
             // Progreso total de la "cámara"
@@ -871,18 +849,18 @@ const SPACING = 900; // px entre cuadros en el eje Z
                 const z = -(idx + 1) * SPACING;
                 const relZ = z + progress;
 
-                // Opacidades según atmósfera
+                // Opacidades según atmósfera (desvanecimiento continuo y lento antes de rebasar)
                 let opacity = 0;
                 if (currentAtmos === 'fog') {
                     // En niebla, las obras se desvanecen mucho antes en la distancia (fade in/out más corto)
-                    if (relZ > 500) opacity = 0;
-                    else if (relZ > 100) opacity = 1 - (relZ - 100) / 400;
+                    if (relZ > 450) opacity = 0;
+                    else if (relZ > 0) opacity = 1 - (relZ / 450);
                     else if (relZ > -SPACING * 0.8) opacity = 1;
                     else opacity = Math.max(0, 1 + (relZ + SPACING * 0.8) / (SPACING * 0.8));
                 } else {
-                    // Comportamiento normal
+                    // Comportamiento normal: desvanecimiento súper suave a partir de relZ = 50 y desaparece en 650
                     if (relZ > 650) opacity = 0;
-                    else if (relZ > 200) opacity = 1 - (relZ - 200) / 450;
+                    else if (relZ > 50) opacity = 1 - (relZ - 50) / 600;
                     else if (relZ > -SPACING * 2) opacity = 1;
                     else opacity = Math.max(0, 1 + (relZ + SPACING * 2) / SPACING);
                 }
