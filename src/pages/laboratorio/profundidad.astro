@@ -122,8 +122,8 @@ const SPACING = 900; // px entre cuadros en el eje Z
             .art-frame     → posiciones fijas en Z, centradas en X/Y
         -->
         <div class="scene-wrapper">
-            <!-- Túnel de Vidrios de Colores (Dirección Inversa) -->
-            <div class="glass-tunnel" id="glass-tunnel">
+            <div class="tunnel" id="tunnel">
+                <!-- Paneles de Vidrio de Colores (Dirección Inversa y Periférica) -->
                 {Array.from({ length: 12 }).map((_, i) => {
                     const colors = [
                         'rgba(220, 177, 74, 0.18)',  // Luxury Gold
@@ -135,8 +135,8 @@ const SPACING = 900; // px entre cuadros en el eje Z
                         'rgba(20, 220, 200, 0.18)'    // Teal
                     ];
                     const color = colors[i % colors.length];
-                    const x = Math.round(Math.sin(i * 1.5) * 450);
-                    const y = Math.round(Math.cos(i * 2.2) * 250);
+                    const x = Math.round(Math.sin(i * 1.5) * 650 + (Math.sin(i * 1.5) >= 0 ? 250 : -250));
+                    const y = Math.round(Math.cos(i * 2.2) * 350 + (Math.cos(i * 2.2) >= 0 ? 150 : -150));
                     const w = Math.round((i % 3) * 60 + 130); // 130px a 250px
                     const h = Math.round(((i + 1) % 3) * 100 + 220); // 220px a 420px
                     return (
@@ -144,13 +144,10 @@ const SPACING = 900; // px entre cuadros en el eje Z
                             class="glass-panel" 
                             data-x={x}
                             data-y={y}
-                            style={`position: absolute; width: ${w}px; height: ${h}px; background: ${color}; border: 1px solid rgba(255,255,255,0.18); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 30px 70px rgba(0,0,0,0.4), inset 0 0 20px rgba(255,255,255,0.1); left: 50%; top: 50%; transform: translate3d(-50%, -50%, 0) translate3d(${x}px, ${y}px, 0px); pointer-events: none; opacity: 0; will-change: transform, opacity;`}
+                            style={`width: ${w}px; height: ${h}px; background: ${color}; transform: translate3d(-50%, -50%, 0) translate3d(${x}px, ${y}px, 0px);`}
                         />
                     );
                 })}
-            </div>
-
-            <div class="tunnel" id="tunnel">
                 {artworks.map((art) => (
                     <div
                         class="art-frame"
@@ -586,17 +583,18 @@ const SPACING = 900; // px entre cuadros en el eje Z
         font-weight: 400;
     }
 
-    /* ─── Atmospheric Overlays ─── */
-    .glass-tunnel {
+    /* ─── Paneles de Vidrio de Colores ─── */
+    .glass-panel {
         position: absolute;
-        inset: 0;
-        transform-style: preserve-3d;
+        left: 50%;
+        top: 50%;
         pointer-events: none;
+        border: 1px solid rgba(255,255,255,0.18);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        box-shadow: 0 30px 70px rgba(0,0,0,0.4), inset 0 0 20px rgba(255,255,255,0.1);
+        will-change: transform, opacity;
         display: none;
-        z-index: 2;
-    }
-    .infinity-container[data-atmos="glass"] .glass-tunnel {
-        display: block;
     }
 
     .fog-overlay {
@@ -1020,13 +1018,14 @@ const SPACING = 900; // px entre cuadros en el eje Z
             // Mover el túnel entero
             tunnel.style.transform = `translateZ(${progress}px)`;
 
-            // Animación de los paneles de vidrio en dirección inversa
+            // Animación de los paneles de vidrio en dirección inversa y compartiendo contexto 3D
             if (currentAtmos === 'glass') {
                 const startZ = 750;
                 const endZ = -8000;
                 const travel = startZ - endZ; // 8750px
 
                 glassPanels.forEach((panel, idx) => {
+                    panel.style.display = 'block';
                     const x = parseFloat(panel.getAttribute('data-x') ?? '0');
                     const y = parseFloat(panel.getAttribute('data-y') ?? '0');
                     
@@ -1034,10 +1033,14 @@ const SPACING = 900; // px entre cuadros en el eje Z
                     const offset = (idx / glassPanels.length) * travel;
                     const val = (progress + offset) % travel;
                     const positiveVal = val < 0 ? val + travel : val;
-                    const zPos = startZ - positiveVal;
+                    
+                    // Z final deseado en el espacio de la cámara
+                    const zPos_final = startZ - positiveVal;
+                    // Compensación porque están dentro de .tunnel (que tiene translateZ(progress))
+                    const zPos_local = zPos_final - progress;
 
                     // Calcular opacidad para fade-in cerca de la cámara y fade-out al fondo
-                    const norm = (zPos - endZ) / travel; // 1.0 (startZ) a 0.0 (endZ)
+                    const norm = (zPos_final - endZ) / travel; // 1.0 (startZ) a 0.0 (endZ)
                     
                     let glassOpacity = 0;
                     if (norm > 0.85) {
@@ -1050,12 +1053,13 @@ const SPACING = 900; // px entre cuadros en el eje Z
                         glassOpacity = 1;
                     }
 
-                    panel.style.transform = `translate3d(-50%, -50%, 0) translate3d(${x}px, ${y}px, ${zPos.toFixed(1)}px)`;
+                    panel.style.transform = `translate3d(-50%, -50%, 0) translate3d(${x}px, ${y}px, ${zPos_local.toFixed(1)}px)`;
                     panel.style.opacity = glassOpacity.toFixed(3);
                 });
             } else {
                 glassPanels.forEach(panel => {
                     panel.style.opacity = '0';
+                    panel.style.display = 'none';
                 });
             }
 
