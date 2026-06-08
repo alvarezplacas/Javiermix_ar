@@ -1,6 +1,10 @@
 ---
 // d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\editor.astro
 import Layout from '@layouts/Layout.astro';
+import { getLaboratorioFiles, getAssetUrl } from '@conexion/directus';
+
+const laboratorioFiles = await getLaboratorioFiles() as any[];
+const editorVersion = '2.5';
 ---
 
 <Layout title="Estudio Editor 3D/IA | Laboratorio JMX" themeForce="dark">
@@ -13,7 +17,7 @@ import Layout from '@layouts/Layout.astro';
             </a>
             <div class="system-status">
                 <span class="status-dot animate-pulse"></span>
-                ESTUDIO DIGITAL JMX: v.2.5
+                ESTUDIO DIGITAL JMX: v.{editorVersion}
             </div>
         </nav>
 
@@ -217,6 +221,20 @@ import Layout from '@layouts/Layout.astro';
                                 <input type="file" id="project-loader" accept=".json" class="hidden">
                                 <button class="btn-action secondary" id="btn-import-project" style="padding: 0.6rem; font-size: 0.55rem; letter-spacing: 1px;">Importar Proyecto</button>
                                 <button class="btn-action secondary" id="btn-export-project" style="padding: 0.6rem; font-size: 0.55rem; letter-spacing: 1px;">Guardar Proyecto</button>
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>BIBLIOTECA JMX</h3>
+                            <div id="directus-library" class="directus-library">
+                                {laboratorioFiles.length ? laboratorioFiles.map(file => (
+                                    <button type="button" class="directus-library-item" data-image-url={getAssetUrl(file.id, { width: 800, quality: 70 })} title={file.filename_download || file.title || 'Imagen JMX'}>
+                                        <img src={getAssetUrl(file.id, { width: 300, quality: 60 })} alt={file.filename_download || file.title || 'Miniatura'} loading="lazy" />
+                                        <span>{file.filename_download || file.title || 'Imagen'}</span>
+                                    </button>
+                                )) : (
+                                    <div class="empty-library">No se encontraron imágenes de laboratorio.</div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -680,6 +698,56 @@ import Layout from '@layouts/Layout.astro';
         gap: 0.6rem;
     }
 
+    .directus-library {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .directus-library-item {
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.03);
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+        padding: 0;
+    }
+
+    .directus-library-item:hover {
+        border-color: rgba(220, 177, 74, 0.45);
+        background: rgba(255,255,255,0.06);
+        transform: translateY(-1px);
+    }
+
+    .directus-library-item img {
+        width: 100%;
+        height: 112px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .directus-library-item span {
+        padding: 0.65rem 0.75rem;
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.8);
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .empty-library {
+        color: var(--color-editor-text-muted);
+        font-size: 0.65rem;
+        line-height: 1.5;
+        padding: 1rem 0.5rem;
+    }
+
     .filter-preset {
         background: rgba(255,255,255,0.02);
         border: 1px solid rgba(255,255,255,0.06);
@@ -847,7 +915,11 @@ import Layout from '@layouts/Layout.astro';
 import * as THREE from 'three';
 
 if (typeof window !== 'undefined') {
-    window.addEventListener('DOMContentLoaded', initEditor);
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', initEditor);
+    } else {
+        initEditor();
+    }
 }
 
 function initEditor() {
@@ -884,6 +956,7 @@ function initEditor() {
     const textColorPicker = document.getElementById('text-color');
     const addTextBtn = document.getElementById('add-text-btn');
     const dynamicLayersContainer = document.getElementById('dynamic-layers-container');
+    const libraryContainer = document.getElementById('directus-library');
 
     const depthIntensitySlider = document.getElementById('depth-intensity-slider');
     const depthIntensityVal = document.getElementById('depth-intensity-val');
@@ -1036,6 +1109,15 @@ function initEditor() {
     btnExportProject?.addEventListener('click', exportProject);
     btnImportProject?.addEventListener('click', () => projectLoader?.click());
 
+    libraryContainer?.addEventListener('click', (event) => {
+        const target = event.target;
+        const item = target && typeof target.closest === 'function' ? target.closest('.directus-library-item') : null;
+        if (item) {
+            const imageUrl = item.dataset.imageUrl;
+            if (imageUrl) loadImageUrl(imageUrl);
+        }
+    });
+
     projectLoader?.addEventListener('change', (event) => {
         const input = event.target;
         const file = input.files && input.files[0];
@@ -1137,6 +1219,41 @@ function initEditor() {
             img.src = reader.result;
         };
         reader.readAsDataURL(file);
+    }
+
+    function loadImageUrl(url) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            originalImage = img;
+            offscreenImage.width = img.width;
+            offscreenImage.height = img.height;
+            offscreenDepth.width = img.width;
+            offscreenDepth.height = img.height;
+            if (offscreenDepthCtx) {
+                offscreenDepthCtx.fillStyle = '#000000';
+                offscreenDepthCtx.fillRect(0, 0, img.width, img.height);
+            }
+            canvas.width = img.width;
+            canvas.height = img.height;
+            if (canvas instanceof HTMLCanvasElement) canvas.style.display = 'block';
+            if (uploadPrompt) uploadPrompt.style.display = 'none';
+            if (dimensionLabel) dimensionLabel.innerText = `Resolución: ${img.width}x${img.height}`;
+            if (btnExport) { btnExport.classList.remove('disabled'); btnExport.disabled = false; }
+            textLayers = [];
+            selectedDepthPreset = 'brush';
+            if (depthPresetSelect) depthPresetSelect.value = 'brush';
+            if (brushSettingsRow) brushSettingsRow.style.display = 'block';
+            visualizeDepthMap = false;
+            if (visualizeDepthCheckbox) visualizeDepthCheckbox.checked = false;
+            renderMode = 0;
+            const renderModeSelect = document.getElementById('render-mode-select');
+            if (renderModeSelect) renderModeSelect.value = '0';
+            updateColorCanvas();
+            generateDepthPreset();
+            initThree();
+        };
+        img.src = url;
     }
 
     function updateColorCanvas() {
