@@ -49,6 +49,7 @@ import Layout from '@layouts/Layout.astro';
             <section class="canvas-viewport" id="drop-zone">
                 <div class="canvas-container">
                     <canvas id="main-webgl-canvas"></canvas>
+                    <div id="brush-cursor" class="brush-cursor-indicator"></div>
                     <div class="upload-overlay" id="upload-prompt">
                         <div class="upload-icon">📂</div>
                         <h3>ARRASTRÁ UNA IMAGEN AQUÍ</h3>
@@ -149,9 +150,25 @@ import Layout from '@layouts/Layout.astro';
                                 </div>
                             </div>
 
-                            <div class="checkbox-row">
+                            <div class="setting-row">
+                                <label>Modo de Visualización 3D</label>
+                                <select id="render-mode-select" class="editor-select">
+                                    <option value="0">Imagen Desplazada (Normal)</option>
+                                    <option value="1">Mapa de Profundidad (Gris)</option>
+                                    <option value="2">Mapa de Calor (Estilo JMX)</option>
+                                    <option value="3">Efecto Anaglifo (3D Estereoscópico)</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row checkbox-row" style="align-items: center;">
                                 <input type="checkbox" id="toggle-visualize-depth" class="editor-checkbox">
-                                <label for="toggle-visualize-depth">Visualizar Mapa de Calor</label>
+                                <label for="toggle-visualize-depth">Mostrar Mapa de Profundidad</label>
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Cargar Mapa de Profundidad</label>
+                                <input type="file" id="depth-loader" accept="image/*" class="hidden">
+                                <button class="btn-action secondary" id="btn-depth-loader-trigger" style="padding: 0.6rem; font-size: 0.55rem; letter-spacing: 1px;">Cargar Imagen de Relieve</button>
                             </div>
                             
                             <div class="info-box">
@@ -194,6 +211,12 @@ import Layout from '@layouts/Layout.astro';
                                 <div id="dynamic-layers-container">
                                     <!-- Aquí irán dinámicamente las capas agregadas -->
                                 </div>
+                            </div>
+
+                            <div class="project-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                                <input type="file" id="project-loader" accept=".json" class="hidden">
+                                <button class="btn-action secondary" id="btn-import-project" style="padding: 0.6rem; font-size: 0.55rem; letter-spacing: 1px;">Importar Proyecto</button>
+                                <button class="btn-action secondary" id="btn-export-project" style="padding: 0.6rem; font-size: 0.55rem; letter-spacing: 1px;">Guardar Proyecto</button>
                             </div>
                         </div>
                     </div>
@@ -367,7 +390,13 @@ import Layout from '@layouts/Layout.astro';
     /* 🖥️ Viewport central */
     .canvas-viewport {
         flex: 1;
-        background: #0d0d0d;
+        background-color: #0b0b0b;
+        background-image: 
+            radial-gradient(rgba(220, 177, 74, 0.08) 1px, transparent 1px),
+            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 20px 20px, 100px 100px, 100px 100px;
+        background-position: center;
         display: flex;
         flex-direction: column;
         position: relative;
@@ -381,6 +410,17 @@ import Layout from '@layouts/Layout.astro';
         justify-content: center;
         align-items: center;
         padding: 2rem;
+    }
+
+    .brush-cursor-indicator {
+        position: absolute;
+        border: 2px dashed rgba(220, 177, 74, 0.6);
+        border-radius: 50%;
+        pointer-events: none;
+        display: none;
+        transform: translate(-50%, -50%);
+        z-index: 100;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
 
     #main-webgl-canvas {
@@ -803,600 +843,720 @@ import Layout from '@layouts/Layout.astro';
     }
 </style>
 
-<script>
-    document.addEventListener('astro:page-load', () => {
-        initEditor();
-    });
+<script type="module">
+import * as THREE from 'three';
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initEditor);
-    } else {
-        initEditor();
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', initEditor);
+}
+
+function initEditor() {
+    const dropZone = document.getElementById('drop-zone');
+    const imgLoader = document.getElementById('image-loader');
+    const btnLoadTrigger = document.getElementById('btn-load-trigger');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const canvas = document.getElementById('main-webgl-canvas');
+    const btnExport = document.getElementById('btn-export');
+    const projectLoader = document.getElementById('project-loader');
+    const btnImportProject = document.getElementById('btn-import-project');
+    const btnExportProject = document.getElementById('btn-export-project');
+    const depthLoader = document.getElementById('depth-loader');
+    const btnDepthLoaderTrigger = document.getElementById('btn-depth-loader-trigger');
+
+    const toolBtns = document.querySelectorAll('.tool-btn');
+    const activeToolLabel = document.getElementById('active-tool-status');
+    const dimensionLabel = document.getElementById('image-dimensions');
+
+    const adjustPanel = document.getElementById('adjust-settings');
+    const filterPanel = document.getElementById('filter-settings');
+    const depthPanel = document.getElementById('depth3d-settings');
+    const textPanel = document.getElementById('text-settings');
+    const pointerPanel = document.getElementById('pointer-settings');
+
+    const brightnessSlider = document.getElementById('brightness-slider');
+    const contrastSlider = document.getElementById('contrast-slider');
+    const saturationSlider = document.getElementById('saturation-slider');
+    const exposureSlider = document.getElementById('exposure-slider');
+    const resetAdjusts = document.getElementById('reset-adjusts');
+    const presetBtns = document.querySelectorAll('.filter-preset');
+    const textInput = document.getElementById('text-input');
+    const textSizeSlider = document.getElementById('text-size-slider');
+    const textColorPicker = document.getElementById('text-color');
+    const addTextBtn = document.getElementById('add-text-btn');
+    const dynamicLayersContainer = document.getElementById('dynamic-layers-container');
+
+    const depthIntensitySlider = document.getElementById('depth-intensity-slider');
+    const depthIntensityVal = document.getElementById('depth-intensity-val');
+    const depthPresetSelect = document.getElementById('depth-map-preset');
+    const brushSettingsRow = document.getElementById('brush-settings');
+    const brushSizeSlider = document.getElementById('brush-size-slider');
+    const brushSizeVal = document.getElementById('brush-size-val');
+    const visualizeDepthCheckbox = document.getElementById('toggle-visualize-depth');
+    const renderModeSelect = document.getElementById('render-mode-select');
+
+    if (!canvas) return;
+
+    const offscreenImage = document.createElement('canvas');
+    const offscreenCtx = offscreenImage.getContext('2d');
+    const offscreenDepth = document.createElement('canvas');
+    const offscreenDepthCtx = offscreenDepth.getContext('2d');
+
+    let originalImage = null;
+    let activeTool = 'pointer';
+    let activeFilter = 'none';
+    let filterMode = 0;
+    let adjustments = { brightness: 100, contrast: 100, saturation: 100, exposure: 100 };
+    let textLayers = [];
+    let dragTextIndex = -1;
+    let isPaintingDepth = false;
+    let brushSize = 60;
+    let depthIntensity = 0.3;
+    let selectedDepthPreset = 'brush';
+    let visualizeDepthMap = false;
+    let renderMode = 0;
+    let mouseX = 0.5;
+    let mouseY = 0.5;
+    let targetMouseX = 0.5;
+    let targetMouseY = 0.5;
+
+    let renderer = null;
+    let scene = null;
+    let camera = null;
+    let material = null;
+    let mesh = null;
+    let imageTexture = null;
+    let depthTexture = null;
+    let animationFrameId = null;
+
+    function updateSliderVal(slider, targetId, suffix = '') {
+        const el = document.getElementById(targetId);
+        if (el && slider) el.innerText = `${slider.value}${suffix}`;
     }
 
-    function initEditor() {
-        const dropZone = document.getElementById('drop-zone');
-        const imgLoader = document.getElementById('image-loader') as HTMLInputElement;
-        const btnLoadTrigger = document.getElementById('btn-load-trigger');
-        const uploadPrompt = document.getElementById('upload-prompt');
-        const canvas = document.getElementById('main-webgl-canvas') as HTMLCanvasElement;
-        const btnExport = document.getElementById('btn-export') as HTMLButtonElement;
-        
-        // Tool Buttons
-        const toolBtns = document.querySelectorAll('.tool-btn');
-        const activeToolLabel = document.getElementById('active-tool-status');
-        const dimensionLabel = document.getElementById('image-dimensions');
-        
-        // Setting Panels
-        const adjustPanel = document.getElementById('adjust-settings');
-        const filterPanel = document.getElementById('filter-settings');
-        const depthPanel  = document.getElementById('depth3d-settings');
-        const textPanel   = document.getElementById('text-settings');
-        const pointerPanel = document.getElementById('pointer-settings');
+    brightnessSlider?.addEventListener('input', () => {
+        adjustments.brightness = Number(brightnessSlider.value);
+        updateSliderVal(brightnessSlider, 'brightness-val', '%');
+        updateColorCanvas();
+    });
 
-        // Form settings references
-        const brightnessSlider = document.getElementById('brightness-slider') as HTMLInputElement;
-        const contrastSlider = document.getElementById('contrast-slider') as HTMLInputElement;
-        const saturationSlider = document.getElementById('saturation-slider') as HTMLInputElement;
-        const exposureSlider = document.getElementById('exposure-slider') as HTMLInputElement;
-        const resetAdjusts = document.getElementById('reset-adjusts');
-        const presetBtns = document.querySelectorAll('.filter-preset');
-        const textInput = document.getElementById('text-input') as HTMLInputElement;
-        const textSizeSlider = document.getElementById('text-size-slider') as HTMLInputElement;
-        const textColorPicker = document.getElementById('text-color') as HTMLInputElement;
-        const addTextBtn = document.getElementById('add-text-btn');
-        const dynamicLayersContainer = document.getElementById('dynamic-layers-container');
+    contrastSlider?.addEventListener('input', () => {
+        adjustments.contrast = Number(contrastSlider.value);
+        updateSliderVal(contrastSlider, 'contrast-val', '%');
+        updateColorCanvas();
+    });
 
-        // 3D Depth Map elements
-        const depthIntensitySlider = document.getElementById('depth-intensity-slider') as HTMLInputElement;
-        const depthIntensityVal = document.getElementById('depth-intensity-val');
-        const depthPresetSelect = document.getElementById('depth-map-preset') as HTMLSelectElement;
-        const brushSettingsRow = document.getElementById('brush-settings');
-        const brushSizeSlider = document.getElementById('brush-size-slider') as HTMLInputElement;
-        const brushSizeVal = document.getElementById('brush-size-val');
-        const visualizeDepthCheckbox = document.getElementById('toggle-visualize-depth') as HTMLInputElement;
+    saturationSlider?.addEventListener('input', () => {
+        adjustments.saturation = Number(saturationSlider.value);
+        updateSliderVal(saturationSlider, 'saturation-val', '%');
+        updateColorCanvas();
+    });
 
-        if (!canvas) return;
+    exposureSlider?.addEventListener('input', () => {
+        adjustments.exposure = Number(exposureSlider.value);
+        updateSliderVal(exposureSlider, 'exposure-val', '%');
+        updateColorCanvas();
+    });
 
-        let activeTool = 'pointer';
-        let originalImage: HTMLImageElement | null = null;
-        
-        // Offscreen buffers to handle rendering logic
-        const offscreenImage = document.createElement('canvas');
-        const offscreenCtx = offscreenImage.getContext('2d')!;
-        const offscreenDepth = document.createElement('canvas');
-        const offscreenDepthCtx = offscreenDepth.getContext('2d')!;
+    depthIntensitySlider?.addEventListener('input', () => {
+        depthIntensity = Number(depthIntensitySlider.value) / 100;
+        if (depthIntensityVal) depthIntensityVal.innerText = `${Math.round(depthIntensity * 100)}%`;
+    });
 
-        // Editor States
-        let adjustments = { brightness: 100, contrast: 100, saturation: 100, exposure: 100 };
-        let activeFilter = 'none';
-        let textLayers: { id: string; text: string; size: number; color: string; x: number; y: number }[] = [];
-        let dragTextIndex = -1;
+    brushSizeSlider?.addEventListener('input', () => {
+        brushSize = Number(brushSizeSlider.value);
+        if (brushSizeVal) brushSizeVal.innerText = `${brushSize}px`;
+    });
 
-        // Brush parameters for depth painting
-        let isPaintingDepth = false;
-        let brushSize = 60;
-        let depthIntensity = 0.3;
-        let selectedDepthPreset = 'brush';
-        let visualizeDepthMap = false;
+    visualizeDepthCheckbox?.addEventListener('change', () => {
+        visualizeDepthMap = visualizeDepthCheckbox.checked;
+    });
 
-        // WebGL displacement variables
-        let gl: WebGLRenderingContext | null = null;
-        let program: WebGLProgram | null = null;
-        let imageTexture: WebGLTexture | null = null;
-        let depthTexture: WebGLTexture | null = null;
-        let mouseX = 0.5, mouseY = 0.5;
-        let targetMouseX = 0.5, targetMouseY = 0.5;
-
-        // Slider real-time updates
-        const updateSliderVal = (slider: HTMLInputElement, targetId: string, suffix = '') => {
-            const el = document.getElementById(targetId);
-            if (el) el.innerText = `${slider.value}${suffix}`;
-        };
-
-        brightnessSlider?.addEventListener('input', () => { updateSliderVal(brightnessSlider, 'brightness-val', '%'); adjustments.brightness = parseInt(brightnessSlider.value); applyAdjustments(); });
-        contrastSlider?.addEventListener('input', () => { updateSliderVal(contrastSlider, 'contrast-val', '%'); adjustments.contrast = parseInt(contrastSlider.value); applyAdjustments(); });
-        saturationSlider?.addEventListener('input', () => { updateSliderVal(saturationSlider, 'saturation-val', '%'); adjustments.saturation = parseInt(saturationSlider.value); applyAdjustments(); });
-        exposureSlider?.addEventListener('input', () => { updateSliderVal(exposureSlider, 'exposure-val', '%'); adjustments.exposure = parseInt(exposureSlider.value); applyAdjustments(); });
-        
-        depthIntensitySlider?.addEventListener('input', () => {
-            const val = parseFloat(depthIntensitySlider.value);
-            depthIntensity = val / 100;
-            if (depthIntensityVal) depthIntensityVal.innerText = `${Math.round(val)}%`;
-        });
-        brushSizeSlider?.addEventListener('input', () => {
-            const val = parseInt(brushSizeSlider.value);
-            brushSize = val;
-            if (brushSizeVal) brushSizeVal.innerText = `${val}px`;
-        });
-        textSizeSlider?.addEventListener('input', () => {
-            updateSliderVal(textSizeSlider, 'text-size-val', 'px');
-        });
-
-        visualizeDepthCheckbox?.addEventListener('change', () => {
-            visualizeDepthMap = visualizeDepthCheckbox.checked;
-        });
-
-        depthPresetSelect?.addEventListener('change', () => {
-            selectedDepthPreset = depthPresetSelect.value;
-            brushSettingsRow!.style.display = selectedDepthPreset === 'brush' ? 'block' : 'none';
+    depthPresetSelect?.addEventListener('change', () => {
+        selectedDepthPreset = depthPresetSelect.value;
+        if (brushSettingsRow) {
+            brushSettingsRow.style.display = selectedDepthPreset === 'brush' ? 'block' : 'none';
+        }
+        if (originalImage) {
             generateDepthPreset();
+            updateDepthTexture();
+        }
+    });
+
+    resetAdjusts?.addEventListener('click', () => {
+        adjustments = { brightness: 100, contrast: 100, saturation: 100, exposure: 100 };
+        if (brightnessSlider) brightnessSlider.value = '100';
+        if (contrastSlider) contrastSlider.value = '100';
+        if (saturationSlider) saturationSlider.value = '100';
+        if (exposureSlider) exposureSlider.value = '100';
+        updateSliderVal(brightnessSlider, 'brightness-val', '%');
+        updateSliderVal(contrastSlider, 'contrast-val', '%');
+        updateSliderVal(saturationSlider, 'saturation-val', '%');
+        updateSliderVal(exposureSlider, 'exposure-val', '%');
+        updateColorCanvas();
+    });
+
+    toolBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            toolBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeTool = btn.getAttribute('data-tool') || 'pointer';
+            if (activeToolLabel) activeToolLabel.innerText = `Herramienta: ${activeTool.toUpperCase()}`;
+            if (adjustPanel) adjustPanel.style.display = activeTool === 'adjust' ? 'flex' : 'none';
+            if (filterPanel) filterPanel.style.display = activeTool === 'filter' ? 'flex' : 'none';
+            if (depthPanel) depthPanel.style.display = activeTool === 'depth3d' ? 'flex' : 'none';
+            if (textPanel) textPanel.style.display = activeTool === 'text' ? 'flex' : 'none';
+            if (pointerPanel) pointerPanel.style.display = activeTool === 'pointer' ? 'flex' : 'none';
         });
+    });
 
-        resetAdjusts?.addEventListener('click', () => {
-            adjustments = { brightness: 100, contrast: 100, saturation: 100, exposure: 100 };
-            brightnessSlider.value = '100';
-            contrastSlider.value = '100';
-            saturationSlider.value = '100';
-            exposureSlider.value = '100';
-            updateSliderVal(brightnessSlider, 'brightness-val', '%');
-            updateSliderVal(contrastSlider, 'contrast-val', '%');
-            updateSliderVal(saturationSlider, 'saturation-val', '%');
-            updateSliderVal(exposureSlider, 'exposure-val', '%');
-            applyAdjustments();
+    btnLoadTrigger?.addEventListener('click', () => imgLoader?.click());
+    uploadPrompt?.addEventListener('click', () => imgLoader?.click());
+
+    imgLoader?.addEventListener('change', (event) => {
+        const input = event.target;
+        const file = input.files && input.files[0];
+        if (file) loadImageFile(file);
+    });
+
+    dropZone?.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    dropZone?.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+    dropZone?.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+        if (file) loadImageFile(file);
+    });
+
+    btnExport?.addEventListener('click', exportFinalImage);
+    btnExportProject?.addEventListener('click', exportProject);
+    btnImportProject?.addEventListener('click', () => projectLoader?.click());
+
+    projectLoader?.addEventListener('change', (event) => {
+        const input = event.target;
+        const file = input.files && input.files[0];
+        if (file) importProject(file);
+    });
+
+    btnDepthLoaderTrigger?.addEventListener('click', () => depthLoader?.click());
+    depthLoader?.addEventListener('change', (event) => {
+        const input = event.target;
+        const file = input.files && input.files[0];
+        if (file) loadDepthFile(file);
+    });
+
+    presetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            presetBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeFilter = btn.getAttribute('data-filter') || 'none';
+            filterMode = filterId(activeFilter);
+            if (material?.uniforms?.uFilterMode) {
+                material.uniforms.uFilterMode.value = filterMode;
+            }
+            updateColorCanvas();
         });
+    });
 
-        // 🔘 Tool Selection
-        toolBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                toolBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                activeTool = btn.getAttribute('data-tool') || 'pointer';
-                if (activeToolLabel) activeToolLabel.innerText = `Herramienta: ${activeTool.toUpperCase()}`;
+    renderModeSelect?.addEventListener('change', () => {
+        renderMode = Number(renderModeSelect.value);
+    });
 
-                // Show corresponding property panel
-                adjustPanel!.style.display = activeTool === 'adjust' ? 'flex' : 'none';
-                filterPanel!.style.display = activeTool === 'filter' ? 'flex' : 'none';
-                depthPanel!.style.display  = activeTool === 'depth3d' ? 'flex' : 'none';
-                textPanel!.style.display   = activeTool === 'text' ? 'flex' : 'none';
-                pointerPanel!.style.display = activeTool === 'pointer' ? 'flex' : 'none';
-            });
-        });
+    canvas.addEventListener('mousemove', onCanvasMouseMove);
+    canvas.addEventListener('mousedown', onCanvasMouseDown);
+    window.addEventListener('mouseup', () => {
+        isPaintingDepth = false;
+        dragTextIndex = -1;
+    });
+    window.addEventListener('resize', resizeRenderer);
+    window.addEventListener('beforeunload', cleanup);
 
-        // 📁 Load Image Action
-        btnLoadTrigger?.addEventListener('click', () => imgLoader.click());
-        uploadPrompt?.addEventListener('click', () => imgLoader.click());
+    addTextBtn?.addEventListener('click', () => {
+        const text = textInput?.value.trim();
+        if (!text || !originalImage) return;
+        const size = Number(textSizeSlider?.value || '48');
+        const color = textColorPicker?.value || '#ffffff';
+        textLayers.push({ id: `layer-${Date.now()}`, text, size, color, x: 0.5, y: 0.5 });
+        if (textInput) textInput.value = '';
+        updateColorCanvas();
+        renderLayersUI();
+    });
 
-        imgLoader?.addEventListener('change', (e: any) => {
-            const file = e.target.files[0];
-            if (file) loadImageFile(file);
-        });
-
-        // Arrastrar y Soltar (Drag & Drop)
-        dropZone?.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-        dropZone?.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
-        });
-        dropZone?.addEventListener('drop', (e: any) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            const file = e.dataTransfer.files[0];
-            if (file) loadImageFile(file);
-        });
-
-        function loadImageFile(file: File) {
-            const reader = new FileReader();
-            reader.onload = (event: any) => {
-                const img = new Image();
-                img.onload = () => {
-                    originalImage = img;
-                    
-                    // Setup offscreen canvas image sizes
-                    offscreenImage.width = img.width;
-                    offscreenImage.height = img.height;
-                    offscreenDepth.width = img.width;
-                    offscreenDepth.height = img.height;
-
-                    // Initialize depth map to black (deep background)
+    function loadImageFile(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                originalImage = img;
+                offscreenImage.width = img.width;
+                offscreenImage.height = img.height;
+                offscreenDepth.width = img.width;
+                offscreenDepth.height = img.height;
+                if (offscreenDepthCtx) {
                     offscreenDepthCtx.fillStyle = '#000000';
                     offscreenDepthCtx.fillRect(0, 0, img.width, img.height);
-                    
-                    // Resize WebGL viewport canvas
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    canvas.style.display = 'block';
-
-                    if (uploadPrompt) uploadPrompt.style.display = 'none';
-                    if (dimensionLabel) dimensionLabel.innerText = `Resolución: ${img.width}x${img.height}`;
-
-                    // Enable export button
-                    btnExport.classList.remove('disabled');
-                    btnExport.disabled = false;
-
-                    // Reset adjustments
-                    applyAdjustments();
-                    initWebGL();
-                };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // Apply visual modifications (brightness, filters, text overlays) to Offscreen
-        function applyAdjustments() {
-            if (!originalImage) return;
-
-            offscreenCtx.clearRect(0, 0, offscreenImage.width, offscreenImage.height);
-
-            // 1. Apply contrast/brightness/exposure filters
-            const exposure = adjustments.exposure / 100;
-            const filterStr = `
-                brightness(${adjustments.brightness * exposure}%)
-                contrast(${adjustments.contrast}%)
-                saturate(${adjustments.saturation}%)
-            `;
-            offscreenCtx.filter = filterStr.trim();
-            offscreenCtx.drawImage(originalImage, 0, 0, offscreenImage.width, offscreenImage.height);
-            offscreenCtx.filter = 'none'; // reset filter for overlays
-
-            // 2. Apply artistic color presets
-            if (activeFilter !== 'none') {
-                offscreenCtx.save();
-                if (activeFilter === 'crimson') {
-                    offscreenCtx.fillStyle = 'rgba(220, 70, 70, 0.12)';
-                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
-                } else if (activeFilter === 'sepia') {
-                    offscreenCtx.fillStyle = 'rgba(220, 177, 74, 0.15)';
-                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
-                } else if (activeFilter === 'emerald') {
-                    offscreenCtx.fillStyle = 'rgba(20, 180, 120, 0.15)';
-                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
-                } else if (activeFilter === 'monochrome') {
-                    // Simular monocromo
-                    offscreenCtx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
-                } else if (activeFilter === 'glitch') {
-                    // Simular aberración cromática canal azul desplazado
-                    offscreenCtx.drawImage(offscreenImage, 8, 4, offscreenImage.width - 8, offscreenImage.height - 4, 0, 0, offscreenImage.width, offscreenImage.height);
-                    offscreenCtx.fillStyle = 'rgba(20, 150, 220, 0.08)';
-                    offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
                 }
-                offscreenCtx.restore();
-            }
-
-            // 3. Draw text layers
-            textLayers.forEach(layer => {
-                offscreenCtx.fillStyle = layer.color;
-                offscreenCtx.font = `bold ${layer.size * (offscreenImage.width / 800)}px 'Cormorant Garamond', serif`;
-                offscreenCtx.textAlign = 'center';
-                offscreenCtx.fillText(layer.text, layer.x * offscreenImage.width, layer.y * offscreenImage.height);
-            });
-
-            // Update WebGL source texture
-            updateWebGLTexture();
-        }
-
-        // Preset button triggers
-        presetBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                presetBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                activeFilter = btn.getAttribute('data-filter') || 'none';
-                applyAdjustments();
-            });
-        });
-
-        // ➕ Add text Layer
-        addTextBtn?.addEventListener('click', () => {
-            const text = textInput.value.trim();
-            if (!text || !originalImage) return;
-
-            const size = parseInt(textSizeSlider.value);
-            const color = textColorPicker.value;
-
-            // Add text layer placed in the middle
-            const newLayer = {
-                id: `layer-${Date.now()}`,
-                text,
-                size,
-                color,
-                x: 0.5,
-                y: 0.5
+                canvas.width = img.width;
+                canvas.height = img.height;
+                if (canvas instanceof HTMLCanvasElement) canvas.style.display = 'block';
+                if (uploadPrompt) uploadPrompt.style.display = 'none';
+                if (dimensionLabel) dimensionLabel.innerText = `Resolución: ${img.width}x${img.height}`;
+                if (btnExport) { btnExport.classList.remove('disabled'); btnExport.disabled = false; }
+                textLayers = [];
+                selectedDepthPreset = 'brush';
+                if (depthPresetSelect) depthPresetSelect.value = 'brush';
+                if (brushSettingsRow) brushSettingsRow.style.display = 'block';
+                visualizeDepthMap = false;
+                if (visualizeDepthCheckbox) visualizeDepthCheckbox.checked = false;
+                renderMode = 0;
+                const renderModeSelect = document.getElementById('render-mode-select');
+                if (renderModeSelect) renderModeSelect.value = '0';
+                updateColorCanvas();
+                generateDepthPreset();
+                initThree();
             };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
 
-            textLayers.push(newLayer);
-            textInput.value = '';
-            applyAdjustments();
-            renderLayersUI();
-        });
+    function loadDepthFile(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                if (!offscreenDepthCtx) return;
+                offscreenDepthCtx.clearRect(0, 0, offscreenDepth.width, offscreenDepth.height);
+                offscreenDepthCtx.drawImage(img, 0, 0, offscreenDepth.width, offscreenDepth.height);
+                updateDepthTexture();
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
 
-        function renderLayersUI() {
-            if (!dynamicLayersContainer) return;
-            dynamicLayersContainer.innerHTML = textLayers.map((layer, index) => `
-                <div class="layer-item" data-id="${layer.id}">
-                    <span class="layer-visible">👁️</span>
-                    <span class="layer-name">Texto: "${layer.text.substring(0, 12)}..."</span>
-                    <button class="delete-layer-btn" style="background:transparent; border:none; color:#f44336; cursor:pointer;" data-idx="${index}">&times;</button>
-                </div>
-            `).join('');
-
-            // Delete listener
-            document.querySelectorAll('.delete-layer-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const idx = parseInt((btn as HTMLElement).getAttribute('data-idx') ?? '0');
-                    textLayers.splice(idx, 1);
-                    applyAdjustments();
-                    renderLayersUI();
-                });
-            });
-        }
-
-        // Generate depth map presets automatically
-        function generateDepthPreset() {
-            if (!originalImage) return;
-
-            const w = offscreenDepth.width;
-            const h = offscreenDepth.height;
-            
-            offscreenDepthCtx.fillStyle = '#000000';
-            offscreenDepthCtx.fillRect(0, 0, w, h);
-
-            if (selectedDepthPreset === 'sphere') {
-                const grad = offscreenDepthCtx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h)/2);
-                grad.addColorStop(0, '#ffffff');
-                grad.addColorStop(1, '#000000');
-                offscreenDepthCtx.fillStyle = grad;
-                offscreenDepthCtx.fillRect(0, 0, w, h);
-            } else if (selectedDepthPreset === 'tunnel') {
-                const grad = offscreenDepthCtx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h)/2);
-                grad.addColorStop(0, '#000000');
-                grad.addColorStop(0.7, '#666666');
-                grad.addColorStop(1, '#ffffff');
-                offscreenDepthCtx.fillStyle = grad;
-                offscreenDepthCtx.fillRect(0, 0, w, h);
-            } else if (selectedDepthPreset === 'horizon') {
-                const grad = offscreenDepthCtx.createLinearGradient(0, 0, 0, h);
-                grad.addColorStop(0, '#000000');
-                grad.addColorStop(0.5, '#ffffff');
-                grad.addColorStop(1, '#000000');
-                offscreenDepthCtx.fillStyle = grad;
-                offscreenDepthCtx.fillRect(0, 0, w, h);
+    function updateColorCanvas() {
+        if (!originalImage || !offscreenCtx) return;
+        offscreenCtx.clearRect(0, 0, offscreenImage.width, offscreenImage.height);
+        offscreenCtx.filter = `brightness(${adjustments.brightness * (adjustments.exposure / 100)}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)`;
+        offscreenCtx.drawImage(originalImage, 0, 0, offscreenImage.width, offscreenImage.height);
+        offscreenCtx.filter = 'none';
+        if (activeFilter !== 'none') {
+            offscreenCtx.save();
+            if (activeFilter === 'crimson') {
+                offscreenCtx.fillStyle = 'rgba(220, 70, 70, 0.12)';
+            } else if (activeFilter === 'sepia') {
+                offscreenCtx.fillStyle = 'rgba(220, 177, 74, 0.15)';
+            } else if (activeFilter === 'emerald') {
+                offscreenCtx.fillStyle = 'rgba(20, 180, 120, 0.15)';
+            } else if (activeFilter === 'monochrome') {
+                offscreenCtx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            } else if (activeFilter === 'glitch') {
+                offscreenCtx.drawImage(offscreenImage, 8, 4, offscreenImage.width - 8, offscreenImage.height - 4, 0, 0, offscreenImage.width, offscreenImage.height);
+                offscreenCtx.fillStyle = 'rgba(20, 150, 220, 0.08)';
             }
-
-            updateWebGLDepthTexture();
+            offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
+            offscreenCtx.restore();
         }
+        textLayers.forEach(layer => {
+            offscreenCtx.fillStyle = layer.color;
+            offscreenCtx.font = `bold ${layer.size * (offscreenImage.width / 800)}px 'Cormorant Garamond', serif`;
+            offscreenCtx.textAlign = 'center';
+            offscreenCtx.fillText(layer.text, layer.x * offscreenImage.width, layer.y * offscreenImage.height);
+        });
+        if (material?.uniforms) {
+            material.uniforms.uBrightness.value = adjustments.brightness / 100;
+            material.uniforms.uContrast.value = adjustments.contrast / 100;
+            material.uniforms.uSaturation.value = adjustments.saturation / 100;
+            material.uniforms.uFilterMode.value = filterMode;
+        }
+        updateColorTexture();
+    }
 
-        // 🖥️ WebGL Displacement Pipeline Setup
-        function initWebGL() {
-            gl = canvas.getContext('webgl')!;
-            if (!gl) return;
+    function renderLayersUI() {
+        if (!dynamicLayersContainer) return;
+        dynamicLayersContainer.innerHTML = textLayers.map((layer, index) => `
+            <div class="layer-item" data-id="${layer.id}">
+                <span class="layer-visible">👁️</span>
+                <span class="layer-name">Texto: "${layer.text.substring(0, 12)}..."</span>
+                <button class="delete-layer-btn" data-idx="${index}">&times;</button>
+            </div>
+        `).join('');
+        document.querySelectorAll('.delete-layer-btn').forEach(btn => {
+            btn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const idx = Number(btn.getAttribute('data-idx'));
+                textLayers.splice(idx, 1);
+                updateColorCanvas();
+                renderLayersUI();
+            });
+        });
+    }
 
-            // Vertex Shader source
-            const vsSource = `
-                attribute vec2 position;
+    function generateDepthPreset() {
+        if (!offscreenDepthCtx || !originalImage) return;
+        const w = offscreenDepth.width;
+        const h = offscreenDepth.height;
+        offscreenDepthCtx.fillStyle = '#000000';
+        offscreenDepthCtx.fillRect(0, 0, w, h);
+        if (selectedDepthPreset === 'sphere') {
+            const grad = offscreenDepthCtx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) / 2);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(1, '#000000');
+            offscreenDepthCtx.fillStyle = grad;
+            offscreenDepthCtx.fillRect(0, 0, w, h);
+        } else if (selectedDepthPreset === 'tunnel') {
+            const grad = offscreenDepthCtx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) / 2);
+            grad.addColorStop(0, '#000000');
+            grad.addColorStop(0.7, '#666666');
+            grad.addColorStop(1, '#ffffff');
+            offscreenDepthCtx.fillStyle = grad;
+            offscreenDepthCtx.fillRect(0, 0, w, h);
+        } else if (selectedDepthPreset === 'horizon') {
+            const grad = offscreenDepthCtx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, '#000000');
+            grad.addColorStop(0.5, '#ffffff');
+            grad.addColorStop(1, '#000000');
+            offscreenDepthCtx.fillStyle = grad;
+            offscreenDepthCtx.fillRect(0, 0, w, h);
+        }
+        updateDepthTexture();
+    }
+
+    function initThree() {
+        if (renderer) return;
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.setClearColor(0x000000, 0);
+        const width = canvas.clientWidth || canvas.width;
+        const height = canvas.clientHeight || canvas.height;
+        renderer.setSize(width, height, false);
+        scene = new THREE.Scene();
+        camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+        camera.position.z = 1;
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        material = new THREE.ShaderMaterial({
+            uniforms: {
+                uImage: { value: null },
+                uDepthMap: { value: null },
+                uMouseOffset: { value: new THREE.Vector2(0.5, 0.5) },
+                uDepthIntensity: { value: depthIntensity },
+                uVisualizeDepth: { value: visualizeDepthMap },
+                uRenderMode: { value: renderMode },
+                uBrightness: { value: adjustments.brightness / 100 },
+                uContrast: { value: adjustments.contrast / 100 },
+                uSaturation: { value: adjustments.saturation / 100 },
+                uFilterMode: { value: filterMode }
+            },
+            vertexShader: `
                 varying vec2 vUv;
                 void main() {
-                    vUv = position * 0.5 + 0.5;
-                    vUv.y = 1.0 - vUv.y;
-                    gl_Position = vec4(position, 0.0, 1.0);
+                    vUv = uv;
+                    gl_Position = vec4(position, 1.0);
                 }
-            `;
-
-            // Fragment Shader source (Displacement shader)
-            const fsSource = `
-                precision mediump float;
-                varying vec2 vUv;
+            `,
+            fragmentShader: `
+                precision highp float;
                 uniform sampler2D uImage;
                 uniform sampler2D uDepthMap;
                 uniform vec2 uMouseOffset;
                 uniform float uDepthIntensity;
                 uniform bool uVisualizeDepth;
-
+                uniform int uRenderMode;
+                uniform float uBrightness;
+                uniform float uContrast;
+                uniform float uSaturation;
+                uniform int uFilterMode;
+                varying vec2 vUv;
+                vec3 adjustColor(vec3 color) {
+                    color *= uBrightness;
+                    color = (color - 0.5) * uContrast + 0.5;
+                    float grey = dot(color, vec3(0.299, 0.587, 0.114));
+                    return mix(vec3(grey), color, uSaturation);
+                }
+                vec3 artisticFilter(vec3 color) {
+                    if (uFilterMode == 1) {
+                        return color * vec3(1.05, 0.9, 0.95);
+                    }
+                    if (uFilterMode == 2) {
+                        return mix(vec3(0.25, 0.16, 0.08), color, 0.7);
+                    }
+                    if (uFilterMode == 3) {
+                        float grey = dot(color, vec3(0.299, 0.587, 0.114));
+                        return vec3(grey);
+                    }
+                    if (uFilterMode == 4) {
+                        return color * vec3(0.8, 1.05, 0.9);
+                    }
+                    if (uFilterMode == 5) {
+                        return mix(color, vec3(color.b * 1.2, color.g * 0.9, color.r * 0.9), 0.25);
+                    }
+                    return color;
+                }
                 void main() {
                     if (uVisualizeDepth) {
                         gl_FragColor = texture2D(uDepthMap, vUv);
-                    } else {
-                        float depth = texture2D(uDepthMap, vUv).r;
-                        vec2 displacedUv = vUv + uMouseOffset * depth * uDepthIntensity;
-                        displacedUv = clamp(displacedUv, 0.001, 0.999);
-                        gl_FragColor = texture2D(uImage, displacedUv);
+                        return;
                     }
+                    float depthValue = texture2D(uDepthMap, vUv).r;
+                    vec2 displacedUv = vUv + (uMouseOffset - vec2(0.5)) * depthValue * uDepthIntensity;
+                    displacedUv = clamp(displacedUv, 0.0, 1.0);
+                    vec4 color = texture2D(uImage, displacedUv);
+                    color.rgb = adjustColor(color.rgb);
+                    color.rgb = artisticFilter(color.rgb);
+                    if (uRenderMode == 1) {
+                        float gray = texture2D(uDepthMap, vUv).r;
+                        gl_FragColor = vec4(vec3(gray), 1.0);
+                        return;
+                    }
+                    if (uRenderMode == 2) {
+                        float gray = texture2D(uDepthMap, vUv).r;
+                        gl_FragColor = vec4(vec3(gray * 0.4, gray * 0.8, 1.0 - gray), 1.0);
+                        return;
+                    }
+                    if (uRenderMode == 3) {
+                        float r = texture2D(uImage, vec2(clamp(displacedUv.x + 0.01, 0.0, 1.0), displacedUv.y)).r;
+                        float g = color.g;
+                        float b = texture2D(uImage, vec2(clamp(displacedUv.x - 0.01, 0.0, 1.0), displacedUv.y)).b;
+                        gl_FragColor = vec4(r, g, b, color.a);
+                        return;
+                    }
+                    gl_FragColor = color;
                 }
-            `;
-
-            // Create WebGL program
-            const vs = gl.createShader(gl.VERTEX_SHADER)!;
-            gl.shaderSource(vs, vsSource);
-            gl.compileShader(vs);
-
-            const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
-            gl.shaderSource(fs, fsSource);
-            gl.compileShader(fs);
-
-            program = gl.createProgram()!;
-            gl.attachShader(program, vs);
-            gl.attachShader(program, fs);
-            gl.linkProgram(program);
-            gl.useProgram(program);
-
-            // Buffer vertices (a quad that covers the screen)
-            const vertices = new Float32Array([
-                -1, -1,
-                 1, -1,
-                -1,  1,
-                -1,  1,
-                 1, -1,
-                 1,  1,
-            ]);
-
-            const buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-            const positionLoc = gl.getAttribLocation(program, 'position');
-            gl.enableVertexAttribArray(positionLoc);
-            gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
-
-            // Setup Textures
-            imageTexture = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D, imageTexture);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-            depthTexture = gl.createTexture();
-            gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-            updateWebGLTexture();
-            updateWebGLDepthTexture();
-
-            // Set uniform samplers
-            const uImageLoc = gl.getUniformLocation(program, 'uImage');
-            const uDepthMapLoc = gl.getUniformLocation(program, 'uDepthMap');
-            gl.uniform1i(uImageLoc, 0);
-            gl.uniform1i(uDepthMapLoc, 1);
-
-            requestAnimationFrame(drawLoop);
-        }
-
-        function updateWebGLTexture() {
-            if (!gl || !imageTexture) return;
-            gl.activeTexture(gl.TEXTURE_0);
-            gl.bindTexture(gl.TEXTURE_2D, imageTexture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, offscreenImage);
-        }
-
-        function updateWebGLDepthTexture() {
-            if (!gl || !depthTexture) return;
-            gl.activeTexture(gl.TEXTURE_1);
-            gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, offscreenDepth);
-        }
-
-        // WebGL continuous render loop
-        function drawLoop() {
-            if (!originalImage || !gl || !program) return;
-
-            gl.viewport(0, 0, canvas.width, canvas.height);
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-
-            // Interpolate mouse movement to make it incredibly smooth
-            mouseX += (targetMouseX - mouseX) * 0.08;
-            mouseY += (targetMouseY - mouseY) * 0.08;
-
-            // Offset coordinate math
-            const uMouseOffsetLoc = gl.getUniformLocation(program, 'uMouseOffset');
-            const uDepthIntensityLoc = gl.getUniformLocation(program, 'uDepthIntensity');
-            const uVisualizeDepthLoc = gl.getUniformLocation(program, 'uVisualizeDepth');
-
-            // Set offset parameters (Limit displacement to +/- 0.03 range)
-            const offX = (mouseX - 0.5) * 0.04;
-            const offY = -(mouseY - 0.5) * 0.04;
-
-            // If depth map visualizer or depth3d tool is not active, force 0 displacement
-            const finalIntensity = (activeTool === 'depth3d' || activeTool === 'pointer') ? depthIntensity : 0.0;
-
-            gl.uniform2f(uMouseOffsetLoc, offX, offY);
-            gl.uniform1f(uDepthIntensityLoc, finalIntensity);
-            gl.uniform1i(uVisualizeDepthLoc, visualizeDepthMap ? 1 : 0);
-
-            // Draw textures
-            gl.activeTexture(gl.TEXTURE_0);
-            gl.bindTexture(gl.TEXTURE_2D, imageTexture);
-            gl.activeTexture(gl.TEXTURE_1);
-            gl.bindTexture(gl.TEXTURE_2D, depthTexture);
-
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-            requestAnimationFrame(drawLoop);
-        }
-
-        // 🖱️ Canvas Mouse Tracking & Painting Actions
-        canvas.addEventListener('mousemove', (e) => {
-            if (!originalImage) return;
-
-            const rect = canvas.getBoundingClientRect();
-            const xNorm = (e.clientX - rect.left) / rect.width;
-            const yNorm = (e.clientY - rect.top) / rect.height;
-
-            // Update destination coordinates for 3D displacement
-            targetMouseX = xNorm;
-            targetMouseY = yNorm;
-
-            // Handle depth painting brush
-            if (activeTool === 'depth3d' && selectedDepthPreset === 'brush' && isPaintingDepth) {
-                paintDepthBrush(xNorm * offscreenDepth.width, yNorm * offscreenDepth.height);
-            }
-
-            // Handle text dragging
-            if (activeTool === 'pointer' && dragTextIndex !== -1) {
-                textLayers[dragTextIndex].x = xNorm;
-                textLayers[dragTextIndex].y = yNorm;
-                applyAdjustments();
-            }
+            `
         });
-
-        canvas.addEventListener('mousedown', (e) => {
-            if (!originalImage) return;
-
-            const rect = canvas.getBoundingClientRect();
-            const xNorm = (e.clientX - rect.left) / rect.width;
-            const yNorm = (e.clientY - rect.top) / rect.height;
-
-            if (activeTool === 'depth3d' && selectedDepthPreset === 'brush') {
-                isPaintingDepth = true;
-                paintDepthBrush(xNorm * offscreenDepth.width, yNorm * offscreenDepth.height);
-            }
-
-            if (activeTool === 'pointer') {
-                // Check if user clicked on any text layer (radius based selection)
-                dragTextIndex = textLayers.findIndex(layer => {
-                    const dist = Math.hypot(layer.x - xNorm, layer.y - yNorm);
-                    return dist < 0.08; // threshold radius
-                });
-            }
-        });
-
-        window.addEventListener('mouseup', () => {
-            isPaintingDepth = false;
-            dragTextIndex = -1;
-        });
-
-        function paintDepthBrush(x: number, y: number) {
-            offscreenDepthCtx.save();
-            const grad = offscreenDepthCtx.createRadialGradient(x, y, 0, x, y, brushSize);
-            grad.addColorStop(0, 'rgba(255, 255, 255, 0.15)'); // Soft additive white
-            grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
-            
-            offscreenDepthCtx.fillStyle = grad;
-            offscreenDepthCtx.beginPath();
-            offscreenDepthCtx.arc(x, y, brushSize, 0, Math.PI * 2);
-            offscreenDepthCtx.fill();
-            offscreenDepthCtx.restore();
-
-            updateWebGLDepthTexture();
-        }
-
-        // 💾 Export Image
-        btnExport?.addEventListener('click', () => {
-            if (!originalImage || btnExport.classList.contains('disabled')) return;
-
-            // Create temporary export canvas to composite WebGL render result or offscreen layers
-            const exportCanvas = document.createElement('canvas');
-            exportCanvas.width = canvas.width;
-            exportCanvas.height = canvas.height;
-            const exportCtx = exportCanvas.getContext('2d')!;
-
-            // Draw WebGL result onto export canvas
-            exportCtx.drawImage(canvas, 0, 0);
-
-            // Generate file download link
-            const url = exportCanvas.toDataURL('image/jpeg', 0.95);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `JMX_Obra_Modificada_${Date.now()}.jpg`;
-            a.click();
-        });
+        mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        imageTexture = new THREE.Texture(offscreenImage);
+        imageTexture.minFilter = THREE.LinearFilter;
+        imageTexture.magFilter = THREE.LinearFilter;
+        imageTexture.flipY = false;
+        imageTexture.encoding = THREE.sRGBEncoding;
+        imageTexture.needsUpdate = true;
+        depthTexture = new THREE.Texture(offscreenDepth);
+        depthTexture.minFilter = THREE.LinearFilter;
+        depthTexture.magFilter = THREE.LinearFilter;
+        depthTexture.flipY = false;
+        depthTexture.needsUpdate = true;
+        material.uniforms.uImage.value = imageTexture;
+        material.uniforms.uDepthMap.value = depthTexture;
+        resizeRenderer();
+        renderLoop();
     }
+
+    function resizeRenderer() {
+        if (!renderer || !camera || !canvas) return;
+        const width = canvas.clientWidth || canvas.width;
+        const height = canvas.clientHeight || canvas.height;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+    }
+
+    function renderLoop() {
+        if (!renderer || !material || !scene || !camera) return;
+        animationFrameId = window.requestAnimationFrame(renderLoop);
+        mouseX += (targetMouseX - mouseX) * 0.08;
+        mouseY += (targetMouseY - mouseY) * 0.08;
+        const offset = new THREE.Vector2((mouseX - 0.5) * 0.04, (mouseY - 0.5) * -0.04);
+        material.uniforms.uMouseOffset.value.copy(offset);
+        material.uniforms.uDepthIntensity.value = activeTool === 'depth3d' ? depthIntensity : 0.0;
+        material.uniforms.uVisualizeDepth.value = visualizeDepthMap;
+        material.uniforms.uRenderMode.value = renderMode;
+        renderer.render(scene, camera);
+    }
+
+    function updateColorTexture() {
+        if (!imageTexture) return;
+        imageTexture.needsUpdate = true;
+    }
+
+    function updateDepthTexture() {
+        if (!depthTexture) return;
+        depthTexture.needsUpdate = true;
+    }
+
+    function onCanvasMouseMove(event) {
+        if (!canvas || !originalImage) return;
+        const rect = canvas.getBoundingClientRect();
+        const xNorm = (event.clientX - rect.left) / rect.width;
+        const yNorm = (event.clientY - rect.top) / rect.height;
+        targetMouseX = xNorm;
+        targetMouseY = yNorm;
+        if (activeTool === 'depth3d' && selectedDepthPreset === 'brush' && isPaintingDepth) {
+            paintDepthBrush(xNorm * offscreenDepth.width, yNorm * offscreenDepth.height);
+        }
+        if (activeTool === 'pointer' && dragTextIndex !== -1) {
+            textLayers[dragTextIndex].x = xNorm;
+            textLayers[dragTextIndex].y = yNorm;
+            updateColorCanvas();
+        }
+    }
+
+    function onCanvasMouseDown(event) {
+        if (!canvas || !originalImage) return;
+        const rect = canvas.getBoundingClientRect();
+        const xNorm = (event.clientX - rect.left) / rect.width;
+        const yNorm = (event.clientY - rect.top) / rect.height;
+        if (activeTool === 'depth3d' && selectedDepthPreset === 'brush') {
+            isPaintingDepth = true;
+            paintDepthBrush(xNorm * offscreenDepth.width, yNorm * offscreenDepth.height);
+        }
+        if (activeTool === 'pointer') {
+            dragTextIndex = textLayers.findIndex(layer => {
+                const dist = Math.hypot(layer.x - xNorm, layer.y - yNorm);
+                return dist < 0.08;
+            });
+        }
+    }
+
+    function paintDepthBrush(x, y) {
+        if (!offscreenDepthCtx) return;
+        const grad = offscreenDepthCtx.createRadialGradient(x, y, 0, x, y, brushSize);
+        grad.addColorStop(0, 'rgba(255,255,255,0.15)');
+        grad.addColorStop(1, 'rgba(255,255,255,0.0)');
+        offscreenDepthCtx.save();
+        offscreenDepthCtx.fillStyle = grad;
+        offscreenDepthCtx.beginPath();
+        offscreenDepthCtx.arc(x, y, brushSize, 0, Math.PI * 2);
+        offscreenDepthCtx.fill();
+        offscreenDepthCtx.restore();
+        updateDepthTexture();
+    }
+
+    function exportFinalImage() {
+        if (!canvas || !btnExport || btnExport.classList.contains('disabled')) return;
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+        const exportCtx = exportCanvas.getContext('2d');
+        if (!exportCtx) return;
+        exportCtx.drawImage(canvas, 0, 0);
+        const url = exportCanvas.toDataURL('image/jpeg', 0.95);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JMX_Obra_Modificada_${Date.now()}.jpg`;
+        link.click();
+    }
+
+    function exportProject() {
+        if (!originalImage) return;
+        const project = {
+            image: offscreenImage.toDataURL('image/png'),
+            adjustments,
+            activeFilter,
+            textLayers,
+            depthMap: offscreenDepth.toDataURL('image/png'),
+            selectedDepthPreset,
+            brushSize,
+            depthIntensity,
+            renderMode,
+            visualizeDepthMap
+        };
+        const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JMX_Editor_Proyecto_${Date.now()}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function importProject(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const project = JSON.parse(reader.result);
+                restoreProject(project);
+            } catch (error) {
+                console.error('Error cargando proyecto:', error);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function restoreProject(project) {
+        if (!project.image) return;
+        const img = new Image();
+        img.onload = () => {
+            originalImage = img;
+            offscreenImage.width = img.width;
+            offscreenImage.height = img.height;
+            offscreenDepth.width = img.width;
+            offscreenDepth.height = img.height;
+            canvas.width = img.width;
+            canvas.height = img.height;
+            if (canvas instanceof HTMLCanvasElement) canvas.style.display = 'block';
+            if (uploadPrompt) uploadPrompt.style.display = 'none';
+            if (dimensionLabel) dimensionLabel.innerText = `Resolución: ${img.width}x${img.height}`;
+            if (btnExport) { btnExport.classList.remove('disabled'); btnExport.disabled = false; }
+            adjustments = project.adjustments || adjustments;
+            activeFilter = project.activeFilter || 'none';
+            textLayers = project.textLayers || [];
+            selectedDepthPreset = project.selectedDepthPreset || 'brush';
+            brushSize = project.brushSize ?? 60;
+            depthIntensity = project.depthIntensity ?? 0.3;
+            renderMode = project.renderMode ?? 0;
+            visualizeDepthMap = project.visualizeDepthMap || false;
+            if (brightnessSlider) brightnessSlider.value = String(adjustments.brightness || 100);
+            if (contrastSlider) contrastSlider.value = String(adjustments.contrast || 100);
+            if (saturationSlider) saturationSlider.value = String(adjustments.saturation || 100);
+            if (exposureSlider) exposureSlider.value = String(adjustments.exposure || 100);
+            updateSliderVal(brightnessSlider, 'brightness-val', '%');
+            updateSliderVal(contrastSlider, 'contrast-val', '%');
+            updateSliderVal(saturationSlider, 'saturation-val', '%');
+            updateSliderVal(exposureSlider, 'exposure-val', '%');
+            if (depthPresetSelect) depthPresetSelect.value = selectedDepthPreset;
+            if (brushSizeSlider) brushSizeSlider.value = String(brushSize);
+            if (depthIntensitySlider) depthIntensitySlider.value = String(Math.round(depthIntensity * 100));
+            if (depthIntensityVal) depthIntensityVal.innerText = `${Math.round(depthIntensity * 100)}%`;
+            if (visualizeDepthCheckbox) visualizeDepthCheckbox.checked = visualizeDepthMap;
+            const renderModeSelect = document.getElementById('render-mode-select');
+            if (renderModeSelect) renderModeSelect.value = String(renderMode);
+            updateColorCanvas();
+            if (project.depthMap) {
+                const depthImg = new Image();
+                depthImg.onload = () => {
+                    if (!offscreenDepthCtx) return;
+                    offscreenDepthCtx.clearRect(0, 0, offscreenDepth.width, offscreenDepth.height);
+                    offscreenDepthCtx.drawImage(depthImg, 0, 0, offscreenDepth.width, offscreenDepth.height);
+                    updateDepthTexture();
+                };
+                depthImg.src = project.depthMap;
+            } else {
+                generateDepthPreset();
+            }
+            renderLayersUI();
+            initThree();
+        };
+        img.src = project.image;
+    }
+
+    function cleanup() {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        window.removeEventListener('resize', resizeRenderer);
+        if (renderer) {
+            renderer.dispose();
+            renderer = null;
+        }
+        if (mesh) {
+            mesh.geometry.dispose();
+            if (mesh.material) mesh.material.dispose();
+        }
+        scene = null;
+        camera = null;
+        material = null;
+        mesh = null;
+        imageTexture = null;
+        depthTexture = null;
+    }
+}
 </script>
