@@ -15,7 +15,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // 3. Forward request to MiniIA backend
-    const backendResponse = await fetch('http://100.94.20.127:3013/api/chat', {
+    const backendResponse = await fetch('http://100.110.176.23:3013/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
