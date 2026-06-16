@@ -118,13 +118,13 @@ if (!isAllowed) {
         let currentPin = '';
 
         const pinModal = document.getElementById('pinModal');
-        const pinInput = document.getElementById('pinInput') as HTMLInputElement;
+        const pinInput = document.getElementById('pinInput');
         const unlockBtn = document.getElementById('unlockBtn');
         const pinError = document.getElementById('pinError');
 
         const chatContainer = document.getElementById('chatContainer');
-        const promptInput = document.getElementById('promptInput') as HTMLTextAreaElement;
-        const sendBtn = document.getElementById('sendBtn') as HTMLButtonElement;
+        const promptInput = document.getElementById('promptInput');
+        const sendBtn = document.getElementById('sendBtn');
 
         // Auto-resize textarea
         promptInput?.addEventListener('input', function() {
@@ -145,7 +145,7 @@ if (!isAllowed) {
         });
 
         // Chat Logic
-        const appendMessage = (role: 'user' | 'ia', text: string) => {
+        const appendMessage = (role, text) => {
             const wrapper = document.createElement('div');
             wrapper.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
             
