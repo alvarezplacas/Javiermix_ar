@@ -75,29 +75,29 @@
     <!-- Chat History -->
     <main id="chatContainer" class="flex-1 overflow-y-auto p-4 space-y-6 flex flex-col pb-6">
         <div class="flex justify-start">
-            <div class="ia-bubble max-w-[90%]">
-                <p class="leading-relaxed">Hola Javier, soy MiniIA. Sistema autenticado correctamente por Tailscale. ¿En qué te puedo ayudar hoy?</p>
+            <div class="ia-bubble max-w-[90%] text-lg">
+                <p class="leading-relaxed">Hola Javier, soy MiniIA. Sistema autenticado correctamente. ¿En qué te puedo ayudar hoy?</p>
             </div>
         </div>
     </main>
 
     <!-- Input Area -->
-    <footer class="p-3 bg-[#131314]">
-        <div class="max-w-3xl mx-auto relative input-bg rounded-3xl border border-gray-700/50 focus-within:border-gray-500 transition-colors flex items-end px-2 py-2">
+    <footer class="p-4 bg-[#131314]">
+        <div class="max-w-3xl mx-auto relative input-bg rounded-3xl border border-gray-700/50 focus-within:border-gray-500 transition-colors flex items-end px-3 py-2">
             
-            <button class="p-2.5 text-gray-400 hover:text-white rounded-full transition-colors flex-shrink-0">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <button class="p-3 text-gray-400 hover:text-white rounded-full transition-colors flex-shrink-0">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             </button>
 
             <textarea 
                 id="promptInput"
-                class="flex-1 bg-transparent border-none text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-0 resize-none max-h-32 min-h-[24px] py-2.5 px-2 text-base leading-relaxed"
-                placeholder="Escribe un mensaje a MiniIA..."
+                class="flex-1 bg-transparent border-none text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-0 resize-none max-h-40 min-h-[32px] py-3 px-2 text-lg leading-relaxed"
+                placeholder="Escribe un mensaje..."
                 rows="1"
             ></textarea>
 
-            <button id="sendBtn" class="p-2.5 text-blue-400 hover:text-blue-300 rounded-full transition-colors flex-shrink-0 disabled:opacity-50">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            <button id="sendBtn" class="p-3 text-blue-400 hover:text-blue-300 rounded-full transition-colors flex-shrink-0 disabled:opacity-50">
+                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
         </div>
         <div class="text-center mt-2">
@@ -141,7 +141,7 @@
             wrapper.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
             
             const bubble = document.createElement('div');
-            bubble.className = `${role === 'user' ? 'user-bubble px-4 py-2.5 rounded-2xl rounded-tr-sm' : 'ia-bubble py-1'} max-w-[90%] leading-relaxed whitespace-pre-wrap text-[15px]`;
+            bubble.className = `${role === 'user' ? 'user-bubble px-5 py-3 rounded-2xl rounded-tr-sm' : 'ia-bubble py-1'} max-w-[90%] leading-relaxed whitespace-pre-wrap text-lg`;
             
             if(text === '...') {
                 bubble.innerHTML = '<div class="loader mt-2"></div>';
