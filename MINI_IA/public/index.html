@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard OCR - Mini IA</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .dashboard-card {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .status-box {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .status-number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .status-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            color: var(--text-main);
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .notification {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .notification.success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+            display: block;
+        }
+
+        .notification.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            display: block;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-card">
+        <h1>Generador de Libros (OCR)</h1>
+        <div class="subtitle">IA Llama 3.2 Vision + Maquetación PDF</div>
+
+        <div class="status-box">
+            <div class="status-number" id="pendingCount">-</div>
+            <div class="status-label">Páginas pendientes en Inbox</div>
+        </div>
+
+        <div class="input-group">
+            <label for="bookTitle">Título del Libro a Generar</label>
+            <input type="text" id="bookTitle" placeholder="Ej. El Principito - Capítulo 1" autocomplete="off">
+        </div>
+
+        <button id="generateBtn" onclick="startGeneration()">
+            <div class="loading" id="btnSpinner"></div>
+            <span id="btnText">Generar eBook (Texto Real)</span>
+        </button>
+
+        <div id="notification" class="notification"></div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/ocr/status`);
+                const data = await response.json();
+                
+                const count = data.pending_images || 0;
+                document.getElementById('pendingCount').textContent = count;
+                
+                const btn = document.getElementById('generateBtn');
+                if (count === 0) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                } else {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                }
+            } catch (error) {
+                console.error("Error al obtener estado:", error);
+                document.getElementById('pendingCount').textContent = "Error";
+            }
+        }
+
+        async function startGeneration() {
+            const title = document.getElementById('bookTitle').value.trim();
+            const notif = document.getElementById('notification');
+            
+            if (!title) {
+                notif.className = 'notification error';
+                notif.textContent = 'Por favor, ingresa un título para el libro.';
+                return;
+            }
+
+            // UI Update
+            const btn = document.getElementById('generateBtn');
+            const spinner = document.getElementById('btnSpinner');
+            const btnText = document.getElementById('btnText');
+            
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.textContent = 'Iniciando IA...';
+            notif.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/ocr/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: title })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    notif.className = 'notification success';
+                    notif.textContent = '¡Proceso iniciado! Las páginas se están convirtiendo en texto en segundo plano. Los archivos se guardarán en "libros_procesados".';
+                    document.getElementById('bookTitle').value = '';
+                    
+                    // Actualizar contador visualmente a 0
+                    document.getElementById('pendingCount').textContent = '0';
+                } else {
+                    notif.className = 'notification error';
+                    notif.textContent = data.detail || 'Error al iniciar el proceso.';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                notif.className = 'notification error';
+                notif.textContent = 'Error de conexión con el servidor.';
+                btn.disabled = false;
+            } finally {
+                spinner.style.display = 'none';
+                btnText.textContent = 'Generar eBook (Texto Real)';
+            }
+        }
+
+        // Cargar estado al inicio
+        fetchStatus();
+        
+        // Actualizar cada 5 segundos
+        setInterval(fetchStatus, 5000);
+    </script>
+</body>
+</html>

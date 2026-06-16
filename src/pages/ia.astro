@@ -1,0 +1,210 @@
+---
+// src/pages/ia.astro
+// Chat Exclusivo Gemini-Style para Javier Móvil vía Tailscale
+const clientIp = Astro.clientAddress;
+const allowedIPs = ['100.67.40.82', 'fd7a:115c:a1e0::2639:2852', '127.0.0.1', '::1'];
+const forwardedFor = Astro.request.headers.get('x-forwarded-for') || '';
+
+const isAllowed = allowedIPs.includes(clientIp) || allowedIPs.some(ip => forwardedFor.includes(ip));
+
+if (!isAllowed) {
+  // Ocultamos la UI si la IP no es la de Tailscale del celular
+  return new Response("ACCESO RESTRINGIDO. Dispositivo no autenticado en la red mesh (Tailscale).", { status: 403 });
+}
+---
+
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MiniIA - Gemini UI</title>
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .gemini-bg {
+            background-color: #131314;
+        }
+        .user-bubble {
+            background-color: #282a2c;
+            color: #e3e3e3;
+        }
+        .ia-bubble {
+            background-color: transparent;
+            color: #e3e3e3;
+        }
+        .input-bg {
+            background-color: #1e1f20;
+        }
+        
+        /* PIN Modal Styles */
+        #pinModal {
+            backdrop-filter: blur(10px);
+        }
+        
+        .loader {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-left-color: #a8c7fa;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+    <!-- Tailwind import asumido por Astro -->
+</head>
+<body class="gemini-bg text-gray-200 h-screen flex flex-col overflow-hidden relative">
+
+    <!-- PIN Modal -->
+    <div id="pinModal" class="absolute inset-0 z-50 flex items-center justify-center bg-[#131314]/90">
+        <div class="bg-[#1e1f20] p-6 rounded-2xl shadow-2xl max-w-sm w-full mx-4 border border-gray-800 text-center">
+            <h2 class="text-xl font-bold mb-2 text-white">Seguridad MiniIA</h2>
+            <p class="text-sm text-gray-400 mb-6">Ingresa tu PIN de administrador</p>
+            
+            <input type="password" id="pinInput" placeholder="••••" maxlength="4" pattern="[0-9]*" inputmode="numeric" class="w-full text-center text-2xl tracking-[0.5em] bg-[#131314] border border-gray-700 rounded-xl py-3 text-white focus:outline-none focus:border-blue-500 mb-4 transition-colors">
+            
+            <button id="unlockBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors">
+                Desbloquear
+            </button>
+            <p id="pinError" class="text-red-400 text-xs mt-3 hidden">PIN Incorrecto</p>
+        </div>
+    </div>
+
+    <!-- Top Header -->
+    <header class="flex items-center justify-between px-4 py-3 border-b border-gray-800/50">
+        <div class="flex items-center gap-2">
+            <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <span class="font-semibold text-lg text-white tracking-wide">MiniIA <span class="text-xs text-blue-400 bg-blue-900/30 px-2 py-0.5 rounded-full ml-1 font-mono">ADMIN</span></span>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm">
+            JM
+        </div>
+    </header>
+
+    <!-- Chat History -->
+    <main id="chatContainer" class="flex-1 overflow-y-auto p-4 space-y-6 flex flex-col pb-6">
+        <div class="flex justify-start">
+            <div class="ia-bubble max-w-[90%]">
+                <p class="leading-relaxed">Hola Javier, soy MiniIA. Sistema autenticado correctamente por Tailscale. ¿En qué te puedo ayudar hoy?</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Input Area -->
+    <footer class="p-3 bg-[#131314]">
+        <div class="max-w-3xl mx-auto relative input-bg rounded-3xl border border-gray-700/50 focus-within:border-gray-500 transition-colors flex items-end px-2 py-2">
+            
+            <button class="p-2.5 text-gray-400 hover:text-white rounded-full transition-colors flex-shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+
+            <textarea 
+                id="promptInput"
+                class="flex-1 bg-transparent border-none text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-0 resize-none max-h-32 min-h-[24px] py-2.5 px-2 text-base leading-relaxed"
+                placeholder="Escribe un mensaje a MiniIA..."
+                rows="1"
+            ></textarea>
+
+            <button id="sendBtn" class="p-2.5 text-blue-400 hover:text-blue-300 rounded-full transition-colors flex-shrink-0 disabled:opacity-50">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </div>
+        <div class="text-center mt-2">
+            <span class="text-[10px] text-gray-500 font-mono">Conectado a nodo principal (100.94.20.127) vía Edge 20 Lite</span>
+        </div>
+    </footer>
+
+    <script>
+        let currentPin = '';
+
+        const pinModal = document.getElementById('pinModal');
+        const pinInput = document.getElementById('pinInput') as HTMLInputElement;
+        const unlockBtn = document.getElementById('unlockBtn');
+        const pinError = document.getElementById('pinError');
+
+        const chatContainer = document.getElementById('chatContainer');
+        const promptInput = document.getElementById('promptInput') as HTMLTextAreaElement;
+        const sendBtn = document.getElementById('sendBtn') as HTMLButtonElement;
+
+        // Auto-resize textarea
+        promptInput?.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            sendBtn.disabled = this.value.trim().length === 0;
+        });
+
+        // Auth Logic
+        unlockBtn?.addEventListener('click', () => {
+            if(pinInput.value === '7890') {
+                currentPin = pinInput.value;
+                pinModal?.classList.add('hidden');
+            } else {
+                pinError?.classList.remove('hidden');
+                pinInput.value = '';
+            }
+        });
+
+        // Chat Logic
+        const appendMessage = (role: 'user' | 'ia', text: string) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `${role === 'user' ? 'user-bubble px-4 py-2.5 rounded-2xl rounded-tr-sm' : 'ia-bubble py-1'} max-w-[90%] leading-relaxed whitespace-pre-wrap text-[15px]`;
+            
+            if(text === '...') {
+                bubble.innerHTML = '<div class="loader mt-2"></div>';
+                bubble.id = 'loadingBubble';
+            } else {
+                bubble.textContent = text;
+            }
+
+            wrapper.appendChild(bubble);
+            chatContainer?.appendChild(wrapper);
+            chatContainer?.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+        };
+
+        const sendMessage = async () => {
+            const text = promptInput.value.trim();
+            if(!text) return;
+
+            promptInput.value = '';
+            promptInput.style.height = 'auto';
+            sendBtn.disabled = true;
+
+            appendMessage('user', text);
+            appendMessage('ia', '...');
+
+            try {
+                const res = await fetch('/api/ia-chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: text, pin: currentPin })
+                });
+
+                const data = await res.json();
+                document.getElementById('loadingBubble')?.parentElement?.remove();
+
+                if(res.ok && data.status === 'success') {
+                    appendMessage('ia', data.response);
+                } else {
+                    appendMessage('ia', `[Error]: ${data.error || 'Fallo de conexión al cerebro central'}`);
+                }
+            } catch(e) {
+                document.getElementById('loadingBubble')?.parentElement?.remove();
+                appendMessage('ia', `[Error de red local]: No se pudo alcanzar el backend.`);
+            }
+            sendBtn.disabled = false;
+            promptInput.focus();
+        };
+
+        sendBtn?.addEventListener('click', sendMessage);
+        promptInput?.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

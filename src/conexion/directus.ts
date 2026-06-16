@@ -389,7 +389,11 @@ export async function getArtworkDetails(fileId: string) {
     try { 
         const client = await DirectusManager.getClient(); 
         // Usar readFiles con filtro en lugar de readItem para evitar restricciones de v11
-        const files = await client.request(readFiles({ filter: { id: { _eq: fileId } }, limit: 1 }));
+        const files = await client.request(readFiles({ 
+            filter: { id: { _eq: fileId } }, 
+            limit: 1,
+            fields: ['*']
+        }));
         const file = files[0];
         if (!file) return null;
         return { mainFile: file, meta: null }; 

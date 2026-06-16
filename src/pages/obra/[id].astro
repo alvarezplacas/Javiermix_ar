@@ -206,7 +206,7 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
           <div class="prose-content">
             <h4 class="prose-subtitle">LA HISTORIA DETRÁS DE LA IMAGEN</h4>
             {mainFile.description || meta?.description ? (
-              <p>{mainFile.description || meta.description}</p>
+              <p style="white-space: pre-line;">{mainFile.description || meta?.description}</p>
             ) : (
               <p>Esta pieza de autor es parte de una selección curada rigurosamente. Refleja nuestro compromiso con el legado fotográfico y el diseño contemporáneo a nivel internacional. La edición es estricta y controlada, asegurando el valor de obra única a lo largo del tiempo.</p>
             )}
