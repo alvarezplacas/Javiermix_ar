@@ -278,28 +278,31 @@
             color: var(--text-primary);
         }
 
-        /* Typing Indicator */
+        /* Typing Indicator (KITT Style) */
         .typing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 0.5rem 0.2rem;
-        }
-
-        .dot {
-            width: 8px;
+            width: 60px;
             height: 8px;
-            background-color: var(--text-secondary);
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
+            background: #110000;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            margin: 0.5rem 0.2rem;
+            border: 1px solid #330000;
         }
-
-        .dot:nth-child(1) { animation-delay: -0.32s; }
-        .dot:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
+        .typing-indicator::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 20px;
+            height: 100%;
+            background: #ff0000;
+            border-radius: 4px;
+            box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+            animation: kitt-scan 0.7s ease-in-out infinite alternate;
+        }
+        @keyframes kitt-scan {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(40px); }
         }
 
         /* Input Area */
@@ -490,11 +493,7 @@
             
             if(text === '...') {
                 bubble.innerHTML = `
-                    <div class="typing-indicator">
-                        <div class="dot"></div>
-                        <div class="dot"></div>
-                        <div class="dot"></div>
-                    </div>
+                    <div class="typing-indicator"></div>
                 `;
                 bubble.id = 'loadingBubble';
             } else {
