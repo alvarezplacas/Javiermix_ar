@@ -1,16 +1,7 @@
 ---
 // src/pages/ia.astro
-// Chat Exclusivo Gemini-Style para Javier Móvil vía Tailscale
-const clientIp = Astro.clientAddress;
-const allowedIPs = ['100.67.40.82', 'fd7a:115c:a1e0::2639:2852', '127.0.0.1', '::1'];
-const forwardedFor = Astro.request.headers.get('x-forwarded-for') || '';
-
-const isAllowed = allowedIPs.includes(clientIp) || allowedIPs.some(ip => forwardedFor.includes(ip));
-
-if (!isAllowed) {
-  // Ocultamos la UI si la IP no es la de Tailscale del celular
-  return new Response("ACCESO RESTRINGIDO. Dispositivo no autenticado en la red mesh (Tailscale).", { status: 403 });
-}
+// Chat Exclusivo Gemini-Style para Javier Móvil
+// Seguridad mediante PIN de acceso.
 ---
 
 <!DOCTYPE html>

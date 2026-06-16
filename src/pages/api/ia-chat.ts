@@ -1,28 +1,9 @@
 import type { APIRoute } from 'astro';
 
-const ALLOWED_IP = '100.67.40.82'; // Tailscale IP of Motorola Edge 20 Lite
-const ALLOWED_IPV6 = 'fd7a:115c:a1e0::2639:2852'; // IPv6 fallback
 const PIN = '7890'; // Simplified PIN for access
 
-export const POST: APIRoute = async ({ request, clientAddress }) => {
+export const POST: APIRoute = async ({ request }) => {
   try {
-    // 1. IP Validation
-    const forwardedFor = request.headers.get('x-forwarded-for') || '';
-    const isAllowedIp = 
-      clientAddress === ALLOWED_IP || 
-      clientAddress === ALLOWED_IPV6 || 
-      forwardedFor.includes(ALLOWED_IP) || 
-      forwardedFor.includes(ALLOWED_IPV6) || 
-      clientAddress === '127.0.0.1' || 
-      clientAddress === '::1';
-
-    if (!isAllowedIp) {
-      return new Response(JSON.stringify({ error: "Dispositivo no autorizado por Tailscale IP." }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
     const body = await request.json();
 
     // 2. PIN Validation
