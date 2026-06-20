@@ -4,6 +4,7 @@ import '../styles/global.css';
 import MobileNav from '@components/MobileNav.astro';
 import SEO from '@components/SEO.astro';
 import CartWidget from '@components/ecommerce/CartWidget.tsx';
+import MiniIAWidget from '@components/MiniIAWidget.jsx';
 import '../styles/ecommerce.css';
 
 interface Props {
@@ -84,6 +85,7 @@ const {
 	<body>
 		<slot />
 		<CartWidget client:only="preact" />
+		<MiniIAWidget client:only="preact" />
 		<MobileNav />
 
 		<!-- 🔄 Hydration for Theme Toggle (Supports View Transitions) -->
