@@ -497,10 +497,12 @@
                 `;
                 bubble.id = 'loadingBubble';
             } else {
-                // Simple formatting for basic markdown (bold, newlines)
+                // Simple formatting for basic markdown (bold, newlines, images, links)
                 const formattedText = text
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n/g, '<br>');
+                    .replace(/\n/g, '<br>')
+                    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; border-radius: 8px; margin-top: 8px; margin-bottom: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />')
+                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #4361ee; text-decoration: underline;">$1</a>');
                 bubble.innerHTML = formattedText;
             }
 
