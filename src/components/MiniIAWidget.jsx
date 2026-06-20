@@ -77,7 +77,7 @@ export default function MiniIAWidget() {
           position: fixed;
           bottom: 2.5rem;
           left: 2.5rem;
-          z-index: 9997;
+          z-index: 9999;
           display: flex;
           flex-direction: column;
           align-items: flex-start;
