@@ -1,0 +1,50 @@
+---
+import { getAssetUrl } from '@conexion/directus';
+
+// NOTA SOBRE VARIABLES DE ENTORNO DE DIRECTUS:
+// getAssetUrl utiliza DirectusManager.getBaseUrl() que depende de:
+// - import.meta.env.PUBLIC_DIRECTUS_URL
+
+interface Props {
+  id: string;
+  alt: string;
+  class?: string;
+  widths?: number[];
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+  crossorigin?: 'anonymous' | 'use-credentials' | '';
+}
+
+const {
+  id,
+  alt,
+  class: className = '',
+  widths = [640, 1200, 1920],
+  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 1200px',
+  loading = 'lazy',
+  crossorigin = 'anonymous'
+} = Astro.props;
+
+// Construir srcsets para AVIF y JPG utilizando la API de Directus
+const avifSrcset = widths
+  .map(w => `${getAssetUrl(id, { width: w, format: 'avif' })} ${w}w`)
+  .join(', ');
+
+const jpgSrcset = widths
+  .map(w => `${getAssetUrl(id, { width: w, format: 'jpg' })} ${w}w`)
+  .join(', ');
+
+// Fallback image en formato JPG y tamaño mínimo de 1200px para garantizar la compatibilidad
+const fallbackUrl = getAssetUrl(id, { width: 1200, format: 'jpg', quality: 85 }) || '/img/placeholder.jpg';
+---
+<picture class={className}>
+  <source srcset={avifSrcset} sizes={sizes} type="image/avif" />
+  <source srcset={jpgSrcset} sizes={sizes} type="image/jpeg" />
+  <img 
+    src={fallbackUrl} 
+    alt={alt} 
+    class={className} 
+    loading={loading} 
+    crossorigin={crossorigin}
+  />
+</picture>

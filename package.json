@@ -13,6 +13,7 @@
   "dependencies": {
     "@astrojs/node": "^10.0.4",
     "@astrojs/preact": "^5.1.1",
+    "@astrojs/rss": "^4.0.18",
     "@directus/sdk": "^21.2.2",
     "@nanostores/persistent": "^1.3.3",
     "@nanostores/preact": "^1.1.0",

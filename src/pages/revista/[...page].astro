@@ -1,12 +1,38 @@
 ---
-// h:\Javiermix_web_v2\frontend\magazine\index.astro
+// src/pages/revista/[...page].astro
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getArticles, getAssetUrl, fetchFromDirectus, slugify } from '@conexion/directus';
+import { getAssetUrl, fetchFromDirectus, slugify, DirectusManager } from '@conexion/directus';
+import { readItems } from '@directus/sdk';
 
-// Fetch articles from Directus SDK
-const dbArticles = await getArticles();
+export const prerender = true;
+
+// NOTA SOBRE VARIABLES DE ENTORNO DE DIRECTUS:
+// DirectusManager y getAssetUrl utilizan internamente las variables de entorno de Directus:
+// - import.meta.env.PUBLIC_DIRECTUS_URL
+
+export async function getStaticPaths({ paginate }) {
+  try {
+    const client = await DirectusManager.getClient();
+    // Obtener todos los artículos publicados
+    const dbArticles = await client.request(readItems('magazine' as any, { 
+        filter: {
+          status: { _in: ['published', 'Publicado'] }
+        },
+        sort: ['-date_created'],
+        fields: ['*', { user_created: ['*'] }],
+        limit: -1
+    }));
+    return paginate(dbArticles, { pageSize: 12 });
+  } catch (e) {
+    console.error('Error fetching articles for pagination:', e);
+    return paginate([], { pageSize: 12 });
+  }
+}
+
+const { page } = Astro.props;
+const dbArticles = page.data || [];
 
 // 🛠️ Decodificador de entidades HTML para textos impecables (Estándar JMX Oro)
 function decodeHtml(html: string): string {
@@ -202,6 +228,23 @@ const articles = dbArticles.map(art => {
         </div>
       )}
     </div>
+
+    <!-- Controles de Paginación Premium -->
+    {page.lastPage > 1 && (
+      <div class="pagination-container">
+        {page.url.prev ? (
+          <a href={page.url.prev} class="btn-pagination">← ANTERIORES</a>
+        ) : (
+          <span class="btn-pagination disabled">← ANTERIORES</span>
+        )}
+        <span class="page-indicator">Edición {page.currentPage} de {page.lastPage}</span>
+        {page.url.next ? (
+          <a href={page.url.next} class="btn-pagination">SIGUIENTES →</a>
+        ) : (
+          <span class="btn-pagination disabled">SIGUIENTES →</span>
+        )}
+      </div>
+    )}
   </main>
 
   <Footer />
@@ -330,7 +373,7 @@ const articles = dbArticles.map(art => {
   .articles-wrapper { 
     max-width: 1400px; 
     margin: 0 auto; 
-    padding: 8rem 5%; 
+    padding: 8rem 5% 4rem; 
     display: flex; 
     flex-direction: column; 
     gap: 12rem; 
@@ -374,7 +417,7 @@ const articles = dbArticles.map(art => {
   
   .article-row:hover .tilt-frame {
     box-shadow: 0 45px 90px rgba(0, 0, 0, 0.7), 0 0 15px rgba(197, 160, 89, 0.1);
-    transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.6s ease; /* Transición ultra-rápida y amortiguada durante el hover */
+    transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.6s ease; 
   }
   
   .slideshow-wrapper { 
@@ -425,7 +468,6 @@ const articles = dbArticles.map(art => {
     transition: opacity 0.3s;
   }
   
-  /* 🕊️ Clean Floating Card-less Text Column */
   .article-text { 
     padding: 1rem 0; 
     display: flex; 
@@ -548,6 +590,42 @@ const articles = dbArticles.map(art => {
     border: 1px dashed var(--glass-border);
   }
 
+  /* Estilos de Paginación Premium */
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3rem;
+    margin: 4rem auto 8rem;
+    font-family: var(--font-secondary);
+  }
+  .btn-pagination {
+    color: var(--color-white);
+    text-decoration: none;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    font-weight: 700;
+    transition: color 0.3s;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .btn-pagination:hover:not(.disabled) {
+    color: #c5a059;
+    border-bottom-color: #c5a059;
+  }
+  .btn-pagination.disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .page-indicator {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
   @media (max-width: 900px) {
     .article-row { 
       grid-template-columns: 1fr; 
@@ -556,7 +634,7 @@ const articles = dbArticles.map(art => {
     }
     .articles-wrapper { 
       gap: 8rem; 
-      padding: 4rem 5%;
+      padding: 4rem 5% 2rem;
     }
     .tilt-frame { 
       height: 380px; 
@@ -564,6 +642,10 @@ const articles = dbArticles.map(art => {
     }
     .article-row:hover .article-headline {
       transform: none;
+    }
+    .pagination-container {
+      gap: 1.5rem;
+      margin-bottom: 6rem;
     }
   }
 </style>

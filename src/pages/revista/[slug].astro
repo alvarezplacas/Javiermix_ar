@@ -3,10 +3,33 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getArticleDetails, getAssetUrl, fetchFromDirectus, slugify } from '@conexion/directus';
+import { getArticleDetails, getAssetUrl, fetchFromDirectus, slugify, DirectusManager } from '@conexion/directus';
 import { getArticleFeedback } from '@conexion/magazine_feedback';
+import OptimizedImage from '@components/OptimizedImage.astro';
+import { readItems } from '@directus/sdk';
 
-export const prerender = false;
+export const prerender = true;
+
+export async function getStaticPaths() {
+  try {
+    const client = await DirectusManager.getClient();
+    const articles = await client.request(readItems('magazine' as any, {
+      filter: {
+        status: { _in: ['published', 'Publicado'] }
+      },
+      fields: ['id', 'slug'],
+      limit: -1
+    }));
+    
+    return articles.map((art: any) => ({
+      params: { slug: `${art.id}-${art.slug}` }
+    }));
+  } catch (e) {
+    console.error('[[slug].astro getStaticPaths] Error fetching paths:', e);
+    return [];
+  }
+}
+
 const { slug } = Astro.params;
 
 // 1. Obtener datos con resiliencia total (Soporte Híbrido ID-Slug)
@@ -25,12 +48,13 @@ try {
     }
 
     if (articulo) {
-        const clientIp = Astro.clientAddress || "unknown";
+        const clientIp = "unknown";
         feedback = await getArticleFeedback(articulo.id, clientIp);
     }
 } catch (e: any) {
     connectionError = `Error de conexión: ${e.message}`;
 }
+
 
 
 // 🛠️ Decodificador de entidades HTML para textos impecables (Estándar JMX Oro)
@@ -121,6 +145,7 @@ if (articulo) {
                 const filesRes = await fetchFromDirectus(`/files?filter[folder][_eq]=${subFolder.id}&sort=filename_download`);
                 const filesData = await filesRes.json();
                 dynamicMedia = (filesData.data || []).map(f => ({
+                    id: f.id,
                     type: f.type?.startsWith('video/') ? 'video' : 'image',
                     src: getAssetUrl(f.id, f.type?.startsWith('video/') ? { raw: true } : { width: 1600 }),
                     caption: f.title || ''
@@ -139,13 +164,12 @@ if (articulo) {
     media = dynamicMedia.length > 0 ? dynamicMedia : [
         youtubeUrl ? { type: 'youtube', src: youtubeUrl, caption: '' } : null,
         articulo.video_url && !youtubeUrl ? { type: 'video', src: resolveMediaURL(articulo.video_url), caption: '' } : null,
-        articulo.featured_image ? { type: 'image', src: resolveMediaURL(articulo.featured_image), caption: '' } : null,
-        ...mediaItems.map(m => ({ ...m, src: resolveMediaURL(m.src) }))
+        articulo.featured_image ? { id: articulo.featured_image, type: 'image', src: resolveMediaURL(articulo.featured_image), caption: '' } : null,
+        ...mediaItems.map(m => ({ ...m, id: m.id || m.src, src: resolveMediaURL(m.src) }))
     ].filter(Boolean);
 
     if (media.length === 0) media.push({ type: 'image', src: '/img/placeholder.jpg', caption: 'Imagen no disponible' });
 
-    // Fecha y Tiempo
     if (articulo.date_created) {
         formattedDate = new Date(articulo.date_created).toLocaleDateString('es-ES', {
             day: 'numeric', month: 'long', year: 'numeric'
@@ -153,10 +177,50 @@ if (articulo) {
     }
     const wordCount = (articulo.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
     readingTime = Math.max(1, Math.ceil(wordCount / 200));
+
+    // Schema estructurado de tipo NewsArticle para Google News/Discover y Microsoft Start
+    const newsSchema = {
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      "headline": articulo.title,
+      "description": articulo.seo_description || (articulo.content_html || '').replace(/<[^>]*>/g, '').trim().substring(0, 220) || '',
+      "image": [
+        articulo.featured_image 
+          ? getAssetUrl(articulo.featured_image, { width: 1200, format: 'jpg', quality: 90 }) 
+          : 'https://javiermix.ar/img/og/javiermix-og.jpg'
+      ],
+      "datePublished": articulo.date_created,
+      "dateModified": articulo.date_updated || articulo.date_created,
+      "author": [{
+        "@type": "Person",
+        "name": articulo.author || 'Javier Mix',
+        "url": 'https://javiermix.ar/sobre-javier'
+      }],
+      "publisher": {
+        "@type": "Organization",
+        "name": "Javier Mix",
+        "logo": {
+          "@type": "ImageObject",
+          "url": 'https://javiermix.ar/logo/JavierMix2.png'
+        }
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": `https://javiermix.ar/revista/${articulo.id}-${articulo.slug}`
+      }
+    };
+    Astro.props.newsSchema = newsSchema;
 }
 ---
 
-<Layout title={articulo?.title || "Error en Artículo"} description={articulo?.title || "No se pudo cargar el artículo"}>
+<Layout 
+  title={articulo?.title || "Error en Artículo"} 
+  description={articulo?.seo_description || articulo?.title || "No se pudo cargar el artículo"}
+  schema={articulo ? Astro.props.newsSchema : undefined}
+  type="article"
+  pubDate={articulo?.date_created}
+  author={articulo?.author}
+>
   <Header currentPath="/revista" />
   
   {!articulo ? (
@@ -179,17 +243,22 @@ if (articulo) {
         <div class="split-layout">
             <aside class="visual-column">
                 <div class="media-stage">
-                    {media.map((m, index) => (
+                    {media.map((m: any, index: number) => (
                         <div class={`media-layer ${index === 0 ? 'active' : ''}`} data-index={index}>
                             {m.type === 'video' ? (
                                 <video src={m.src} class="media-video" muted autoplay loop playsinline></video>
                             ) : m.type === 'youtube' ? (
                                 <iframe src={m.src} class="media-iframe" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                             ) : (
-                                <img src={m.src} alt={articulo.title} class="media-img" loading="lazy" crossorigin="anonymous" />
+                                m.id && !m.id.startsWith('http') && !m.id.startsWith('/') ? (
+                                    <OptimizedImage id={m.id} alt={articulo.title} class="media-img" loading={index === 0 ? "eager" : "lazy"} />
+                                ) : (
+                                    <img src={m.src} alt={articulo.title} class="media-img" loading={index === 0 ? "eager" : "lazy"} crossorigin="anonymous" />
+                                )
                             )}
                         </div>
                     ))}
+
 
                     <!-- EXIF Overlay -->
                     <div class="media-exif-overlay" id="media-exif-overlay"></div>
