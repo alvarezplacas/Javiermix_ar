@@ -161,6 +161,8 @@ const photoOfTheDay = artworks.reduce((prev, current) => (prev.likes > current.l
     font-family: var(--font-primary); 
     margin: 0; 
     letter-spacing: clamp(5px, 2vw, 20px); 
+    /* Compensate for letter-spacing on the last character to perfectly center it */
+    margin-right: calc(clamp(5px, 2vw, 20px) * -1);
     text-transform: uppercase;
     color: var(--color-text);
     opacity: 0.9;
