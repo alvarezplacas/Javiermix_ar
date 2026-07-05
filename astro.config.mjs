@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url';
 
 import preact from '@astrojs/preact';
 
+import auth from 'auth-astro';
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://javiermix.ar',
@@ -18,5 +20,5 @@ export default defineConfig({
       mode: 'standalone'
   }),
 
-  integrations: [preact()]
+  integrations: [preact(), auth()]
 });
