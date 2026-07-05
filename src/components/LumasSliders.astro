@@ -40,7 +40,7 @@ const { artworks = [], articles = [] } = Astro.props;
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
       </button>
       
-      <div class="slider-viewport" data-slider-id="artworks">
+      <div class="slider-viewport" data-slider-id="artworks" data-drift-dir="1">
         <div class="slider-canvas">
           {[...artworks, ...artworks, ...artworks].map(art => (
             <div class="gallery-artwork-card" data-artwork-id={art.id}>
@@ -95,7 +95,7 @@ const { artworks = [], articles = [] } = Astro.props;
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
       </button>
       
-      <div class="slider-viewport" data-slider-id="magazine">
+      <div class="slider-viewport" data-slider-id="magazine" data-drift-dir="-1">
         <div class="slider-canvas">
           {[...articles, ...articles, ...articles].map((article, idx) => (
             <div class="magazine-slide-card" data-article-card-id={idx}>
@@ -893,17 +893,28 @@ const { artworks = [], articles = [] } = Astro.props;
       let lastTime = 0;
       let animationFrameId: number;
       
-      const driftSpeed = 0.4; 
+      let exactScroll = viewport.scrollLeft;
+      
+      const driftDirAttr = viewport.getAttribute('data-drift-dir');
+      const driftDir = driftDirAttr ? parseInt(driftDirAttr) : 1; // 1 = scroll right (images move left), -1 = scroll left (images move right)
+      
+      const driftSpeed = 0.5; 
       let isPaused = false;
       let pauseTimeout: any;
 
       function stepDrift() {
         if (!isDown && !isPaused) {
-          viewport.scrollLeft += driftSpeed;
+          exactScroll += (driftSpeed * driftDir);
+          
           const maxScroll = viewport.scrollWidth - viewport.clientWidth;
-          if (viewport.scrollLeft >= maxScroll - 1) {
-            viewport.scrollLeft = 0;
+          
+          if (driftDir === 1) {
+              if (exactScroll >= maxScroll - 1) exactScroll = 0;
+          } else {
+              if (exactScroll <= 0) exactScroll = maxScroll - 1;
           }
+          
+          viewport.scrollLeft = exactScroll;
         }
         animationFrameId = requestAnimationFrame(stepDrift);
       }
@@ -918,6 +929,7 @@ const { artworks = [], articles = [] } = Astro.props;
 
         startX = e.pageX - viewport.offsetLeft;
         scrollLeft = viewport.scrollLeft;
+        exactScroll = viewport.scrollLeft;
         
         lastX = e.pageX;
         lastTime = performance.now();
@@ -972,6 +984,12 @@ const { artworks = [], articles = [] } = Astro.props;
       viewport.addEventListener('touchmove', (e) => {
         isPaused = true;
         clearTimeout(pauseTimeout);
+      }, { passive: true });
+
+      viewport.addEventListener('scroll', () => {
+         if (isDown || isPaused) {
+             exactScroll = viewport.scrollLeft;
+         }
       }, { passive: true });
 
       function applyInertia() {
