@@ -178,16 +178,19 @@ if (articulo) {
     const wordCount = (articulo.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
     readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
-    // Inyección de Publicidad Nuthost en el medio de la lectura
+    // Inyección de Publicidad Nuthost en el medio de la lectura (o al final si es corta)
     articulo.contentPart1 = articulo.content_html;
     articulo.contentPart2 = "";
 
     if (articulo.content_html) {
-        const paragraphs = articulo.content_html.split('</p>');
-        if (paragraphs.length > 5) {
+        const paragraphs = articulo.content_html.split('</p>').filter((p: string) => p.trim());
+        if (paragraphs.length > 2) {
             const midPoint = Math.floor(paragraphs.length / 2);
             articulo.contentPart1 = paragraphs.slice(0, midPoint).join('</p>') + '</p>';
-            articulo.contentPart2 = paragraphs.slice(midPoint).join('</p>');
+            articulo.contentPart2 = paragraphs.slice(midPoint).join('</p>') + '</p>';
+        } else {
+            articulo.contentPart1 = articulo.content_html;
+            articulo.contentPart2 = " "; // Forzar renderizado del anuncio al final
         }
     }
 
@@ -1042,7 +1045,7 @@ if (articulo) {
 }
 .split-layout { 
     display: grid; 
-    grid-template-columns: 1.2fr 1fr; 
+    grid-template-columns: 3fr 7fr; 
     min-height: 100vh; 
 }
 .narrative-column { 
@@ -1516,7 +1519,9 @@ if (articulo) {
     line-height: 2; 
     color: var(--color-text); 
     opacity: 0.85;
-    text-align: justify;
+    text-align: left;
+    max-width: 800px;
+    margin: 0 auto;
     transition: color 0.5s ease;
 }
 .prose-content :global(p) { 
