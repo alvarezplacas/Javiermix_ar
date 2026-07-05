@@ -26,13 +26,20 @@ const { currentPath = '/', theme = 'dark', themeForce } = Astro.props;
             </a>
 
             <!-- 🌍 Botón de Idioma -->
-            <button class="lang-toggle-btn" aria-label="Cambiar idioma" data-tooltip="Idioma / Language" onclick="alert('La versión en múltiples idiomas está en desarrollo. ¡Pronto disponible!')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                </svg>
-            </button>
+            <div class="lang-dropdown-wrapper">
+                <button class="lang-toggle-btn" aria-label="Cambiar idioma" data-tooltip="Idioma / Language">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                </button>
+                <div class="lang-dropdown-menu">
+                    <button class="lang-option" data-lang="es">Español</button>
+                    <button class="lang-option" data-lang="en">English</button>
+                    <button class="lang-option" data-lang="fr">Français</button>
+                </div>
+            </div>
 
 			<!-- 🌓 Alternador de Tema Luz/Noche (Ocultado si themeForce está activo) -->
 			{!themeForce && (
@@ -160,6 +167,51 @@ const { currentPath = '/', theme = 'dark', themeForce } = Astro.props;
     height: 20px;
 }
 
+/* Dropdown Idiomas */
+.lang-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+.lang-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: rgba(10, 10, 10, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 4000;
+}
+.lang-dropdown-wrapper:hover .lang-dropdown-menu,
+.lang-dropdown-wrapper:focus-within .lang-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+.lang-option {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 0.5rem 1rem;
+    text-align: left;
+    font-family: var(--font-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.lang-option:hover {
+    color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.05);
+}
+
 /* Ocultar/Mostrar iconos SVG de acuerdo al tema cargado */
 html[data-theme="light"] .theme-toggle-btn .sun-icon {
     display: none;
@@ -252,4 +304,19 @@ html[data-theme="dark"] .theme-toggle-btn .moon-icon {
     }
 }
 </style>
-</style>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const langOptions = document.querySelectorAll('.lang-option');
+        langOptions.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const lang = (e.target as HTMLElement).getAttribute('data-lang');
+                const select = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+                if (select) {
+                    select.value = lang || 'es';
+                    select.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+    });
+</script>
