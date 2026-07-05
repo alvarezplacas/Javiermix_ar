@@ -30,7 +30,7 @@ export const prerender = false;
                 </button>
 
                 <div class="divider">
-                    <span>O con tu cuenta de Directus</span>
+                    <span>O con tu correo electrónico</span>
                 </div>
 
                 <form id="login-form" class="classic-form">
@@ -47,10 +47,18 @@ export const prerender = false;
                         Credenciales incorrectas. Intenta de nuevo.
                     </div>
 
+                    <div class="forgot-password">
+                        <a href="/recuperar-clave">¿Olvidaste tu contraseña?</a>
+                    </div>
+
                     <button type="submit" class="btn-submit gold-btn" id="btn-submit">
                         <span class="btn-text">INGRESAR</span>
                         <i class="fas fa-spinner fa-spin loader" style="display: none;"></i>
                     </button>
+                    
+                    <div class="register-prompt">
+                        <p>¿No tienes una cuenta? <a href="/registro">Regístrate aquí</a></p>
+                    </div>
                 </form>
             </div>
         </div>
@@ -267,5 +275,53 @@ export const prerender = false;
             border-right: none;
             border-bottom: none;
         }
+    }
+
+    .forgot-password {
+        text-align: right;
+        margin-top: -1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .forgot-password a {
+        color: var(--color-travertine-light);
+        font-family: var(--font-secondary);
+        font-size: 0.8rem;
+        text-decoration: none;
+        transition: color 0.3s ease;
+        opacity: 0.8;
+    }
+
+    .forgot-password a:hover {
+        color: var(--color-accent);
+        text-decoration: underline;
+        opacity: 1;
+    }
+
+    .register-prompt {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .register-prompt p {
+        color: var(--color-travertine-light);
+        font-family: var(--font-secondary);
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .register-prompt a {
+        color: var(--color-accent);
+        text-decoration: none;
+        font-weight: 600;
+        transition: opacity 0.3s ease;
+        margin-left: 0.3rem;
+    }
+
+    .register-prompt a:hover {
+        opacity: 0.8;
+        text-decoration: underline;
     }
 </style>
