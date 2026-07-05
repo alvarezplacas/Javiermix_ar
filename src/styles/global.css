@@ -227,3 +227,26 @@ a:hover {
 .text-burgundy {
 	color: var(--color-burgundy);
 }
+
+/* Community Invite */
+.community-invite {
+    margin-top: 2rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    font-family: var(--font-secondary);
+    letter-spacing: 1px;
+}
+
+.community-invite a {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    transition: var(--transition-premium);
+}
+
+.community-invite a:hover {
+    color: var(--color-white);
+    text-shadow: 0 0 10px rgba(197, 160, 89, 0.5);
+}
