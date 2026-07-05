@@ -1470,12 +1470,13 @@ if (articulo) {
     font-weight: 600;
     margin: 0 0 0.5rem 0;
     letter-spacing: 1px;
+    color: var(--color-text);
 }
 .ad-text {
     font-family: var(--font-secondary);
     font-size: 0.95rem;
     line-height: 1.6;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-muted);
     margin: 0;
 }
 .ad-action {
@@ -1527,7 +1528,7 @@ if (articulo) {
 .prose-content :global(p) { 
     margin-bottom: 2.5rem; 
 }
-.prose-content :global(p:first-of-type::first-letter) {
+.prose-content > :global(p:first-of-type::first-letter) {
     float: left;
     font-size: 4.5rem;
     line-height: 1;

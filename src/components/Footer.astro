@@ -136,6 +136,8 @@ const singletonColumns = [
 
   <div class="curaduria-link-container">
     <a href="/curaduria" class="curaduria-link">Consultas para Artistas / Curaduría</a>
+    <span class="link-separator">|</span>
+    <a href="https://clientes.nuthost.com/aff.php?aff=329" target="_blank" rel="noopener noreferrer" class="curaduria-link">Partner Tecnológico: Nuthost</a>
   </div>
 
   <div class="footer-bottom">
@@ -398,6 +400,16 @@ const singletonColumns = [
   .curaduria-link-container {
     text-align: center;
     margin-bottom: 4rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .link-separator {
+    color: var(--color-travertine-dark);
+    opacity: 0.3;
+    font-size: 0.8rem;
   }
 
   .curaduria-link {
