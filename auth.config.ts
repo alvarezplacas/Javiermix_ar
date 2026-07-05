@@ -1,4 +1,5 @@
 import Google from '@auth/core/providers/google';
+import Credentials from '@auth/core/providers/credentials';
 import { defineConfig } from 'auth-astro';
 
 export default defineConfig({
@@ -7,11 +8,62 @@ export default defineConfig({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         }),
+        Credentials({
+            name: "Directus",
+            credentials: {
+                email: { label: "Email", type: "email" },
+                password: { label: "Contraseña", type: "password" }
+            },
+            async authorize(credentials) {
+                const directusUrl = process.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
+                try {
+                    // Autenticar contra Directus usando /auth/login
+                    const res = await fetch(`${directusUrl}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: credentials?.email,
+                            password: credentials?.password
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (data.data?.access_token) {
+                        // Si hay token, pedimos los datos del usuario logueado (/users/me)
+                        const userRes = await fetch(`${directusUrl}/users/me`, {
+                            headers: { 'Authorization': `Bearer ${data.data.access_token}` }
+                        });
+                        const userData = await userRes.json();
+                        
+                        if (userData.data) {
+                            return {
+                                id: userData.data.id,
+                                name: `${userData.data.first_name || ''} ${userData.data.last_name || ''}`.trim(),
+                                email: userData.data.email,
+                                image: userData.data.avatar ? `${directusUrl}/assets/${userData.data.avatar}` : null,
+                                directusToken: data.data.access_token
+                            };
+                        }
+                    }
+                    return null;
+                } catch (e) {
+                    console.error("[Auth] Error en login manual:", e);
+                    return null;
+                }
+            }
+        })
     ],
+    pages: {
+        signIn: '/acceso', // Custom login page
+    },
     callbacks: {
         async signIn({ user, account, profile }) {
+            // Si es login por Credentials, retornamos true directamente
+            if (account?.provider === 'credentials') return true;
+
             try {
-                // Sincronización automática con Directus al iniciar sesión
+                // Sincronización automática con Directus al iniciar sesión (Google)
                 const directusUrl = process.env.PUBLIC_DIRECTUS_URL || 'https://admin.javiermix.ar';
                 const adminToken = process.env.DIRECTUS_STATIC_TOKEN;
                 

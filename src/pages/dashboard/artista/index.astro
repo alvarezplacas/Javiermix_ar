@@ -1,12 +1,17 @@
 ---
 // d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\dashboard\artista\index.astro
 import ProducerLayout from '@layouts/ProducerLayout.astro';
+import { getSession } from 'auth-astro/server';
 
 export const prerender = false;
 
+// Obtener sesión (si no hay, el layout lo redirigirá igual, pero aquí lo tenemos para el nombre)
+const session = await getSession(Astro.request);
+const artistName = session?.user?.name || 'Artista Anónimo';
+
 // Mock data for initial UI
 const artist = {
-    name: 'Artista Anónimo',
+    name: artistName,
     upload_quota: 7,
     used_quota: 2,
     likes_received: 45

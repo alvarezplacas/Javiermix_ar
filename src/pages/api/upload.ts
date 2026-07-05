@@ -1,9 +1,15 @@
 import type { APIRoute } from 'astro';
 import sharp from 'sharp';
 import { DirectusManager } from '../../conexion/directus';
+import { getSession } from 'auth-astro/server';
 
 export const POST: APIRoute = async ({ request }) => {
     try {
+        const session = await getSession(request);
+        if (!session) {
+            return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+        }
+
         const formData = await request.formData();
         const file = formData.get('file') as File;
         

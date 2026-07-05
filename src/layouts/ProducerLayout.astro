@@ -3,6 +3,8 @@
 import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
 
+import { getSession } from 'auth-astro/server';
+
 interface Props {
   title: string;
 }
@@ -10,7 +12,15 @@ interface Props {
 const { title } = Astro.props;
 const currentPath = Astro.url.pathname;
 
-// TODO: Verify Artist Session (Directus)
+// Verificar Sesión del Artista
+const session = await getSession(Astro.request);
+
+if (!session) {
+    return Astro.redirect('/acceso');
+}
+
+const artistName = session.user?.name || "Artista Anónimo";
+const artistImage = session.user?.image || null;
 ---
 
 <!doctype html>
@@ -71,10 +81,12 @@ const currentPath = Astro.url.pathname;
                 <div class="header-right">
                     <div class="user-badge">
                         <div class="user-info">
-                            <span class="user-name">Artista Anónimo</span>
+                            <span class="user-name">{artistName}</span>
                             <span class="user-role">FOTÓGRAFO</span>
                         </div>
-                        <div class="user-avatar"><i class="fas fa-user"></i></div>
+                        <div class="user-avatar">
+                            {artistImage ? <img src={artistImage} alt={artistName} style="width:100%; height:100%; border-radius:50%; object-fit:cover;" /> : <i class="fas fa-user"></i>}
+                        </div>
                     </div>
                 </div>
             </header>
