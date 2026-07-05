@@ -12,10 +12,18 @@ const { currentPath = '/', theme = 'dark', themeForce } = Astro.props;
             <a href="/rescate" class={currentPath.startsWith('/rescate') ? 'active' : ''}>Rescate</a>
             <a href="/royal-gallery" class={currentPath.startsWith('/royal-gallery') ? 'active' : ''}>Royal</a>
             <a href="/revista/" class={currentPath.startsWith('/revista') ? 'active' : ''}>Revista</a>
-            <a href="/dashboard/artista" class="join-community-btn">Únete a la Comunidad</a>
+            
             <div class="cart-wrapper">
 			    <CartNavButton client:load />
             </div>
+
+            <!-- Botón de Acceso (Comunidad) Minimalista -->
+            <a href="/dashboard/artista" class="user-access-btn" aria-label="Acceso a la Comunidad" data-tooltip="Comunidad">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </a>
 
 			<!-- 🌓 Alternador de Tema Luz/Noche (Ocultado si themeForce está activo) -->
 			{!themeForce && (
@@ -90,20 +98,31 @@ const { currentPath = '/', theme = 'dark', themeForce } = Astro.props;
     letter-spacing: 3px;
 }
 
-.join-community-btn {
-    border: 1px solid var(--color-accent);
-    padding: 0.5rem 1rem !important;
-    border-radius: 4px;
-    color: var(--color-accent) !important;
-    background: rgba(197, 160, 89, 0.05);
+.user-access-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-left: 0.5rem;
+    z-index: 3000;
 }
 
-.join-community-btn:hover {
-    background: var(--color-accent) !important;
-    color: var(--color-onyx-deep) !important;
+.user-access-btn:hover {
+    color: var(--color-accent);
+    transform: scale(1.1);
 }
 
-.join-community-btn::after {
+.user-access-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.user-access-btn::after {
     display: none;
 }
 
