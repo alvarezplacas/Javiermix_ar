@@ -3,6 +3,8 @@ import Credentials from '@auth/core/providers/credentials';
 import { defineConfig } from 'auth-astro';
 
 export default defineConfig({
+    secret: process.env.AUTH_SECRET || "N01rAndLvx-S3cr3t-2026-xYz89PqWk12Mv",
+    trustHost: true,
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
