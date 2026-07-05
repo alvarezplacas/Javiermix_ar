@@ -178,6 +178,19 @@ if (articulo) {
     const wordCount = (articulo.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
     readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
+    // Inyección de Publicidad Nuthost en el medio de la lectura
+    articulo.contentPart1 = articulo.content_html;
+    articulo.contentPart2 = "";
+
+    if (articulo.content_html) {
+        const paragraphs = articulo.content_html.split('</p>');
+        if (paragraphs.length > 5) {
+            const midPoint = Math.floor(paragraphs.length / 2);
+            articulo.contentPart1 = paragraphs.slice(0, midPoint).join('</p>') + '</p>';
+            articulo.contentPart2 = paragraphs.slice(midPoint).join('</p>');
+        }
+    }
+
     // Schema estructurado de tipo NewsArticle para Google News/Discover y Microsoft Start
     const newsSchema = {
       "@context": "https://schema.org",
@@ -330,7 +343,29 @@ if (articulo) {
                     </div>
                 </header>
 
-                <div class="prose-content" set:html={articulo.content_html}></div>
+                <div class="prose-content">
+                    <Fragment set:html={articulo.contentPart1} />
+                    
+                    {articulo.contentPart2 && (
+                        <div class="nuthost-ad-container">
+                            <a href="https://clientes.nuthost.com/aff.php?aff=329" target="_blank" rel="noopener noreferrer" class="nuthost-ad-card">
+                                <div class="ad-visual">
+                                    <i class="fa-solid fa-server"></i>
+                                </div>
+                                <div class="ad-info">
+                                    <span class="ad-eyebrow">PARTNER TECNOLÓGICO OFICIAL</span>
+                                    <h4 class="ad-title">Alojamiento Web Premium</h4>
+                                    <p class="ad-text">La infraestructura que potencia a JavierMix. Acelera tu presencia digital con Nuthost.</p>
+                                </div>
+                                <div class="ad-action">
+                                    <span>DESCUBRIR</span>
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                </div>
+                            </a>
+                        </div>
+                        <Fragment set:html={articulo.contentPart2} />
+                    )}
+                </div>
                 
                 {articulo.Bibliografia && (
                     <div class="article-bibliography">
@@ -1371,6 +1406,110 @@ if (articulo) {
     letter-spacing: -1px;
     transition: color 0.5s ease;
 }
+/* --- Nuthost Ad --- */
+.nuthost-ad-container {
+    margin: 4rem 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+}
+.nuthost-ad-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.5rem 2.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 85%;
+    position: relative;
+    overflow: hidden;
+}
+.nuthost-ad-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--color-accent);
+    opacity: 0.5;
+    transition: opacity 0.4s ease;
+}
+.nuthost-ad-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+}
+.nuthost-ad-card:hover::before {
+    opacity: 1;
+}
+.ad-visual {
+    font-size: 2.5rem;
+    color: var(--color-accent);
+    opacity: 0.8;
+}
+.ad-info {
+    flex: 1;
+}
+.ad-eyebrow {
+    font-family: var(--font-primary);
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--color-accent);
+    display: block;
+    margin-bottom: 0.4rem;
+}
+.ad-title {
+    font-family: var(--font-primary);
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: 1px;
+}
+.ad-text {
+    font-family: var(--font-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+}
+.ad-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-accent);
+    font-family: var(--font-primary);
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+.ad-action i {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+.nuthost-ad-card:hover .ad-action {
+    opacity: 1;
+}
+.nuthost-ad-card:hover .ad-action i {
+    transform: translateX(5px);
+}
+@media (max-width: 768px) {
+    .nuthost-ad-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        max-width: 100%;
+    }
+    .ad-action {
+        flex-direction: row;
+    }
+}
+
 .prose-content { 
     font-family: var(--font-secondary); 
     font-size: 1.2rem; 

@@ -22,9 +22,9 @@ export async function GET(context) {
     }));
 
     return rss({
-      title: 'Revista Javier Mix | Fine Art & Fotografía de Autor',
-      description: 'Crónicas de luz, memoria y potencia estética para coleccionistas y decoradores de interiores.',
-      site: context.site || 'https://javiermix.ar',
+      title: 'Noir & Lux | Lifestyle & Tendencias',
+      description: 'Investigación de tendencias globales, estilo de vida, arte y cultura.',
+      site: context.site || 'https://noirandlux.com',
       xmlns: {
         media: 'http://search.yahoo.com/mrss/',
         content: 'http://purl.org/rss/1.0/modules/content/'
@@ -33,7 +33,7 @@ export async function GET(context) {
         // Generar URL de portada optimizada en formato .jpg y ancho de 1200px para crawlers / Google Discover
         const imageUrl = article.featured_image 
           ? getAssetUrl(article.featured_image, { width: 1200, format: 'jpg', quality: 90 }) 
-          : 'https://javiermix.ar/img/og/javiermix-og.jpg';
+          : 'https://noirandlux.com/img/og/noirandlux-og.jpg';
 
         // Sanitizar y decodificar el contenido
         const plainExcerpt = article.seo_description || 
@@ -52,7 +52,7 @@ export async function GET(context) {
           },
           customData: `
             <media:content url="${imageUrl}" type="image/jpeg" medium="image" width="1200" />
-            <author>${article.author || 'Javier Mix'}</author>
+            <author>${article.author || 'Redacción Noir & Lux'}</author>
             <content:encoded><![CDATA[${article.content_html || ''}]]></content:encoded>
           `
         };

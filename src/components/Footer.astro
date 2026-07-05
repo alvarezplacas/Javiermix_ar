@@ -12,8 +12,8 @@ const footerSeries = allSeries.slice(0, 5);
 const footerArticles = latestArticles.slice(0, 3);
 
 // Fallbacks
-const brandText = footerSettings?.brand_text || "Colecciones exclusivas donde la luz, el metal y la memoria convergen en obra de autor. Para coleccionistas y decoradores de interiores que buscan una presencia sólida y honesta.";
-const services = footerSettings?.services?.split('\n').filter((s: string) => s.trim() !== '') || ["Carrito de Ventas", "Prueba tu Obra en tu Espacio", "Laboratorio de Diseño 2026", "Ediciones Limitadas"];
+const brandText = footerSettings?.brand_text || "Un ecosistema dedicado a la fotografía y el arte visual. Explora obras exclusivas Fine Art, lee nuestra revista de tendencias e invita a tu mirada a formar parte de nuestra comunidad curada.";
+const services = footerSettings?.services?.split('\n').filter((s: string) => s.trim() !== '') || ["Venta de Cuadros Fine Art", "Asesoría para Coleccionistas", "Envíos Internacionales", "Certificados de Autenticidad"];
 const instagram = footerSettings?.instagram_url || "https://www.instagram.com/javiermixok/";
 const whatsapp = footerSettings?.whatsapp_url || "#";
 const bluesky = "https://bsky.app/profile/javiermix.bsky.social";
@@ -34,21 +34,9 @@ const singletonColumns = [
 
 <footer class="site-footer">
   <div class="footer-sitemap">    <div class="sitemap-inner">
-      { (dynamicColumns && dynamicColumns.length > 0) || (singletonColumns.length > 0) ? (
-        (dynamicColumns.length > 0 ? dynamicColumns : singletonColumns).map((col: any) => (
-          <div class="footer-nav-col dynamic-col">
-            <h4 class="footer-nav-title">
-              <span class="nav-title-line"></span>
-              {col.title}
-            </h4>
-            <div class="col-content" set:html={col.content}></div>
-          </div>
-        ))
-      ) : (
-        <>
           <div class="footer-brand">
-            <p class="brand-signature">Javier Mix</p>
-            <p class="brand-tagline">Fotografía Fine Art · Buenos Aires</p>
+            <p class="brand-signature">Noir & Lux</p>
+            <p class="brand-tagline">Fine Art Photography & Magazine</p>
             <p class="brand-desc">
               {brandText}
             </p>
@@ -72,32 +60,28 @@ const singletonColumns = [
             </div>
           </div>
 
-          <nav class="footer-nav-col" aria-label="Colecciones de obras">
+          <nav class="footer-nav-col" aria-label="Comunidad">
             <h4 class="footer-nav-title">
               <span class="nav-title-line"></span>
-              Colecciones
+              Para Fotógrafos
             </h4>
             <ul>
-              <li><a href="/galeria">Ver Portfolio Completo</a></li>
-              {footerSeries.map((serie: any) => (
-                <li><a href={`/galeria/${slugify(serie.name)}`}>{serie.name}</a></li>
-              ))}
-              <li><a href="/galeria" class="link-all">→ Ver todas las series</a></li>
+              <li><a href="/comunidad">Únete a la Red Noir & Lux</a></li>
+              <li><a href="/comunidad/publicar">Publicar una Muestra</a></li>
+              <li><a href="/comunidad/normas">Normas de Curaduría</a></li>
+              <li><a href="/comunidad/beneficios" class="link-lab">Beneficios para Creadores</a></li>
             </ul>
           </nav>
 
-          <nav class="footer-nav-col" aria-label="Servicios">
+          <nav class="footer-nav-col" aria-label="Fine Art">
             <h4 class="footer-nav-title">
               <span class="nav-title-line"></span>
-              Servicios
+              Galería Fine Art
             </h4>
             <ul>
               {services.map((service: string) => (
                 <li>
-                  <a 
-                    href={service.includes('Laboratorio') ? '/laboratorio' : '#'}
-                    class={service.includes('Laboratorio') ? 'link-lab' : ''}
-                  >
+                  <a href="#">
                     {service}
                   </a>
                 </li>
@@ -108,14 +92,14 @@ const singletonColumns = [
           <nav class="footer-nav-col" aria-label="Revista">
             <h4 class="footer-nav-title">
               <span class="nav-title-line"></span>
-              Revista Digital
+              Revista Online
             </h4>
             <ul>
-              <li><a href="/revista/">Últimas Notas</a></li>
+              <li><a href="/revista/">Artículos de Actualidad</a></li>
               {footerArticles.map((article: any) => (
                 <li><a href={`/revista/${article.slug}`}>{article.title}</a></li>
               ))}
-              <li><a href="/revista/" class="link-all">→ Ver todas las notas</a></li>
+              <li><a href="/revista/" class="link-all">→ Ver todo el Magazine</a></li>
             </ul>
           </nav>
 
@@ -139,8 +123,6 @@ const singletonColumns = [
               </li>
             </ul>
           </nav>
-        </>
-      )}
     </div>
     
     <!-- Redes Sociales de Soporte (Siempre Visibles) -->
@@ -166,7 +148,7 @@ const singletonColumns = [
 
   <div class="footer-divider">
     <span class="divider-line"></span>
-    <span class="divider-mark">JM</span>
+    <span class="divider-mark">N&L</span>
     <span class="divider-line"></span>
   </div>
 
@@ -176,7 +158,7 @@ const singletonColumns = [
 
   <div class="footer-bottom">
     <div class="footer-bottom-inner">
-      <p class="copyright">&copy; {currentYear} Javier Mix. Todos los derechos reservados.</p>
+      <p class="copyright">&copy; {currentYear} Noir & Lux. Todos los derechos reservados.</p>
       <div class="bottom-links">
         <a href="#">Política de Privacidad</a>
         <a href="#">Términos de Uso</a>
