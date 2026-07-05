@@ -35,7 +35,7 @@ const singletonColumns = [
 <footer class="site-footer">
   <div class="footer-sitemap">    <div class="sitemap-inner">
           <div class="footer-brand">
-            <p class="brand-signature" translate="no" class="notranslate">Noir & Lux</p>
+            <img src="/logo_footer.svg" alt="Noir & Lux" class="brand-signature-svg" />
             <p class="brand-tagline">Fine Art Photography & Magazine</p>
             <p class="brand-desc">
               {brandText}
@@ -194,6 +194,13 @@ const singletonColumns = [
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
     gap: 5rem;
+  }
+
+  .brand-signature-svg {
+    height: 45px;
+    width: auto;
+    margin-bottom: 1rem;
+    display: block;
   }
 
   .brand-signature {
