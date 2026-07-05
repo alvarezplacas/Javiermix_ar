@@ -1,14 +1,14 @@
 ---
 // src/pages/obra/[id].astro
 import Layout from '../../layouts/Layout.astro';
-import { getDirectusClient } from '../../conexion/directus';
+import { DirectusManager } from '../../conexion/directus';
 import { readItem } from '@directus/sdk';
 
 const { id } = Astro.params;
 
 let artwork = null;
 try {
-  const client = getDirectusClient();
+  const client = await DirectusManager.getClient();
   artwork = await client.request(readItem('directus_files', id as string));
 } catch (e) {
   console.error("Error cargando obra:", e);
