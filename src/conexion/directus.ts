@@ -462,10 +462,9 @@ export async function getFooterColumns() {
 export async function getCatalogoFiles() { 
     try { 
         const client = await DirectusManager.getClient(); 
-        // 🚀 Excluimos carpetas de sistema/revista para traer TODAS las galerías de arte
-        const ignoredFolders = ['Home', 'Revista', 'Video', 'Audio', 'Laboratorio'];
+        // 🚀 Restringimos para traer SOLO las galerías de arte en venta (Colecciones/Catálogos)
         const rootFolders = await client.request(readFolders({ 
-            filter: { name: { _nin: ignoredFolders } },
+            filter: { name: { _in: ['Catalogo', 'Catálogo', 'Coleccion', 'Colección', 'Colecciones'] } },
             limit: -1
         })); 
         
@@ -473,7 +472,7 @@ export async function getCatalogoFiles() {
         
         const rootIds = rootFolders.map((f: any) => f.id);
         
-        // Obtener TODAS las subcarpetas de esas raíces
+        // Obtener TODAS las subcarpetas de esas raíces (las series individuales)
         const seriesFolders = await client.request(readFolders({ 
             filter: { parent: { _in: rootIds } },
             limit: -1
@@ -491,7 +490,7 @@ export async function getCatalogoFiles() {
         
         return (files as any[]).map((file: any) => ({ 
             ...file, 
-            serie_name: seriesMap.get(file.folder) || "Archivo General" 
+            serie_name: seriesMap.get(file.folder) || "Colección General" 
         })); 
     } catch (e) { 
         console.error("[getCatalogoFiles] Error:", e);
