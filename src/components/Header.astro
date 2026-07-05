@@ -6,12 +6,13 @@ const { currentPath = '/', theme = 'dark', themeForce } = Astro.props;
 
 <header class={`site-header theme-${theme}`}>
 	<nav class="nav-container" aria-label="Navegación principal">
-		<div class="nav-links">
+        <div class="nav-links">
             <a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
             <a href="/galeria" class={currentPath.startsWith('/galeria') ? 'active' : ''}>Colección</a>
             <a href="/rescate" class={currentPath.startsWith('/rescate') ? 'active' : ''}>Rescate</a>
             <a href="/royal-gallery" class={currentPath.startsWith('/royal-gallery') ? 'active' : ''}>Royal</a>
             <a href="/revista/" class={currentPath.startsWith('/revista') ? 'active' : ''}>Revista</a>
+            <a href="/dashboard/artista" class="join-community-btn">Únete a la Comunidad</a>
             <div class="cart-wrapper">
 			    <CartNavButton client:load />
             </div>
@@ -87,6 +88,23 @@ const { currentPath = '/', theme = 'dark', themeForce } = Astro.props;
 .nav-links a.active {
     color: var(--color-text);
     letter-spacing: 3px;
+}
+
+.join-community-btn {
+    border: 1px solid var(--color-accent);
+    padding: 0.5rem 1rem !important;
+    border-radius: 4px;
+    color: var(--color-accent) !important;
+    background: rgba(197, 160, 89, 0.05);
+}
+
+.join-community-btn:hover {
+    background: var(--color-accent) !important;
+    color: var(--color-onyx-deep) !important;
+}
+
+.join-community-btn::after {
+    display: none;
 }
 
 /* 🌓 Botón de Alternancia de Tema Premium */

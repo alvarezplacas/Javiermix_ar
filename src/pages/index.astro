@@ -180,6 +180,10 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
                         <span class="btn-label">VER COLECCIÓN</span>
                         <span class="btn-hover-bg"></span>
                     </a>
+                    <a href="/comunidad" class="glass-cta-btn community">
+                        <span class="btn-label">COMUNIDAD</span>
+                        <span class="btn-hover-bg"></span>
+                    </a>
                     <a href="/revista/" class="glass-cta-btn secondary">
                         <span class="btn-label">REVISTA ONLINE</span>
                         <span class="btn-hover-bg"></span>
@@ -503,10 +507,11 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
     position: relative;
     padding: 1.1rem 2rem;
     width: 100%;
-    background: rgba(13, 13, 13, 0.4);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(13, 13, 13, 0.5);
+    backdrop-filter: blur(40px) saturate(150%);
+    -webkit-backdrop-filter: blur(40px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
     color: var(--color-white);
     text-decoration: none;
     overflow: hidden;
@@ -555,14 +560,25 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
 }
 
 .glass-cta-btn.secondary {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.glass-cta-btn.community {
+    background: rgba(197, 160, 89, 0.15);
+    border-color: rgba(197, 160, 89, 0.3);
+    box-shadow: inset 0 0 20px rgba(197, 160, 89, 0.1);
+}
+
+.glass-cta-btn.community:hover {
+    border-color: rgba(197, 160, 89, 0.6);
+    background: rgba(197, 160, 89, 0.25);
 }
 
 .glass-cta-btn.secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(50px) saturate(150%);
+    -webkit-backdrop-filter: blur(50px) saturate(150%);
     border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-5px);
 }
@@ -723,30 +739,29 @@ const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la 
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 0.75rem !important;
-        width: 90% !important;
+        width: 95% !important;
         max-width: 480px !important;
     }
     .glass-cta-btn {
-        padding: 0.85rem 1.2rem !important;
-        border-radius: 0 !important; /* Rectangulares sin redondeo en concordancia con el diseño original */
+        padding: 0.85rem 0.5rem !important;
+        border-radius: 0 !important;
         width: 100% !important;
-        transform: none !important; /* Desactivar desplazamiento lateral en pantallas táctiles */
-        background: rgba(13, 13, 13, 0.65) !important; /* Mayor contraste de vidrio sobre video */
-        border-color: rgba(255, 255, 255, 0.15) !important;
+        transform: none !important;
+        background: rgba(13, 13, 13, 0.75) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
     }
     .glass-cta-btn:hover {
-        transform: scale(1.02) !important; /* Hover táctil sutil */
+        transform: scale(1.02) !important;
     }
     .glass-cta-btn .btn-label {
-        font-size: 0.75rem !important;
-        letter-spacing: 1.5px !important;
+        font-size: 0.7rem !important;
+        letter-spacing: 1px !important;
+        text-align: center;
     }
-    /* El botón explorar se ubica debajo centrado, unificando la cuadrícula con estética triangular */
+    /* El botón explorar ahora se queda integrado de manera uniforme */
     .glass-cta-btn.explore {
         grid-column: span 2 !important;
-        width: auto !important;
-        min-width: 150px !important;
-        justify-self: center !important;
+        width: 100% !important;
         padding: 0.65rem 1.5rem !important;
     }
     .split-content {
