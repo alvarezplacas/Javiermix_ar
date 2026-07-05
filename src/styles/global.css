@@ -67,30 +67,30 @@
 	}
 }
 
-/* --- SYSTEM THEME: PREMIUM COTTON-PAPER LIGHT MODE --- */
+/* --- SYSTEM THEME: LUX MODE (PREMIUM COTTON-PAPER) --- */
 html[data-theme="light"] {
-	/* Override Onyx Neutral Tones with Travertine Cotton-Paper */
-	--color-onyx-deep: oklch(0.96 0.012 85); /* #F7F4EF - Cotton Paper Base */
-	--color-onyx-soft: oklch(0.92 0.015 85); /* Slightly darker warm paper */
-	--color-onyx-charcoal: oklch(0.88 0.02 85); /* Warm gray border lines */
+	/* Override Onyx Neutral Tones with Cotton-Paper Lux */
+	--color-onyx-deep: #FDFBF7; /* Blanco Hueso Delicado (Papel de Algodón) */
+	--color-onyx-soft: #F5F2EA; /* Sombras sutiles del papel */
+	--color-onyx-charcoal: #EAE6DB; /* Bordes suaves */
 
 	/* Override Travertine Tones with Charcoal Onyx Tones */
-	--color-travertine-light: oklch(0.22 0.01 25); /* #2D2D2A - Charcoal Onyx Text */
-	--color-travertine-mid: oklch(0.45 0.01 25);   /* Muted charcoal */
-	--color-travertine-dark: oklch(0.65 0.01 25);
+	--color-travertine-light: #2A2A28; /* Gris Carbón Oscuro para lectura perfecta */
+	--color-travertine-mid: #545450;   /* Gris medio */
+	--color-travertine-dark: #7D7D77;
 
-	/* Semantic Colors mapped for light mode */
+	/* Semantic Colors mapped for LUX mode */
 	--color-bg: var(--color-onyx-deep);
 	--bg-primary: var(--color-onyx-deep);
 	--text-primary: var(--color-travertine-light);
 	--text-secondary: var(--color-travertine-mid);
 	--color-text: var(--color-travertine-light);
 	--color-text-muted: var(--color-travertine-mid);
-	--color-white: oklch(0.15 0.01 25); /* Header active links and headings in charcoal instead of white */
+	--color-white: #1A1A18; /* Header active links and headings in pure charcoal */
 
-	/* Glassmorphism for light mode */
-	--glass-bg: oklch(0.96 0.012 85 / 0.85);
-	--glass-border: oklch(0.22 0.01 25 / 0.08);
+	/* Glassmorphism for LUX mode */
+	--glass-bg: rgba(253, 251, 247, 0.85);
+	--glass-border: rgba(42, 42, 40, 0.08);
 }
 
 /* --- 2. CSS RESET & GLOBAL BASICS --- */
