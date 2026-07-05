@@ -7,6 +7,9 @@ import { getOptimizedImageURL } from '@utils/media';
 
 export const prerender = false;
 
+// 🚀 FIX: Caché Dinámica para Cloudflare
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
+
 // TODO: Connect to Directus artists/community tables
 // For now, we will use mock data to build the UI based on the Fstoppers analysis
 const artworks = [

@@ -43,7 +43,13 @@ const recentArtworks = [
             <div class="action-icon"><i class="fas fa-cloud-upload-alt"></i></div>
             <h3>Subir Nueva Obra</h3>
             <p>Tus obras se optimizan automáticamente a calidad de museo (AVIF).</p>
-            <button class="btn-studio gold-btn">Seleccionar Archivo</button>
+            
+            <input type="file" id="artwork-upload" accept="image/jpeg, image/png, image/webp" style="display: none;" />
+            <button class="btn-studio gold-btn" id="btn-upload">Seleccionar Archivo</button>
+            <div id="upload-status" style="display: none; margin-bottom: 1rem; color: var(--c-accent); font-size: 0.9rem;">
+                <i class="fas fa-spinner fa-spin"></i> Subiendo y optimizando (AVIF)...
+            </div>
+
             <div class="quota-progress">
                 <div class="progress-bar" style={`width: ${(artist.used_quota / artist.upload_quota) * 100}%`}></div>
                 <span>{artist.used_quota} / {artist.upload_quota} espacios usados</span>
@@ -84,6 +90,58 @@ const recentArtworks = [
         </div>
     </div>
 </ProducerLayout>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const fileInput = document.getElementById('artwork-upload') as HTMLInputElement;
+        const btnUpload = document.getElementById('btn-upload');
+        const uploadStatus = document.getElementById('upload-status');
+
+        if (!btnUpload || !fileInput) return;
+
+        btnUpload.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const target = e.target as HTMLInputElement;
+            if (!target.files || target.files.length === 0) return;
+
+            const file = target.files[0];
+            
+            // UI Updates
+            btnUpload.style.display = 'none';
+            if (uploadStatus) uploadStatus.style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('¡Obra subida con éxito! Tu imagen ha sido convertida a formato museo (AVIF).');
+                    // Reload to update list
+                    window.location.reload();
+                } else {
+                    alert('Error al subir: ' + (result.error || 'Inténtalo de nuevo'));
+                    btnUpload.style.display = 'block';
+                    if (uploadStatus) uploadStatus.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Upload Error:', error);
+                alert('Ocurrió un error inesperado al subir el archivo.');
+                btnUpload.style.display = 'block';
+                if (uploadStatus) uploadStatus.style.display = 'none';
+            }
+        });
+    });
+</script>
 
 <style>
     .studio-header {

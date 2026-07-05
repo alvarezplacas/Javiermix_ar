@@ -8,6 +8,9 @@ import LumasSliders from '@components/LumasSliders.astro';
 
 export const prerender = false;
 
+// 🚀 FIX: Caché Dinámica para Cloudflare
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
+
 import { 
     getHomeFiles, 
     getAssetUrl, 
