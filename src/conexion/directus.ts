@@ -462,9 +462,11 @@ export async function getFooterColumns() {
 export async function getCatalogoFiles() { 
     try { 
         const client = await DirectusManager.getClient(); 
-        // 🚀 Buscamos en todas las posibles carpetas raíz de arte
+        // 🚀 Excluimos carpetas de sistema/revista para traer TODAS las galerías de arte
+        const ignoredFolders = ['Home', 'Revista', 'Video', 'Audio', 'Laboratorio'];
         const rootFolders = await client.request(readFolders({ 
-            filter: { name: { _in: ['Catalogo', 'Catálogo', 'Coleccion', 'Colección', 'Obras', 'Royal Gallery', 'Exposicion', 'Exposición'] } } 
+            filter: { name: { _nin: ignoredFolders } },
+            limit: -1
         })); 
         
         if (rootFolders.length === 0) return []; 
