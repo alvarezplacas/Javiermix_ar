@@ -68,6 +68,11 @@ const photoOfTheDay = artworks.reduce((prev, current) => (prev.likes > current.l
 
 		<!-- 🏛️ CONTENIDO (Default: Obras Recientes / Resultados) -->
 		<div id="content-view" class="viewport">
+            
+            <div class="community-invite" style="margin-bottom: 2rem;">
+                ¿Buscas adquirir obras impresas? <a href="/galeria">Visita la colección exclusiva <i class="fas fa-arrow-right"></i></a>
+            </div>
+
             <!-- GRILLA MASONRY -->
             <div id="community-grid" class="masonry-grid">
                 {artworks.map((art, index) => (

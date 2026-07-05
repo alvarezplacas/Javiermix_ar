@@ -232,7 +232,8 @@ a:hover {
 .community-invite {
     margin-top: 2rem;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-travertine-light);
+    opacity: 0.8;
     text-align: center;
     font-family: var(--font-secondary);
     letter-spacing: 1px;
@@ -247,6 +248,6 @@ a:hover {
 }
 
 .community-invite a:hover {
-    color: var(--color-white);
+    color: var(--color-text-main, #fff);
     text-shadow: 0 0 10px rgba(197, 160, 89, 0.5);
 }
