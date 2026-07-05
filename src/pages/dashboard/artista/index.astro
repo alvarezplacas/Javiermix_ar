@@ -5,8 +5,12 @@ import { getSession } from 'auth-astro/server';
 
 export const prerender = false;
 
-// Obtener sesión (si no hay, el layout lo redirigirá igual, pero aquí lo tenemos para el nombre)
+// Obtener sesión
 const session = await getSession(Astro.request);
+if (!session) {
+    return Astro.redirect('/acceso');
+}
+
 const artistName = session?.user?.name || 'Artista Anónimo';
 
 // Mock data for initial UI

@@ -15,12 +15,8 @@ const currentPath = Astro.url.pathname;
 // Verificar Sesión del Artista
 const session = await getSession(Astro.request);
 
-if (!session) {
-    return Astro.redirect('/acceso');
-}
-
-const artistName = session.user?.name || "Artista Anónimo";
-const artistImage = session.user?.image || null;
+const artistName = session?.user?.name || "Artista Anónimo";
+const artistImage = session?.user?.image || null;
 ---
 
 <!doctype html>
