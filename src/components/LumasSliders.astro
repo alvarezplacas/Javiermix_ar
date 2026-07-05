@@ -42,7 +42,7 @@ const { artworks = [], articles = [] } = Astro.props;
       
       <div class="slider-viewport" data-slider-id="artworks">
         <div class="slider-canvas">
-          {artworks.map(art => (
+          {[...artworks, ...artworks, ...artworks].map(art => (
             <div class="gallery-artwork-card" data-artwork-id={art.id}>
               <a href={`/obra/${art.id}`} class="artwork-link">
                 <div class="artwork-frame">
@@ -97,7 +97,7 @@ const { artworks = [], articles = [] } = Astro.props;
       
       <div class="slider-viewport" data-slider-id="magazine">
         <div class="slider-canvas">
-          {articles.map((article, idx) => (
+          {[...articles, ...articles, ...articles].map((article, idx) => (
             <div class="magazine-slide-card" data-article-card-id={idx}>
               <div class="magazine-slide-media-wrapper">
                 <div class="magazine-slide-slideshow">
