@@ -66,9 +66,9 @@ export const prerender = false;
 </Layout>
 
 <script>
-    const { signIn } = await import("auth-astro/client");
+    document.addEventListener('astro:page-load', async () => {
+        const { signIn } = await import("auth-astro/client");
 
-    document.addEventListener('astro:page-load', () => {
         const btnGoogle = document.getElementById('btn-google');
         const loginForm = document.getElementById('login-form');
         const btnSubmit = document.getElementById('btn-submit');
@@ -78,7 +78,8 @@ export const prerender = false;
 
         // Login Google
         if (btnGoogle) {
-            btnGoogle.addEventListener('click', () => {
+            btnGoogle.addEventListener('click', (e) => {
+                e.preventDefault();
                 signIn('google', { callbackUrl: '/dashboard/artista' });
             });
         }

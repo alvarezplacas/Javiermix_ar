@@ -105,7 +105,7 @@ const { artworks = [], articles = [] } = Astro.props;
                     media.type === 'video' ? (
                       <video src={media.url} class={`magazine-slide-media ${i === 0 ? 'active' : ''}`} muted playsinline loop autoplay></video>
                     ) : (
-                      <img src={media.url} alt={`${article.title} slide ${i}`} class={`magazine-slide-media ${i === 0 ? 'active' : ''}`} loading="lazy" />
+                      <img src={media.url} alt={`${article.title} slide ${i}`} class={`magazine-slide-media ${i === 0 ? 'active' : ''}`} loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.classList.remove('active'); const n = this.nextElementSibling; if(n && n.tagName !== 'DIV') n.classList.add('active'); else this.src='/logo_footer_dorado.png';" />
                     )
                   ))}
                   <div class="magazine-slide-vignette"></div>
@@ -864,8 +864,13 @@ const { artworks = [], articles = [] } = Astro.props;
 
         let current = 0;
         const intervalId = setInterval(() => {
+          let prev = current;
           media[current].classList.remove('active');
-          current = (current + 1) % media.length;
+          
+          do {
+            current = (current + 1) % media.length;
+          } while ((media[current] as HTMLElement).style.display === 'none' && current !== prev);
+
           media[current].classList.add('active');
           
           if (media[current].tagName === 'VIDEO') {
