@@ -149,7 +149,7 @@ const articles = dbArticles.map(art => {
 
   // 3. Fallback de seguridad si no hay ninguna foto
   if (slideshow.length === 0) {
-      slideshow.push({ url: '/logo_footer_gris.png', type: 'image' });
+      slideshow.push({ url: '/logo_footer_dorado.png', type: 'image' });
   }
 
   // Limpiar HTML y decodificar entidades en el título y extracto
@@ -202,7 +202,7 @@ const articles = dbArticles.map(art => {
                         media.type === 'video' ? (
                             <video src={media.url} class={`article-media ${i === 0 ? 'active' : ''}`} muted playsinline loop autoplay></video>
                         ) : (
-                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.classList.remove('active'); if(this.nextElementSibling) this.nextElementSibling.classList.add('active'); else this.src='/logo_footer_gris.png';" />
+                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.classList.remove('active'); if(this.nextElementSibling) this.nextElementSibling.classList.add('active'); else this.src='/logo_footer_dorado.png';" />
                         )
                     ))}
                 </div>
