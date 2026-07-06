@@ -4,7 +4,7 @@ export default function MiniIAWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'bot', text: '¡Hola! Soy JavierMix IA. ¿En qué te puedo ayudar hoy?' }
+    { role: 'bot', text: '¡Hola! Soy Lux IA. ¿En qué te puedo ayudar hoy?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -583,7 +583,7 @@ export default function MiniIAWidget() {
         {!isOpen && (
           <div className="mini-ia-tooltip" style={{ opacity: isHovered ? 1 : 0, transform: isHovered ? 'translateY(-50%) scale(1)' : 'translateY(-50%) scale(0.95)', pointerEvents: isHovered ? 'auto' : 'none' }}>
             ¿Quieres que te ayude con algo?
-            <span className="mini-ia-tooltip-sub">Soy JavierMix IA</span>
+            <span className="mini-ia-tooltip-sub">Soy Lux IA</span>
             <div className="mini-ia-tooltip-arrow"></div>
           </div>
         )}
