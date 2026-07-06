@@ -122,8 +122,11 @@ const articles = dbArticles.map(art => {
   const wordCount = (art.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  // 1. Iniciar slideshow con la imagen de portada principal
-  let slideshow = [resolveMedia(art.featured_image)];
+  // 1. Iniciar slideshow con la imagen de portada principal solo si existe
+  let slideshow = [];
+  if (art.featured_image) {
+    slideshow.push(resolveMedia(art.featured_image));
+  }
   
   // 2. Intentar buscar fotos dinámicas en la carpeta asociada al slug/título de la nota
   const normalizedSlug = slugify(art.slug || art.title || '');
@@ -142,6 +145,11 @@ const articles = dbArticles.map(art => {
             slideshow = [...slideshow, ...extra].slice(0, 6);
         }
     } catch(e) { console.error("Error parsing media_json", e); }
+  }
+
+  // 3. Fallback de seguridad si no hay ninguna foto
+  if (slideshow.length === 0) {
+      slideshow.push({ url: '/logo_footer_gris.png', type: 'image' });
   }
 
   // Limpiar HTML y decodificar entidades en el título y extracto
