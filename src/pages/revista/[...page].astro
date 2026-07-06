@@ -202,7 +202,7 @@ const articles = dbArticles.map(art => {
                         media.type === 'video' ? (
                             <video src={media.url} class={`article-media ${i === 0 ? 'active' : ''}`} muted playsinline loop autoplay></video>
                         ) : (
-                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" onerror="this.onerror=null; this.src='/logo_footer_gris.png';" />
+                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.classList.remove('active'); if(this.nextElementSibling) this.nextElementSibling.classList.add('active'); else this.src='/logo_footer_gris.png';" />
                         )
                     ))}
                 </div>
@@ -275,8 +275,14 @@ const articles = dbArticles.map(art => {
             if ((art as any)._slideInterval) clearInterval((art as any)._slideInterval);
             
             (art as any)._slideInterval = setInterval(() => {
+                let prev = current;
                 media[current].classList.remove('active');
-                current = (current + 1) % media.length;
+                
+                // Buscar la siguiente imagen que no esté oculta (rota)
+                do {
+                    current = (current + 1) % media.length;
+                } while ((media[current] as HTMLElement).style.display === 'none' && current !== prev);
+                
                 media[current].classList.add('active');
                 
                 if (media[current].tagName === 'VIDEO') {
