@@ -202,7 +202,7 @@ const articles = dbArticles.map(art => {
                         media.type === 'video' ? (
                             <video src={media.url} class={`article-media ${i === 0 ? 'active' : ''}`} muted playsinline loop autoplay></video>
                         ) : (
-                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" />
+                            <img src={media.url} alt={`${article.title} - view ${i}`} class={`article-media ${i === 0 ? 'active' : ''}`} loading="lazy" onerror="this.onerror=null; this.src='/logo_footer_gris.png';" />
                         )
                     ))}
                 </div>
