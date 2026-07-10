@@ -6,17 +6,20 @@ import Footer from '@components/Footer.astro';
 import { getAssetUrl, fetchFromDirectus, slugify, DirectusManager } from '@conexion/directus';
 import { readItems } from '@directus/sdk';
 
-export const prerender = true;
+export const prerender = false;
 
-// NOTA SOBRE VARIABLES DE ENTORNO DE DIRECTUS:
-// DirectusManager y getAssetUrl utilizan internamente las variables de entorno de Directus:
-// - import.meta.env.PUBLIC_DIRECTUS_URL
+// 🚀 SSR: La revista carga artículos en runtime (no en build time)
+// Esto garantiza que Directus siempre esté disponible y los artículos se muestren frescos.
 
-export async function getStaticPaths({ paginate }) {
-  try {
+const PAGE_SIZE = 12;
+const pageParam = Number(Astro.url.searchParams.get('pagina') || '1');
+
+let dbArticles: any[] = [];
+let totalArticles = 0;
+
+try {
     const client = await DirectusManager.getClient();
-    // Obtener todos los artículos publicados
-    const dbArticles = await client.request(readItems('magazine' as any, { 
+    const allArticles = await client.request(readItems('magazine' as any, { 
         filter: {
           status: { _in: ['published', 'Publicado'] }
         },
@@ -24,15 +27,31 @@ export async function getStaticPaths({ paginate }) {
         fields: ['*', { user_created: ['*'] }],
         limit: -1
     }));
-    return paginate(dbArticles, { pageSize: 12 });
-  } catch (e) {
-    console.error('Error fetching articles for pagination:', e);
-    return paginate([], { pageSize: 12 });
-  }
+    dbArticles = allArticles as any[];
+    totalArticles = dbArticles.length;
+} catch (e) {
+    console.error('[Revista-SSR] Error al cargar artículos:', e);
+    dbArticles = [];
 }
 
-const { page } = Astro.props;
-const dbArticles = page.data || [];
+// Paginación manual en SSR
+const totalPages = Math.max(1, Math.ceil(totalArticles / PAGE_SIZE));
+const currentPage = Math.min(Math.max(pageParam, 1), totalPages);
+const startIdx = (currentPage - 1) * PAGE_SIZE;
+const pageArticles = dbArticles.slice(startIdx, startIdx + PAGE_SIZE);
+
+// Objeto compatible con la estructura que usaba `page` de getStaticPaths
+const page = {
+    data: pageArticles,
+    currentPage,
+    lastPage: totalPages,
+    url: {
+        prev: currentPage > 1 ? `/revista?pagina=${currentPage - 1}` : null,
+        next: currentPage < totalPages ? `/revista?pagina=${currentPage + 1}` : null,
+    }
+};
+
+
 
 // 🛠️ Decodificador de entidades HTML para textos impecables (Estándar JMX Oro)
 function decodeHtml(html: string): string {
@@ -118,7 +137,7 @@ try {
   console.error('[Revista-SSR] Error al cargar multimedia dinámico por carpetas:', e);
 }
 
-const articles = dbArticles.map(art => {
+const articles = pageArticles.map(art => {
   const wordCount = (art.content_html || '').replace(/<[^>]*>/g, '').split(/\s+/).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
 
