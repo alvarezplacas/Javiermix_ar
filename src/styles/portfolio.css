@@ -189,7 +189,46 @@
   100% { transform: translate(-50%, 12px); opacity: 0; }
 }
 
-/* 2. INSPIRACIÓN Y MAESTROS */
+/* 2. DISEÑO INTEGRAL Y VISIÓN DE AUTOR */
+.integral-design-section {
+  padding: 10rem 2rem 4rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.integral-design-content {
+  background: linear-gradient(145deg, rgba(86, 31, 26, 0.1) 0%, rgba(0,0,0,0) 100%);
+  padding: 4rem;
+  border-radius: 20px;
+  border-left: 2px solid var(--port-accent);
+}
+
+.integral-title {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-family: var(--font-primary);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--port-accent);
+  margin-bottom: 2.5rem;
+  letter-spacing: 2px;
+}
+
+.integral-text {
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  line-height: 1.9;
+  color: var(--port-light);
+  font-weight: 300;
+  font-family: var(--font-secondary);
+}
+
+@media (max-width: 768px) {
+  .integral-design-content {
+    padding: 2rem;
+  }
+}
+
+/* 3. INSPIRACIÓN Y MAESTROS */
 .inspiration-section {
   padding: 8rem 2rem;
   max-width: 1200px;
@@ -251,7 +290,7 @@
   text-align: right;
 }
 
-/* 3. SKILLS */
+/* 4. SKILLS */
 .skills-section {
   padding: 8rem 2rem;
   background: linear-gradient(to bottom, transparent, rgba(86, 31, 26, 0.1), transparent);
@@ -285,7 +324,7 @@
   transform: scale(1.05);
 }
 
-/* 4. PROYECTOS / ECOSISTEMA */
+/* 5. PROYECTOS / ECOSISTEMA */
 .projects-section {
   padding: 8rem 2rem;
   max-width: 1200px;
