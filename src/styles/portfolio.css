@@ -7,21 +7,18 @@
 
 :root {
   /* 
-    Colores solicitados:
-    1. rgb(134, 23, 88)  -> Acento (Magenta/Berry)
-    2. rgb(224, 186, 162) -> Tono suave (Peach/Arena)
-    3. rgb(86, 31, 26)    -> Fondo intenso (Maroon/Vino oscuro)
+    Paleta Web Designer (Tecnológica y Estructurada)
   */
-  --port-accent: rgb(134, 23, 88);
-  --port-light: rgb(224, 186, 162);
-  --port-dark: rgb(86, 31, 26);
-  --port-bg: #050202;
+  --port-accent: #c5a059; /* Accent Gold from global */
+  --port-light: #F0F0F0;  /* Bright Silver/White */
+  --port-dark: #121212;   /* Dark Charcoal Grid lines */
+  --port-bg: #050505;     /* Pure Deep Black */
   --font-primary: 'Montserrat', sans-serif;
   --font-secondary: 'Montserrat', sans-serif;
 }
 
 /* ==========================================================
-   ESTRUCTURAS MÓVILES (FONDOS KANDINSKY)
+   ESTRUCTURA RETICULAR 2D (DESIGNER GRID)
    ========================================================== */
 .portfolio-background {
   position: fixed;
@@ -30,52 +27,36 @@
   width: 100vw;
   height: 100vh;
   z-index: -1;
-  overflow: hidden;
   background-color: var(--port-bg);
+  /* 2D Grid Pattern */
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: center center;
 }
 
-.kandinsky-shape {
+/* Líneas de Fuga Adicionales (Estructura arquitectónica) */
+.portfolio-background::before {
+  content: '';
   position: absolute;
-  filter: blur(80px);
-  opacity: 0.5;
-  animation: floatShape 20s infinite alternate ease-in-out;
-}
-
-.shape-1 {
-  width: 50vw;
-  height: 50vw;
-  background: var(--port-accent);
-  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-  top: -10%;
-  left: -10%;
-  animation-delay: 0s;
-}
-
-.shape-2 {
-  width: 40vw;
-  height: 40vw;
-  background: var(--port-dark);
-  border-radius: 50%;
-  bottom: -10%;
-  right: -10%;
-  animation-delay: -5s;
-}
-
-.shape-3 {
-  width: 30vw;
-  height: 30vw;
-  background: var(--port-light);
-  border-radius: 30% 70% 50% 50% / 50% 30% 70% 50%;
-  top: 40%;
+  top: 0;
   left: 50%;
-  opacity: 0.2;
-  animation-duration: 25s;
+  width: 1px;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-50%);
 }
 
-@keyframes floatShape {
-  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-  50% { transform: translate(5vw, 10vh) rotate(45deg) scale(1.1); }
-  100% { transform: translate(-5vw, -5vh) rotate(-15deg) scale(0.9); }
+.portfolio-background::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100vw;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-50%);
 }
 
 /* ==========================================================
@@ -126,19 +107,21 @@
 /* Eliminada animación pulseHero a petición del usuario */
 
 .hero-title {
-  font-size: clamp(3rem, 6vw, 6rem);
-  font-weight: 300;
-  line-height: 1.1;
+  font-family: var(--font-secondary);
+  font-size: clamp(3rem, 8vw, 8rem);
+  font-weight: 800;
+  line-height: 1;
   color: var(--port-light);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: -2px; /* Tight, modern feel */
+  text-align: center;
 }
 
 .hero-subtitle {
   font-size: clamp(1rem, 2vw, 1.5rem);
-  color: #fff;
+  color: var(--port-accent);
   font-family: var(--font-secondary);
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: 5px;
   text-transform: uppercase;
 }
