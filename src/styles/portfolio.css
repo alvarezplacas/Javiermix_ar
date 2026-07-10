@@ -292,6 +292,10 @@
   cursor: pointer;
 }
 
+.skill-icon.invert-icon {
+  filter: invert(1) opacity(0.6);
+}
+
 .skill-icon img {
   width: 100%;
   height: 100%;
