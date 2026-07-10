@@ -20,19 +20,6 @@ const PUBLIC_URL = import.meta.env?.PUBLIC_DIRECTUS_URL || 'https://admin.javier
 const INTERNAL_URL = import.meta.env?.INTERNAL_DIRECTUS_URL || 'http://javiermix-directus:8055'; 
 const STATIC_TOKEN = import.meta.env?.DIRECTUS_STATIC_TOKEN || '-Z-gFGpFRrmFv8dOxED-LZbusJDRQJsg';
 
-// 🛡️ Parche Global de Fetch: Inyectar User-Agent para evitar bloqueos de Cloudflare durante el Build
-if (typeof globalThis !== 'undefined' && globalThis.fetch) {
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = async (url, options: any = {}) => {
-        const newOptions = { ...options };
-        newOptions.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            ...newOptions.headers
-        };
-        return originalFetch(url, newOptions);
-    };
-}
-
 /**
  * 🛰️ Cliente Directus
  */

@@ -1,0 +1,544 @@
+---
+// d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\cuarto-oscuro.astro
+import Layout from '@layouts/Layout.astro';
+import { getCatalogoFiles } from '@conexion/directus';
+import { getOptimizedImageURL } from '@utils/media';
+
+export const prerender = false;
+
+let artworks = [];
+try {
+    const artworksRaw = await getCatalogoFiles();
+    artworks = artworksRaw
+        .filter(file => file.id && !file.filename_download.toLowerCase().includes('_2'))
+        .slice(0, 12)
+        .map((file, index) => ({
+            id: file.id,
+            title: file.title || `Obra ${index + 1}`,
+            img: getOptimizedImageURL(file.id, { width: 1200, format: 'webp', quality: 90 }),
+            thumb: getOptimizedImageURL(file.id, { width: 300, format: 'webp', quality: 70 }),
+        }));
+} catch (e) {
+    console.error("Error al cargar catálogo en cuarto oscuro:", e);
+}
+
+// Fallback por si falla la base de datos
+if (artworks.length === 0) {
+    artworks = [
+        {
+            id: 'demo1',
+            title: 'Obra de Prueba JMX I',
+            img: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1200&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=300&q=70'
+        },
+        {
+            id: 'demo2',
+            title: 'Obra de Prueba JMX II',
+            img: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=1200&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=300&q=70'
+        }
+    ];
+}
+---
+
+<Layout title="El Cuarto Oscuro JMX | Laboratorio JMX" themeForce="dark">
+    <main class="darkroom-container" data-artworks={JSON.stringify(artworks)}>
+        <!-- Grid de fondo retroiluminada en rojo cuarto oscuro -->
+        <div class="red-light-overlay"></div>
+        <div class="grain-overlay"></div>
+
+        <!-- Barra de Control Superior -->
+        <nav class="darkroom-nav">
+            <a href="/laboratorio" class="back-link">← VOLVER AL GABINETE</a>
+            <div class="darkroom-title">PROTOCOLO EXP-09: REVELADO QUÍMICO</div>
+            <button id="reset-btn" class="control-btn">REINICIAR REVELADO</button>
+        </nav>
+
+        <!-- Zona de Revelado Principal -->
+        <div class="work-table">
+            <div class="tray-bezel">
+                <div class="chemical-water"></div>
+                <div class="canvas-wrapper" id="canvas-wrapper">
+                    <!-- Capa Base: Imagen Revelada Completa (Color) -->
+                    <img id="source-img" src={artworks[0].img} alt="Obra de arte" crossorigin="anonymous" />
+                    <!-- Capa Superior: Canvas interactivo del Negativo sin revelar -->
+                    <canvas id="reveal-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Ficha Técnica de la Obra Activa -->
+            <div class="active-metadata">
+                <span class="spec-label">EXHIBICIÓN ACTIVA //</span>
+                <h2 id="active-title">{artworks[0].title}</h2>
+                <p>Desliza el cursor o el dedo lentamente sobre el lienzo para revelar la plata fotográfica.</p>
+            </div>
+        </div>
+
+        <!-- Carrusel de Obras en la parte inferior -->
+        <div class="carousel-panel">
+            <span class="panel-label">SELECCIONAR NEGATIVO PARA PROCESAR //</span>
+            <div class="thumb-strip">
+                {artworks.map((art, idx) => (
+                    <button class={`thumb-btn ${idx === 0 ? 'active' : ''}`} data-index={idx} data-img={art.img} data-title={art.title}>
+                        <img src={art.thumb} alt={art.title} />
+                        <span class="thumb-title">{art.title}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    :root {
+        --dark-red: #3a0000;
+        --glow-red: #ff0000;
+        --lab-gold: #dcb14a;
+    }
+
+    .darkroom-container {
+        min-height: 100vh;
+        background: #020202;
+        color: #fff;
+        font-family: 'Inter', system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+        padding: 6rem 2rem 2rem 2rem;
+    }
+
+    .red-light-overlay {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 10%, rgba(255, 0, 0, 0.1) 0%, transparent 80%);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .grain-overlay {
+        position: absolute;
+        inset: 0;
+        background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+        opacity: 0.04;
+        pointer-events: none;
+        z-index: 5;
+        mix-blend-mode: overlay;
+    }
+
+    .darkroom-nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        padding: 2rem 4rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(to bottom, #000 60%, transparent);
+        z-index: 100;
+    }
+
+    .back-link {
+        color: rgba(255,255,255,0.4);
+        text-decoration: none;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        transition: 0.3s;
+    }
+
+    .back-link:hover {
+        color: var(--lab-gold);
+    }
+
+    .darkroom-title {
+        font-size: 0.6rem;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: var(--glow-red);
+        text-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+        border: 1px solid rgba(255, 0, 0, 0.3);
+        padding: 0.3rem 1rem;
+        background: rgba(255, 0, 0, 0.02);
+    }
+
+    .control-btn {
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+        padding: 0.5rem 1.2rem;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .control-btn:hover {
+        border-color: var(--lab-gold);
+        color: var(--lab-gold);
+        background: rgba(220,177,74,0.05);
+    }
+
+    /* Mesa de Trabajo */
+    .work-table {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        gap: 2rem;
+        padding: 2rem 0;
+    }
+
+    /* Bandeja química del laboratorio */
+    .tray-bezel {
+        background: #090909;
+        border: 10px solid #141414;
+        border-radius: 4px;
+        box-shadow: 
+            0 30px 80px rgba(0,0,0,0.9),
+            inset 0 0 30px rgba(0,0,0,0.9);
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+        max-width: 90%;
+        max-height: 55vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .chemical-water {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 0, 0, 0.02);
+        pointer-events: none;
+        z-index: 2;
+        animation: liquidWobble 6s infinite ease-in-out;
+    }
+
+    @keyframes liquidWobble {
+        0%, 100% { transform: scale(1.0) rotate(0deg); opacity: 0.2; }
+        50% { transform: scale(1.02) rotate(0.5deg); opacity: 0.3; }
+    }
+
+    .canvas-wrapper {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    }
+
+    #source-img {
+        max-height: 45vh;
+        width: auto;
+        max-width: 100%;
+        display: block;
+        opacity: 1;
+        pointer-events: none;
+    }
+
+    #reveal-canvas {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        cursor: crosshair;
+        mix-blend-mode: normal;
+        touch-action: none;
+    }
+
+    .active-metadata {
+        text-align: center;
+        max-width: 500px;
+    }
+
+    .spec-label {
+        font-size: 0.55rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--lab-gold);
+    }
+
+    .active-metadata h2 {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.2rem;
+        margin: 0.5rem 0;
+        color: #fff;
+    }
+
+    .active-metadata p {
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.4);
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    /* Panel de Selección */
+    .carousel-panel {
+        background: rgba(10, 10, 10, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        padding: 1.5rem;
+        z-index: 10;
+        max-width: 1400px;
+        width: 100%;
+        margin: 0 auto;
+        backdrop-filter: blur(20px);
+    }
+
+    .panel-label {
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .thumb-strip {
+        display: flex;
+        gap: 1.2rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .thumb-btn {
+        background: #060606;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        cursor: pointer;
+        width: 120px;
+        flex-shrink: 0;
+        text-align: left;
+        transition: all 0.3s ease;
+    }
+
+    .thumb-btn img {
+        width: 100%;
+        aspect-ratio: 4/3;
+        object-fit: cover;
+        opacity: 0.5;
+        transition: 0.3s;
+    }
+
+    .thumb-btn:hover {
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .thumb-btn:hover img {
+        opacity: 0.8;
+    }
+
+    .thumb-btn.active {
+        border-color: var(--lab-gold);
+        background: rgba(220, 177, 74, 0.03);
+    }
+
+    .thumb-btn.active img {
+        opacity: 1;
+        filter: sepia(0.3) contrast(1.1);
+    }
+
+    .thumb-title {
+        font-size: 0.55rem;
+        color: rgba(255,255,255,0.6);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 600;
+    }
+
+    .thumb-btn.active .thumb-title {
+        color: var(--lab-gold);
+    }
+
+    @media (max-width: 768px) {
+        .darkroom-container { padding-top: 5rem; }
+        .darkroom-nav { padding: 1.5rem 2rem; }
+        .tray-bezel { padding: 1rem; border-width: 6px; }
+        .thumb-strip { gap: 0.8rem; }
+    }
+</style>
+
+<script>
+    // 🧪 Audio procedimental para emular el flujo químico del revelado
+    let audioCtx: AudioContext | null = null;
+    let mainGain: GainNode | null = null;
+
+    function initAudio() {
+        if (audioCtx) return;
+        try {
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            audioCtx = new AudioContextClass();
+            mainGain = audioCtx.createGain();
+            mainGain.gain.value = 0.0;
+            mainGain.connect(audioCtx.destination);
+        } catch (e) {}
+    }
+
+    function playDripSound() {
+        if (!audioCtx || !mainGain) return;
+        try {
+            // Sintetizar gota/burbuja al pintar
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(mainGain);
+            
+            const startFreq = 200 + Math.random() * 600;
+            osc.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.15);
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.16);
+        } catch(e){}
+    }
+
+    document.addEventListener('astro:page-load', () => {
+        const sourceImg = document.getElementById('source-img') as HTMLImageElement;
+        const canvas = document.getElementById('reveal-canvas') as HTMLCanvasElement;
+        const resetBtn = document.getElementById('reset-btn');
+        const activeTitle = document.getElementById('active-title');
+        const thumbBtns = document.querySelectorAll('.thumb-btn');
+
+        if (!sourceImg || !canvas) return;
+
+        const ctx = canvas.getContext('2d')!;
+        let isDrawing = false;
+        let brushRadius = 55;
+
+        // Ajustar el tamaño del canvas al de la imagen física cargada
+        function resizeCanvas() {
+            canvas.width = sourceImg.clientWidth;
+            canvas.height = sourceImg.clientHeight;
+            resetDarkroom();
+        }
+
+        // Dibuja el estado inicial (el negativo oscuro sepia sin revelar)
+        function resetDarkroom() {
+            if (!canvas.width || !canvas.height) return;
+            
+            ctx.restore();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Pintamos un negativo sepia rojizo oscuro
+            ctx.fillStyle = 'rgba(28, 4, 4, 0.96)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar grano sobre el negativo
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
+            for (let i = 0; i < 20000; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.fillRect(x, y, 1, 1);
+            }
+        }
+
+        // Carga la nueva imagen en la mesa de revelado
+        function loadNegative(imgUrl: string, title: string) {
+            sourceImg.src = imgUrl;
+            if (activeTitle) activeTitle.innerText = title;
+            
+            if (sourceImg.complete) {
+                resizeCanvas();
+            } else {
+                sourceImg.onload = resizeCanvas;
+            }
+        }
+
+        // Eventos de Interacción (Mouse y Touch)
+        function getPos(e: MouseEvent | TouchEvent) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+            const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function draw(e: MouseEvent | TouchEvent) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const pos = getPos(e);
+
+            ctx.save();
+            // globalCompositeOperation = 'destination-out' borra el contenido del canvas
+            // revelando lo que hay detrás (la foto a todo color).
+            ctx.globalCompositeOperation = 'destination-out';
+            
+            // Dibujar un pincel difuminado radial
+            const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, brushRadius);
+            gradient.addColorStop(0, 'rgba(0,0,0,1)');
+            gradient.addColorStop(0.3, 'rgba(0,0,0,0.8)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, brushRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Activar efecto de sonido procedural de revelado químico
+            if (Math.random() < 0.25) {
+                if (mainGain) mainGain.gain.value = 0.5;
+                playDripSound();
+            }
+        }
+
+        // Mouse listeners
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; draw(e); });
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', () => { isDrawing = false; if(mainGain) mainGain.gain.value = 0; });
+
+        // Touch listeners
+        canvas.addEventListener('touchstart', (e) => { isDrawing = true; draw(e); });
+        canvas.addEventListener('touchmove', draw);
+        window.addEventListener('touchend', () => { isDrawing = false; if(mainGain) mainGain.gain.value = 0; });
+
+        // Reset Button
+        resetBtn?.addEventListener('click', resetDarkroom);
+
+        // Cambiar entre obras del carrusel
+        thumbBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                thumbBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const img = btn.getAttribute('data-img') || '';
+                const title = btn.getAttribute('data-title') || '';
+                loadNegative(img, title);
+            });
+        });
+
+        // Carga inicial
+        if (sourceImg.complete) {
+            resizeCanvas();
+        } else {
+            sourceImg.onload = resizeCanvas;
+        }
+
+        // Resize Listener
+        window.addEventListener('resize', resizeCanvas);
+
+        document.addEventListener('astro:before-preparation', () => {
+            window.removeEventListener('resize', resizeCanvas);
+        }, { once: true });
+    });
+</script>

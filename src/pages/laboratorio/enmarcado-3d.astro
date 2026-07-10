@@ -1,0 +1,800 @@
+---
+// d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\enmarcado-3d.astro
+import Layout from '@layouts/Layout.astro';
+import { getCatalogoFiles } from '@conexion/directus';
+import { getOptimizedImageURL } from '@utils/media';
+
+export const prerender = false;
+
+let artworks = [];
+try {
+    const artworksRaw = await getCatalogoFiles();
+    artworks = artworksRaw
+        .filter(file => file.id && !file.filename_download.toLowerCase().includes('_2'))
+        .slice(0, 12)
+        .map((file, index) => ({
+            id: file.id,
+            title: file.title || `Obra ${index + 1}`,
+            img: getOptimizedImageURL(file.id, { width: 1200, format: 'webp', quality: 90 }),
+            thumb: getOptimizedImageURL(file.id, { width: 300, format: 'webp', quality: 70 }),
+            serie: file.serie_name || 'Archivo General',
+            dim: file.width && file.height ? `${file.width} x ${file.height} px` : 'Dimensiones Variables'
+        }));
+} catch (e) {
+    console.error("Error al cargar catálogo en enmarcado-3d:", e);
+}
+
+// Fallback por si falla la base de datos
+if (artworks.length === 0) {
+    artworks = [
+        {
+            id: 'demo1',
+            title: 'Obra de Prueba JMX I',
+            img: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1200&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=300&q=70',
+            serie: 'Serie Prueba',
+            dim: '3000 x 4000 px'
+        },
+        {
+            id: 'demo2',
+            title: 'Obra de Prueba JMX II',
+            img: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=1200&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=300&q=70',
+            serie: 'Serie Prueba',
+            dim: '3500 x 5000 px'
+        }
+    ];
+}
+---
+
+<Layout title="Simulador de Enmarcado 3D | Laboratorio JMX" themeForce="dark">
+    <main class="framer-container" id="framer-root">
+        <div class="grain-overlay"></div>
+
+        <!-- Barra de navegación -->
+        <nav class="framer-nav">
+            <a href="/laboratorio" class="back-link">← GABINETE</a>
+            <div class="framer-title">PROTOCOLO EXP-11: CONFIGURADOR DE ESPACIOS</div>
+            <div class="system-tag">JMX PRO-RENDER v2.0</div>
+        </nav>
+
+        <div class="framer-layout">
+            <!-- Columna Izquierda: Escenario de Render con Muro y Cuadro -->
+            <div class="render-stage" id="wall-bg">
+                <!-- Capa de sombra de luz direccional -->
+                <div class="wall-ambient-shadow" id="ambient-light-overlay"></div>
+
+                <!-- El Cuadro Completo -->
+                <div class="frame-shadow-wrapper" id="frame-shadow-box">
+                    <div class="frame-molding" id="frame-molding-box" data-style="black">
+                        <div class="paspartu-matte" id="paspartu-box" style="padding: 3.5rem;">
+                            <!-- El Cristal con reflejos -->
+                            <div class="glare-glass-overlay"></div>
+                            <!-- Imagen de la obra real -->
+                            <img id="framer-img" src={artworks[0].img} alt={artworks[0].title} crossorigin="anonymous" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="artwork-hud">
+                    <h2 id="hud-title">{artworks[0].title}</h2>
+                    <span id="hud-dim">{artworks[0].dim} · FINE-ART EDITION</span>
+                </div>
+
+                <div class="stage-controls">
+                    <button id="play-tour-btn" class="tour-btn">
+                        <span class="play-icon">▶</span> INICIAR TOUR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Panel de Controles (Photoshop Style) -->
+            <aside class="control-sidebar">
+                <div class="sidebar-header">
+                    <h3>CONFIGURACIÓN DE ACABADOS</h3>
+                </div>
+
+                <div class="sidebar-content">
+                    <!-- 1. Textura del Muro -->
+                    <div class="control-section">
+                        <label>TEXTURA DEL MURO</label>
+                        <div class="options-grid">
+                            <button class="option-btn active" data-config="wall" data-val="museum" style="background: #121212; border-color: #222;" title="Yeso de Museo">MUSEO</button>
+                            <button class="option-btn" data-config="wall" data-val="marble" style="background: url('https://images.unsplash.com/photo-1618220179428-22790b461013?w=100&q=50'); background-size: cover;" title="Mármol Carrara">MÁRMOL</button>
+                            <button class="option-btn" data-config="wall" data-val="velvet" style="background: #3a080d;" title="Terciopelo Velvet">VELVET</button>
+                            <button class="option-btn" data-config="wall" data-val="brick" style="background: url('https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=100&q=50'); background-size: cover;" title="Ladrillo Rústico">LADRILLO</button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Moldura del Marco -->
+                    <div class="control-section">
+                        <label>MATERIAL DEL MARCO</label>
+                        <div class="options-grid cols-2">
+                            <button class="option-btn active" data-config="frame" data-val="black">
+                                <span class="color-dot" style="background: #000;"></span> ALUMINIO NEGRO
+                            </button>
+                            <button class="option-btn" data-config="frame" data-val="oak">
+                                <span class="color-dot" style="background: #d4b285;"></span> ROBLE NATURAL
+                            </button>
+                            <button class="option-btn" data-config="frame" data-val="walnut">
+                                <span class="color-dot" style="background: #4e3629;"></span> NOGAL CLÁSICO
+                            </button>
+                            <button class="option-btn" data-config="frame" data-val="gold">
+                                <span class="color-dot" style="background: #d4af37;"></span> ORO ENVEJECIDO
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Tamaño del Paspartú -->
+                    <div class="control-section">
+                        <div class="label-header">
+                            <label>ANCHO PASPARTÚ (CM)</label>
+                            <span id="paspartu-val">4.5 cm</span>
+                        </div>
+                        <input type="range" id="paspartu-slider" min="1.5" max="8.0" step="0.5" value="4.5" class="jmx-range" />
+                    </div>
+
+                    <!-- 4. Ángulo e Incidencia de Luz -->
+                    <div class="control-section">
+                        <label>INCIDENCIA DE LUZ DE GALERÍA</label>
+                        <div class="options-grid">
+                            <button class="option-btn" data-config="light" data-val="left">IZQUIERDA</button>
+                            <button class="option-btn active" data-config="light" data-val="center">CENTRAL</button>
+                            <button class="option-btn" data-config="light" data-val="right">DERECHA</button>
+                        </div>
+                    </div>
+
+                    <!-- 5. Obras disponibles -->
+                    <div class="control-section flex-expand">
+                        <label>FOTOGRAFÍA A ENMARCAR //</label>
+                        <div class="stage-carousel">
+                            {artworks.map((art, idx) => (
+                                <button class={`carousel-item ${idx === 0 ? 'active' : ''}`} data-index={idx} data-img={art.img} data-title={art.title} data-dim={art.dim}>
+                                    <img src={art.thumb} alt={art.title} />
+                                    <div class="item-meta">
+                                        <span class="item-title">{art.title}</span>
+                                        <span class="item-dim">{art.dim}</span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    :root {
+        --jmx-gold: #dcb14a;
+        --sidebar-bg: #090909;
+        --stage-bg: #141414;
+    }
+
+    .framer-container {
+        min-height: 100vh;
+        background: #020202;
+        color: #fff;
+        font-family: 'Inter', system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .grain-overlay {
+        position: absolute;
+        inset: 0;
+        background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+        opacity: 0.03;
+        pointer-events: none;
+        z-index: 5;
+        mix-blend-mode: overlay;
+    }
+
+    .framer-nav {
+        height: 64px;
+        background: #000;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 2rem;
+        z-index: 100;
+    }
+
+    .back-link {
+        color: rgba(255,255,255,0.4);
+        text-decoration: none;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        transition: 0.3s;
+    }
+    .back-link:hover { color: var(--jmx-gold); }
+
+    .framer-title {
+        font-size: 0.6rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--jmx-gold);
+    }
+
+    .system-tag {
+        font-family: monospace;
+        font-size: 0.55rem;
+        color: rgba(255,255,255,0.3);
+    }
+
+    /* Layout principal split */
+    .framer-layout {
+        display: flex;
+        flex: 1;
+        height: calc(100vh - 64px);
+    }
+
+    /* Columna Izquierda - Stage de Render */
+    .render-stage {
+        flex: 1;
+        background: var(--stage-bg);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        transition: background 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        padding: 3rem;
+        perspective: 1500px;
+        transform-style: preserve-3d;
+    }
+
+    /* Diferentes muros de fondo */
+    .render-stage[data-wall="museum"] {
+        background: #141414;
+        background-image: radial-gradient(circle at 50% 50%, #1f1f1f 0%, #101010 100%);
+    }
+
+    .render-stage[data-wall="marble"] {
+        background: url('https://images.unsplash.com/photo-1618220179428-22790b461013?w=1600&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .render-stage[data-wall="velvet"] {
+        background: #1b0204;
+        background-image: radial-gradient(circle at 50% 50%, #290408 0%, #110002 100%);
+    }
+
+    .render-stage[data-wall="brick"] {
+        background: url('https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=1600&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .wall-ambient-shadow {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.12) 0%, rgba(0,0,0,0.85) 100%);
+        pointer-events: none;
+        z-index: 2;
+        transition: background 0.5s ease;
+    }
+
+    /* Luces direccionales */
+    .render-stage[data-light="left"] .wall-ambient-shadow {
+        background: radial-gradient(circle at 10% 20%, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.9) 100%);
+    }
+
+    .render-stage[data-light="center"] .wall-ambient-shadow {
+        background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.12) 0%, rgba(0,0,0,0.85) 100%);
+    }
+
+    .render-stage[data-light="right"] .wall-ambient-shadow {
+        background: radial-gradient(circle at 90% 20%, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.9) 100%);
+    }
+
+    /* Marco y Sombra del Cuadro */
+    .frame-shadow-wrapper {
+        position: relative;
+        z-index: 10;
+        transition: box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.1s ease;
+        max-width: 90%;
+        max-height: 70vh;
+        will-change: transform;
+        transform-style: preserve-3d;
+    }
+
+    /* Proyección de sombras realista según el ángulo de la luz */
+    .render-stage[data-light="center"] .frame-shadow-wrapper {
+        box-shadow: 0 40px 90px rgba(0,0,0,0.9);
+    }
+    .render-stage[data-light="left"] .frame-shadow-wrapper {
+        box-shadow: 25px 35px 80px rgba(0,0,0,0.9);
+    }
+    .render-stage[data-light="right"] .frame-shadow-wrapper {
+        box-shadow: -25px 35px 80px rgba(0,0,0,0.9);
+    }
+
+    .frame-molding {
+        padding: 18px; /* El grosor físico de la moldura */
+        background: #080808;
+        border: 1px solid #141414;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Estilos de marcos */
+    .frame-molding[data-style="black"] {
+        background: #0d0d0d;
+        border: 2px solid #181818;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.9);
+    }
+    .frame-molding[data-style="oak"] {
+        background: #cca97e;
+        border: 2px solid #b69265;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.5), inset 2px 2px 5px rgba(255,255,255,0.2);
+    }
+    .frame-molding[data-style="walnut"] {
+        background: #3a251a;
+        border: 2px solid #27160d;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.7), inset 1px 1px 3px rgba(255,255,255,0.1);
+    }
+    .frame-molding[data-style="gold"] {
+        background: linear-gradient(135deg, #c5a059 0%, #ecd39d 50%, #9e7d3b 100%);
+        border: 2px solid #8e6d2c;
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+    }
+
+    .paspartu-matte {
+        background: #fcfbf9; /* Crema lino */
+        box-shadow: 
+            inset 0 0 12px rgba(0,0,0,0.2),
+            0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        transition: padding 0.3s ease;
+    }
+
+    #framer-img {
+        max-height: 50vh;
+        max-width: 100%;
+        width: auto;
+        display: block;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        z-index: 10;
+        position: relative;
+    }
+
+    /* Brillo/reflejo del cristal */
+    .glare-glass-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 12;
+        background: linear-gradient(125deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 35%, transparent 50%);
+        pointer-events: none;
+    }
+
+    .artwork-hud {
+        position: absolute;
+        bottom: 2rem;
+        left: 2rem;
+        z-index: 20;
+        color: rgba(255,255,255,0.8);
+    }
+    .artwork-hud h2 {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.6rem;
+        margin: 0;
+    }
+    .artwork-hud span {
+        font-size: 0.55rem;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        display: block;
+        margin-top: 0.2rem;
+        text-transform: uppercase;
+    }
+
+    /* Controles de Tour */
+    .stage-controls {
+        position: absolute;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 30;
+    }
+
+    .tour-btn {
+        background: rgba(0, 0, 0, 0.65);
+        border: 1px solid var(--jmx-gold);
+        color: var(--jmx-gold);
+        padding: 0.6rem 1.4rem;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 20px;
+    }
+
+    .tour-btn:hover, .tour-btn.active {
+        background: var(--jmx-gold);
+        color: #000;
+        box-shadow: 0 0 15px rgba(220, 177, 74, 0.4);
+    }
+
+    /* Columna Derecha - Panel de Controles */
+    .control-sidebar {
+        width: 380px;
+        background: var(--sidebar-bg);
+        border-left: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+    }
+
+    .sidebar-header {
+        height: 60px;
+        background: #101010;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        padding: 0 2rem;
+    }
+
+    .sidebar-header h3 {
+        font-size: 0.65rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--jmx-gold);
+        margin: 0;
+    }
+
+    .sidebar-content {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .control-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .control-section label {
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        color: rgba(255,255,255,0.4);
+    }
+
+    .label-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .label-header span {
+        font-size: 0.6rem;
+        font-family: monospace;
+        color: var(--jmx-gold);
+        font-weight: 800;
+    }
+
+    /* Grilla de opciones */
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+
+    .options-grid.cols-2 {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .option-btn {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.6);
+        padding: 0.8rem 0.5rem;
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        text-align: center;
+        border-radius: 2px;
+    }
+
+    .option-btn:hover {
+        border-color: rgba(255,255,255,0.3);
+        color: #fff;
+    }
+
+    .option-btn.active {
+        border-color: var(--jmx-gold);
+        color: var(--jmx-gold);
+        background: rgba(220, 177, 74, 0.05);
+    }
+
+    .color-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* Rango deslizante */
+    .jmx-range {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 2px;
+        background: rgba(255,255,255,0.1);
+        outline: none;
+    }
+    .jmx-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--jmx-gold);
+        cursor: pointer;
+    }
+
+    /* Carrusel de Obras */
+    .flex-expand {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stage-carousel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        overflow-y: auto;
+        max-height: 250px;
+        padding-right: 0.4rem;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .carousel-item {
+        background: #060606;
+        border: 1px solid rgba(255,255,255,0.05);
+        padding: 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        transition: all 0.3s ease;
+    }
+
+    .carousel-item img {
+        width: 50px;
+        height: 40px;
+        object-fit: cover;
+        opacity: 0.5;
+        transition: 0.3s;
+    }
+
+    .carousel-item:hover { border-color: rgba(255,255,255,0.2); }
+    .carousel-item:hover img { opacity: 0.8; }
+
+    .carousel-item.active {
+        border-color: var(--jmx-gold);
+        background: rgba(220,177,74,0.03);
+    }
+    .carousel-item.active img { opacity: 1; }
+
+    .item-meta { display: flex; flex-direction: column; gap: 0.2rem; }
+    .item-title { font-size: 0.65rem; font-weight: 700; color: #fff; }
+    .item-dim { font-size: 0.55rem; color: rgba(255,255,255,0.3); }
+    .carousel-item.active .item-title { color: var(--jmx-gold); }
+
+    @media (max-width: 1024px) {
+        .framer-layout { flex-direction: column; height: auto; }
+        .control-sidebar { width: 100%; border-left: none; border-top: 1px solid rgba(255,255,255,0.05); }
+        .render-stage { min-height: 60vh; }
+    }
+</style>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const wallBg = document.getElementById('wall-bg');
+        const frameMolding = document.getElementById('frame-molding-box');
+        const paspartuBox = document.getElementById('paspartu-box');
+        const framerImg = document.getElementById('framer-img') as HTMLImageElement;
+        const hudTitle = document.getElementById('hud-title');
+        const hudDim = document.getElementById('hud-dim');
+        const paspartuSlider = document.getElementById('paspartu-slider') as HTMLInputElement;
+        const paspartuVal = document.getElementById('paspartu-val');
+        const frameShadowBox = document.getElementById('frame-shadow-box');
+        const playTourBtn = document.getElementById('play-tour-btn');
+
+        const optionBtns = document.querySelectorAll('.option-btn');
+        const carouselItems = document.querySelectorAll('.carousel-item');
+
+        if (!wallBg || !frameMolding || !paspartuBox || !framerImg || !frameShadowBox) return;
+
+        // 1. Manejo del Muro, Marco y Luces
+        optionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const configGroup = btn.getAttribute('data-config');
+                const val = btn.getAttribute('data-val') || '';
+
+                // Activar visualmente el botón
+                document.querySelectorAll(`.option-btn[data-config="${configGroup}"]`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                if (configGroup === 'wall') {
+                    wallBg.setAttribute('data-wall', val);
+                } else if (configGroup === 'frame') {
+                    frameMolding.setAttribute('data-style', val);
+                } else if (configGroup === 'light') {
+                    wallBg.setAttribute('data-light', val);
+                }
+            });
+        });
+
+        // 2. Control dinámico del Paspartú
+        paspartuSlider?.addEventListener('input', (e) => {
+            const val = (e.target as HTMLInputElement).value;
+            if (paspartuVal) paspartuVal.innerText = `${val} cm`;
+            
+            // Mapeamos el valor deslizante (1.5 a 8) a un padding físico de CSS (de 1.5rem a 6rem)
+            const paddingRem = (parseFloat(val) * 0.9).toFixed(2);
+            paspartuBox.style.padding = `${paddingRem}rem`;
+        });
+
+        // 3. Carousel de Obras
+        carouselItems.forEach(item => {
+            item.addEventListener('click', () => {
+                carouselItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                const img = item.getAttribute('data-img') || '';
+                const title = item.getAttribute('data-title') || '';
+                const dim = item.getAttribute('data-dim') || '';
+
+                if (framerImg) framerImg.src = img;
+                if (hudTitle) hudTitle.innerText = title;
+                if (hudDim) hudDim.innerText = `${dim} · FINE-ART EDITION`;
+
+                // Si está activado el tour, reiniciar el temporizador para dar tiempo a ver la seleccionada
+                if (isTourPlaying) {
+                    startTour();
+                }
+            });
+        });
+
+        // 4. Efecto de Movimiento 3D en el Muro (Parallax del Cuadro)
+        let targetX = 0;
+        let targetY = 0;
+        let lastX = 0;
+        let lastY = 0;
+
+        wallBg.addEventListener('mousemove', (e) => {
+            const rect = wallBg.getBoundingClientRect();
+            // Calcular coordenadas normales (-1.0 a 1.0) relativas al centro del muro
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            targetX = (e.clientX - cx) / (rect.width / 2);
+            targetY = (e.clientY - cy) / (rect.height / 2);
+        });
+
+        wallBg.addEventListener('mouseleave', () => {
+            targetX = 0;
+            targetY = 0;
+        });
+
+        function update3DEffect() {
+            lastX += (targetX - lastX) * 0.08;
+            lastY += (targetY - lastY) * 0.08;
+
+            const rotX = -lastY * 16; // Inclinación vertical máx 16°
+            const rotY = lastX * 16;  // Inclinación horizontal máx 16°
+
+            frameShadowBox.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
+
+            // Ajustar dinámicamente la sombra en base a la luz seleccionada y la rotación 3D
+            const light = wallBg.getAttribute('data-light') || 'center';
+            let lightOffset = 0;
+            if (light === 'left') lightOffset = 30;
+            if (light === 'right') lightOffset = -30;
+
+            const shadX = -lastX * 25 + lightOffset;
+            const shadY = -lastY * 20 + 35; // 35px vertical offset por defecto
+            const shadBlur = 80 - (Math.abs(lastX) + Math.abs(lastY)) * 10;
+
+            frameShadowBox.style.boxShadow = `${shadX.toFixed(1)}px ${shadY.toFixed(1)}px ${shadBlur}px rgba(0,0,0,0.85)`;
+
+            requestAnimationFrame(update3DEffect);
+        }
+
+        update3DEffect();
+
+        // Giroscopio en dispositivos móviles
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', (e) => {
+                if (e.beta !== null && e.gamma !== null) {
+                    targetX = Math.min(1.0, Math.max(-1.0, e.gamma / 45));
+                    targetY = Math.min(1.0, Math.max(-1.0, (e.beta - 45) / 45));
+                }
+            });
+        }
+
+        // 5. Motor de Auto-Tour (Recorrido de Museo)
+        let isTourPlaying = false;
+        let tourInterval: any = null;
+
+        function startTour() {
+            if (tourInterval) clearInterval(tourInterval);
+            tourInterval = setInterval(() => {
+                const activeItem = document.querySelector('.carousel-item.active');
+                const items = Array.from(document.querySelectorAll('.carousel-item'));
+                if (items.length <= 1) return;
+                
+                const currentIdx = items.indexOf(activeItem);
+                const nextIdx = (currentIdx + 1) % items.length;
+                
+                // Efecto de desvanecimiento corto al cambiar de obra en tour
+                framerImg.style.transition = 'opacity 0.4s ease';
+                framerImg.style.opacity = '0';
+                
+                setTimeout(() => {
+                    (items[nextIdx] as HTMLElement).click();
+                    framerImg.style.opacity = '1';
+                }, 400);
+
+            }, 5500); // Pasar de obra cada 5.5 segundos
+        }
+
+        function stopTour() {
+            if (tourInterval) {
+                clearInterval(tourInterval);
+                tourInterval = null;
+            }
+        }
+
+        playTourBtn?.addEventListener('click', () => {
+            isTourPlaying = !isTourPlaying;
+            playTourBtn.classList.toggle('active', isTourPlaying);
+            
+            if (isTourPlaying) {
+                playTourBtn.innerHTML = '<span class="play-icon">⏸</span> DETENER TOUR';
+                startTour();
+            } else {
+                playTourBtn.innerHTML = '<span class="play-icon">▶</span> INICIAR TOUR';
+                stopTour();
+            }
+        });
+
+        // Limpieza de intervalos al cambiar de vista
+        document.addEventListener('astro:before-preparation', () => {
+            stopTour();
+        }, { once: true });
+
+        // Valores por defecto en carga
+        wallBg.setAttribute('data-wall', 'museum');
+        wallBg.setAttribute('data-light', 'center');
+        frameMolding.setAttribute('data-style', 'black');
+    });
+</script>

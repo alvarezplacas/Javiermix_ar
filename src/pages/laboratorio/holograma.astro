@@ -1,0 +1,816 @@
+---
+// d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\holograma.astro
+import Layout from '@layouts/Layout.astro';
+import { getCatalogoFiles } from '@conexion/directus';
+import { getOptimizedImageURL } from '@utils/media';
+
+export const prerender = false;
+
+let artworks = [];
+try {
+    const artworksRaw = await getCatalogoFiles();
+    artworks = artworksRaw
+        .filter(file => file.id && !file.filename_download.toLowerCase().includes('_2'))
+        .map((file, index) => ({
+            id: file.id,
+            title: file.title || `Obra ${index + 1}`,
+            img: getOptimizedImageURL(file.id, { width: 1200, format: 'webp', quality: 90 }),
+            thumb: getOptimizedImageURL(file.id, { width: 300, format: 'webp', quality: 70 }),
+            serie: file.serie_name || 'Archivo General',
+        }));
+} catch (e) {
+    console.error("Error al cargar catálogo en holograma:", e);
+}
+
+// Fallback por si falla la base de datos
+if (artworks.length === 0) {
+    artworks = [
+        {
+            id: 'demo1',
+            title: 'Obra de Prueba JMX I',
+            img: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1200&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=300&q=70',
+            serie: 'Serie Prueba'
+        },
+        {
+            id: 'demo2',
+            title: 'Obra de Prueba JMX II',
+            img: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=1200&q=90',
+            thumb: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?w=300&q=70',
+            serie: 'Serie Prueba'
+        }
+    ];
+}
+
+const seriesList = [...new Set(artworks.map(a => a.serie))];
+const defaultSerie = seriesList[0] || '';
+const initialArtworks = artworks.filter(art => art.serie === defaultSerie);
+---
+
+<Layout title="Holograma de Profundidad 3D | Laboratorio JMX" themeForce="dark">
+    <main class="holo-container" data-artworks={JSON.stringify(artworks)} data-wall="dark">
+        <!-- Grilla de laboratorio -->
+        <div class="grid-overlay"></div>
+        <div class="glow-orb"></div>
+
+        <!-- Navegación superior -->
+        <nav class="holo-nav">
+            <a href="/laboratorio" class="back-link">← GABINETE</a>
+            <div class="holo-title">PROTOCOLO EXP-10: HOLOGRAMA PARALLAX 3D</div>
+            <div class="sensor-status">
+                <span class="status-dot"></span>
+                <span id="sensor-text">RATIO PARALLAX: 1.0</span>
+            </div>
+        </nav>
+
+        <!-- Layout split: Escenario y Sidebar -->
+        <div class="framer-layout">
+            <!-- Escenario de Visualización Holográfica -->
+            <div class="holo-stage">
+                <div class="holo-wrapper" id="holo-wrapper">
+                    <!-- Sombra proyectada detrás -->
+                    <div class="holo-shadow" id="holo-shadow"></div>
+                    
+                    <!-- El Marco del Holograma que rota en 3D -->
+                    <div class="holo-card" id="holo-card">
+                        <!-- Textura de fondo paspartú -->
+                        <div class="holo-paspartu"></div>
+                        
+                        <!-- Imagen Base (Capa de Fondo) -->
+                        <img id="holo-img" src={initialArtworks[0]?.img || artworks[0]?.img} alt={initialArtworks[0]?.title || artworks[0]?.title} class="holo-layer bg-layer" />
+                        
+                        <!-- Capa de Brillo/Reflejo de Cristal de Museo (Capa Superior) -->
+                        <div class="holo-layer reflection-layer" id="holo-reflection"></div>
+                        
+                        <!-- Marco Físico Tridimensional virtual -->
+                        <div class="holo-bezel"></div>
+                    </div>
+
+                    <!-- Ficha de Datos que flota delante (Parallax extra) -->
+                    <div class="holo-tag" id="holo-tag">
+                        <span id="holo-tag-serie">{(initialArtworks[0]?.serie || artworks[0]?.serie).toUpperCase()}</span>
+                        <h3 id="holo-tag-title">{initialArtworks[0]?.title || artworks[0]?.title}</h3>
+                        <div class="tag-footer">
+                            <span>ESTÁNDAR FINE-ART</span>
+                            <span class="gold-spec">JMX 2026</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hint de interacción -->
+                <div class="stage-hint">
+                    <span>MUEVE EL CURSOR O INCLINA EL MÓVIL PARA VER LA TRIDIMENSIONALIDAD</span>
+                </div>
+            </div>
+
+            <!-- Panel de Ajustes Derecho (Photoshop Style) -->
+            <aside class="holo-sidebar">
+                <div class="sidebar-header">
+                    <h3>CONFIGURACIÓN DE ENTORNOS</h3>
+                </div>
+                <div class="sidebar-content">
+                    <!-- 1. Selección de Serie -->
+                    <div class="control-section">
+                        <label>SERIE DE FOTOGRAFÍAS</label>
+                        <select id="serie-select" class="jmx-select">
+                            {seriesList.map(serie => (
+                                <option value={serie} selected={serie === defaultSerie}>{serie.toUpperCase()}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <!-- 2. Textura/Color de Pared -->
+                    <div class="control-section">
+                        <label>TEXTURA / COLOR DE PARED</label>
+                        <div class="options-grid">
+                            <button class="option-btn active" data-wall="dark" title="Pared Oscura de Museo">
+                                <span class="color-dot" style="background: #121212; border: 1px solid #333;"></span> OSCURO
+                            </button>
+                            <button class="option-btn" data-wall="worn" title="Pared de Hormigón Gastado">
+                                <span class="color-dot" style="background: #5c5c5c; border: 1px solid #777;"></span> GASTADO
+                            </button>
+                            <button class="option-btn" data-wall="burgundy" title="Terciopelo Velvet Borgoña">
+                                <span class="color-dot" style="background: #3a080d; border: 1px solid #5a1017;"></span> VELVET
+                            </button>
+                            <button class="option-btn" data-wall="olive" title="Verde Oliva Museo">
+                                <span class="color-dot" style="background: #1f2d24; border: 1px solid #2f3d34;"></span> OLIVA
+                            </button>
+                            <button class="option-btn" data-wall="terracotta" title="Terracota Rústica Gastada">
+                                <span class="color-dot" style="background: #4e2b1f; border: 1px solid #6c3f30;"></span> TERRACOTA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Selector Inferior -->
+        <div class="carousel-panel">
+            <span class="panel-label">SELECCIONAR OBRA PARA PROYECTAR //</span>
+            <div class="thumb-strip" id="thumb-strip">
+                {initialArtworks.map((art, idx) => (
+                    <button class={`thumb-btn ${idx === 0 ? 'active' : ''}`} data-index={idx} data-img={art.img} data-title={art.title} data-serie={art.serie}>
+                        <img src={art.thumb} alt={art.title} />
+                        <span class="thumb-title">{art.title}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    :root {
+        --holo-accent: #dcb14a;
+        --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    .holo-container {
+        min-height: 100vh;
+        background: #030303;
+        color: #fff;
+        font-family: 'Inter', system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+        padding: 5rem 2rem 1.5rem 2rem;
+        transition: background 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Muros de Fondo */
+    .holo-container[data-wall="dark"] {
+        background: #030303;
+        background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #030303 100%);
+    }
+
+    .holo-container[data-wall="worn"] {
+        background: radial-gradient(circle at 50% 50%, rgba(15, 15, 15, 0.8) 0%, rgba(3, 3, 3, 0.95) 100%), 
+                    url('https://images.unsplash.com/photo-1590069261209-f8e9b8642343?w=1600&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .holo-container[data-wall="burgundy"] {
+        background: radial-gradient(circle at 50% 50%, rgba(35, 4, 8, 0.85) 0%, rgba(5, 0, 2, 0.97) 100%), 
+                    url('https://images.unsplash.com/photo-1618220179428-22790b461013?w=1600&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .holo-container[data-wall="olive"] {
+        background: radial-gradient(circle at 50% 50%, rgba(15, 25, 18, 0.85) 0%, rgba(3, 7, 5, 0.97) 100%), 
+                    url('https://images.unsplash.com/photo-1618220179428-22790b461013?w=1600&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .holo-container[data-wall="terracotta"] {
+        background: radial-gradient(circle at 50% 50%, rgba(45, 20, 15, 0.85) 0%, rgba(10, 5, 3, 0.97) 100%), 
+                    url('https://images.unsplash.com/photo-1618220179428-22790b461013?w=1600&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .grid-overlay {
+        position: absolute;
+        inset: 0;
+        background-image: 
+            linear-gradient(rgba(220, 177, 74, 0.01) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(220, 177, 74, 0.01) 1px, transparent 1px);
+        background-size: 50px 50px;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .glow-orb {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 800px;
+        height: 800px;
+        background: radial-gradient(circle, rgba(220, 177, 74, 0.03) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 2;
+        filter: blur(80px);
+    }
+
+    .holo-nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        padding: 1.5rem 3rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(to bottom, rgba(3,3,3,0.95) 60%, transparent);
+        z-index: 100;
+    }
+
+    .back-link {
+        color: rgba(255,255,255,0.4);
+        text-decoration: none;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        transition: 0.3s;
+    }
+
+    .back-link:hover { color: var(--holo-accent); }
+
+    .holo-title {
+        font-size: 0.6rem;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: var(--holo-accent);
+        border: 1px solid rgba(220, 177, 74, 0.3);
+        padding: 0.3rem 1rem;
+        background: rgba(220, 177, 74, 0.02);
+    }
+
+    .sensor-status {
+        font-family: monospace;
+        font-size: 0.55rem;
+        color: rgba(255,255,255,0.4);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        background: #00ff88;
+        border-radius: 50%;
+        box-shadow: 0 0 8px #00ff88;
+    }
+
+    /* Layout Split */
+    .framer-layout {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: 3rem;
+        width: 100%;
+        max-width: 1400px;
+        margin: 2rem auto;
+        padding: 0 2rem;
+    }
+
+    /* Escenario */
+    .holo-stage {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        perspective: 1500px;
+        z-index: 10;
+        position: relative;
+        min-height: 480px;
+    }
+
+    .holo-wrapper {
+        position: relative;
+        width: 480px;
+        height: 360px;
+        transform-style: preserve-3d;
+        will-change: transform;
+        transition: transform 0.1s ease;
+    }
+
+    .holo-shadow {
+        position: absolute;
+        inset: -20px;
+        background: rgba(0,0,0,0.85);
+        filter: blur(30px);
+        transform: translateZ(-80px);
+        pointer-events: none;
+        border-radius: 8px;
+        opacity: 0.8;
+        transition: transform 0.1s ease;
+    }
+
+    .holo-card {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 50px 100px rgba(0,0,0,0.9);
+        border: 1px solid var(--glass-border);
+    }
+
+    .holo-paspartu {
+        position: absolute;
+        inset: 0;
+        background: #0a0a0a;
+        z-index: 1;
+    }
+
+    .holo-layer {
+        position: absolute;
+        display: block;
+        pointer-events: none;
+    }
+
+    /* Imagen Principal - Ajuste Contain para evitar recortes */
+    .bg-layer {
+        inset: 24px;
+        width: calc(100% - 48px);
+        height: calc(100% - 48px);
+        object-fit: contain;
+        z-index: 2;
+        transform: translateZ(15px) scale(0.96);
+        border: 1px solid rgba(255,255,255,0.02);
+    }
+
+    /* Cristal */
+    .reflection-layer {
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%, rgba(255,255,255,0.08) 100%);
+        mix-blend-mode: overlay;
+        transform: translateZ(30px);
+        pointer-events: none;
+    }
+
+    .holo-bezel {
+        position: absolute;
+        inset: 0;
+        border: 1px solid rgba(255,255,255,0.05);
+        z-index: 20;
+        pointer-events: none;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.85);
+    }
+
+    /* Ficha Técnica Refinada y Más Pequeña */
+    .holo-tag {
+        position: absolute;
+        bottom: -20px;
+        right: -30px;
+        background: rgba(10, 10, 10, 0.9);
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255,255,255,0.08);
+        padding: 1rem 1.2rem;
+        width: 210px;
+        transform: translateZ(60px);
+        box-shadow: 0 20px 45px rgba(0,0,0,0.6);
+        z-index: 30;
+        border-radius: 2px;
+    }
+
+    .holo-tag span:first-child {
+        font-size: 0.45rem;
+        letter-spacing: 2px;
+        color: var(--holo-accent);
+        font-weight: 800;
+        display: block;
+        margin-bottom: 0.3rem;
+    }
+
+    /* Título reducido a demanda del autor */
+    .holo-tag h3 {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+        color: #fff;
+        line-height: 1.25;
+        letter-spacing: 0.5px;
+    }
+
+    .tag-footer {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.45rem;
+        font-weight: 900;
+        letter-spacing: 1.2px;
+        color: rgba(255,255,255,0.35);
+        border-top: 1px solid rgba(255,255,255,0.06);
+        padding-top: 0.5rem;
+    }
+
+    .gold-spec { color: var(--holo-accent); }
+
+    .stage-hint {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.55rem;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.25);
+        font-weight: 700;
+        text-align: center;
+        width: 100%;
+    }
+
+    /* Panel de Ajustes / Sidebar */
+    .holo-sidebar {
+        width: 320px;
+        background: rgba(10, 10, 10, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+    }
+
+    .sidebar-header {
+        height: 54px;
+        background: rgba(0, 0, 0, 0.4);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        padding: 0 1.5rem;
+    }
+
+    .sidebar-header h3 {
+        font-size: 0.65rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--holo-accent);
+        margin: 0;
+    }
+
+    .sidebar-content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.8rem;
+    }
+
+    .control-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .control-section label {
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        color: rgba(255,255,255,0.4);
+    }
+
+    .jmx-select {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #fff;
+        padding: 0.7rem;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        outline: none;
+        cursor: pointer;
+        width: 100%;
+        border-radius: 2px;
+        transition: 0.3s;
+    }
+
+    .jmx-select:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .jmx-select option {
+        background: #111;
+        color: #fff;
+    }
+
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
+    .option-btn {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.6);
+        padding: 0.8rem 0.5rem;
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.6rem;
+        border-radius: 2px;
+        padding-left: 0.8rem;
+    }
+
+    .option-btn:hover {
+        border-color: rgba(255,255,255,0.25);
+        color: #fff;
+    }
+
+    .option-btn.active {
+        border-color: var(--holo-accent);
+        color: var(--holo-accent);
+        background: rgba(220, 177, 74, 0.05);
+    }
+
+    .color-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    /* Carousel Panel */
+    .carousel-panel {
+        background: rgba(10, 10, 10, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        padding: 1.5rem;
+        z-index: 10;
+        max-width: 1400px;
+        width: 100%;
+        margin: 0 auto;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    .panel-label {
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.4);
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .thumb-strip {
+        display: flex;
+        gap: 1.2rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .thumb-btn {
+        background: #060606;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        cursor: pointer;
+        width: 120px;
+        flex-shrink: 0;
+        text-align: left;
+        transition: all 0.3s ease;
+        border-radius: 2px;
+    }
+
+    .thumb-btn img {
+        width: 100%;
+        aspect-ratio: 4/3;
+        object-fit: cover;
+        opacity: 0.5;
+        transition: 0.3s;
+    }
+
+    .thumb-btn:hover { border-color: rgba(255, 255, 255, 0.25); }
+    .thumb-btn:hover img { opacity: 0.8; }
+    .thumb-btn.active { border-color: var(--holo-accent); background: rgba(220, 177, 74, 0.03); }
+    .thumb-btn.active img { opacity: 1; }
+    
+    .thumb-title {
+        font-size: 0.55rem;
+        color: rgba(255,255,255,0.6);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 600;
+    }
+
+    .thumb-btn.active .thumb-title { color: var(--holo-accent); }
+
+    @media (max-width: 1024px) {
+        .framer-layout {
+            flex-direction: column;
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+        .holo-sidebar {
+            width: 100%;
+        }
+        .holo-stage {
+            min-height: 400px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .holo-nav {
+            padding: 1.5rem 1.5rem;
+        }
+        .holo-stage { perspective: 800px; }
+        .holo-wrapper { width: 85vw; height: 64vw; }
+        .holo-tag { bottom: -30px; right: 0; left: 0; margin: 0 auto; width: 80%; }
+        .bg-layer { inset: 16px; width: calc(100% - 32px); height: calc(100% - 32px); }
+    }
+</style>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const wrapper = document.getElementById('holo-wrapper');
+        const card = document.getElementById('holo-card');
+        const shadow = document.getElementById('holo-shadow');
+        const tag = document.getElementById('holo-tag');
+        const reflection = document.getElementById('holo-reflection');
+        const sensorText = document.getElementById('sensor-text');
+
+        const holoImg = document.getElementById('holo-img') as HTMLImageElement;
+        const tagTitle = document.getElementById('holo-tag-title');
+        const tagSerie = document.getElementById('holo-tag-serie');
+        const container = document.querySelector('.holo-container');
+        const serieSelect = document.getElementById('serie-select') as HTMLSelectElement;
+        const thumbStrip = document.getElementById('thumb-strip');
+
+        if (!wrapper || !card || !shadow || !tag || !reflection || !container) return;
+
+        let artworksData: any[] = [];
+        try {
+            artworksData = JSON.parse(container.getAttribute('data-artworks') || '[]');
+        } catch (e) {
+            console.error("Error al parsear obras en script de holograma:", e);
+        }
+
+        let lastX = 0;
+        let lastY = 0;
+        let targetX = 0;
+        let targetY = 0;
+
+        // Escuchar el movimiento del mouse
+        window.addEventListener('mousemove', (e) => {
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+            targetX = (e.clientX - cx) / cx;
+            targetY = (e.clientY - cy) / cy;
+        });
+
+        // Suavizado (Lerp) para movimiento cinemático fluido
+        function updateParallax() {
+            lastX += (targetX - lastX) * 0.1;
+            lastY += (targetY - lastY) * 0.1;
+
+            const rotateX = -lastY * 25; 
+            const rotateY = lastX * 30;  
+
+            wrapper.style.transform = `rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`;
+            
+            const shadowX = -lastX * 45;
+            const shadowY = -lastY * 30;
+            shadow.style.transform = `translate3d(${shadowX.toFixed(1)}px, ${shadowY.toFixed(1)}px, -80px)`;
+
+            const refX = -lastX * 35;
+            const refY = -lastY * 35;
+            reflection.style.backgroundPosition = `${(50 + refX).toFixed(1)}% ${(50 + refY).toFixed(1)}%`;
+
+            if (sensorText) {
+                const ratio = Math.sqrt(lastX * lastX + lastY * lastY);
+                sensorText.innerText = `RATIO PARALLAX: ${(1.0 + ratio).toFixed(2)}`;
+            }
+
+            requestAnimationFrame(updateParallax);
+        }
+
+        updateParallax();
+
+        // Soporte para Giroscopio de dispositivo móvil (DeviceOrientation)
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', (e) => {
+                if (e.beta !== null && e.gamma !== null) {
+                    targetX = Math.min(1.0, Math.max(-1.0, e.gamma / 45));
+                    targetY = Math.min(1.0, Math.max(-1.0, (e.beta - 45) / 45));
+                }
+            });
+        }
+
+        // Configurar botones de cambio de pared
+        const wallBtns = document.querySelectorAll('[data-wall]');
+        wallBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const wallType = btn.getAttribute('data-wall') || 'dark';
+                
+                document.querySelectorAll('[data-wall]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                container.setAttribute('data-wall', wallType);
+            });
+        });
+
+        // Vincular los eventos de clic en las miniaturas
+        function bindThumbEvents() {
+            const thumbBtns = document.querySelectorAll('.thumb-btn');
+            thumbBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    thumbBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const img = btn.getAttribute('data-img') || '';
+                    const title = btn.getAttribute('data-title') || '';
+                    const serie = btn.getAttribute('data-serie') || '';
+
+                    if (holoImg) holoImg.src = img;
+                    if (tagTitle) tagTitle.innerText = title;
+                    if (tagSerie) tagSerie.innerText = serie.toUpperCase();
+                });
+            });
+        }
+
+        // Inicializar clics de miniaturas iniciales
+        bindThumbEvents();
+
+        // Cambiar serie de fotos y recargar miniaturas correspondientes
+        serieSelect?.addEventListener('change', (e) => {
+            const selectedSerie = (e.target as HTMLSelectElement).value;
+            const filtered = artworksData.filter((art: any) => art.serie === selectedSerie);
+            
+            if (!thumbStrip) return;
+            thumbStrip.innerHTML = '';
+            
+            filtered.forEach((art: any, idx: number) => {
+                const btn = document.createElement('button');
+                btn.className = `thumb-btn ${idx === 0 ? 'active' : ''}`;
+                btn.setAttribute('data-index', idx.toString());
+                btn.setAttribute('data-img', art.img);
+                btn.setAttribute('data-title', art.title);
+                btn.setAttribute('data-serie', art.serie);
+                
+                const img = document.createElement('img');
+                img.src = art.thumb;
+                img.alt = art.title;
+                
+                const span = document.createElement('span');
+                span.className = 'thumb-title';
+                span.innerText = art.title;
+                
+                btn.appendChild(img);
+                btn.appendChild(span);
+                
+                thumbStrip.appendChild(btn);
+            });
+            
+            // Re-vincular eventos a las nuevas miniaturas
+            bindThumbEvents();
+            
+            // Cargar automáticamente la primera obra de la serie seleccionada
+            if (filtered.length > 0) {
+                if (holoImg) holoImg.src = filtered[0].img;
+                if (tagTitle) tagTitle.innerText = filtered[0].title;
+                if (tagSerie) tagSerie.innerText = filtered[0].serie.toUpperCase();
+            }
+        });
+    });
+</script>

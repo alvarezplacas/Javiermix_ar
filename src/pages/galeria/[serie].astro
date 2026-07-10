@@ -1,0 +1,1731 @@
+---
+import Layout from '@layouts/Layout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { 
+    getSerieDetails, 
+    getApprovedExhibitionModes, 
+    getSerieSettings, 
+    getSerieDetailsBySlugOrId,
+    getApprovedPublicSubmissions,
+    getAssetUrl
+} from '@conexion/directus';
+import { getArtworkLikes, hasLiked } from '@conexion/likes';
+import { getOptimizedImageURL } from '@utils/media';
+
+export const prerender = false;
+
+const { serie } = Astro.params; // Folder ID or Name Slug
+
+// Resolve Folder dynamically by UUID or name slug
+const serieData = await getSerieDetailsBySlugOrId(serie as string);
+
+// 301 HTTP Permanent Redirection if UUID was requested
+const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(serie as string);
+if (isUuid && serieData.slug) {
+    return Astro.redirect(`/galeria/${serieData.slug}`, 301);
+}
+
+const { name, items } = serieData;
+const serieSettings = await getSerieSettings(serieData.id || (serie as string));
+
+// 🧼 LIMPIEZA DE SALTOS DE LÍNEA MANUALES (FÓRMULA LUMAS PREMIUM)
+// Elimina los saltos de línea forzados del CMS para que el texto fluya de forma natural en el catálogo
+let narrativeClean = "";
+if (serieSettings?.narrative) {
+    narrativeClean = serieSettings.narrative
+        .replace(/<br\s*\/?>/gi, ' ') // Quita etiquetas <br>
+        .replace(/\n/g, ' ')          // Quita saltos de línea literales \n
+        .replace(/\s+/g, ' ');        // Colapsa espacios redundantes
+}
+
+// Lógica: JMX_xxxx.ext es principal, JMX_xxxx_2.ext es variante hover
+const mainImages = items.filter((f: any) => {
+	const low = f.filename_download.toLowerCase();
+	return !low.includes('_2.') && !low.includes(' 2.');
+});
+
+const clientIp = Astro.clientAddress || "unknown";
+
+const artworks = await Promise.all(mainImages.map(async (img: any) => {
+	const baseName = img.filename_download.split('.')[0].toLowerCase();
+	const hoverVariant = items.find((f: any) => f.filename_download.toLowerCase().startsWith(`${baseName}_2.`));
+    const likes = await getArtworkLikes(img.id);
+    const likedByUser = await hasLiked(img.id, clientIp);
+	
+	return {
+		id: img.id,
+		title: img.title || "Obra Javier Mix",
+		mainUrl: getOptimizedImageURL(img.id),
+		hoverUrl: hoverVariant ? getOptimizedImageURL(hoverVariant.id) : null,
+		likes,
+		likedByUser
+	};
+}));
+
+// Lógica de Participación del Público
+const isPublicSeries = name.toLowerCase().includes('_publico') || name.toLowerCase().endsWith('_publico');
+const displayTitle = name.replace(/_publico/gi, '').replace(/_/g, ' ').trim();
+
+let publicSubmissions: any[] = [];
+if (isPublicSeries && serieData.id) {
+    const rawSubmissions = await getApprovedPublicSubmissions(serieData.id);
+    publicSubmissions = rawSubmissions.map((sub: any) => ({
+        id: sub.id,
+        name: sub.name,
+        imageUrl: getAssetUrl(sub.image, { width: 800, quality: 80 }),
+        hasSocial: sub.social_link && sub.social_link.trim() !== '',
+        socialLink: sub.social_link || ''
+    }));
+}
+
+const invitationTitle = serieSettings?.invitation_title || "Sube tu imagen.";
+const invitationText = serieSettings?.invitation_text || "Deja tus rastros con los signos que te habitan.";
+const confirmationText = serieSettings?.confirmation_text || "Ahora un nuevo signo habita nuestro espacio.";
+
+const serieName = displayTitle;
+const coverOg = artworks[0]?.mainUrl || undefined;
+const approvedModes = await getApprovedExhibitionModes();
+---
+
+<Layout
+  title={`${serieName} | Colección Fine Art`}
+  description={`Descubrí la serie "${serieName}" de Javier Mix: ${artworks.length} obras de fotografía Fine Art de autor.`}
+  url={`/galeria/${Astro.params.serie}`}
+  image={coverOg}
+>
+	<Header currentPath="/galeria" />
+
+	<div class="immersive-header" data-artworks={JSON.stringify(artworks.map(a => a.mainUrl))}>
+		<div class="slideshow-container">
+			<div class="slide-layer active" id="slide-1"></div>
+			<div class="slide-layer" id="slide-2"></div>
+		</div>
+		
+		<div class="header-overlay-mask"></div>
+
+		<header class="serie-header-content">
+			<a href="/galeria" class="back-link">
+				<span class="icon">&larr;</span>
+				<span class="label">Volver a Colecciones</span>
+			</a>
+			<h1 class="serie-title">{displayTitle}</h1>
+			
+			<div class="serie-lab-suggestion">
+				<span class="suggestion-label">VER OBRAS EN:</span>
+				<div class="approved-modes">
+					{approvedModes.map(mode => (
+						<a href={`${mode.path}?serie=${name}`} class="lab-link">{mode.label}</a>
+					))}
+				</div>
+			</div>
+
+			<p class="serie-meta">
+				<span class="count">{artworks.length}</span>
+				<span class="label">Obras Disponibles</span>
+			</p>
+		</header>
+	</div>
+
+	<article class="serie-content-container">
+        
+        {serieSettings && narrativeClean && (
+            <div class="serie-editorial-preamble">
+                <div class="editorial-catalog-grid">
+                    <!-- 🖼️ Columna 1: Obra Física Enmarcada -->
+                    <div class="editorial-artwork-column">
+                        {(serieSettings.cover_artwork || artworks[0]?.id) && (
+                            <div class="gallery-frame-wrapper">
+                                <div class="gallery-physical-frame">
+                                    <div class="gallery-passepartout">
+                                        <img src={getOptimizedImageURL(serieSettings.cover_artwork || artworks[0]?.id, { width: 800, quality: 90 })} alt="Obra de portada de la serie" class="gallery-framed-image" loading="lazy" />
+                                    </div>
+                                </div>
+                                
+                                <button class="btn-glass-play" id="open-immersive-slideshow">
+                                    <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    Iniciar Experiencia
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <!-- 📝 Columna 2: Texto Explicativo Curatorial -->
+                    <div class="editorial-text-column">
+                        <span class="editorial-meta-label">Presentación:</span>
+                        <div class="editorial-body" set:html={narrativeClean}></div>
+                        
+                        <div class="editorial-signature">
+                            <span class="signature-line"></span>
+                            <span class="signature-name">Javier Mix · Curaduría</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 🎭 Experiencia Inmersiva Fullscreen (cross-fade con transparencias) -->
+            <div class="immersive-overlay" id="immersive-slideshow-overlay">
+                <!-- Top Bar with F11 hint and Close Button -->
+                <div class="immersive-top-bar">
+                    <span class="desktop-f11-hint">Presione F11 para una mejor experiencia.</span>
+                    <button class="immersive-close-btn" id="immersive-close" title="Cerrar Experiencia">
+                        <span class="icon">&times;</span>
+                    </button>
+                </div>
+
+                <div class="immersive-slideshow-container">
+                    {artworks.map((artwork, idx) => (
+                        <div class={`immersive-slide ${idx === 0 ? 'active' : ''}`} data-index={idx} data-title={artwork.title} data-serie={name}>
+                            <div class="immersive-artwork-wrapper">
+                                <img src={artwork.mainUrl} alt={artwork.title} class="immersive-artwork-image" loading="lazy" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <!-- Sleek Bottom Immersive Bar -->
+                <div class="immersive-footer-bar">
+                    <!-- Left Side: Player Controls -->
+                    <div class="immersive-bar-controls">
+                        <button class="immersive-ctrl-btn prev-btn" id="immersive-prev" title="Anterior">
+                            <span class="icon">&larr;</span>
+                        </button>
+                        
+                        <button class="immersive-ctrl-btn play-pause-btn" id="immersive-play-pause" title="Auto-reproducción (Play/Pause)">
+                            <span class="icon" id="play-pause-icon">⏸</span>
+                        </button>
+
+                        <button class="immersive-ctrl-btn next-btn" id="immersive-next" title="Siguiente">
+                            <span class="icon">&rarr;</span>
+                        </button>
+                    </div>
+
+                    <!-- Right Side: Minimalist Single-Color Description -->
+                    <div class="immersive-bar-description">
+                        <span class="immersive-desc-text" id="immersive-active-desc"></span>
+                    </div>
+                </div>
+            </div>
+        )}
+
+		<section class="masonry-grid" id="series-masonry">
+			{artworks.map((artwork) => (
+				<div class="gallery-artwork-card" data-id={artwork.id}>
+					<a href={`/obra/${artwork.id}`} class="artwork-link">
+						<div class="artwork-figure">
+							<img src={artwork.mainUrl} alt={""} class="artwork-img main-img" loading="lazy" />
+							{artwork.hoverUrl && (
+								<img src={artwork.hoverUrl} alt={""} class="artwork-img hover-img" loading="lazy" />
+							)}
+						</div>
+					</a>
+					
+					<div class="artwork-info-overlay">
+						<div class="interaction-bar">
+							<button class={`like-btn ${artwork.likedByUser ? 'liked' : ''}`} data-artwork-id={artwork.id}>
+								<svg class="heart-svg" viewBox="0 0 24 24">
+									<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+								</svg>
+								<span class="likes-count">{artwork.likes}</span>
+							</button>
+							<a href={`/obra/${artwork.id}`} class="view-obra">VER OBRA</a>
+						</div>
+					</div>
+				</div>
+			))}
+		</section>
+
+		{isPublicSeries && (
+			<div class="public-disparador-section">
+				<div class="disparador-divider">
+					<span class="d-line"></span>
+					<span class="d-mark">❖</span>
+					<span class="d-line"></span>
+				</div>
+				
+				<div class="disparador-content">
+					<h2 class="disparador-title">{invitationTitle}</h2>
+					<p class="disparador-text">{invitationText}</p>
+					
+					<form class="disparador-form" id="public-submission-form" enctype="multipart/form-data">
+						<input type="hidden" name="folder_id" value={serieData.id} />
+						
+						<div class="form-grid">
+							<div class="form-group">
+								<label for="p-name">Nombre *</label>
+								<input type="text" id="p-name" name="name" required placeholder="Tu nombre artístico o real" />
+							</div>
+							
+							<div class="form-group">
+								<label for="p-email">Email *</label>
+								<input type="email" id="p-email" name="email" required placeholder="tu@email.com (no se compartirá)" />
+							</div>
+							
+							<div class="form-group full-width">
+								<label for="p-social">Red Social o Sitio Web (Instagram, Facebook o Web - Opcional)</label>
+								<input type="url" id="p-social" name="social_link" placeholder="https://instagram.com/tuperfil" />
+								<span class="input-helper">Si es elegida para la serie, tu foto enlazará a este sitio. Si decides no colocarlo, la imagen no te llevará a ningún sitio.</span>
+							</div>
+						</div>
+
+						<div class="file-upload-wrapper">
+							<div class="file-upload-zone" id="file-drop-zone">
+								<svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+								</svg>
+								<p class="upload-text" id="upload-status-text">Arrastra tu imagen aquí o haz clic para explorar</p>
+								<p class="upload-limits">Formatos soportados: JPG, PNG, WEBP, AVIF. Máximo 10MB.</p>
+								<input type="file" id="p-file" name="file" accept="image/*" required style="display: none;" />
+							</div>
+						</div>
+						
+						<div class="form-submit-container">
+							<button type="submit" class="btn-premium-action" id="submit-rastro-btn">
+								Enviar Rastro
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		)}
+
+		{isPublicSeries && publicSubmissions.length > 0 && (
+			<div class="collaborative-grid-section">
+				<div class="collaborative-header">
+					<span class="collab-meta-label">El Eco Colectivo</span>
+					<h3 class="collab-title">La Huella Colectiva</h3>
+				</div>
+				
+				<div class="collaborative-masonry">
+					{publicSubmissions.map((sub) => (
+						sub.hasSocial ? (
+							<a href={sub.socialLink} target="_blank" rel="noopener noreferrer" class="collab-card-link">
+								<div class="collab-artwork-card">
+									<div class="collab-artwork-figure">
+										<img src={sub.imageUrl} alt={`Obra de ${sub.name}`} class="collab-img" loading="lazy" />
+										<div class="collab-info-overlay">
+											<span class="collab-submitter-name">Huella de {sub.name}</span>
+											<span class="collab-social-hint">Ver artista →</span>
+										</div>
+									</div>
+								</div>
+							</a>
+						) : (
+							<div class="collab-card-static">
+								<div class="collab-artwork-card">
+									<div class="collab-artwork-figure">
+										<img src={sub.imageUrl} alt={`Obra de ${sub.name}`} class="collab-img" loading="lazy" />
+										<div class="collab-info-overlay">
+											<span class="collab-submitter-name">Huella de {sub.name}</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						)
+					))}
+				</div>
+			</div>
+		)}
+
+		{isPublicSeries && (
+			<!-- 🎬 El Eco: Fullscreen Overlay Cinematográfico -->
+			<div class="eco-overlay" id="eco-confirmation-overlay">
+				<div class="eco-container">
+					<p class="eco-text font-serif-italic">{confirmationText}</p>
+				</div>
+			</div>
+		)}
+	</article>
+
+	<Footer />
+</Layout>
+
+<style>
+.immersive-header {
+	position: relative;
+	width: 100%;
+	height: 85vh;
+	background-color: #000;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+
+.slideshow-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+}
+
+.slide-layer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	background-position: center;
+	opacity: 0;
+	transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+	filter: brightness(0.5) contrast(1.1) saturate(0.8);
+}
+
+.slide-layer.active {
+	opacity: 1;
+}
+
+.header-overlay-mask {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	/* 🌫️ Premium Bottom Fade-out Overlay: melts photo into adaptive page background */
+	background: linear-gradient(to bottom, 
+		rgba(0, 0, 0, 0.15) 0%, 
+		rgba(0, 0, 0, 0.55) 60%, 
+		var(--color-bg) 100%);
+	z-index: 2;
+	transition: background 0.5s ease;
+}
+
+.serie-header-content {
+	position: relative;
+	z-index: 10;
+	padding: 0 2rem;
+}
+
+.back-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 3rem;
+	color: rgba(255, 255, 255, 0.45);
+	text-decoration: none;
+	font-family: var(--font-secondary);
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 3px;
+	transition: all 0.5s var(--ease-premium);
+}
+
+.back-link:hover {
+	color: var(--color-accent);
+	transform: translateX(-5px);
+}
+
+.serie-title {
+	font-family: var(--font-primary);
+	font-size: clamp(3.5rem, 10vw, 8rem);
+	font-weight: 200;
+	color: #fff;
+	line-height: 0.9;
+	margin-bottom: 2rem;
+	text-shadow: 0 20px 50px rgba(0,0,0,0.8);
+	letter-spacing: -2px;
+}
+
+.serie-meta {
+	font-family: var(--font-secondary);
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 5px;
+	/* 🕊️ Soft white letters to elegantly blend and break the cutting line */
+	color: rgba(255, 255, 255, 0.8);
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1.5rem;
+	margin-top: 2rem;
+	transition: color 0.5s ease;
+}
+
+.serie-meta::before, .serie-meta::after {
+	content: "";
+	width: 40px;
+	height: 1px;
+	/* 🕊️ Soft white line instead of harsh gold */
+	background: rgba(255, 255, 255, 0.25);
+	transition: background 0.5s ease;
+}
+
+.serie-lab-suggestion {
+	margin: 2rem 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	align-items: center;
+}
+
+.approved-modes {
+	display: flex;
+	gap: 2.5rem;
+	justify-content: center;
+}
+
+.suggestion-label {
+	font-size: 0.6rem;
+	letter-spacing: 4px;
+	color: rgba(255, 255, 255, 0.3);
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.lab-link {
+	color: #fff;
+	text-decoration: none;
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 4px;
+	text-transform: uppercase;
+	transition: all 0.5s var(--ease-premium);
+	opacity: 0.6;
+	padding: 0.5rem 1rem;
+	border: 1px solid rgba(255,255,255,0.1);
+}
+
+.lab-link:hover {
+	opacity: 1;
+	border-color: var(--color-accent);
+	color: var(--color-accent);
+	background: rgba(220, 177, 74, 0.05);
+	transform: translateY(-2px);
+	box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.serie-content-container {
+	max-width: 1800px;
+	margin: -15vh auto 0;
+	position: relative;
+	z-index: 20;
+	padding: 0 4% 10rem;
+}
+
+.masonry-grid {
+	column-count: 3;
+	column-gap: 4rem;
+}
+
+.gallery-artwork-card {
+	break-inside: avoid;
+	margin-bottom: 4rem;
+	position: relative;
+	overflow: hidden;
+	background: var(--color-onyx-charcoal);
+	transition: transform 0.6s var(--ease-premium);
+}
+
+.artwork-figure {
+	position: relative;
+	width: 100%;
+	overflow: hidden;
+}
+
+.artwork-img {
+	width: 100%;
+	height: auto;
+	display: block;
+	transition: transform 1.2s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.8s ease;
+}
+
+.artwork-img.hover-img {
+	position: absolute;
+	top: 0;
+	left: 0;
+	opacity: 0;
+	z-index: 2;
+	transform: scale(1.05);
+}
+
+.gallery-artwork-card:hover .artwork-img.main-img {
+	transform: scale(1.1);
+	filter: blur(5px);
+}
+
+.gallery-artwork-card:hover .artwork-img.hover-img {
+	opacity: 1;
+	transform: scale(1);
+}
+
+.artwork-info-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: radial-gradient(circle at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%);
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	transition: all 0.5s var(--ease-premium);
+	backdrop-filter: blur(0px);
+}
+
+.gallery-artwork-card:hover .artwork-info-overlay {
+	opacity: 1;
+	backdrop-filter: blur(8px);
+}
+
+.interaction-bar {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2rem;
+	transform: translateY(20px);
+	transition: transform 0.6s var(--ease-premium);
+}
+
+.gallery-artwork-card:hover .interaction-bar {
+	transform: translateY(0);
+}
+
+.like-btn {
+	background: rgba(255,255,255,0.05);
+	border: 1px solid rgba(255,255,255,0.1);
+	color: #fff;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.8rem;
+	padding: 12px 24px;
+	backdrop-filter: blur(10px);
+	transition: all 0.4s var(--ease-premium);
+}
+
+.like-btn:hover {
+	background: rgba(255,255,255,0.1);
+	border-color: var(--color-accent);
+	transform: scale(1.05);
+}
+
+.like-btn.liked {
+	color: #FF2D55;
+	border-color: #FF2D55;
+	background: rgba(255, 45, 85, 0.05);
+}
+
+.heart-svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+.like-btn.liked .heart-svg {
+    fill: #FF2D55;
+}
+
+.view-obra {
+    background: var(--color-accent);
+	color: #000;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 3px;
+	padding: 1rem 2.5rem;
+	transition: all 0.4s var(--ease-premium);
+    text-decoration: none;
+}
+
+.view-obra:hover {
+    background: #fff;
+    transform: scale(1.05);
+	box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+}
+
+/* ─── NEW MUSEUM-CATALOG ASYMMETRIC PREAMBLE ─── */
+.serie-editorial-preamble {
+    width: 100%;
+    max-width: 1400px;
+    margin: 2rem auto 8rem auto;
+    padding: 6rem 0;
+    position: relative;
+    z-index: 20;
+    border-top: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border);
+    transition: border-color 0.5s ease;
+}
+
+.editorial-catalog-grid {
+    display: grid;
+    grid-template-columns: 45% 55%;
+    gap: 6rem;
+    align-items: center;
+}
+
+/* 🖼️ Columna de la Fotografía Enmarcada */
+.editorial-artwork-column {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.gallery-frame-wrapper {
+    width: 100%;
+    max-width: 480px;
+    perspective: 1000px;
+}
+
+/* Simulación de Marco Físico de Galería */
+.gallery-physical-frame {
+    background: #0d0d0d;
+    padding: 1.5rem;
+    border-radius: 2px;
+    box-shadow: 
+        0 40px 100px rgba(0, 0, 0, 0.7),
+        0 15px 35px rgba(0, 0, 0, 0.4),
+        inset 0 0 20px rgba(255, 255, 255, 0.03);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.8s var(--ease-premium), box-shadow 0.8s ease;
+    transform-style: preserve-3d;
+}
+
+.gallery-physical-frame:hover {
+    transform: scale(1.03) rotateY(-4deg) rotateX(1.5deg);
+    box-shadow: 
+        0 50px 120px rgba(0, 0, 0, 0.8),
+        0 20px 45px rgba(0, 0, 0, 0.5);
+}
+
+/* Paspartú Blanco Hueso Premium */
+.gallery-passepartout {
+    background: radial-gradient(circle at center, #fdfdfb 0%, #f4f3ef 100%);
+    padding: 3.5rem;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Efecto de cristal reflejante de museo */
+.gallery-passepartout::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 40%, transparent 60%, rgba(0,0,0,0.02) 100%);
+    pointer-events: none;
+    z-index: 3;
+}
+
+.gallery-framed-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    box-shadow: 
+        0 8px 25px rgba(0,0,0,0.15),
+        0 1px 3px rgba(0,0,0,0.08);
+    position: relative;
+    z-index: 2;
+    filter: contrast(1.02) saturate(0.95);
+}
+
+/* 📝 Columna de Texto Curatorial */
+.editorial-text-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+}
+
+.editorial-meta-label {
+    font-family: var(--font-secondary);
+    font-size: 0.8rem; /* Slightly larger, elegant label size */
+    letter-spacing: 5px; /* Premium letter spacing */
+    color: var(--color-accent); /* Gold! */
+    font-weight: 700;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.editorial-body {
+    font-family: 'Montserrat', sans-serif !important;
+    max-width: 580px;
+}
+
+.editorial-body :global(p) {
+    font-family: 'Montserrat', sans-serif !important;
+    font-size: 1.05rem; /* Tamaño de lectura de catálogo */
+    line-height: 1.9;
+    font-weight: 300;
+    color: var(--color-text); /* 🌟 Adaptive text color! */
+    opacity: 0.85; /* Dynamic opacity for a softer contrast on both themes */
+    text-align: left;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.025em; /* Optical spacing for Montserrat fine art descriptions */
+    transition: color 0.5s ease;
+}
+
+.editorial-body :global(p:last-child) {
+    margin-bottom: 0;
+}
+
+.editorial-signature {
+    margin-top: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.signature-line {
+    width: 30px;
+    height: 1px;
+    background: var(--color-accent);
+    opacity: 0.4;
+}
+
+.signature-name {
+    font-family: var(--font-secondary);
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+@media (max-width: 1200px) {
+	.masonry-grid { column-count: 2; column-gap: 2rem; }
+}
+
+@media (max-width: 992px) {
+    .editorial-catalog-grid {
+        grid-template-columns: 100%;
+        gap: 4rem;
+    }
+    
+    .gallery-frame-wrapper {
+        max-width: 380px;
+    }
+    
+    .gallery-passepartout {
+        padding: 2rem;
+    }
+
+    .editorial-text-column {
+        align-items: center;
+        text-align: center;
+        padding: 0 1.5rem;
+    }
+    
+    .editorial-body {
+        max-width: 100%;
+    }
+    
+    .editorial-body :global(p) {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: var(--color-text);
+        opacity: 0.9;
+        text-align: left;
+        transition: color 0.5s ease;
+    }
+}
+
+@media (max-width: 768px) {
+	.masonry-grid { column-count: 1; }
+	.serie-title { font-size: 3.5rem; }
+	.immersive-header { height: 60vh; }
+	.serie-content-container { margin-top: -5vh; }
+}
+
+/* ─── GLASS PLAY BUTTON ─── */
+.btn-glass-play {
+    margin-top: 2.5rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    padding: 1rem 2rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--color-text);
+    font-family: var(--font-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.5s var(--ease-premium);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.btn-glass-play:hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #000;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.btn-glass-play:active {
+    transform: translateY(0);
+}
+
+.play-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--color-accent);
+}
+
+/* ─── IMMERSIVE FULLSCREEN SLIDESHOW OVERLAY ─── */
+.immersive-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.immersive-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.immersive-slideshow-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.immersive-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 1;
+}
+
+.immersive-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 2;
+}
+
+.immersive-artwork-wrapper {
+    position: relative;
+    max-width: 85vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.immersive-artwork-image {
+    max-width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    box-shadow: 0 35px 90px rgba(0, 0, 0, 0.95);
+    border: 4px solid rgba(255, 255, 255, 0.02);
+}
+
+/* Top Bar: Muted F11 Hint + Close Button */
+.immersive-top-bar {
+    position: absolute;
+    top: 3rem;
+    left: 4rem;
+    right: 4rem;
+    z-index: 10;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 2rem;
+    pointer-events: none;
+}
+
+.desktop-f11-hint {
+    font-family: var(--font-secondary);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.35); /* Elegant Muted Grey */
+    text-transform: uppercase;
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .desktop-f11-hint {
+        display: inline-block;
+    }
+}
+
+.immersive-close-btn {
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.5rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: all 0.4s var(--ease-premium);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.immersive-close-btn:hover {
+    color: #fff;
+    border-color: var(--color-accent);
+    transform: scale(1.1) rotate(90deg);
+}
+
+/* Sleek Bottom Bar (Two-Sided Split) */
+.immersive-footer-bar {
+    position: absolute;
+    bottom: 3rem;
+    left: 4rem;
+    right: 4rem;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+}
+
+.immersive-bar-controls {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+}
+
+.immersive-ctrl-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s var(--ease-premium);
+    padding: 0.4rem;
+}
+
+.immersive-ctrl-btn:hover {
+    color: var(--color-accent);
+    transform: scale(1.15);
+}
+
+.immersive-ctrl-btn.play-pause-btn {
+    font-size: 0.85rem;
+    color: var(--color-accent);
+}
+
+.immersive-bar-description {
+    text-align: right;
+}
+
+.immersive-desc-text {
+    font-family: var(--font-secondary);
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.45); /* Muted single-color grey */
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+@media (max-width: 992px) {
+    .btn-glass-play {
+        margin-top: 1.5rem;
+        max-width: 380px;
+    }
+}
+
+@media (max-width: 768px) {
+    .immersive-top-bar {
+        top: 2rem;
+        left: 2rem;
+        right: 2rem;
+    }
+    .immersive-close-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+    }
+    .immersive-footer-bar {
+        bottom: 2rem;
+        left: 2rem;
+        right: 2rem;
+        flex-direction: column;
+        gap: 1.2rem;
+        align-items: center;
+    }
+    .immersive-bar-description {
+        text-align: center;
+    }
+}
+
+/* 👥 SERIES COLABORATIVAS - CSS ESTÁNDAR JMX */
+.public-disparador-section {
+    max-width: 900px;
+    margin: 8rem auto 6rem;
+    padding: 0 2rem;
+    text-align: center;
+}
+
+.disparador-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+}
+
+.disparador-divider .d-line {
+    flex: 1;
+    max-width: 100px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1));
+}
+
+.disparador-divider .d-line:last-child {
+    background: linear-gradient(to left, transparent, rgba(255, 255, 255, 0.1));
+}
+
+.disparador-divider .d-mark {
+    font-size: 0.8rem;
+    color: var(--color-accent);
+    opacity: 0.6;
+}
+
+.disparador-title {
+    font-family: var(--font-primary);
+    font-size: 2.2rem;
+    font-weight: 300;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    letter-spacing: 1px;
+}
+
+.disparador-text {
+    font-family: var(--font-secondary);
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    max-width: 600px;
+    margin: 0 auto 3rem;
+    line-height: 1.7;
+    opacity: 0.8;
+}
+
+.disparador-form {
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 3rem;
+    border-radius: 4px;
+    text-align: left;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.form-group.full-width {
+    grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-group.full-width {
+        grid-column: span 1;
+    }
+}
+
+.form-group label {
+    font-family: var(--font-secondary);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+.form-group input {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.9rem 1.2rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+    color: #fff;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.input-helper {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.35);
+    line-height: 1.4;
+    margin-top: 0.2rem;
+}
+
+.file-upload-wrapper {
+    margin-bottom: 3rem;
+}
+
+.file-upload-zone {
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.005);
+    padding: 3rem 2rem;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+}
+
+.file-upload-zone:hover, .file-upload-zone.dragover {
+    border-color: var(--color-accent);
+    background: rgba(220, 177, 74, 0.02);
+}
+
+.upload-icon {
+    width: 36px;
+    height: 36px;
+    color: rgba(255, 255, 255, 0.25);
+    transition: color 0.3s;
+}
+
+.file-upload-zone:hover .upload-icon {
+    color: var(--color-accent);
+}
+
+.upload-text {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+}
+
+.upload-limits {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.form-submit-container {
+    display: flex;
+    justify-content: center;
+}
+
+.btn-premium-action {
+    background: transparent;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    padding: 1.1rem 3.5rem;
+    font-family: var(--font-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.5s var(--ease-premium);
+    border-radius: 2px;
+}
+
+.btn-premium-action:hover {
+    background: var(--color-accent);
+    color: #000;
+    box-shadow: 0 15px 45px rgba(220, 177, 74, 0.15);
+    transform: translateY(-2px);
+}
+
+/* 👥 LA GRILLA COLABORATIVA */
+.collaborative-grid-section {
+    max-width: 1400px;
+    margin: 8rem auto 4rem;
+    padding: 0 2rem;
+}
+
+.collaborative-header {
+    text-align: center;
+    margin-bottom: 5rem;
+}
+
+.collab-meta-label {
+    font-family: var(--font-secondary);
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+.collab-title {
+    font-family: var(--font-primary);
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.collaborative-masonry {
+    column-count: 4;
+    column-gap: 3rem;
+}
+
+@media (max-width: 1200px) {
+    .collaborative-masonry { column-count: 3; }
+}
+
+@media (max-width: 992px) {
+    .collaborative-masonry { column-count: 2; column-gap: 2rem; }
+}
+
+@media (max-width: 576px) {
+    .collaborative-masonry { column-count: 1; }
+}
+
+.collab-card-link, .collab-card-static {
+    display: block;
+    break-inside: avoid;
+    margin-bottom: 3rem;
+    background: rgba(255,255,255,0.005);
+    border: 1px solid rgba(255,255,255,0.01);
+    transition: all 0.5s var(--ease-premium);
+    overflow: hidden;
+}
+
+.collab-card-link {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.collab-card-link:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255,255,255,0.08);
+}
+
+.collab-artwork-figure {
+    position: relative;
+    width: 100%;
+}
+
+.collab-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.8s ease;
+}
+
+.collab-card-link:hover .collab-img {
+    transform: scale(1.03);
+}
+
+.collab-info-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 5;
+}
+
+.collab-card-link:hover .collab-info-overlay, .collab-card-static:hover .collab-info-overlay {
+    opacity: 1;
+}
+
+.collab-submitter-name {
+    font-family: var(--font-secondary);
+    font-size: 0.72rem;
+    color: #fff;
+    letter-spacing: 1px;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+.collab-social-hint {
+    font-family: var(--font-secondary);
+    font-size: 0.6rem;
+    color: var(--color-accent);
+    letter-spacing: 1px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* 🎬 EL ECO: FULLSCREEN CONFIRMATION OVERLAY */
+.eco-overlay {
+    position: fixed;
+    inset: 0;
+    background: #050505;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1), visibility 1.5s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.eco-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.eco-container {
+    text-align: center;
+    padding: 2rem;
+}
+
+.eco-text {
+    font-family: var(--font-primary);
+    font-size: clamp(1.2rem, 3.5vw, 2.2rem);
+    font-weight: 200;
+    color: #fff;
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 2s cubic-bezier(0.25, 1, 0.5, 1) 0.5s;
+}
+
+.eco-overlay.active .eco-text {
+    opacity: 0.7;
+    transform: translateY(0);
+}
+
+.font-serif-italic {
+    font-style: italic;
+    font-family: 'Cormorant Garamond', serif !important;
+}
+</style>
+
+<script>
+	document.addEventListener('astro:page-load', () => {
+		const header = document.querySelector('.immersive-header');
+		if (header) {
+			const artworks = JSON.parse(header.getAttribute('data-artworks') || '[]');
+			const slide1 = document.getElementById('slide-1');
+			const slide2 = document.getElementById('slide-2');
+			let currentSlide = 0;
+			let activeLayer = 1;
+
+			if (slide1 && artworks.length > 0) slide1.style.backgroundImage = `url(${artworks[0]})`;
+			
+			if (artworks.length > 1) {
+				setInterval(() => {
+					currentSlide = (currentSlide + 1) % artworks.length;
+					const nextUrl = artworks[currentSlide];
+					if (activeLayer === 1) {
+						if (slide2) { slide2.style.backgroundImage = `url(${nextUrl})`; slide2.classList.add('active'); }
+						if (slide1) slide1.classList.remove('active');
+						activeLayer = 2;
+					} else {
+						if (slide1) { slide1.style.backgroundImage = `url(${nextUrl})`; slide1.classList.add('active'); }
+						if (slide2) slide2.classList.remove('active');
+						activeLayer = 1;
+					}
+				}, 3000);
+			}
+		}
+
+        // Lógica de Likes
+        const likeButtons = document.querySelectorAll('.like-btn');
+        likeButtons.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const artworkId = btn.getAttribute('data-artwork-id');
+                try {
+                    const res = await fetch('/api/like', {
+                        method: 'POST',
+                        body: JSON.stringify({ artworkId })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        const countEl = btn.querySelector('.likes-count');
+                        if (countEl) countEl.textContent = (parseInt(countEl.textContent || '0') + 1).toString();
+                        btn.classList.add('liked');
+                        btn.classList.add('animating');
+                        setTimeout(() => btn.classList.remove('animating'), 400);
+                    } else {
+                        alert(data.message || "Error al registrar like");
+                    }
+                } catch (err) {
+                    console.error("Error liking:", err);
+                }
+            });
+        });
+
+        // 🎭 Lógica de Experiencia Inmersiva Fullscreen (LUMAS Premium)
+        const openBtn = document.getElementById('open-immersive-slideshow');
+        const overlay = document.getElementById('immersive-slideshow-overlay');
+        const closeBtn = document.getElementById('immersive-close');
+        const prevBtn = document.getElementById('immersive-prev');
+        const nextBtn = document.getElementById('immersive-next');
+        const playPauseBtn = document.getElementById('immersive-play-pause');
+        const playPauseIcon = document.getElementById('play-pause-icon');
+        const slides = document.querySelectorAll('.immersive-slide');
+        
+        if (openBtn && overlay && closeBtn && slides.length > 0) {
+            let currentIndex = 0;
+            let isPlaying = true;
+            let autoPlayTimer: any = null;
+            
+            const descEl = document.getElementById('immersive-active-desc');
+            const showSlide = (index: number) => {
+                slides.forEach(slide => slide.classList.remove('active'));
+                currentIndex = (index + slides.length) % slides.length;
+                const activeSlide = slides[currentIndex];
+                activeSlide.classList.add('active');
+                
+                if (descEl) {
+                    const title = activeSlide.getAttribute('data-title') || '';
+                    const serie = activeSlide.getAttribute('data-serie') || '';
+                    descEl.textContent = `${title} · ${serie}`;
+                }
+            };
+            
+            const startAutoPlay = () => {
+                if (autoPlayTimer) clearInterval(autoPlayTimer);
+                autoPlayTimer = setInterval(() => {
+                    showSlide(currentIndex + 1);
+                }, 7000); // Auto transition every 7 seconds
+                isPlaying = true;
+                if (playPauseIcon) playPauseIcon.textContent = '⏸';
+            };
+            
+            const stopAutoPlay = () => {
+                if (autoPlayTimer) clearInterval(autoPlayTimer);
+                isPlaying = false;
+                if (playPauseIcon) playPauseIcon.textContent = '▶';
+            };
+            
+            const togglePlayPause = () => {
+                if (isPlaying) {
+                    stopAutoPlay();
+                } else {
+                    startAutoPlay();
+                }
+            };
+            
+            openBtn.addEventListener('click', () => {
+                overlay.style.display = 'flex';
+                // Trigger transition in the next tick
+                setTimeout(() => {
+                    overlay.classList.add('active');
+                    showSlide(0);
+                    startAutoPlay();
+
+                    // 🚀 Pantalla completa nativa (F11)
+                    const reqFs = overlay.requestFullscreen || 
+                                  (overlay as any).webkitRequestFullscreen || 
+                                  (overlay as any).mozRequestFullScreen || 
+                                  (overlay as any).msRequestFullscreen;
+                    if (reqFs) {
+                        reqFs.call(overlay).catch(() => {});
+                    }
+                }, 10);
+            });
+            
+            const closeOverlay = () => {
+                stopAutoPlay();
+                overlay.classList.remove('active');
+
+                // 🚀 Salir de pantalla completa nativa si sigue activa
+                const exitFs = document.exitFullscreen || 
+                               (document as any).webkitExitFullscreen || 
+                               (document as any).mozCancelFullScreen || 
+                               (document as any).msExitFullscreen;
+                
+                if (exitFs && (document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement)) {
+                    exitFs.call(document).catch(() => {});
+                }
+
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 800); // Match transition duration
+            };
+
+            // Escuchar el evento de salida nativo de pantalla completa (ej. si presionan ESC)
+            const handleFullscreenExit = () => {
+                if (!document.fullscreenElement && !(document as any).webkitFullscreenElement && !(document as any).mozFullScreenElement && overlay.classList.contains('active')) {
+                    closeOverlay();
+                }
+            };
+            document.addEventListener('fullscreenchange', handleFullscreenExit);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenExit);
+            document.addEventListener('mozfullscreenchange', handleFullscreenExit);
+            
+            closeBtn.addEventListener('click', closeOverlay);
+            
+            prevBtn?.addEventListener('click', () => {
+                stopAutoPlay();
+                showSlide(currentIndex - 1);
+            });
+            
+            nextBtn?.addEventListener('click', () => {
+                stopAutoPlay();
+                showSlide(currentIndex + 1);
+            });
+            
+            playPauseBtn?.addEventListener('click', togglePlayPause);
+            
+            // Allow close on ESC key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                    closeOverlay();
+                }
+            });
+        }
+
+        // 👥 Lógica de Participación del Público (Series Colaborativas)
+        const form = document.getElementById('public-submission-form');
+        const fileInput = document.getElementById('p-file') as HTMLInputElement;
+        const dropZone = document.getElementById('file-drop-zone');
+        const uploadStatusText = document.getElementById('upload-status-text');
+        const ecoOverlay = document.getElementById('eco-confirmation-overlay');
+        const submitBtn = document.getElementById('submit-rastro-btn');
+
+        if (form && fileInput && dropZone) {
+            // Click to browse
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Handle file selection
+            fileInput.addEventListener('change', () => {
+                const files = fileInput.files;
+                if (files && files.length > 0) {
+                    if (uploadStatusText) uploadStatusText.textContent = `Imagen seleccionada: ${files[0].name}`;
+                    dropZone.classList.add('selected');
+                }
+            });
+
+            // Drag over
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            // Drag leave
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            // Drop file
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const files = e.dataTransfer?.files;
+                if (files && files.length > 0) {
+                    fileInput.files = files;
+                    if (uploadStatusText) uploadStatusText.textContent = `Imagen seleccionada: ${files[0].name}`;
+                    dropZone.classList.add('selected');
+                }
+            });
+
+            // Form Submit
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!submitBtn) return;
+                
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Procesando signo...';
+                submitBtn.disabled = true;
+
+                const formData = new FormData(form as HTMLFormElement);
+
+                try {
+                    const res = await fetch('/api/submit-participation', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+
+                    if (res.ok && data.success) {
+                        // 🎬 Mostrar "El Eco" (Confirmación Cinematográfica)
+                        if (ecoOverlay) {
+                            ecoOverlay.classList.add('active');
+                            
+                            // Limpiar formulario
+                            (form as HTMLFormElement).reset();
+                            if (uploadStatusText) uploadStatusText.textContent = 'Arrastra tu imagen aquí o haz clic para explorar';
+                            dropZone.classList.remove('selected');
+
+                            // Desvanecer El Eco tras 6 segundos
+                            setTimeout(() => {
+                                ecoOverlay.classList.remove('active');
+                            }, 6000);
+                        } else {
+                            alert("¡Signo recibido con éxito! Pendiente de curaduría.");
+                        }
+                    } else {
+                        alert(data.message || "Fallo al enviar tu participación. Por favor, intenta de nuevo.");
+                    }
+                } catch (err) {
+                    console.error("Error submitting participation:", err);
+                    alert("Error de conexión al enviar el rastro.");
+                } finally {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+	});
+</script>

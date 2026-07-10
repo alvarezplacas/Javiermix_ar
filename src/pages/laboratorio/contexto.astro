@@ -1,0 +1,128 @@
+---
+// d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\contexto.astro
+import Layout from '@layouts/Layout.astro';
+import { getCatalogoFiles } from '@conexion/directus';
+import { getOptimizedImageURL } from '@utils/media';
+
+export const prerender = false;
+
+const artworksRaw = await getCatalogoFiles();
+// Filtrar solo las que tienen mockup (_2)
+const artworks = artworksRaw
+    .filter(file => !file.filename_download.toLowerCase().includes('_2'))
+    .map(file => {
+        const baseName = file.filename_download.split('.')[0];
+        const mockup = artworksRaw.find(f => f.filename_download.toLowerCase().startsWith(baseName.toLowerCase() + '_2'));
+        if (!mockup) return null;
+        return {
+            id: file.id,
+            title: file.title || file.filename_download.split('.')[0],
+            img: getOptimizedImageURL(file.id, { width: 1000, format: 'avif', quality: 90 }),
+            mockup: getOptimizedImageURL(mockup.id, { width: 1000, format: 'avif', quality: 90 })
+        };
+    })
+    .filter(a => a !== null)
+    .slice(0, 10);
+---
+
+<Layout title="Sincronía de Espacios | Laboratorio JMX">
+    <main class="context-lab">
+        <header class="context-header">
+            <h1>Sincronía de Espacios</h1>
+            <p>Mantén el cursor sobre la obra para visualizarla en su contexto ambiental.</p>
+        </header>
+
+        <div class="context-grid">
+            {artworks.map((art) => (
+                <div class="context-item" data-tilt>
+                    <div class="media-stack">
+                        <img src={art.img} alt={art.title} class="img-art" />
+                        <img src={art.mockup} alt={`${art.title} en ambiente`} class="img-env" />
+                    </div>
+                    <div class="label">
+                        <h3>{art.title}</h3>
+                        <div class="badge">HOVER PARA AMBIENTE</div>
+                    </div>
+                </div>
+            ))}
+        </div>
+
+        <a href="/laboratorio" class="back-btn">← VOLVER AL GABINETE</a>
+    </main>
+</Layout>
+
+<style>
+    .context-lab {
+        background: #050505;
+        min-height: 100vh;
+        color: #fff;
+        padding: 6rem 5%;
+    }
+
+    .context-header { text-align: center; margin-bottom: 5rem; }
+    .context-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; letter-spacing: 2px; margin-bottom: 1rem; }
+    .context-header p { color: rgba(255,255,255,0.4); letter-spacing: 1px; font-weight: 300; }
+
+    .context-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+        gap: 3rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .context-item {
+        background: #0a0a0a;
+        padding: 1.5rem;
+        border: 1px solid rgba(255,255,255,0.05);
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .media-stack {
+        position: relative;
+        aspect-ratio: 4/3;
+        overflow: hidden;
+        background: #000;
+    }
+
+    .img-art, .img-env {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .img-env { opacity: 0; transform: scale(1.1); }
+    
+    .context-item:hover .img-art { opacity: 0; transform: scale(0.95); }
+    .context-item:hover .img-env { opacity: 1; transform: scale(1); }
+
+    .label {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .label h3 { font-size: 0.9rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .badge { font-size: 0.6rem; letter-spacing: 2px; color: var(--color-accent, #dcb14a); border: 1px solid currentColor; padding: 0.3rem 0.6rem; font-weight: 900; }
+
+    .back-btn {
+        display: block;
+        width: fit-content;
+        margin: 5rem auto 0;
+        color: rgba(255,255,255,0.3);
+        text-decoration: none;
+        font-size: 0.7rem;
+        letter-spacing: 3px;
+        font-weight: 900;
+        transition: 0.3s;
+    }
+    .back-btn:hover { color: #fff; }
+
+    @media (max-width: 768px) {
+        .context-grid { grid-template-columns: 1fr; }
+        .context-header h1 { font-size: 2.5rem; }
+    }
+</style>

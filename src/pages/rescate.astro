@@ -1,0 +1,1548 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getRescateFiles, getAssetUrl } from '../conexion/directus';
+
+const photos = await getRescateFiles();
+
+const uniqueSeries = [...new Set(photos.map((f: any) => f.serie_name))].filter(Boolean);
+
+// Lógica de pares _2
+const mainPhotos = photos.filter((p: any) => !p.filename_download.toLowerCase().includes('_2'));
+const hoverPhotos = photos.filter((p: any) => p.filename_download.toLowerCase().includes('_2'));
+
+const galleryItems = mainPhotos.map((file: any) => {
+    const baseName = file.filename_download.split('.')[0];
+    // Buscador más flexible de la versión restaurada
+    const hoverFile = hoverPhotos.find((h: any) => 
+        h.filename_download.toLowerCase().includes(baseName.toLowerCase() + '_2') ||
+        h.filename_download.toLowerCase().includes(baseName.toLowerCase() + ' _2')
+    );
+
+    return {
+        id: file.id,
+        title: file.title || file.filename_download,
+        serie: file.serie_name,
+        src: getAssetUrl(file.id, { width: 1600, format: 'webp', quality: 90 }),
+        thumb: getAssetUrl(file.id, { width: 600, format: 'webp', quality: 70 }),
+        hoverThumb: hoverFile ? getAssetUrl(hoverFile.id, { width: 1600, format: 'webp', quality: 90 }) : null,
+        metadata: {
+            type: file.type,
+            size: (file.filesize / 1024 / 1024).toFixed(2) + ' MB',
+            dim: `${file.width} x ${file.height}px`,
+            date: file.uploaded_on ? new Date(file.uploaded_on).toLocaleDateString('es-AR') : '',
+            year: file.uploaded_on ? new Date(file.uploaded_on).getFullYear().toString() : ''
+        }
+    };
+});
+---
+
+<Layout title="Rescate Fotográfico | Javier Mix" themeForce="dark">
+    <main class="studio-wrapper">
+        <div class="grain-overlay"></div>
+        
+        <!-- Navegación -->
+        <nav class="studio-nav">
+            <a href="/" class="back-link">← INICIO</a>
+            <div class="studio-badge">SERVICIO DE RESCATE HISTÓRICO</div>
+        </nav>
+
+        <header class="studio-header">
+            <!-- Efecto Escáner Detrás del Contenido -->
+            <div class="scanner-bed-bg">
+                <div class="scanner-light-beam"></div>
+            </div>
+
+            <div class="header-grid">
+                <!-- Columna Izquierda: Identidad y Título -->
+                <div class="header-main-info">
+                    <div class="brand-meta">
+                        <span class="tech-badge">RETOQUE HIGH-END</span>
+                        <span class="meta-dot">·</span>
+                        <span class="tech-spec">CAPTURA 48-BIT DE RESOLUCIÓN</span>
+                    </div>
+                    
+                    <h1 class="main-title">
+                        Restauración <br>
+                        <span class="gold-gradient">& Memoria</span>
+                    </h1>
+                    
+                    <!-- Lista Semántica para Googlebot / SEO -->
+                    <ul class="archival-labels-list">
+                        <li>DIGITALIZACIÓN DE NEGATIVOS</li>
+                        <li class="separator-dot">·</li>
+                        <li>RESTAURACIÓN DIGITAL</li>
+                        <li class="separator-dot">·</li>
+                        <li>LIGHTROOM & PHOTOSHOP</li>
+                    </ul>
+                </div>
+
+                <!-- Columna Derecha: Narrativa y Lienzo Vintage -->
+                <div class="header-editorial">
+                    <div class="vintage-canvas-card">
+                        <!-- Imagen real del catálogo en movimiento lento -->
+                        {photos.length > 0 && (
+                            <img 
+                                src={getAssetUrl(photos[0].id, { width: 1000, format: 'webp', quality: 80 })} 
+                                alt="Detalle de negativo escaneado" 
+                                class="panning-scan-img" 
+                                draggable="false"
+                            />
+                        )}
+                        
+                        <div class="vintage-overlay"></div>
+                        
+                        <!-- Lupa de inspección fija en el centro con refracción -->
+                        <div class="scanner-loupe">
+                            <div class="loupe-glass"></div>
+                            <svg class="lens-crosshair-fixed" width="30" height="30" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                                <circle cx="50" cy="50" r="4" fill="currentColor"/>
+                                <line x1="50" y1="15" x2="50" y2="85" stroke-width="1.5"/>
+                                <line x1="15" y1="50" x2="85" y2="50" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        
+                        <span class="canvas-meta">INSPECCIÓN DE DETALLES · SCAN INSPECT</span>
+                    </div>
+                    <p class="section-intro">
+                        Digitalización profesional de negativos, diapositivas y copias impresas antiguas en alta resolución. Conservación y restauración digital meticulosa mediante retoque avanzado en Lightroom y Photoshop, devolviendo el contraste, la nitidez and la fidelidad cromática original a cada archivo familiar e histórico dañado por el paso del tiempo.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Navegación Semántica del Selector: Glassmorphic Pill-Tabs con Máscara Apple-Style -->
+            <nav class="filter-navigation-modern" aria-label="Filtro de archivos por serie">
+                <span class="filter-label-modern">ARCHIVOS:</span>
+                <div class="tabs-scroll-container">
+                    <div class="filter-tabs-wrapper" role="tablist">
+                        <button class="filter-tab active" data-value="all" role="tab" aria-selected="true">
+                            TODOS LOS ARCHIVOS
+                            <span class="tab-count">{photos.filter((p: any) => !p.filename_download.toLowerCase().includes('_2')).length}</span>
+                        </button>
+                        {uniqueSeries.map(s => (
+                            <button class="filter-tab" data-value={s} role="tab" aria-selected="false">
+                                {s.toUpperCase()}
+                                <span class="tab-count">{galleryItems.filter(item => item.serie === s).length}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        {uniqueSeries.length === 0 ? (
+            <div class="empty-state">
+                <p>No se encontraron capturas en la carpeta "Rescate de Fotos".</p>
+                <p class="hint">Asegúrate de haber creado la carpeta en Directus y subido las imágenes.</p>
+            </div>
+        ) : (
+            <div class="gallery-container">
+                {uniqueSeries.map((serie) => (
+                    <section class="serie-group" data-serie={serie}>
+                        <div class="serie-header">
+                            <h2 class="serie-title">{serie}</h2>
+                            <div class="serie-stats">{galleryItems.filter(item => item.serie === serie).length} ARCHIVOS</div>
+                        </div>
+                        <div class="contact-sheet">
+                            {galleryItems.filter(item => item.serie === serie).map((item, index) => (
+                                <div class="photo-cell" data-index={index}>
+                                    <button class="image-box" onclick="openStudioViewer(this)" 
+                                        aria-label={`Ver restauración de ${item.title}`}
+                                        data-src={item.src} 
+                                        data-hover={item.hoverThumb} 
+                                        data-title={item.title} 
+                                        data-date={item.metadata.date}
+                                    >
+                                        <img src={item.thumb} alt={item.title} loading="lazy" class="old-photo-effect main-img" />
+                                    </button>
+                                    <div class="photo-info">
+                                        <span class="file-name">{item.title}</span>
+                                        <span class="file-meta">{item.metadata.year}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                ))}
+            </div>
+        )}
+
+        <!-- Visor de Alta Fidelidad -->
+        <div id="viewer" class="studio-viewer">
+            <div class="viewer-nav">
+                <div class="branding-label">INTERVENCIÓN DE FOTOGRAFÍAS ANTIGUAS</div>
+                <button id="close-viewer" class="close-btn">×</button>
+            </div>
+            <div class="viewer-content">
+                <div class="f11-hint">Presiona <b>F11</b> para pantalla completa.</div>
+                <div class="mobile-zoom-hint">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; display: inline-block; vertical-align: middle;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    <span>Pellizca con 2 dedos para ampliar y ver detalles</span>
+                </div>
+                <div class="slider-stage" id="comparison-stage">
+                    <div id="lava-container" style="position:absolute; inset:0; pointer-events:none; z-index:15;"></div>
+
+                    <div id="slide-current" class="slide-item active">
+                        <div class="comparison-wrapper">
+                            <!-- Fondo (Restaurado) -->
+                            <img src="" alt="" class="v-hover" draggable="false" />
+                            <!-- Frente (Original) -->
+                            <img src="" alt="" class="v-main" draggable="false" />
+                            <div class="curtain-line" id="lava-line"></div>
+                        </div>
+                    </div>
+                    <div id="slide-next" class="slide-item">
+                        <div class="comparison-wrapper">
+                            <img src="" alt="" class="v-hover" draggable="false" />
+                            <img src="" alt="" class="v-main" draggable="false" />
+                            <div class="curtain-line"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="viewer-meta-box">
+                    <span id="viewer-title"></span>
+                    <span id="viewer-date"></span>
+                </div>
+    </main>
+</Layout>
+
+<style>
+    :root {
+        --studio-bg: #050505;
+        --studio-accent: #dcb14a;
+        --studio-text: rgba(255,255,255,0.5);
+        --sepia-tone: #3e2723;
+    }
+
+    .studio-wrapper {
+        min-height: 100vh;
+        background: var(--studio-bg);
+        color: #fff;
+        padding: 8rem 4rem 4rem;
+        font-family: 'Inter', system-ui, sans-serif;
+        position: relative;
+        overflow-x: hidden; /* Evita que elementos se desborden de la pantalla horizontalmente */
+    }
+
+    .grain-overlay {
+        position: fixed;
+        inset: 0;
+        background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+        opacity: 0.05;
+        pointer-events: none;
+        z-index: 5;
+        mix-blend-mode: overlay;
+    }
+
+    .studio-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        box-sizing: border-box; /* Contiene el padding dentro del 100% del ancho del viewport */
+        padding: 2rem 4rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        background: linear-gradient(to bottom, var(--studio-bg) 0%, transparent 100%);
+    }
+
+    .back-link {
+        color: var(--studio-text);
+        text-decoration: none;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        transition: 0.3s;
+    }
+    .back-link:hover { color: #fff; }
+
+    .studio-badge {
+        font-size: 0.6rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        color: var(--studio-accent);
+        border: 1px solid var(--studio-accent);
+        padding: 0.4rem 1rem;
+        background: rgba(220, 177, 74, 0.05);
+    }
+
+    .studio-header {
+        max-width: 1400px;
+        margin: 0 auto 6rem;
+        position: relative;
+        padding: 4rem;
+        background: rgba(8, 8, 8, 0.55);
+        border: 1px solid rgba(220, 177, 74, 0.08);
+        border-radius: 12px;
+        overflow: hidden; /* Mantiene la luz del escáner dentro del contenedor */
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,255,255,0.01);
+    }
+
+    /* Contenedor de la luz del escáner - Pasa por arriba de la foto y texto */
+    .scanner-bed-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 4; /* Elevado a 4 para superponerse con realismo tridimensional sobre la foto y textos */
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    /* Haz de luz de escáner - Incorpora inconsistencia eléctrica de alta fidelidad */
+    .scanner-light-beam {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 6px;
+        background: #ffffff;
+        box-shadow: 
+            0 0 15px #ffffff, 
+            0 0 35px var(--studio-accent),
+            -20px 0 60px rgba(220, 177, 74, 0.15),
+            20px 0 60px rgba(220, 177, 74, 0.15);
+        opacity: 0.85;
+        left: -10%;
+        /* Doble animación: Movimiento de barrido lento y parpadeo rápido realista */
+        animation: scanner-sweep 12s infinite ease-in-out, scanner-flicker 0.18s infinite linear;
+    }
+
+    @keyframes scanner-sweep {
+        0% {
+            left: -5%;
+        }
+        45% {
+            left: 105%;
+        }
+        50% {
+            left: 105%;
+        }
+        95% {
+            left: -5%;
+        }
+        100% {
+            left: -5%;
+        }
+    }
+
+    /* ⚡ Efecto de inconsistencia/parpadeo de gas-neon vintage */
+    @keyframes scanner-flicker {
+        0%, 100% {
+            opacity: 0.95;
+            box-shadow: 
+                0 0 12px rgba(255, 255, 255, 0.85),
+                0 0 25px rgba(220, 177, 74, 0.8),
+                0 0 50px rgba(220, 177, 74, 0.35);
+        }
+        15% {
+            opacity: 0.84;
+            box-shadow: 
+                0 0 8px rgba(255, 255, 255, 0.7),
+                0 0 18px rgba(220, 177, 74, 0.7),
+                0 0 45px rgba(220, 177, 74, 0.25);
+        }
+        30% {
+            opacity: 0.98;
+            box-shadow: 
+                0 0 15px rgba(255, 255, 255, 0.98),
+                0 0 30px rgba(220, 177, 74, 0.9),
+                0 0 60px rgba(220, 177, 74, 0.45);
+        }
+        45% {
+            opacity: 0.81;
+            box-shadow: 
+                0 0 7px rgba(255, 255, 255, 0.6),
+                0 0 16px rgba(220, 177, 74, 0.6),
+                0 0 40px rgba(220, 177, 74, 0.2);
+        }
+        60% {
+            opacity: 0.96;
+            box-shadow: 
+                0 0 11px rgba(255, 255, 255, 0.9),
+                0 0 27px rgba(220, 177, 74, 0.85),
+                0 0 55px rgba(220, 177, 74, 0.4);
+        }
+        75% {
+            opacity: 0.89;
+            box-shadow: 
+                0 0 9px rgba(255, 255, 255, 0.75),
+                0 0 21px rgba(220, 177, 74, 0.75),
+                0 0 48px rgba(220, 177, 74, 0.3);
+        }
+        90% {
+            opacity: 0.99;
+            box-shadow: 
+                0 0 14px rgba(255, 255, 255, 1),
+                0 0 32px rgba(220, 177, 74, 0.95),
+                0 0 65px rgba(220, 177, 74, 0.5);
+        }
+    }
+
+    .header-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 5rem;
+        align-items: center;
+        margin-bottom: 4rem;
+        position: relative;
+        z-index: 2; /* Al frente, inmune a la luz de fondo */
+    }
+
+    .header-main-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .brand-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .tech-badge {
+        font-size: 0.6rem;
+        font-weight: 900;
+        color: var(--studio-accent);
+        letter-spacing: 3px;
+    }
+
+    .meta-dot {
+        color: rgba(255, 255, 255, 0.2);
+        font-size: 0.7rem;
+    }
+
+    .tech-spec {
+        font-size: 0.55rem;
+        font-family: monospace;
+        color: rgba(255, 255, 255, 0.35);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .main-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 5rem;
+        font-weight: 300;
+        line-height: 0.95;
+        letter-spacing: -2px;
+        margin: 1.5rem 0;
+        color: #ffffff;
+    }
+
+    .gold-gradient {
+        background: linear-gradient(135deg, #fff 30%, var(--studio-accent) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-style: italic;
+    }
+
+    .archival-labels-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .separator-dot {
+        color: var(--studio-accent);
+        opacity: 0.5;
+    }
+
+    .header-editorial {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .vintage-canvas-card {
+        position: relative;
+        width: 100%;
+        height: 220px;
+        background: #090909;
+        border: 1px solid rgba(220, 177, 74, 0.15);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 1.8rem;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 10px 40px rgba(0,0,0,0.6);
+    }
+
+    .panning-scan-img {
+        position: absolute;
+        top: -25%;
+        left: -25%;
+        width: 150%;
+        height: 150%;
+        object-fit: cover;
+        opacity: 0.35;
+        filter: sepia(0.45) contrast(1.15) brightness(0.75);
+        pointer-events: none;
+        animation: scan-pan 32s infinite ease-in-out;
+        will-change: transform;
+    }
+
+    @keyframes scan-pan {
+        0% {
+            transform: translate(0%, 0%) scale(1);
+        }
+        25% {
+            transform: translate(-12%, -8%) scale(1.08);
+        }
+        50% {
+            transform: translate(-18%, -15%) scale(1.02);
+        }
+        75% {
+            transform: translate(-6%, -18%) scale(1.08);
+        }
+        100% {
+            transform: translate(0%, 0%) scale(1);
+        }
+    }
+
+    .vintage-overlay {
+        position: absolute;
+        inset: 0;
+        background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+        opacity: 0.08;
+        mix-blend-mode: overlay;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* Lupa fija en el centro */
+    .scanner-loupe {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 105px;
+        height: 105px;
+        border-radius: 50%;
+        border: 2px solid var(--studio-accent);
+        box-shadow: 
+            0 10px 30px rgba(0,0,0,0.9), 
+            inset 0 0 20px rgba(255, 255, 255, 0.15);
+        z-index: 5;
+        overflow: hidden;
+        background: rgba(220, 177, 74, 0.02);
+    }
+
+    .loupe-glass {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        backdrop-filter: contrast(1.5) brightness(1.35) saturate(1.25) blur(0.3px);
+        -webkit-backdrop-filter: contrast(1.5) brightness(1.35) saturate(1.25) blur(0.3px);
+        box-shadow: inset 0 0 15px rgba(220, 177, 74, 0.15);
+    }
+
+    .lens-crosshair-fixed {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: var(--studio-accent);
+        opacity: 0.65;
+        pointer-events: none;
+        z-index: 6;
+    }
+
+    .canvas-meta {
+        position: absolute;
+        bottom: 1.2rem;
+        left: 1.5rem;
+        font-family: monospace;
+        font-size: 0.55rem;
+        letter-spacing: 3px;
+        color: rgba(255, 255, 255, 0.35);
+        z-index: 4;
+        text-transform: uppercase;
+    }
+
+    .section-intro {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.4);
+        max-width: 600px;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .filter-navigation-modern {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 1.5rem 0;
+        margin-top: 2rem;
+        position: relative;
+        z-index: 2; /* Asegura estar en el frente de la luz */
+    }
+
+    .filter-label-modern {
+        font-size: 0.6rem;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: rgba(255, 255, 255, 0.25);
+    }
+
+    .tabs-scroll-container {
+        overflow-x: auto;
+        flex: 1;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
+        /* Máscara lineal: desvanece los extremos cuando hay desborde horizontal */
+        mask-image: linear-gradient(to right, transparent 0%, #000 2.5%, #000 97.5%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 2.5%, #000 97.5%, transparent 100%);
+    }
+
+    .tabs-scroll-container::-webkit-scrollbar {
+        display: none; /* Ocultar barra de scroll nativa */
+    }
+
+    .filter-tabs-wrapper {
+        display: flex;
+        gap: 0.8rem;
+        white-space: nowrap;
+        padding: 0.2rem 2.5rem 0.2rem 1.5rem; /* Colchón lateral para evitar que la máscara difumine los extremos cuando no hay scroll */
+    }
+
+    .filter-tab {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.5);
+        padding: 0.6rem 1.2rem;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        border-radius: 30px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: inherit;
+        outline: none;
+    }
+
+    .filter-tab:hover {
+        background: rgba(220, 177, 74, 0.04);
+        border-color: rgba(220, 177, 74, 0.3);
+        color: #ffffff;
+        transform: translateY(-2px);
+    }
+
+    .filter-tab.active {
+        background: rgba(220, 177, 74, 0.1);
+        border-color: var(--studio-accent);
+        color: var(--studio-accent);
+        box-shadow: 0 4px 15px rgba(220, 177, 74, 0.15);
+    }
+
+    .tab-count {
+        font-size: 0.5rem;
+        font-family: monospace;
+        opacity: 0.6;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.1rem 0.4rem;
+        border-radius: 10px;
+        transition: background 0.4s;
+    }
+
+    .filter-tab.active .tab-count {
+        background: rgba(220, 177, 74, 0.2);
+        opacity: 1;
+    }
+
+    @media (max-width: 1024px) {
+        .header-grid {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+        .main-title {
+            font-size: 3.8rem;
+        }
+    }
+
+    .gallery-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6rem;
+    }
+
+    .serie-group {
+        border-top: 1px solid rgba(255,255,255,0.05);
+        padding-top: 2rem;
+        transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .serie-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 2rem;
+    }
+
+    .serie-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.2rem;
+        color: var(--studio-accent);
+        margin: 0;
+        text-transform: capitalize;
+    }
+
+    .serie-stats {
+        font-family: monospace;
+        font-size: 0.6rem;
+        color: rgba(255,255,255,0.2);
+        letter-spacing: 2px;
+    }
+
+    /* 🎞️ Tetris / Masonry Sheet */
+    .contact-sheet {
+        column-count: 3;
+        column-gap: 2rem;
+        width: 100%;
+    }
+
+    @media (max-width: 1200px) { .contact-sheet { column-count: 2; } }
+    @media (max-width: 768px) { .contact-sheet { column-count: 1; } }
+
+    .photo-cell {
+        break-inside: avoid;
+        margin-bottom: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        transition: 0.4s;
+    }
+
+    .image-box {
+        position: relative;
+        background: #0a0a0a;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.03);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border-radius: 4px;
+        padding: 0;
+        width: 100%;
+        display: block;
+        text-align: left;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .image-box img {
+        width: 100%;
+        height: auto;
+        display: block;
+        transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .old-photo-effect {
+        filter: sepia(0.2) contrast(1.1) brightness(0.9);
+    }
+
+    .photo-cell:hover .main-img { 
+        transform: scale(1.08); 
+    }
+
+    .overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: 0.5s;
+        backdrop-filter: blur(8px);
+        z-index: 10;
+    }
+
+    .photo-cell:hover .overlay { 
+        opacity: 1; 
+    }
+
+    .view-btn {
+        background: transparent;
+        border: 1px solid var(--studio-accent);
+        color: var(--studio-accent);
+        padding: 1rem 2rem;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .view-btn:hover { background: var(--studio-accent); color: #000; }
+
+    .photo-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding: 0 0.5rem;
+    }
+
+    .file-serie {
+        font-size: 0.55rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        color: var(--studio-accent);
+        letter-spacing: 2px;
+        opacity: 0.7;
+    }
+
+    .file-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: rgba(255,255,255,0.9);
+        font-family: 'Cormorant Garamond', serif;
+    }
+
+    .file-meta {
+        font-size: 0.6rem;
+        font-family: monospace;
+        color: rgba(255,255,255,0.3);
+    }
+
+    .empty-state {
+        padding: 8rem 2rem;
+        border: 1px dashed rgba(255,255,255,0.05);
+        text-align: center;
+        color: var(--studio-text);
+        background: rgba(255,255,255,0.01);
+    }
+
+    /* 🔍 Studio Viewer */
+    .studio-viewer {
+        position: fixed;
+        inset: 0;
+        background: #000;
+        z-index: 99999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        user-select: none;
+    }
+
+    /* Fondo de papel forzado */
+    .studio-viewer::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%), url('/img/revista/papel.avif');
+        background-size: cover;
+        background-blend-mode: darken;
+        opacity: 1;
+        z-index: -1;
+    }
+
+    .studio-viewer.active {
+        display: flex !important;
+        opacity: 1;
+    }
+
+    .viewer-nav {
+        position: absolute;
+        top: 2rem;
+        left: 2rem;
+        right: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1001;
+    }
+
+    .f11-hint {
+        position: fixed; /* Fuera del flujo de la imagen */
+        bottom: 1.5rem;
+        left: 2rem;
+        font-size: 0.55rem;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,0.25);
+        text-transform: uppercase;
+        z-index: 1000;
+        pointer-events: none;
+    }
+
+    .f11-hint b { color: var(--studio-accent); }
+
+    .viewer-content {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .slider-stage {
+        position: relative;
+        width: 100%;
+        height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        perspective: 1500px;
+        touch-action: none; /* Prevenir scroll/drag nativo */
+    }
+
+    .slide-item {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                    filter 1.4s cubic-bezier(0.16, 1, 0.3, 1),
+                    opacity 1s ease;
+        will-change: transform, opacity, filter;
+    }
+
+    .slide-item.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(0) scale(1);
+        filter: blur(0) brightness(1);
+        z-index: 2;
+    }
+
+    .slide-item.exit-left {
+        opacity: 0;
+        transform: translateX(-100vw) scale(0.8) rotateY(25deg);
+        filter: blur(20px) brightness(0.2);
+    }
+
+    .slide-item.enter-right {
+        opacity: 0;
+        transform: translateX(100vw) scale(1.2) rotateY(-25deg);
+        filter: blur(20px) brightness(0.2);
+    }
+
+    .comparison-wrapper {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        max-width: 95vw;
+        max-height: 90vh;
+        overflow: hidden;
+        cursor: default;
+    }
+
+    .v-hover {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        z-index: 1;
+    }
+
+    .v-main {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        z-index: 2;
+        clip-path: inset(0 50% 0 0);
+    }
+
+    .curtain-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 3px;
+        background: var(--studio-accent); /* Standby: Delicada línea ámbar de guía */
+        z-index: 10;
+        transform: translateX(-50%);
+        pointer-events: none;
+        transition: background 0.4s, box-shadow 0.4s, width 0.4s;
+        box-shadow: 0 0 10px rgba(220, 177, 74, 0.6), 0 0 25px rgba(220, 177, 74, 0.3);
+        display: none;
+        opacity: 0.85;
+    }
+
+    .slider-stage.has-comparison .curtain-line {
+        display: block; /* Solo visible si hay par _2 */
+    }
+
+    /* 🚀 REINVENCIÓN: El mismo haz de luz escáner blanco/oro con parpadeo eléctrico al arrastrar */
+    .slider-stage.is-dragging .curtain-line {
+        background: #ffffff !important;
+        width: 5px;
+        box-shadow: 
+            0 0 15px #ffffff, 
+            0 0 35px var(--studio-accent), 
+            0 0 70px rgba(220, 177, 74, 0.65) !important;
+        animation: scanner-flicker 0.12s infinite linear !important;
+        opacity: 1 !important;
+    }
+
+    .branding-label {
+        font-size: 0.65rem;
+        color: var(--studio-accent);
+        letter-spacing: 2px;
+        font-weight: 800;
+        opacity: 0.8;
+        text-transform: uppercase;
+    }
+
+    .viewer-meta-box {
+        position: fixed; /* Fuera del flujo de la imagen */
+        bottom: 1.5rem;
+        right: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.2rem;
+        text-align: right;
+        pointer-events: none;
+        z-index: 1000;
+        opacity: 0.4;
+    }
+
+    .f11-hint {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 2rem;
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.4);
+        font-family: monospace;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        pointer-events: none;
+        z-index: 1000;
+    }
+
+    .mobile-zoom-hint {
+        display: none; /* Oculto por defecto en escritorio */
+    }
+
+    @media (max-width: 768px) {
+        .f11-hint {
+            display: none; /* Inútil en celulares */
+        }
+
+        .mobile-zoom-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            bottom: 6.5rem; /* Posicionado flotante debajo de la foto */
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 4rem);
+            max-width: 320px;
+            font-size: 0.6rem;
+            color: var(--studio-accent);
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(10, 10, 10, 0.78);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(220, 177, 74, 0.25);
+            padding: 0.5rem 0.8rem;
+            border-radius: 20px;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            animation: pulse-hint 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-hint {
+            0%, 100% { opacity: 0.8; transform: translateX(-50%) scale(1); }
+            50% { opacity: 1; transform: translateX(-50%) scale(1.02); }
+        }
+    }
+
+    #viewer-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.2rem;
+        color: #fff;
+        font-weight: 500;
+        letter-spacing: 1px;
+    }
+
+    #viewer-date {
+        font-size: 0.65rem;
+        color: var(--studio-accent);
+        font-family: monospace;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 3rem;
+        cursor: pointer;
+        line-height: 1;
+        transition: 0.4s;
+        opacity: 0.5;
+    }
+
+    .close-btn:hover {
+        transform: rotate(180deg);
+        color: var(--studio-accent);
+        opacity: 1;
+    }
+
+    .studio-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 3rem 0;
+        padding: 1.5rem 0;
+        border-top: 1px solid rgba(255,255,255,0.03);
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .filter-group .label {
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: var(--studio-text);
+        text-transform: uppercase;
+    }
+
+    .studio-select {
+        background: #0a0a0a;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+        padding: 0.8rem 1.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        min-width: 280px;
+        outline: none;
+        transition: 0.3s;
+        font-family: inherit;
+    }
+
+    .studio-select:hover {
+        border-color: var(--studio-accent);
+    }
+
+    .play-btn {
+        background: transparent;
+        border: 1px solid var(--studio-accent);
+        color: var(--studio-accent);
+        padding: 0.8rem 2rem;
+        font-size: 0.7rem;
+        font-weight: 900;
+        letter-spacing: 3px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: 0.4s;
+    }
+
+    .play-btn.active {
+        background: var(--studio-accent);
+        color: #000;
+    }
+
+    .play-btn:hover {
+        background: rgba(220, 177, 74, 0.1);
+        box-shadow: 0 0 30px rgba(220, 177, 74, 0.2);
+    }
+
+    @media (max-width: 900px) {
+        .studio-controls { flex-direction: column; align-items: flex-start; }
+        .play-btn { width: 100%; justify-content: center; }
+    }
+
+    @media (max-width: 768px) {
+        .studio-wrapper { 
+            padding: 6rem 1.2rem 7rem; /* Aumenta padding inferior para no solapar con la botonera flotante */
+        }
+        .studio-header {
+            padding: 2rem 1.5rem;
+            margin-bottom: 3.5rem;
+        }
+        .studio-nav {
+            padding: 1.2rem 1.2rem;
+        }
+        .contact-sheet { 
+            column-count: 1 !important; /* Fuerza una sola columna vertical limpia en móviles */
+            column-gap: 0;
+        }
+        .photo-cell {
+            margin-bottom: 2.5rem; /* Separación clara entre fotos */
+        }
+        /* 🚀 CORRECCIÓN CLAVE: Reducción del tamaño del título y control responsivo para evitar desborde en celular */
+        .main-title {
+            font-size: clamp(2.1rem, 9.5vw, 2.7rem) !important;
+            letter-spacing: -1.5px !important;
+            line-height: 1.05 !important;
+            margin: 1.2rem 0 !important;
+        }
+    }
+</style>
+
+<script>
+    // --- SELECCIÓN DE ELEMENTOS ---
+    const viewer = document.getElementById('viewer');
+    const viewerTitle = document.getElementById('viewer-title');
+    const viewerDate = document.getElementById('viewer-date');
+    const closeBtn = document.getElementById('close-viewer');
+    const comparisonStage = document.getElementById('comparison-stage');
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const lavaContainer = document.getElementById('lava-container');
+
+    // --- ESTADO GLOBAL ---
+    let isTransitioning = false;
+    let isDragging = false;
+    let currentX = 50;
+
+    const serieGroups = document.querySelectorAll('.serie-group');
+
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Actualizar clase activa en los botones de pestañas
+            filterTabs.forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+
+            const filter = tab.getAttribute('data-value');
+
+            // Filtrar grupos con la misma lógica dinámica ultra suave
+            serieGroups.forEach(group => {
+                const el = group as HTMLElement;
+                const serie = el.getAttribute('data-serie');
+                const shouldShow = filter === 'all' || serie === filter;
+
+                if (shouldShow) {
+                    el.style.display = 'block';
+                    void el.offsetWidth; // Reflow
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                } else {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(15px)';
+                    
+                    el.ontransitionend = null;
+                    el.ontransitionend = () => {
+                        if (el.style.opacity === '0') {
+                            el.style.display = 'none';
+                        }
+                        el.ontransitionend = null;
+                    };
+                }
+            });
+        });
+    });
+
+    // --- FUNCIÓN GLOBAL DE APERTURA ---
+    (window as any).openStudioViewer = function(btn: HTMLElement) {
+        const src = btn.getAttribute('data-src') || '';
+        const hover = btn.getAttribute('data-hover') || '';
+        const title = btn.getAttribute('data-title') || '';
+        const date = btn.getAttribute('data-date') || '';
+        
+        updateViewer(src, hover, title, date);
+        
+        if (viewer) {
+            viewer.style.display = 'flex';
+            viewer.classList.add('active');
+            document.body.classList.add('viewer-open');
+        }
+    };
+
+    function updateViewer(src: string, hoverSrc: string, title: string, date: string) {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        const current = document.getElementById('slide-current');
+        const next = document.getElementById('slide-next');
+
+        if (!current || !next) {
+            isTransitioning = false;
+            return;
+        }
+
+        const nextMain = next.querySelector('.v-main') as HTMLImageElement;
+        const nextHover = next.querySelector('.v-hover') as HTMLImageElement;
+
+        if (!nextMain) {
+            isTransitioning = false;
+            return;
+        }
+
+        nextMain.src = src;
+
+        if (hoverSrc && hoverSrc !== src && nextHover) {
+            nextHover.src = hoverSrc;
+            nextHover.style.display = 'block';
+            comparisonStage?.classList.add('has-comparison');
+            
+            // Resetear posición
+            currentX = 50;
+            nextMain.style.clipPath = `inset(0 50% 0 0)`;
+            const nextLine = next.querySelector('.curtain-line') as HTMLElement;
+            if (nextLine) nextLine.style.left = `50%`;
+            resetZoom(); // Resetear zoom al cambiar de diapositiva
+        } else {
+            if (nextHover) nextHover.style.display = 'none';
+            comparisonStage?.classList.remove('has-comparison');
+            nextMain.style.clipPath = 'none';
+            resetZoom(); // Resetear zoom al cambiar de diapositiva sin comparativa
+        }
+
+        next.className = 'slide-item enter-right';
+        void next.offsetWidth;
+
+        current.classList.add('exit-left');
+        current.classList.remove('active');
+        next.classList.add('active');
+        next.classList.remove('enter-right');
+
+        if (viewerTitle) viewerTitle.textContent = title;
+        if (viewerDate) viewerDate.textContent = date;
+
+        setTimeout(() => {
+            current.className = 'slide-item';
+            const tempId = current.id;
+            current.id = next.id;
+            next.id = tempId;
+            isTransitioning = false;
+        }, 1400);
+    }
+
+    // --- MOTOR DE COMPARACIÓN (LAVA) ---
+    function updateComparator(clientX: number) {
+        if (!comparisonStage || !comparisonStage.classList.contains('has-comparison')) return;
+        const activeItem = comparisonStage.querySelector('.slide-item.active');
+        const mainImg = activeItem?.querySelector('.v-main') as HTMLElement;
+        const line = activeItem?.querySelector('.curtain-line') as HTMLElement;
+        
+        if (!mainImg || !line) return;
+
+        const rect = mainImg.getBoundingClientRect();
+        let x = ((clientX - rect.left) / rect.width) * 100;
+        currentX = Math.max(0, Math.min(100, x));
+
+        mainImg.style.clipPath = `inset(0 ${100 - currentX}% 0 0)`;
+        line.style.left = `${currentX}%`;
+    }
+
+    const startDragging = (e: PointerEvent) => {
+        if (!comparisonStage?.classList.contains('has-comparison')) return;
+        if (currentScale > 1.05) return; // Desactivar drag de cortina si el zoom está activo
+        isDragging = true;
+        comparisonStage.classList.add('is-dragging');
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        updateComparator(e.clientX);
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+        if (!isDragging) return;
+        updateComparator(e.clientX);
+    };
+
+    const endDragging = (e: PointerEvent) => {
+        isDragging = false;
+        comparisonStage?.classList.remove('is-dragging');
+        if (e && (e.target as HTMLElement).hasPointerCapture(e.pointerId)) {
+            (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+        }
+    };
+
+    comparisonStage?.addEventListener('pointerdown', startDragging);
+    comparisonStage?.addEventListener('pointermove', handlePointerMove);
+    comparisonStage?.addEventListener('pointerup', endDragging);
+    comparisonStage?.addEventListener('pointercancel', endDragging);
+    comparisonStage?.addEventListener('pointerleave', endDragging);
+
+    // --- SISTEMA DE DESTELLOS DE LUZ (SPARKS) ---
+    function spawnLavaDrop() {
+        if (!isDragging || !lavaContainer || !comparisonStage?.classList.contains('has-comparison')) return;
+        
+        const activeLine = comparisonStage?.querySelector('.slide-item.active .curtain-line');
+        if (!activeLine) return;
+
+        const lineRect = activeLine.getBoundingClientRect();
+        const drop = document.createElement('div');
+        const size = Math.random() * 4 + 1.5;
+        
+        drop.style.position = 'absolute';
+        drop.style.left = (lineRect.left + lineRect.width / 2) + 'px';
+        drop.style.top = (lineRect.top + Math.random() * lineRect.height) + 'px';
+        drop.style.width = size + 'px';
+        drop.style.height = size + 'px';
+        // Sparks de luz ámbar/blanca coherentes con el láser escáner
+        drop.style.background = Math.random() > 0.65 ? '#ffffff' : 'var(--studio-accent)';
+        drop.style.borderRadius = '50%';
+        drop.style.filter = 'blur(0.5px)';
+        drop.style.boxShadow = '0 0 6px var(--studio-accent), 0 0 12px #ffffff';
+        drop.style.zIndex = '1000001';
+        
+        lavaContainer.appendChild(drop);
+        
+        // Animación de dispersión radial rápida y enérgica en lugar de caída vertical
+        const anim = drop.animate([
+            { transform: `translate(0, 0) scale(1)`, opacity: 1 },
+            { transform: `translate(${(Math.random() - 0.5) * 80}px, ${(Math.random() - 0.5) * 80}px) scale(0)`, opacity: 0 }
+        ], {
+            duration: 400 + Math.random() * 450,
+            easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+        });
+        
+        anim.onfinish = () => drop.remove();
+    }
+    setInterval(spawnLavaDrop, 45);
+
+    // --- CONTROLES ---
+    closeBtn?.addEventListener('click', () => {
+        isDragging = false;
+        resetZoom(); // Resetear zoom al cerrar el visor
+        if (viewer) {
+            viewer.classList.remove('active');
+            viewer.style.display = 'none';
+            document.body.classList.remove('viewer-open');
+        }
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && viewer?.classList.contains('active')) {
+            closeBtn?.click();
+        }
+    });
+
+    // --- GESTOS MULTITÁCTILES (PINCH-TO-ZOOM Y PAN EN CELULARES) ---
+    let currentScale = 1;
+    let initialDistance = 0;
+    let panStartX = 0;
+    let panStartY = 0;
+    let panX = 0;
+    let panY = 0;
+    let isPinching = false;
+    let lastTap = 0;
+
+    function getDistance(t1: Touch, t2: Touch) {
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function resetZoom() {
+        currentScale = 1;
+        panX = 0;
+        panY = 0;
+        const activeItem = comparisonStage?.querySelector('.slide-item.active');
+        const wrapper = activeItem?.querySelector('.comparison-wrapper') as HTMLElement;
+        if (wrapper) {
+            wrapper.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+            wrapper.style.transform = 'scale(1) translate(0px, 0px)';
+            setTimeout(() => {
+                wrapper.style.transition = '';
+            }, 300);
+        }
+    }
+
+    comparisonStage?.addEventListener('touchstart', (e: TouchEvent) => {
+        if (e.touches.length === 2) {
+            isPinching = true;
+            initialDistance = getDistance(e.touches[0], e.touches[1]);
+        } else if (e.touches.length === 1 && currentScale > 1.05) {
+            isPinching = false;
+            panStartX = e.touches[0].clientX - panX;
+            panStartY = e.touches[0].clientY - panY;
+        }
+    }, { passive: false });
+
+    comparisonStage?.addEventListener('touchmove', (e: TouchEvent) => {
+        const activeItem = comparisonStage?.querySelector('.slide-item.active');
+        const wrapper = activeItem?.querySelector('.comparison-wrapper') as HTMLElement;
+        if (!wrapper) return;
+
+        if (e.touches.length === 2 && isPinching) {
+            e.preventDefault(); // Evitar zoom nativo del navegador
+            const dist = getDistance(e.touches[0], e.touches[1]);
+            const newScale = currentScale * (dist / initialDistance);
+            
+            // Limitar escala entre 1x y 4x
+            const boundedScale = Math.max(1, Math.min(4, newScale));
+            
+            // Aplicar transformación compensada
+            wrapper.style.transform = `scale(${boundedScale}) translate(${panX / boundedScale}px, ${panY / boundedScale}px)`;
+            
+            // Guardar escala temporal
+            (window as any).tempScale = boundedScale;
+        } else if (e.touches.length === 1 && currentScale > 1.05) {
+            e.preventDefault(); // Evitar scroll de la página al arrastrar
+            
+            const rawPanX = e.touches[0].clientX - panStartX;
+            const rawPanY = e.touches[0].clientY - panStartY;
+            
+            // Límites de desplazamiento según la escala
+            const limitX = (currentScale - 1) * 150;
+            const limitY = (currentScale - 1) * 150;
+            
+            panX = Math.max(-limitX, Math.min(limitX, rawPanX));
+            panY = Math.max(-limitY, Math.min(limitY, rawPanY));
+            
+            wrapper.style.transform = `scale(${currentScale}) translate(${panX / currentScale}px, ${panY / currentScale}px)`;
+        }
+    }, { passive: false });
+
+    comparisonStage?.addEventListener('touchend', (e: TouchEvent) => {
+        if (isPinching && e.touches.length < 2) {
+            isPinching = false;
+            currentScale = (window as any).tempScale || currentScale;
+            
+            if (currentScale <= 1.05) {
+                resetZoom();
+            }
+        }
+        
+        // Atajo: Doble toque para resetear el zoom de inmediato
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+            e.preventDefault();
+            resetZoom();
+        }
+        lastTap = currentTime;
+    });
+</script>

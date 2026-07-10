@@ -1,0 +1,1679 @@
+---
+// d:\web_javiermix\JAVIERMIX-AR-0504\src\pages\laboratorio\editor.astro
+import Layout from '@layouts/Layout.astro';
+import { getLaboratorioFiles, getAssetUrl } from '@conexion/directus';
+
+const laboratorioFiles = await getLaboratorioFiles() as any[];
+const editorVersion = '2.5';
+---
+
+<Layout title="Estudio Editor 3D/IA | Laboratorio JMX" themeForce="dark">
+    <main class="editor-portal">
+        <!-- 🧭 Top Navigation -->
+        <nav class="editor-nav">
+            <a href="/laboratorio" class="back-link">
+                <span class="nav-icon">←</span>
+                VOLVER AL GABINETE
+            </a>
+            <div class="system-status">
+                <span class="status-dot animate-pulse"></span>
+                ESTUDIO DIGITAL JMX: v.{editorVersion}
+            </div>
+        </nav>
+
+        <!-- 🎛️ Editor Layout -->
+        <div class="editor-layout">
+            <!-- 🛠️ Left Toolbar -->
+            <aside class="left-toolbar">
+                <div class="tool-group">
+                    <button class="tool-btn active" data-tool="pointer" title="Puntero / Navegar (V)">
+                        <span class="icon">➔</span>
+                        <span class="tooltip">Mover Capas / Inspeccionar</span>
+                    </button>
+                    <button class="tool-btn" data-tool="adjust" title="Revelado Digital (C)">
+                        <span class="icon">☀️</span>
+                        <span class="tooltip">Ajustar Brillo, Contraste y Exposición</span>
+                    </button>
+                    <button class="tool-btn" data-tool="filter" title="Filtros Artísticos (F)">
+                        <span class="icon">🎨</span>
+                        <span class="tooltip">Aplicar tonalidades de autor</span>
+                    </button>
+                    <button class="tool-btn" data-tool="depth3d" title="Relieve 3D (D)">
+                        <span class="icon">🧊</span>
+                        <span class="tooltip">Pintar o generar relieve 3D interactivo</span>
+                    </button>
+                    <button class="tool-btn" data-tool="text" title="Añadir Texto (T)">
+                        <span class="icon">T</span>
+                        <span class="tooltip">Capas tipográficas personalizadas</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- 🖥️ Central Canvas Viewport -->
+            <section class="canvas-viewport" id="drop-zone">
+                <div class="canvas-container">
+                    <canvas id="main-webgl-canvas"></canvas>
+                    <div id="brush-cursor" class="brush-cursor-indicator"></div>
+                    <div class="upload-overlay" id="upload-prompt">
+                        <div class="upload-icon">📂</div>
+                        <h3>ARRASTRÁ UNA IMAGEN AQUÍ</h3>
+                        <p>o haz clic para buscar un archivo local</p>
+                        <span class="badge-limits">Formatos soportados: JPG, PNG, WEBP, AVIF</span>
+                    </div>
+                </div>
+                <!-- Mini barra de estado del lienzo -->
+                <div class="canvas-status">
+                    <span id="image-dimensions">Resolución: N/A</span>
+                    <span id="active-tool-status">Herramienta: Puntero</span>
+                </div>
+            </section>
+
+            <!-- ⚙️ Right Properties Panel -->
+            <aside class="right-panel">
+                <div class="panel-section">
+                    <h3>PROPIEDADES</h3>
+                    <div class="properties-content">
+                        <!-- Ajustes de Revelado -->
+                        <div class="tool-settings" id="adjust-settings" style="display: none;">
+                            <label class="setting-title">Revelado Digital</label>
+                            
+                            <div class="setting-row">
+                                <label>Brillo</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="brightness-slider" min="50" max="150" value="100" class="editor-range">
+                                    <span class="slider-val" id="brightness-val">100%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-row">
+                                <label>Contraste</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="contrast-slider" min="50" max="150" value="100" class="editor-range">
+                                    <span class="slider-val" id="contrast-val">100%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-row">
+                                <label>Saturación</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="saturation-slider" min="0" max="200" value="100" class="editor-range">
+                                    <span class="slider-val" id="saturation-val">100%</span>
+                                </div>
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Exposición</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="exposure-slider" min="50" max="150" value="100" class="editor-range">
+                                    <span class="slider-val" id="exposure-val">100%</span>
+                                </div>
+                            </div>
+                            <button class="btn-action secondary reset-btn" id="reset-adjusts">Restaurar Valores</button>
+                        </div>
+
+                        <!-- Filtros Artísticos -->
+                        <div class="tool-settings" id="filter-settings" style="display: none;">
+                            <label class="setting-title">Filtros Creativos</label>
+                            <div class="filter-presets">
+                                <button class="filter-preset active" data-filter="none">Ninguno</button>
+                                <button class="filter-preset" data-filter="crimson">Velvet Crimson</button>
+                                <button class="filter-preset" data-filter="sepia">Golden Sepia</button>
+                                <button class="filter-preset" data-filter="emerald">Esmeralda</button>
+                                <button class="filter-preset" data-filter="monochrome">Gris Platinado</button>
+                                <button class="filter-preset" data-filter="glitch">Glitch Azulado</button>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de Relieve 3D -->
+                        <div class="tool-settings" id="depth3d-settings" style="display: none;">
+                            <label class="setting-title">Relieve 3D e IA</label>
+                            
+                            <div class="setting-row">
+                                <label>Intensidad de Parallax</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="depth-intensity-slider" min="0" max="100" value="30" class="editor-range">
+                                    <span class="slider-val" id="depth-intensity-val">30%</span>
+                                </div>
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Mapa de Profundidad</label>
+                                <select id="depth-map-preset" class="editor-select">
+                                    <option value="brush">Pincel (Pintar Relieve)</option>
+                                    <option value="sphere">Cúpula Central (Esfera)</option>
+                                    <option value="tunnel">Efecto Túnel (Radial)</option>
+                                    <option value="horizon">Gradiente de Horizonte</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row" id="brush-settings">
+                                <label>Tamaño del Pincel</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="brush-size-slider" min="10" max="200" value="60" class="editor-range">
+                                    <span class="slider-val" id="brush-size-val">60px</span>
+                                </div>
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Modo de Visualización 3D</label>
+                                <select id="render-mode-select" class="editor-select">
+                                    <option value="0">Imagen Desplazada (Normal)</option>
+                                    <option value="1">Mapa de Profundidad (Gris)</option>
+                                    <option value="2">Mapa de Calor (Estilo JMX)</option>
+                                    <option value="3">Efecto Anaglifo (3D Estereoscópico)</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row checkbox-row" style="align-items: center;">
+                                <input type="checkbox" id="toggle-visualize-depth" class="editor-checkbox">
+                                <label for="toggle-visualize-depth">Mostrar Mapa de Profundidad</label>
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Cargar Mapa de Profundidad</label>
+                                <input type="file" id="depth-loader" accept="image/*" class="hidden">
+                                <button class="btn-action secondary" id="btn-depth-loader-trigger" style="padding: 0.6rem; font-size: 0.55rem; letter-spacing: 1px;">Cargar Imagen de Relieve</button>
+                            </div>
+                            
+                            <div class="info-box">
+                                <p>💡 <strong>¿Cómo funciona?</strong> Mueve el mouse sobre la imagen para ver el relieve 3D. El blanco indica cercanía y el negro lejanía.</p>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de Texto -->
+                        <div class="tool-settings" id="text-settings" style="display: none;">
+                            <label class="setting-title">Añadir Capas de Texto</label>
+                            <div class="setting-row">
+                                <label>Texto de la Capa</label>
+                                <input type="text" id="text-input" placeholder="Escribe algo..." class="editor-input">
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Tamaño de Letra</label>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="text-size-slider" min="16" max="120" value="48" class="editor-range">
+                                    <span class="slider-val" id="text-size-val">48px</span>
+                                </div>
+                            </div>
+
+                            <div class="setting-row">
+                                <label>Color de Texto</label>
+                                <input type="color" id="text-color" value="#ffffff" class="editor-color">
+                            </div>
+
+                            <button class="btn-action gold" id="add-text-btn">Añadir Capa</button>
+                        </div>
+
+                        <!-- Carga Inicial -->
+                        <div class="tool-settings" id="pointer-settings">
+                            <label class="setting-title">Capas y Proyecto</label>
+                            <div class="layers-list">
+                                <div class="layer-item active" id="background-layer-item">
+                                    <span class="layer-visible">👁️</span>
+                                    <span class="layer-name">Imagen de Fondo</span>
+                                </div>
+                                <div id="dynamic-layers-container">
+                                    <!-- Aquí irán dinámicamente las capas agregadas -->
+                                </div>
+                            </div>
+
+                            <div class="project-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                                <input type="file" id="project-loader" accept=".json" class="hidden">
+                                <button class="btn-action secondary" id="btn-import-project" style="padding: 0.6rem; font-size: 0.55rem; letter-spacing: 1px;">Importar Proyecto</button>
+                                <button class="btn-action secondary" id="btn-export-project" style="padding: 0.6rem; font-size: 0.55rem; letter-spacing: 1px;">Guardar Proyecto</button>
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>BIBLIOTECA JMX</h3>
+                            <div id="directus-library" class="directus-library">
+                                {laboratorioFiles.length ? laboratorioFiles.map(file => (
+                                    <button type="button" class="directus-library-item" data-image-url={getAssetUrl(file.id, { width: 800, quality: 70 })} title={file.filename_download || file.title || 'Imagen JMX'}>
+                                        <img src={getAssetUrl(file.id, { width: 300, quality: 60 })} alt={file.filename_download || file.title || 'Miniatura'} loading="lazy" />
+                                        <span>{file.filename_download || file.title || 'Imagen'}</span>
+                                    </button>
+                                )) : (
+                                    <div class="empty-library">No se encontraron imágenes de laboratorio.</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💾 File Management Buttons -->
+                <div class="panel-section file-management">
+                    <input type="file" id="image-loader" accept="image/*" class="hidden">
+                    <button class="btn-action" id="btn-load-trigger">Cargar Imagen</button>
+                    <button class="btn-action gold disabled" id="btn-export" disabled>Exportar Obra</button>
+                </div>
+            </aside>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    :root {
+        --color-editor-bg: #030303;
+        --color-editor-panel: rgba(15, 15, 15, 0.9);
+        --color-editor-border: rgba(255, 255, 255, 0.08);
+        --color-editor-accent: #dcb14a;
+        --color-editor-text-muted: rgba(255, 255, 255, 0.4);
+        --transition-editor: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .editor-portal {
+        min-height: 100vh;
+        background: var(--color-editor-bg);
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* 🧭 Navigation */
+    .editor-nav {
+        height: 60px;
+        border-bottom: 1px solid var(--color-editor-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 2rem;
+        background: rgba(10, 10, 10, 0.95);
+        backdrop-filter: blur(10px);
+        z-index: 10;
+        flex-shrink: 0;
+    }
+
+    .back-link {
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        opacity: 0.6;
+        transition: var(--transition-editor);
+    }
+
+    .back-link:hover {
+        opacity: 1;
+        color: var(--color-editor-accent);
+    }
+
+    .system-status {
+        font-family: monospace;
+        font-size: 0.6rem;
+        color: var(--color-editor-text-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        background: #00ff88;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #00ff88;
+    }
+
+    /* 🎛️ Layout Grid */
+    .editor-layout {
+        display: flex;
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* 🛠️ Left Toolbar */
+    .left-toolbar {
+        width: 60px;
+        border-right: 1px solid var(--color-editor-border);
+        background: var(--color-editor-panel);
+        backdrop-filter: blur(20px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem 0;
+        z-index: 5;
+        flex-shrink: 0;
+    }
+
+    .tool-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        width: 100%;
+        align-items: center;
+    }
+
+    .tool-btn {
+        width: 44px;
+        height: 44px;
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--color-editor-text-muted);
+        border-radius: 6px;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.1rem;
+        transition: var(--transition-editor);
+    }
+
+    .tool-btn:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    .tool-btn.active {
+        color: var(--color-editor-accent);
+        background: rgba(220, 177, 74, 0.08);
+        border-color: rgba(220, 177, 74, 0.3);
+        box-shadow: inset 0 0 10px rgba(220, 177, 74, 0.05);
+    }
+
+    .tool-btn .tooltip {
+        position: absolute;
+        left: 70px;
+        top: 50%;
+        transform: translateY(-50%) translateX(10px);
+        background: #121212;
+        border: 1px solid var(--color-editor-border);
+        color: #fff;
+        padding: 0.5rem 1rem;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        border-radius: 4px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s, transform 0.3s;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        text-transform: uppercase;
+    }
+
+    .tool-btn:hover .tooltip {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+
+    /* 🖥️ Viewport central */
+    .canvas-viewport {
+        flex: 1;
+        background-color: #0b0b0b;
+        background-image: 
+            radial-gradient(rgba(220, 177, 74, 0.08) 1px, transparent 1px),
+            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 20px 20px, 100px 100px, 100px 100px;
+        background-position: center;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .canvas-container {
+        flex: 1;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    }
+
+    .brush-cursor-indicator {
+        position: absolute;
+        border: 2px dashed rgba(220, 177, 74, 0.6);
+        border-radius: 50%;
+        pointer-events: none;
+        display: none;
+        transform: translate(-50%, -50%);
+        z-index: 100;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    #main-webgl-canvas {
+        max-width: 100%;
+        max-height: 100%;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95);
+        border: 1px solid rgba(255,255,255,0.05);
+        background-image: linear-gradient(45deg, #151515 25%, transparent 25%),
+                          linear-gradient(-45deg, #151515 25%, transparent 25%),
+                          linear-gradient(45deg, transparent 75%, #151515 75%),
+                          linear-gradient(-45deg, transparent 75%, #151515 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        display: none;
+    }
+
+    .upload-overlay {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border: 2px dashed rgba(220, 177, 74, 0.25);
+        border-radius: 12px;
+        padding: 4rem;
+        background: rgba(15, 15, 15, 0.85);
+        backdrop-filter: blur(15px);
+        width: 80%;
+        max-width: 500px;
+        cursor: pointer;
+        transition: var(--transition-editor);
+    }
+
+    .upload-overlay:hover {
+        border-color: var(--color-editor-accent);
+        box-shadow: 0 0 40px rgba(220, 177, 74, 0.08);
+        transform: translateY(-4px);
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .upload-overlay h3 {
+        font-size: 0.9rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        margin-bottom: 0.5rem;
+        color: #fff;
+    }
+
+    .upload-overlay p {
+        font-size: 0.75rem;
+        color: var(--color-editor-text-muted);
+        margin-bottom: 2rem;
+    }
+
+    .badge-limits {
+        font-size: 0.55rem;
+        color: var(--color-editor-accent);
+        border: 1px solid rgba(220, 177, 74, 0.3);
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        letter-spacing: 1px;
+    }
+
+    .canvas-status {
+        height: 35px;
+        border-top: 1px solid var(--color-editor-border);
+        background: var(--color-editor-panel);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 1.5rem;
+        font-family: monospace;
+        font-size: 0.6rem;
+        color: var(--color-editor-text-muted);
+        flex-shrink: 0;
+    }
+
+    /* ⚙️ Right Panel */
+    .right-panel {
+        width: 320px;
+        border-left: 1px solid var(--color-editor-border);
+        background: var(--color-editor-panel);
+        backdrop-filter: blur(20px);
+        display: flex;
+        flex-direction: column;
+        z-index: 5;
+        flex-shrink: 0;
+    }
+
+    .panel-section {
+        padding: 2rem;
+        border-bottom: 1px solid var(--color-editor-border);
+    }
+
+    .panel-section h3 {
+        font-size: 0.68rem;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: var(--color-editor-accent);
+        margin-bottom: 1.5rem;
+        text-transform: uppercase;
+    }
+
+    .properties-content {
+        flex: 1;
+    }
+
+    .tool-settings {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .setting-title {
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        color: #fff;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+    }
+
+    .setting-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .setting-row label {
+        font-size: 0.58rem;
+        font-weight: 900;
+        color: var(--color-editor-text-muted);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+
+    .slider-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .editor-range {
+        flex: 1;
+        -webkit-appearance: none;
+        background: rgba(255,255,255,0.08);
+        height: 3px;
+        border-radius: 2px;
+        outline: none;
+    }
+
+    .editor-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--color-editor-accent);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .editor-range::-webkit-slider-thumb:hover {
+        transform: scale(1.25);
+    }
+
+    .slider-val {
+        font-family: monospace;
+        font-size: 0.6rem;
+        color: var(--color-editor-accent);
+        min-width: 35px;
+        text-align: right;
+    }
+
+    .editor-select, .editor-input {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #fff;
+        padding: 0.6rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        outline: none;
+        transition: var(--transition-editor);
+    }
+
+    .editor-select:focus, .editor-input:focus {
+        border-color: var(--color-editor-accent);
+        background: rgba(255,255,255,0.05);
+    }
+
+    .editor-color {
+        -webkit-appearance: none;
+        border: 1px solid rgba(255,255,255,0.08);
+        width: 100%;
+        height: 38px;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        border-radius: 4px;
+    }
+
+    .editor-color::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+    .editor-color::-webkit-color-swatch {
+        border: none;
+        border-radius: 4px;
+    }
+
+    .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .editor-checkbox {
+        accent-color: var(--color-editor-accent);
+        cursor: pointer;
+    }
+
+    .checkbox-row label {
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+    }
+
+    .info-box {
+        background: rgba(220, 177, 74, 0.05);
+        border: 1px solid rgba(220, 177, 74, 0.15);
+        padding: 1rem;
+        border-radius: 4px;
+    }
+    .info-box p {
+        font-size: 0.6rem;
+        color: rgba(255,255,255,0.6);
+        line-height: 1.5;
+    }
+
+    /* Preset list filters */
+    .filter-presets {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+    }
+
+    .directus-library {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .directus-library-item {
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.03);
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+        padding: 0;
+    }
+
+    .directus-library-item:hover {
+        border-color: rgba(220, 177, 74, 0.45);
+        background: rgba(255,255,255,0.06);
+        transform: translateY(-1px);
+    }
+
+    .directus-library-item img {
+        width: 100%;
+        height: 112px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .directus-library-item span {
+        padding: 0.65rem 0.75rem;
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.8);
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .empty-library {
+        color: var(--color-editor-text-muted);
+        font-size: 0.65rem;
+        line-height: 1.5;
+        padding: 1rem 0.5rem;
+    }
+
+    .filter-preset {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 4px;
+        padding: 0.7rem 0.5rem;
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: var(--color-editor-text-muted);
+        cursor: pointer;
+        transition: var(--transition-editor);
+        text-align: center;
+    }
+
+    .filter-preset:hover {
+        border-color: rgba(255,255,255,0.15);
+        color: #fff;
+    }
+
+    .filter-preset.active {
+        background: rgba(220, 177, 74, 0.08);
+        border-color: var(--color-editor-accent);
+        color: var(--color-editor-accent);
+    }
+
+    /* Layers List */
+    .layers-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .layer-item {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 4px;
+        padding: 0.8rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-size: 0.65rem;
+        cursor: grab;
+        transition: var(--transition-editor);
+    }
+
+    .layer-item.active {
+        border-color: rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.04);
+    }
+
+    .layer-item:hover {
+        background: rgba(255,255,255,0.05);
+    }
+
+    .layer-visible {
+        cursor: pointer;
+        font-size: 0.75rem;
+    }
+
+    .layer-name {
+        flex: 1;
+        font-weight: 600;
+    }
+
+    /* File actions buttons */
+    .file-management {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        border-bottom: none;
+    }
+
+    .btn-action {
+        width: 100%;
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #fff;
+        padding: 1rem;
+        border-radius: 6px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.8rem;
+        transition: var(--transition-editor);
+    }
+
+    .btn-action:hover:not(.disabled) {
+        background: rgba(255,255,255,0.05);
+        border-color: #fff;
+    }
+
+    .btn-action.gold {
+        background: var(--color-editor-accent);
+        border-color: var(--color-editor-accent);
+        color: #000;
+        font-weight: 900;
+    }
+
+    .btn-action.gold:hover:not(.disabled) {
+        background: #fff;
+        border-color: #fff;
+        color: #000;
+        box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-action.disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+    }
+
+    .btn-action.secondary {
+        padding: 0.6rem;
+        font-size: 0.55rem;
+        letter-spacing: 1.5px;
+    }
+
+    @media (max-width: 1024px) {
+        .editor-layout {
+            flex-direction: column;
+        }
+        .left-toolbar {
+            width: 100%;
+            height: 50px;
+            flex-direction: row;
+            justify-content: center;
+            border-right: none;
+            border-bottom: 1px solid var(--color-editor-border);
+            padding: 0;
+        }
+        .tool-group {
+            flex-direction: row;
+            justify-content: center;
+            height: 100%;
+            gap: 0.5rem;
+        }
+        .tool-btn {
+            height: 38px;
+            width: 38px;
+        }
+        .tool-btn .tooltip {
+            left: 50%;
+            top: 60px;
+            transform: translateX(-50%) translateY(-10px);
+        }
+        .tool-btn:hover .tooltip {
+            transform: translateX(-50%) translateY(0);
+        }
+        .right-panel {
+            width: 100%;
+            border-left: none;
+            border-top: 1px solid var(--color-editor-border);
+        }
+        .canvas-container {
+            height: 50vh;
+        }
+    }
+</style>
+
+<script type="module">
+import * as THREE from 'three';
+
+if (typeof window !== 'undefined') {
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', initEditor);
+    } else {
+        initEditor();
+    }
+}
+
+function initEditor() {
+    const dropZone = document.getElementById('drop-zone');
+    const imgLoader = document.getElementById('image-loader');
+    const btnLoadTrigger = document.getElementById('btn-load-trigger');
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const canvas = document.getElementById('main-webgl-canvas');
+    const btnExport = document.getElementById('btn-export');
+    const projectLoader = document.getElementById('project-loader');
+    const btnImportProject = document.getElementById('btn-import-project');
+    const btnExportProject = document.getElementById('btn-export-project');
+    const depthLoader = document.getElementById('depth-loader');
+    const btnDepthLoaderTrigger = document.getElementById('btn-depth-loader-trigger');
+
+    const toolBtns = document.querySelectorAll('.tool-btn');
+    const activeToolLabel = document.getElementById('active-tool-status');
+    const dimensionLabel = document.getElementById('image-dimensions');
+
+    const adjustPanel = document.getElementById('adjust-settings');
+    const filterPanel = document.getElementById('filter-settings');
+    const depthPanel = document.getElementById('depth3d-settings');
+    const textPanel = document.getElementById('text-settings');
+    const pointerPanel = document.getElementById('pointer-settings');
+
+    const brightnessSlider = document.getElementById('brightness-slider');
+    const contrastSlider = document.getElementById('contrast-slider');
+    const saturationSlider = document.getElementById('saturation-slider');
+    const exposureSlider = document.getElementById('exposure-slider');
+    const resetAdjusts = document.getElementById('reset-adjusts');
+    const presetBtns = document.querySelectorAll('.filter-preset');
+    const textInput = document.getElementById('text-input');
+    const textSizeSlider = document.getElementById('text-size-slider');
+    const textColorPicker = document.getElementById('text-color');
+    const addTextBtn = document.getElementById('add-text-btn');
+    const dynamicLayersContainer = document.getElementById('dynamic-layers-container');
+    const libraryContainer = document.getElementById('directus-library');
+
+    const depthIntensitySlider = document.getElementById('depth-intensity-slider');
+    const depthIntensityVal = document.getElementById('depth-intensity-val');
+    const depthPresetSelect = document.getElementById('depth-map-preset');
+    const brushSettingsRow = document.getElementById('brush-settings');
+    const brushSizeSlider = document.getElementById('brush-size-slider');
+    const brushSizeVal = document.getElementById('brush-size-val');
+    const visualizeDepthCheckbox = document.getElementById('toggle-visualize-depth');
+    const renderModeSelect = document.getElementById('render-mode-select');
+
+    if (!canvas) return;
+
+    const offscreenImage = document.createElement('canvas');
+    const offscreenCtx = offscreenImage.getContext('2d');
+    const offscreenDepth = document.createElement('canvas');
+    const offscreenDepthCtx = offscreenDepth.getContext('2d');
+
+    let originalImage = null;
+    let activeTool = 'pointer';
+    let activeFilter = 'none';
+    let filterMode = 0;
+    let adjustments = { brightness: 100, contrast: 100, saturation: 100, exposure: 100 };
+    let textLayers = [];
+    let dragTextIndex = -1;
+    let isPaintingDepth = false;
+    let brushSize = 60;
+    let depthIntensity = 0.3;
+    let selectedDepthPreset = 'brush';
+    let visualizeDepthMap = false;
+    let renderMode = 0;
+    let mouseX = 0.5;
+    let mouseY = 0.5;
+    let targetMouseX = 0.5;
+    let targetMouseY = 0.5;
+
+    let renderer = null;
+    let scene = null;
+    let camera = null;
+    let material = null;
+    let mesh = null;
+    let imageTexture = null;
+    let depthTexture = null;
+    let animationFrameId = null;
+
+    function updateSliderVal(slider, targetId, suffix = '') {
+        const el = document.getElementById(targetId);
+        if (el && slider) el.innerText = `${slider.value}${suffix}`;
+    }
+
+    brightnessSlider?.addEventListener('input', () => {
+        adjustments.brightness = Number(brightnessSlider.value);
+        updateSliderVal(brightnessSlider, 'brightness-val', '%');
+        updateColorCanvas();
+    });
+
+    contrastSlider?.addEventListener('input', () => {
+        adjustments.contrast = Number(contrastSlider.value);
+        updateSliderVal(contrastSlider, 'contrast-val', '%');
+        updateColorCanvas();
+    });
+
+    saturationSlider?.addEventListener('input', () => {
+        adjustments.saturation = Number(saturationSlider.value);
+        updateSliderVal(saturationSlider, 'saturation-val', '%');
+        updateColorCanvas();
+    });
+
+    exposureSlider?.addEventListener('input', () => {
+        adjustments.exposure = Number(exposureSlider.value);
+        updateSliderVal(exposureSlider, 'exposure-val', '%');
+        updateColorCanvas();
+    });
+
+    depthIntensitySlider?.addEventListener('input', () => {
+        depthIntensity = Number(depthIntensitySlider.value) / 100;
+        if (depthIntensityVal) depthIntensityVal.innerText = `${Math.round(depthIntensity * 100)}%`;
+    });
+
+    brushSizeSlider?.addEventListener('input', () => {
+        brushSize = Number(brushSizeSlider.value);
+        if (brushSizeVal) brushSizeVal.innerText = `${brushSize}px`;
+    });
+
+    visualizeDepthCheckbox?.addEventListener('change', () => {
+        visualizeDepthMap = visualizeDepthCheckbox.checked;
+    });
+
+    depthPresetSelect?.addEventListener('change', () => {
+        selectedDepthPreset = depthPresetSelect.value;
+        if (brushSettingsRow) {
+            brushSettingsRow.style.display = selectedDepthPreset === 'brush' ? 'block' : 'none';
+        }
+        if (originalImage) {
+            generateDepthPreset();
+            updateDepthTexture();
+        }
+    });
+
+    resetAdjusts?.addEventListener('click', () => {
+        adjustments = { brightness: 100, contrast: 100, saturation: 100, exposure: 100 };
+        if (brightnessSlider) brightnessSlider.value = '100';
+        if (contrastSlider) contrastSlider.value = '100';
+        if (saturationSlider) saturationSlider.value = '100';
+        if (exposureSlider) exposureSlider.value = '100';
+        updateSliderVal(brightnessSlider, 'brightness-val', '%');
+        updateSliderVal(contrastSlider, 'contrast-val', '%');
+        updateSliderVal(saturationSlider, 'saturation-val', '%');
+        updateSliderVal(exposureSlider, 'exposure-val', '%');
+        updateColorCanvas();
+    });
+
+    toolBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            toolBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeTool = btn.getAttribute('data-tool') || 'pointer';
+            if (activeToolLabel) activeToolLabel.innerText = `Herramienta: ${activeTool.toUpperCase()}`;
+            if (adjustPanel) adjustPanel.style.display = activeTool === 'adjust' ? 'flex' : 'none';
+            if (filterPanel) filterPanel.style.display = activeTool === 'filter' ? 'flex' : 'none';
+            if (depthPanel) depthPanel.style.display = activeTool === 'depth3d' ? 'flex' : 'none';
+            if (textPanel) textPanel.style.display = activeTool === 'text' ? 'flex' : 'none';
+            if (pointerPanel) pointerPanel.style.display = activeTool === 'pointer' ? 'flex' : 'none';
+        });
+    });
+
+    btnLoadTrigger?.addEventListener('click', () => imgLoader?.click());
+    uploadPrompt?.addEventListener('click', () => imgLoader?.click());
+
+    imgLoader?.addEventListener('change', (event) => {
+        const input = event.target;
+        const file = input.files && input.files[0];
+        if (file) loadImageFile(file);
+    });
+
+    dropZone?.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    dropZone?.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+    dropZone?.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+        if (file) loadImageFile(file);
+    });
+
+    btnExport?.addEventListener('click', exportFinalImage);
+    btnExportProject?.addEventListener('click', exportProject);
+    btnImportProject?.addEventListener('click', () => projectLoader?.click());
+
+    libraryContainer?.addEventListener('click', (event) => {
+        const target = event.target;
+        const item = target && typeof target.closest === 'function' ? target.closest('.directus-library-item') : null;
+        if (item) {
+            const imageUrl = item.dataset.imageUrl;
+            if (imageUrl) loadImageUrl(imageUrl);
+        }
+    });
+
+    projectLoader?.addEventListener('change', (event) => {
+        const input = event.target;
+        const file = input.files && input.files[0];
+        if (file) importProject(file);
+    });
+
+    btnDepthLoaderTrigger?.addEventListener('click', () => depthLoader?.click());
+    depthLoader?.addEventListener('change', (event) => {
+        const input = event.target;
+        const file = input.files && input.files[0];
+        if (file) loadDepthFile(file);
+    });
+
+    presetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            presetBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeFilter = btn.getAttribute('data-filter') || 'none';
+            filterMode = filterId(activeFilter);
+            if (material?.uniforms?.uFilterMode) {
+                material.uniforms.uFilterMode.value = filterMode;
+            }
+            updateColorCanvas();
+        });
+    });
+
+    renderModeSelect?.addEventListener('change', () => {
+        renderMode = Number(renderModeSelect.value);
+    });
+
+    canvas.addEventListener('mousemove', onCanvasMouseMove);
+    canvas.addEventListener('mousedown', onCanvasMouseDown);
+    window.addEventListener('mouseup', () => {
+        isPaintingDepth = false;
+        dragTextIndex = -1;
+    });
+    window.addEventListener('resize', resizeRenderer);
+    window.addEventListener('beforeunload', cleanup);
+
+    addTextBtn?.addEventListener('click', () => {
+        const text = textInput?.value.trim();
+        if (!text || !originalImage) return;
+        const size = Number(textSizeSlider?.value || '48');
+        const color = textColorPicker?.value || '#ffffff';
+        textLayers.push({ id: `layer-${Date.now()}`, text, size, color, x: 0.5, y: 0.5 });
+        if (textInput) textInput.value = '';
+        updateColorCanvas();
+        renderLayersUI();
+    });
+
+    function loadImageFile(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                originalImage = img;
+                offscreenImage.width = img.width;
+                offscreenImage.height = img.height;
+                offscreenDepth.width = img.width;
+                offscreenDepth.height = img.height;
+                if (offscreenDepthCtx) {
+                    offscreenDepthCtx.fillStyle = '#000000';
+                    offscreenDepthCtx.fillRect(0, 0, img.width, img.height);
+                }
+                canvas.width = img.width;
+                canvas.height = img.height;
+                if (canvas instanceof HTMLCanvasElement) canvas.style.display = 'block';
+                if (uploadPrompt) uploadPrompt.style.display = 'none';
+                if (dimensionLabel) dimensionLabel.innerText = `Resolución: ${img.width}x${img.height}`;
+                if (btnExport) { btnExport.classList.remove('disabled'); btnExport.disabled = false; }
+                textLayers = [];
+                selectedDepthPreset = 'brush';
+                if (depthPresetSelect) depthPresetSelect.value = 'brush';
+                if (brushSettingsRow) brushSettingsRow.style.display = 'block';
+                visualizeDepthMap = false;
+                if (visualizeDepthCheckbox) visualizeDepthCheckbox.checked = false;
+                renderMode = 0;
+                const renderModeSelect = document.getElementById('render-mode-select');
+                if (renderModeSelect) renderModeSelect.value = '0';
+                updateColorCanvas();
+                generateDepthPreset();
+                initThree();
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function loadDepthFile(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                if (!offscreenDepthCtx) return;
+                offscreenDepthCtx.clearRect(0, 0, offscreenDepth.width, offscreenDepth.height);
+                offscreenDepthCtx.drawImage(img, 0, 0, offscreenDepth.width, offscreenDepth.height);
+                updateDepthTexture();
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function loadImageUrl(url) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            originalImage = img;
+            offscreenImage.width = img.width;
+            offscreenImage.height = img.height;
+            offscreenDepth.width = img.width;
+            offscreenDepth.height = img.height;
+            if (offscreenDepthCtx) {
+                offscreenDepthCtx.fillStyle = '#000000';
+                offscreenDepthCtx.fillRect(0, 0, img.width, img.height);
+            }
+            canvas.width = img.width;
+            canvas.height = img.height;
+            if (canvas instanceof HTMLCanvasElement) canvas.style.display = 'block';
+            if (uploadPrompt) uploadPrompt.style.display = 'none';
+            if (dimensionLabel) dimensionLabel.innerText = `Resolución: ${img.width}x${img.height}`;
+            if (btnExport) { btnExport.classList.remove('disabled'); btnExport.disabled = false; }
+            textLayers = [];
+            selectedDepthPreset = 'brush';
+            if (depthPresetSelect) depthPresetSelect.value = 'brush';
+            if (brushSettingsRow) brushSettingsRow.style.display = 'block';
+            visualizeDepthMap = false;
+            if (visualizeDepthCheckbox) visualizeDepthCheckbox.checked = false;
+            renderMode = 0;
+            const renderModeSelect = document.getElementById('render-mode-select');
+            if (renderModeSelect) renderModeSelect.value = '0';
+            updateColorCanvas();
+            generateDepthPreset();
+            initThree();
+        };
+        img.src = url;
+    }
+
+    function updateColorCanvas() {
+        if (!originalImage || !offscreenCtx) return;
+        offscreenCtx.clearRect(0, 0, offscreenImage.width, offscreenImage.height);
+        offscreenCtx.filter = `brightness(${adjustments.brightness * (adjustments.exposure / 100)}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)`;
+        offscreenCtx.drawImage(originalImage, 0, 0, offscreenImage.width, offscreenImage.height);
+        offscreenCtx.filter = 'none';
+        if (activeFilter !== 'none') {
+            offscreenCtx.save();
+            if (activeFilter === 'crimson') {
+                offscreenCtx.fillStyle = 'rgba(220, 70, 70, 0.12)';
+            } else if (activeFilter === 'sepia') {
+                offscreenCtx.fillStyle = 'rgba(220, 177, 74, 0.15)';
+            } else if (activeFilter === 'emerald') {
+                offscreenCtx.fillStyle = 'rgba(20, 180, 120, 0.15)';
+            } else if (activeFilter === 'monochrome') {
+                offscreenCtx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            } else if (activeFilter === 'glitch') {
+                offscreenCtx.drawImage(offscreenImage, 8, 4, offscreenImage.width - 8, offscreenImage.height - 4, 0, 0, offscreenImage.width, offscreenImage.height);
+                offscreenCtx.fillStyle = 'rgba(20, 150, 220, 0.08)';
+            }
+            offscreenCtx.fillRect(0, 0, offscreenImage.width, offscreenImage.height);
+            offscreenCtx.restore();
+        }
+        textLayers.forEach(layer => {
+            offscreenCtx.fillStyle = layer.color;
+            offscreenCtx.font = `bold ${layer.size * (offscreenImage.width / 800)}px 'Cormorant Garamond', serif`;
+            offscreenCtx.textAlign = 'center';
+            offscreenCtx.fillText(layer.text, layer.x * offscreenImage.width, layer.y * offscreenImage.height);
+        });
+        if (material?.uniforms) {
+            material.uniforms.uBrightness.value = adjustments.brightness / 100;
+            material.uniforms.uContrast.value = adjustments.contrast / 100;
+            material.uniforms.uSaturation.value = adjustments.saturation / 100;
+            material.uniforms.uFilterMode.value = filterMode;
+        }
+        updateColorTexture();
+    }
+
+    function renderLayersUI() {
+        if (!dynamicLayersContainer) return;
+        dynamicLayersContainer.innerHTML = textLayers.map((layer, index) => `
+            <div class="layer-item" data-id="${layer.id}">
+                <span class="layer-visible">👁️</span>
+                <span class="layer-name">Texto: "${layer.text.substring(0, 12)}..."</span>
+                <button class="delete-layer-btn" data-idx="${index}">&times;</button>
+            </div>
+        `).join('');
+        document.querySelectorAll('.delete-layer-btn').forEach(btn => {
+            btn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const idx = Number(btn.getAttribute('data-idx'));
+                textLayers.splice(idx, 1);
+                updateColorCanvas();
+                renderLayersUI();
+            });
+        });
+    }
+
+    function generateDepthPreset() {
+        if (!offscreenDepthCtx || !originalImage) return;
+        const w = offscreenDepth.width;
+        const h = offscreenDepth.height;
+        offscreenDepthCtx.fillStyle = '#000000';
+        offscreenDepthCtx.fillRect(0, 0, w, h);
+        if (selectedDepthPreset === 'sphere') {
+            const grad = offscreenDepthCtx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) / 2);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(1, '#000000');
+            offscreenDepthCtx.fillStyle = grad;
+            offscreenDepthCtx.fillRect(0, 0, w, h);
+        } else if (selectedDepthPreset === 'tunnel') {
+            const grad = offscreenDepthCtx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) / 2);
+            grad.addColorStop(0, '#000000');
+            grad.addColorStop(0.7, '#666666');
+            grad.addColorStop(1, '#ffffff');
+            offscreenDepthCtx.fillStyle = grad;
+            offscreenDepthCtx.fillRect(0, 0, w, h);
+        } else if (selectedDepthPreset === 'horizon') {
+            const grad = offscreenDepthCtx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, '#000000');
+            grad.addColorStop(0.5, '#ffffff');
+            grad.addColorStop(1, '#000000');
+            offscreenDepthCtx.fillStyle = grad;
+            offscreenDepthCtx.fillRect(0, 0, w, h);
+        }
+        updateDepthTexture();
+    }
+
+    function initThree() {
+        if (renderer) return;
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.setClearColor(0x000000, 0);
+        const width = canvas.clientWidth || canvas.width;
+        const height = canvas.clientHeight || canvas.height;
+        renderer.setSize(width, height, false);
+        scene = new THREE.Scene();
+        camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+        camera.position.z = 1;
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        material = new THREE.ShaderMaterial({
+            uniforms: {
+                uImage: { value: null },
+                uDepthMap: { value: null },
+                uMouseOffset: { value: new THREE.Vector2(0.5, 0.5) },
+                uDepthIntensity: { value: depthIntensity },
+                uVisualizeDepth: { value: visualizeDepthMap },
+                uRenderMode: { value: renderMode },
+                uBrightness: { value: adjustments.brightness / 100 },
+                uContrast: { value: adjustments.contrast / 100 },
+                uSaturation: { value: adjustments.saturation / 100 },
+                uFilterMode: { value: filterMode }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                precision highp float;
+                uniform sampler2D uImage;
+                uniform sampler2D uDepthMap;
+                uniform vec2 uMouseOffset;
+                uniform float uDepthIntensity;
+                uniform bool uVisualizeDepth;
+                uniform int uRenderMode;
+                uniform float uBrightness;
+                uniform float uContrast;
+                uniform float uSaturation;
+                uniform int uFilterMode;
+                varying vec2 vUv;
+                vec3 adjustColor(vec3 color) {
+                    color *= uBrightness;
+                    color = (color - 0.5) * uContrast + 0.5;
+                    float grey = dot(color, vec3(0.299, 0.587, 0.114));
+                    return mix(vec3(grey), color, uSaturation);
+                }
+                vec3 artisticFilter(vec3 color) {
+                    if (uFilterMode == 1) {
+                        return color * vec3(1.05, 0.9, 0.95);
+                    }
+                    if (uFilterMode == 2) {
+                        return mix(vec3(0.25, 0.16, 0.08), color, 0.7);
+                    }
+                    if (uFilterMode == 3) {
+                        float grey = dot(color, vec3(0.299, 0.587, 0.114));
+                        return vec3(grey);
+                    }
+                    if (uFilterMode == 4) {
+                        return color * vec3(0.8, 1.05, 0.9);
+                    }
+                    if (uFilterMode == 5) {
+                        return mix(color, vec3(color.b * 1.2, color.g * 0.9, color.r * 0.9), 0.25);
+                    }
+                    return color;
+                }
+                void main() {
+                    if (uVisualizeDepth) {
+                        gl_FragColor = texture2D(uDepthMap, vUv);
+                        return;
+                    }
+                    float depthValue = texture2D(uDepthMap, vUv).r;
+                    vec2 displacedUv = vUv + (uMouseOffset - vec2(0.5)) * depthValue * uDepthIntensity;
+                    displacedUv = clamp(displacedUv, 0.0, 1.0);
+                    vec4 color = texture2D(uImage, displacedUv);
+                    color.rgb = adjustColor(color.rgb);
+                    color.rgb = artisticFilter(color.rgb);
+                    if (uRenderMode == 1) {
+                        float gray = texture2D(uDepthMap, vUv).r;
+                        gl_FragColor = vec4(vec3(gray), 1.0);
+                        return;
+                    }
+                    if (uRenderMode == 2) {
+                        float gray = texture2D(uDepthMap, vUv).r;
+                        gl_FragColor = vec4(vec3(gray * 0.4, gray * 0.8, 1.0 - gray), 1.0);
+                        return;
+                    }
+                    if (uRenderMode == 3) {
+                        float r = texture2D(uImage, vec2(clamp(displacedUv.x + 0.01, 0.0, 1.0), displacedUv.y)).r;
+                        float g = color.g;
+                        float b = texture2D(uImage, vec2(clamp(displacedUv.x - 0.01, 0.0, 1.0), displacedUv.y)).b;
+                        gl_FragColor = vec4(r, g, b, color.a);
+                        return;
+                    }
+                    gl_FragColor = color;
+                }
+            `
+        });
+        mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        imageTexture = new THREE.Texture(offscreenImage);
+        imageTexture.minFilter = THREE.LinearFilter;
+        imageTexture.magFilter = THREE.LinearFilter;
+        imageTexture.flipY = false;
+        imageTexture.encoding = THREE.sRGBEncoding;
+        imageTexture.needsUpdate = true;
+        depthTexture = new THREE.Texture(offscreenDepth);
+        depthTexture.minFilter = THREE.LinearFilter;
+        depthTexture.magFilter = THREE.LinearFilter;
+        depthTexture.flipY = false;
+        depthTexture.needsUpdate = true;
+        material.uniforms.uImage.value = imageTexture;
+        material.uniforms.uDepthMap.value = depthTexture;
+        resizeRenderer();
+        renderLoop();
+    }
+
+    function resizeRenderer() {
+        if (!renderer || !camera || !canvas) return;
+        const width = canvas.clientWidth || canvas.width;
+        const height = canvas.clientHeight || canvas.height;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+    }
+
+    function renderLoop() {
+        if (!renderer || !material || !scene || !camera) return;
+        animationFrameId = window.requestAnimationFrame(renderLoop);
+        mouseX += (targetMouseX - mouseX) * 0.08;
+        mouseY += (targetMouseY - mouseY) * 0.08;
+        const offset = new THREE.Vector2((mouseX - 0.5) * 0.04, (mouseY - 0.5) * -0.04);
+        material.uniforms.uMouseOffset.value.copy(offset);
+        material.uniforms.uDepthIntensity.value = activeTool === 'depth3d' ? depthIntensity : 0.0;
+        material.uniforms.uVisualizeDepth.value = visualizeDepthMap;
+        material.uniforms.uRenderMode.value = renderMode;
+        renderer.render(scene, camera);
+    }
+
+    function updateColorTexture() {
+        if (!imageTexture) return;
+        imageTexture.needsUpdate = true;
+    }
+
+    function updateDepthTexture() {
+        if (!depthTexture) return;
+        depthTexture.needsUpdate = true;
+    }
+
+    function onCanvasMouseMove(event) {
+        if (!canvas || !originalImage) return;
+        const rect = canvas.getBoundingClientRect();
+        const xNorm = (event.clientX - rect.left) / rect.width;
+        const yNorm = (event.clientY - rect.top) / rect.height;
+        targetMouseX = xNorm;
+        targetMouseY = yNorm;
+        if (activeTool === 'depth3d' && selectedDepthPreset === 'brush' && isPaintingDepth) {
+            paintDepthBrush(xNorm * offscreenDepth.width, yNorm * offscreenDepth.height);
+        }
+        if (activeTool === 'pointer' && dragTextIndex !== -1) {
+            textLayers[dragTextIndex].x = xNorm;
+            textLayers[dragTextIndex].y = yNorm;
+            updateColorCanvas();
+        }
+    }
+
+    function onCanvasMouseDown(event) {
+        if (!canvas || !originalImage) return;
+        const rect = canvas.getBoundingClientRect();
+        const xNorm = (event.clientX - rect.left) / rect.width;
+        const yNorm = (event.clientY - rect.top) / rect.height;
+        if (activeTool === 'depth3d' && selectedDepthPreset === 'brush') {
+            isPaintingDepth = true;
+            paintDepthBrush(xNorm * offscreenDepth.width, yNorm * offscreenDepth.height);
+        }
+        if (activeTool === 'pointer') {
+            dragTextIndex = textLayers.findIndex(layer => {
+                const dist = Math.hypot(layer.x - xNorm, layer.y - yNorm);
+                return dist < 0.08;
+            });
+        }
+    }
+
+    function paintDepthBrush(x, y) {
+        if (!offscreenDepthCtx) return;
+        const grad = offscreenDepthCtx.createRadialGradient(x, y, 0, x, y, brushSize);
+        grad.addColorStop(0, 'rgba(255,255,255,0.15)');
+        grad.addColorStop(1, 'rgba(255,255,255,0.0)');
+        offscreenDepthCtx.save();
+        offscreenDepthCtx.fillStyle = grad;
+        offscreenDepthCtx.beginPath();
+        offscreenDepthCtx.arc(x, y, brushSize, 0, Math.PI * 2);
+        offscreenDepthCtx.fill();
+        offscreenDepthCtx.restore();
+        updateDepthTexture();
+    }
+
+    function exportFinalImage() {
+        if (!canvas || !btnExport || btnExport.classList.contains('disabled')) return;
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+        const exportCtx = exportCanvas.getContext('2d');
+        if (!exportCtx) return;
+        exportCtx.drawImage(canvas, 0, 0);
+        const url = exportCanvas.toDataURL('image/jpeg', 0.95);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JMX_Obra_Modificada_${Date.now()}.jpg`;
+        link.click();
+    }
+
+    function exportProject() {
+        if (!originalImage) return;
+        const project = {
+            image: offscreenImage.toDataURL('image/png'),
+            adjustments,
+            activeFilter,
+            textLayers,
+            depthMap: offscreenDepth.toDataURL('image/png'),
+            selectedDepthPreset,
+            brushSize,
+            depthIntensity,
+            renderMode,
+            visualizeDepthMap
+        };
+        const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JMX_Editor_Proyecto_${Date.now()}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function importProject(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const project = JSON.parse(reader.result);
+                restoreProject(project);
+            } catch (error) {
+                console.error('Error cargando proyecto:', error);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function restoreProject(project) {
+        if (!project.image) return;
+        const img = new Image();
+        img.onload = () => {
+            originalImage = img;
+            offscreenImage.width = img.width;
+            offscreenImage.height = img.height;
+            offscreenDepth.width = img.width;
+            offscreenDepth.height = img.height;
+            canvas.width = img.width;
+            canvas.height = img.height;
+            if (canvas instanceof HTMLCanvasElement) canvas.style.display = 'block';
+            if (uploadPrompt) uploadPrompt.style.display = 'none';
+            if (dimensionLabel) dimensionLabel.innerText = `Resolución: ${img.width}x${img.height}`;
+            if (btnExport) { btnExport.classList.remove('disabled'); btnExport.disabled = false; }
+            adjustments = project.adjustments || adjustments;
+            activeFilter = project.activeFilter || 'none';
+            textLayers = project.textLayers || [];
+            selectedDepthPreset = project.selectedDepthPreset || 'brush';
+            brushSize = project.brushSize ?? 60;
+            depthIntensity = project.depthIntensity ?? 0.3;
+            renderMode = project.renderMode ?? 0;
+            visualizeDepthMap = project.visualizeDepthMap || false;
+            if (brightnessSlider) brightnessSlider.value = String(adjustments.brightness || 100);
+            if (contrastSlider) contrastSlider.value = String(adjustments.contrast || 100);
+            if (saturationSlider) saturationSlider.value = String(adjustments.saturation || 100);
+            if (exposureSlider) exposureSlider.value = String(adjustments.exposure || 100);
+            updateSliderVal(brightnessSlider, 'brightness-val', '%');
+            updateSliderVal(contrastSlider, 'contrast-val', '%');
+            updateSliderVal(saturationSlider, 'saturation-val', '%');
+            updateSliderVal(exposureSlider, 'exposure-val', '%');
+            if (depthPresetSelect) depthPresetSelect.value = selectedDepthPreset;
+            if (brushSizeSlider) brushSizeSlider.value = String(brushSize);
+            if (depthIntensitySlider) depthIntensitySlider.value = String(Math.round(depthIntensity * 100));
+            if (depthIntensityVal) depthIntensityVal.innerText = `${Math.round(depthIntensity * 100)}%`;
+            if (visualizeDepthCheckbox) visualizeDepthCheckbox.checked = visualizeDepthMap;
+            const renderModeSelect = document.getElementById('render-mode-select');
+            if (renderModeSelect) renderModeSelect.value = String(renderMode);
+            updateColorCanvas();
+            if (project.depthMap) {
+                const depthImg = new Image();
+                depthImg.onload = () => {
+                    if (!offscreenDepthCtx) return;
+                    offscreenDepthCtx.clearRect(0, 0, offscreenDepth.width, offscreenDepth.height);
+                    offscreenDepthCtx.drawImage(depthImg, 0, 0, offscreenDepth.width, offscreenDepth.height);
+                    updateDepthTexture();
+                };
+                depthImg.src = project.depthMap;
+            } else {
+                generateDepthPreset();
+            }
+            renderLayersUI();
+            initThree();
+        };
+        img.src = project.image;
+    }
+
+    function cleanup() {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        window.removeEventListener('resize', resizeRenderer);
+        if (renderer) {
+            renderer.dispose();
+            renderer = null;
+        }
+        if (mesh) {
+            mesh.geometry.dispose();
+            if (mesh.material) mesh.material.dispose();
+        }
+        scene = null;
+        camera = null;
+        material = null;
+        mesh = null;
+        imageTexture = null;
+        depthTexture = null;
+    }
+}
+</script>

@@ -448,32 +448,30 @@ export default function MiniIAWidget() {
             0 0 0 1px rgba(197, 160, 89, 0.3);
         }
 
-        /* Eliminamos la animación de spin por un pulso suave */
         .mini-ia-fab-spin {
           position: absolute;
           inset: -3px;
           border-radius: 50%;
           border: 2px solid transparent;
-          border-top-color: rgba(197, 160, 89, 0.2);
-          border-bottom-color: rgba(197, 160, 89, 0.2);
-          animation: miniIaPulse 2s ease-in-out infinite alternate;
+          border-top-color: rgba(197, 160, 89, 0.4);
+          animation: miniIaSpin 3s linear infinite;
           pointer-events: none;
         }
 
-        @keyframes miniIaPulse {
-          from { transform: scale(0.95); opacity: 0.5; }
-          to { transform: scale(1.05); opacity: 1; }
+        @keyframes miniIaSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
 
         .mini-ia-fab-icon {
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .mini-ia-fab:hover .mini-ia-fab-icon {
-          transform: scale(1.1);
+          transform: rotate(90deg);
         }
 
         .mini-ia-online-badge {
@@ -517,7 +515,7 @@ export default function MiniIAWidget() {
           <div className="mini-ia-header">
             <div className="mini-ia-header-info">
               <div className="mini-ia-avatar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M14.31 8l5.74 9.94"/><path d="M9.69 8h11.48"/><path d="M7.38 12l5.74-9.94"/><path d="M9.69 16L3.95 6.06"/><path d="M14.31 16H2.83"/><path d="M16.62 12l-5.74 9.94"/></svg>
                 <span className="mini-ia-status-dot"></span>
               </div>
               <div className="mini-ia-header-text">
@@ -600,7 +598,13 @@ export default function MiniIAWidget() {
             <div className="mini-ia-fab-spin"></div>
             <div className="mini-ia-fab-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ width: '30px', height: '30px' }}>
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M14.31 8l5.74 9.94" />
+                <path d="M9.69 8h11.48" />
+                <path d="M7.38 12l5.74-9.94" />
+                <path d="M9.69 16L3.95 6.06" />
+                <path d="M14.31 16H2.83" />
+                <path d="M16.62 12l-5.74 9.94" />
               </svg>
             </div>
             <span className="mini-ia-online-badge"></span>
