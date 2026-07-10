@@ -16,6 +16,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect(redirectUrl, 301);
   }
 
+  // Redirigir noirandlux.com a la revista (ya que index es el portfolio de javiermix)
+  if (host && host.includes("noirandlux.com") && context.url.pathname === "/") {
+    return context.redirect(`https://${host}/revista/`, 301);
+  }
+
   return next();
 });
 

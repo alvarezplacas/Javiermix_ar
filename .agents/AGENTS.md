@@ -1,0 +1,1 @@
+Regla de Oro (Noir & Lux): PROHIBIDO usar 'overwrite' o reemplazar páginas enteras de forma destructiva. Antes de tocar cualquier vista principal, se DEBE leer el código existente. Todo componente nuevo se debe inyectar como componente aislado de React o Astro dentro de la estructura actual sin romper el diseño base.

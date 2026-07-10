@@ -921,11 +921,14 @@ const metaDescription = mainFile.description || meta?.description || `Descubre "
 
 .obra-title {
   font-family: var(--font-primary);
-  font-size: 4rem;
+  font-size: clamp(2.2rem, 8vw, 4rem);
   color: var(--color-white);
   margin-bottom: 2rem;
-  line-height: 1;
+  line-height: 1.1;
   font-weight: 300;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .social-feedback-badge {

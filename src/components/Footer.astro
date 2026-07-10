@@ -12,9 +12,10 @@ const footerSeries = allSeries.slice(0, 5);
 const footerArticles = latestArticles.slice(0, 3);
 
 // Fallbacks
+const isRevista = Astro.url.pathname.includes('/revista');
 const brandText = footerSettings?.brand_text || "Un ecosistema dedicado a la fotografía y el arte visual. Explora obras exclusivas Fine Art, lee nuestra revista de tendencias e invita a tu mirada a formar parte de nuestra comunidad curada.";
 const services = footerSettings?.services?.split('\n').filter((s: string) => s.trim() !== '') || ["Venta de Cuadros Fine Art", "Asesoría para Coleccionistas", "Envíos Internacionales", "Certificados de Autenticidad"];
-const instagram = footerSettings?.instagram_url || "https://www.instagram.com/javiermixok/";
+const instagram = isRevista ? "https://www.instagram.com/noirandluxph/" : "https://www.instagram.com/javiermixok/";
 const whatsapp = footerSettings?.whatsapp_url || "#";
 const bluesky = "https://bsky.app/profile/javiermix.bsky.social";
 const linkedin = "https://www.linkedin.com/in/javiermixok";

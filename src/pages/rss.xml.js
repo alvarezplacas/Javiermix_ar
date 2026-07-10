@@ -27,7 +27,8 @@ export async function GET(context) {
       site: context.site || 'https://noirandlux.com',
       xmlns: {
         media: 'http://search.yahoo.com/mrss/',
-        content: 'http://purl.org/rss/1.0/modules/content/'
+        content: 'http://purl.org/rss/1.0/modules/content/',
+        dc: 'http://purl.org/dc/elements/1.1/'
       },
       items: dbArticles.map((article) => {
         // Generar URL de portada optimizada en formato .jpg y ancho de 1200px para crawlers / Google Discover
@@ -52,7 +53,7 @@ export async function GET(context) {
           },
           customData: `
             <media:content url="${imageUrl}" type="image/jpeg" medium="image" width="1200" />
-            <author>${article.author || 'Redacción Noir & Lux'}</author>
+            <dc:creator>${article.author || 'Redacción Noir & Lux'}</dc:creator>
             <content:encoded><![CDATA[${article.content_html || ''}]]></content:encoded>
           `
         };

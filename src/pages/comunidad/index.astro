@@ -11,14 +11,9 @@ export const prerender = false;
 Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
 
 // TODO: Connect to Directus artists/community tables
-// For now, we will use mock data to build the UI based on the Fstoppers analysis
-const artworks = [
-    { id: '1', title: 'Soledad Urbana', author: 'Ana Silva', thumb: '/img/placeholder.jpg', likes: 120, isPick: true },
-    { id: '2', title: 'Luz y Sombra', author: 'Carlos Rey', thumb: '/img/placeholder.jpg', likes: 85, isPick: false },
-    { id: '3', title: 'Reflejos', author: 'Marta Diaz', thumb: '/img/placeholder.jpg', likes: 45, isPick: false },
-];
+const artworks: any[] = [];
 
-const photoOfTheDay = artworks.reduce((prev, current) => (prev.likes > current.likes) ? prev : current);
+const photoOfTheDay = artworks.length > 0 ? artworks.reduce((prev, current) => (prev.likes > current.likes) ? prev : current) : null;
 
 ---
 
@@ -33,7 +28,7 @@ const photoOfTheDay = artworks.reduce((prev, current) => (prev.likes > current.l
 		<!-- 🎭 HERO INMERSIVO COMUNIDAD -->
 		<header class="google-hero">
             <div class="immersive-hero-bg">
-                <div class="bg-layer active" style={`background-image: url('${photoOfTheDay.thumb}')`}></div>
+                {photoOfTheDay && <div class="bg-layer active" style={`background-image: url('${photoOfTheDay.thumb}')`}></div>}
                 <div class="bg-overlay"></div>
             </div>
 
@@ -52,6 +47,7 @@ const photoOfTheDay = artworks.reduce((prev, current) => (prev.likes > current.l
 		</header>
 
         <!-- OBRA DEL DÍA (Photo of the Day) -->
+        {photoOfTheDay && (
         <section class="photo-of-the-day-section">
             <div class="potd-badge">🏆 OBRA DEL DÍA</div>
             <div class="potd-container">
@@ -65,6 +61,7 @@ const photoOfTheDay = artworks.reduce((prev, current) => (prev.likes > current.l
                 </div>
             </div>
         </section>
+        )}
 
 		<!-- 🏛️ CONTENIDO (Default: Obras Recientes / Resultados) -->
 		<div id="content-view" class="viewport">

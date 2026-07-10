@@ -3,804 +3,144 @@
 import Layout from '@layouts/Layout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import CollectorJoin from '@components/CollectorJoin.astro';
-import LumasSliders from '@components/LumasSliders.astro';
 
 export const prerender = false;
-
-// 🚀 FIX: Caché Dinámica para Cloudflare
 Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
 
-import { 
-    getHomeFiles, 
-    getAssetUrl, 
-    DirectusManager, 
-    getHomeSettings,
-    getCatalogoFiles,
-    getArticles
-} from '@conexion/directus';
-import { getOptimizedImageURL } from '@utils/media';
-import { hasLiked } from '@conexion/likes';
+import { getHomeSettings, getAssetUrl } from '@conexion/directus';
 
-let homeAssets = [];
 let homeSettings = null;
-let artworks = [];
-let articles = [];
-
 try {
-    const [assets, settings, artworksRaw, fetchedArticles] = await Promise.all([
-        getHomeFiles(),
-        getHomeSettings(),
-        getCatalogoFiles(),
-        getArticles()
-      ]);
-      homeAssets = assets;
-      homeSettings = settings;
-
-      const clientIp = Astro.clientAddress || "unknown";
-
-      // 🎨 Procesar obras (estilo Lumas, filtrando muestras _2)
-      const filteredArtworks = artworksRaw
-          .filter(file => file.id && file.id.length === 36 && !file.filename_download.toLowerCase().includes('_2'));
-
-      artworks = await Promise.all(filteredArtworks.map(async (file) => {
-          const baseName = file.filename_download.split('.')[0];
-          const mockup = artworksRaw.find(f => f.filename_download.toLowerCase().startsWith(baseName.toLowerCase() + '_2'));
-          const likedByUser = await hasLiked(file.id, clientIp);
-          return {
-              id: file.id,
-              title: file.title || file.filename_download.split('.')[0],
-              serie: file.serie_name || 'Archivo General',
-              thumb: getOptimizedImageURL(file.id, { width: 800, format: 'webp', quality: 80 }),
-              mockup: mockup ? getOptimizedImageURL(mockup.id, { width: 800, format: 'webp', quality: 80 }) : null,
-              likedByUser
-          };
-      }));
-
-    // 📖 Procesar artículos de la revista en formato compacto horizontal
-    const PUBLIC_DIRECTUS_URL = 'https://admin.javiermix.ar';
-    function resolveMedia(id: any): { url: string, type: 'image' | 'video' } {
-      const url = id?.id ? `${PUBLIC_DIRECTUS_URL}/assets/${id.id}` : (typeof id === 'string' ? (id.startsWith('http') ? id : `${PUBLIC_DIRECTUS_URL}/assets/${id}`) : '/img/placeholder.jpg');
-      const type = (url?.toLowerCase().endsWith('.mp4') || url?.includes('video')) ? 'video' : 'image';
-      return { url: url || '/img/placeholder.jpg', type };
-    }
-
-    function decodeHtml(str: string): string {
-      if (!str) return '';
-      return str
-        .replace(/&aacute;/gi, 'á')
-        .replace(/&eacute;/gi, 'é')
-        .replace(/&iacute;/gi, 'í')
-        .replace(/&oacute;/gi, 'ó')
-        .replace(/&uacute;/gi, 'ú')
-        .replace(/&ntilde;/gi, 'ñ')
-        .replace(/&Aacute;/gi, 'Á')
-        .replace(/&Eacute;/gi, 'É')
-        .replace(/&Iacute;/gi, 'Í')
-        .replace(/&Oacute;/gi, 'Ó')
-        .replace(/&Uacute;/gi, 'Ú')
-        .replace(/&Ntilde;/gi, 'Ñ')
-        .replace(/&ldquo;/gi, '“')
-        .replace(/&rdquo;/gi, '”')
-        .replace(/&quot;/gi, '"')
-        .replace(/&amp;/gi, '&')
-        .replace(/&lt;/gi, '<')
-        .replace(/&gt;/gi, '>')
-        .replace(/&nbsp;/gi, ' ')
-        .replace(/&#39;/g, "'")
-        .replace(/&deg;/g, '°');
-    }
-
-    articles = fetchedArticles.map((a: any) => {
-      let slideshow = [resolveMedia(a.featured_image)];
-      if (a.media_json) {
-        try {
-            const extraRaw = typeof a.media_json === 'string' ? JSON.parse(a.media_json) : a.media_json;
-            if (Array.isArray(extraRaw)) {
-                const extra = extraRaw.map(m => resolveMedia(m));
-                slideshow = [...slideshow, ...extra].slice(0, 5);
-            }
-        } catch(e) {}
-      }
-
-      // Decodificar y limpiar etiquetas HTML
-      const rawText = a.content_html ? a.content_html.replace(/<[^>]*>/g, '') : '';
-      const cleanExcerpt = decodeHtml(rawText).substring(0, 160).trim() + '...';
-
-      return {
-        title: a.title,
-        excerpt: cleanExcerpt,
-        slideshow,
-        link: `/revista/${a.id}-${a.slug}`,
-        location: "Buenos Aires",
-        readTime: "5 min"
-      };
-    });
-
-    console.log(`[SSR] 📂 Assets cargados para Home: ${homeAssets.length}, Obras: ${artworks.length}, Artículos: ${articles.length}`);
-} catch (error: any) {
-    console.error(`[SSR-Home-Error] ❌ Fracaso en Fetch de Directus:`, error.message);
+    homeSettings = await getHomeSettings();
+} catch (error) {
+    console.error(`[SSR-Home-Error] Fallo en Fetch de Directus para Settings:`, error);
 }
 
-// Global Fallback if everything fails
-if (homeAssets.length === 0) {
-    console.warn("[SSR-Home-Warning] Usando fallback local por falta de assets en Directus.");
-    homeAssets = [{ id: 'fallback', filename_download: '00.avif', type: 'image/avif' }];
-}
+// --------------------------------------------------------
+// DATOS DINÁMICOS DESDE DIRECTUS O VALORES POR DEFECTO
+// --------------------------------------------------------
 
-// Nota: getAssetUrl centralizado ya maneja HTTPS y optimización.
-function getLocalFallbackUrl(id: string, isVideo: boolean = false) {
-    if (id === 'fallback') return '/media/home/00.avif'; 
-    return getAssetUrl(id, isVideo ? { raw: true } : {});
-}
+const heroImage = homeSettings?.portfolio_photo 
+    ? getAssetUrl(homeSettings.portfolio_photo, { width: 800, format: 'webp', quality: 90 }) 
+    : '/img/portfolio_hero.png';
 
-// Default values for home narrative
-const homeTitle = homeSettings?.title || "Memoria y Potencia";
-const homeContent = homeSettings?.content || "La fotografía no es solo captura; es la luz escribiendo la historia de nuestra resistencia. En cada obra, buscamos el lenguaje de la luz. Entender de dónde venimos es lo que nos permite capturar con autoridad hacia dónde vamos.";
-const famousQuote = homeSettings?.famous_quote || "Capturando el lenguaje de la luz.";
+const heroTitle = homeSettings?.portfolio_title || "Javier Álvarez";
+const heroSubtitle = homeSettings?.portfolio_subtitle || "Fotógrafo & Creador Digital";
+
+// Frases Célebres (Inspiración)
+const qPhoto = homeSettings?.quote_photo || "Un fotógrafo hace una foto, no la toma.";
+const aPhoto = homeSettings?.author_photo || "Pedro Luis Raota";
+
+const qPaint = homeSettings?.quote_paint || "No pinto lo que veo, pinto lo que pienso.";
+const aPaint = homeSettings?.author_paint || "Dalí & Picasso";
+
+const qDesign = homeSettings?.quote_design || "El diseño es la organización de la experiencia visual y la materia.";
+const aDesign = homeSettings?.author_design || "Herbert Bayer";
 ---
 
 <Layout 
-  title="Javier Mix | Fotografía Fine Art" 
-  description="Obra fotográfica de autor sobre metales y papeles premium. Fotografía contemporánea para coleccionistas y espacios exclusivos."
+  title="JavierMix | Portfolio Profesional" 
+  description="Portfolio profesional de Javier Álvarez. Fotografía Fine Art, Diseño y Desarrollo Web."
 >
   <Header currentPath="/" theme="dark" />
   
-  <main class="home-main">
-    <div class="split-screen">
-      <!-- Left side: Immersive Visual -->
-      <aside class="split-visual">
-        <div class="hero-visual-container">
-            {/* Capa de Contenido Mixto (Bucle Infinito) */}
-            <div class="hero-main-stack" id="hero-assets-loop" data-api={DirectusManager.getBaseUrl()}>
-                {homeAssets.filter(a => a.type?.startsWith('video/') || a.type?.startsWith('image/')).map((asset, index) => {
-                    const isVid = asset.type?.startsWith('video/');
-                    return isVid ? (
-                        <video 
-                            src={getLocalFallbackUrl(asset.id, true)} 
-                            class={`hero-media-item ${index === 0 ? 'active' : ''}`}
-                            muted 
-                            loop={false}
-                            playsinline
-                            autoplay={index === 0}
-                            data-type="video"
-                        ></video>
-                    ) : (
-                        <img 
-                            src={getLocalFallbackUrl(asset.id, false)} 
-                            alt={asset.title || "Obra Javier Mix"} 
-                            class={`hero-media-item ${index === 0 ? 'active' : ''}`} 
-                            data-type="image"
-                        />
-                    );
-                })}
-            </div>
-
-            {/* 3. Overlay de Botones/CTAs */}
-            <div class="immersive-cta-overlay">
-                <div class="glass-cta-stack">
-                    <a href="/galeria" class="glass-cta-btn">
-                        <span class="btn-label">VER COLECCIÓN</span>
-                        <span class="btn-hover-bg"></span>
-                    </a>
-                    <a href="/comunidad" class="glass-cta-btn community">
-                        <span class="btn-label">COMUNIDAD</span>
-                        <span class="btn-hover-bg"></span>
-                    </a>
-                    <a href="/revista/" class="glass-cta-btn secondary">
-                        <span class="btn-label">REVISTA ONLINE</span>
-                        <span class="btn-hover-bg"></span>
-                    </a>
-                    <a href="#showroom-anchor" class="glass-cta-btn explore">
-                        <span class="btn-label">EXPLORAR <span class="explore-arrow">↓</span></span>
-                        <span class="btn-hover-bg"></span>
-                    </a>
-                </div>
-            </div>
-        </div>
-      </aside>
-
-      <!-- Right side: Narrative Content -->
-      <section class="split-content">
-        <header class="hero-text">
-          <h1 class="main-heading">
-            <span class="weight-light gold-text">{homeTitle}</span>
-          </h1>
-          <div class="intro-text" set:html={homeContent} />
-        </header>
-
-        <!-- 🌌 Cita Editorial Destacada (JMX Golden Quote) -->
-        <blockquote class="jmx-editorial-quote">
-            <p class="quote-body">"No viajamos para escapar, viajamos para que no se nos escape la vida"</p>
-        </blockquote>
-
-        <div class="home-closing">
-            {famousQuote}
-        </div>
-
-        <!-- Social Links (Floating Bottom Right based on CSS) -->
-        <div class="home-social-links-floating">
-           <a href="#" class="social-circle-btn"><i class="fab fa-instagram"></i></a>
-           <a href="#" class="social-circle-btn"><i class="fab fa-whatsapp"></i></a>
-           <a href="#" class="social-circle-btn"><i class="fab fa-behance"></i></a>
-        </div>
-      </section>
+  <main class="portfolio-main">
+    
+    <!-- FONDOS ANIMADOS OKLCH / KANDINSKY -->
+    <div class="portfolio-background">
+        <div class="kandinsky-shape shape-1"></div>
+        <div class="kandinsky-shape shape-2"></div>
+        <div class="kandinsky-shape shape-3"></div>
     </div>
 
-    <!-- Registro de Coleccionistas -->
-    <CollectorJoin />
+    <!-- 1. HERO SECTION -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="hero-image-container">
+            <img src={heroImage} alt="JavierMix Profile" class="hero-image" />
+        </div>
+        <div>
+            <h1 class="hero-title">{heroTitle}</h1>
+            <p class="hero-subtitle">{heroSubtitle}</p>
+        </div>
+      </div>
+    </section>
 
-    <!-- Carruseles Premium Estilo Lumas (Obras + Revista) -->
-    <LumasSliders artworks={artworks} articles={articles} />
+    <!-- 2. INSPIRACIÓN Y MAESTROS -->
+    <section class="inspiration-section">
+        <h2 class="section-title">Pilares de Inspiración</h2>
+        <div class="quotes-grid">
+            
+            <article class="quote-card">
+                <span class="quote-category">Fotografía</span>
+                <p class="quote-text">"{qPhoto}"</p>
+                <div class="quote-author">- {aPhoto}</div>
+            </article>
+
+            <article class="quote-card">
+                <span class="quote-category">Pintura</span>
+                <p class="quote-text">"{qPaint}"</p>
+                <div class="quote-author">- {aPaint}</div>
+            </article>
+
+            <article class="quote-card">
+                <span class="quote-category">Diseño Gráfico</span>
+                <p class="quote-text">"{qDesign}"</p>
+                <div class="quote-author">- {aDesign}</div>
+            </article>
+
+        </div>
+    </section>
+
+    <!-- 3. HABILIDADES -->
+    <section class="skills-section">
+        <h2 class="section-title">Habilidades y Herramientas</h2>
+        <div class="skills-container">
+            <span class="skill-pill">Fotografía Fine Art</span>
+            <span class="skill-pill">Adobe Photoshop</span>
+            <span class="skill-pill">Adobe Illustrator</span>
+            <span class="skill-pill">Adobe Premiere</span>
+            <span class="skill-pill">UI / UX Design</span>
+            <span class="skill-pill">Astro & React</span>
+            <span class="skill-pill">Docker & VPS</span>
+        </div>
+    </section>
+
+    <!-- 4. ECOSISTEMA DE PROYECTOS -->
+    <section class="projects-section">
+        <h2 class="section-title">Proyectos Destacados</h2>
+        <div class="projects-grid">
+            
+            <a href="https://alvarezplacas.com.ar" target="_blank" rel="noopener noreferrer" class="project-card">
+                <div class="project-bg" style="background-image: url('/img/hero-placas.jpg');"></div>
+                <div class="project-overlay"></div>
+                <div class="project-content">
+                    <h3 class="project-title">Álvarez Placas</h3>
+                    <p class="project-desc">Diseño, fabricación y portal e-commerce líder en reconocimientos.</p>
+                </div>
+            </a>
+
+            <a href="/revista/" class="project-card">
+                <!-- Por ahora usamos el hero generado como fondo, o uno de Directus si existiera -->
+                <div class="project-bg" style="background-image: url('/img/portfolio_hero.png');"></div>
+                <div class="project-overlay"></div>
+                <div class="project-content">
+                    <h3 class="project-title">Noir & Lux</h3>
+                    <p class="project-desc">Revista online y galería de arte contemporáneo (Fotografía de Autor).</p>
+                </div>
+            </a>
+
+        </div>
+    </section>
+
   </main>
 
   <Footer />
 
-  <script>
-    /**
-     * MOTOR DE HIDRATACIÓN HÍBRIDA (V4.1)
-     * Optimizado para transiciones suaves y detección de fallos.
-     */
-    document.addEventListener('astro:page-load', () => {
-        const container = document.getElementById('hero-assets-loop');
-        const initialItems = container?.querySelectorAll('.hero-media-item') || [];
-        
-        let currentIndex = 0;
-        let loopTimeout: any;
-        let isPreparing = false;
-
-        function playItem(item: HTMLElement, onEnd: () => void) {
-            clearTimeout(loopTimeout);
-            
-            if (item.dataset.type === 'video') {
-                const vid = item as HTMLVideoElement;
-                vid.onended = onEnd;
-
-                // Heartbeat safety
-                const safetyTimeout = setTimeout(() => {
-                    console.log("[Home-Slider] 💓 Heartbeat safety triggered");
-                    onEnd();
-                }, 40000);
-
-                const startPlayback = () => {
-                    const dur = vid.duration;
-                    const waitTime = (isFinite(dur) && dur > 0 ? dur : 15) * 1000;
-                    
-                    clearTimeout(loopTimeout);
-                    loopTimeout = setTimeout(() => {
-                        clearTimeout(safetyTimeout);
-                        onEnd();
-                    }, waitTime + 200);
-                };
-
-                if (vid.readyState >= 1) {
-                    startPlayback();
-                } else {
-                    vid.addEventListener('loadedmetadata', startPlayback, { once: true });
-                }
-
-                vid.play().catch(() => {
-                    loopTimeout = setTimeout(onEnd, 5000);
-                });
-            } else {
-                // Images: 6 seconds
-                loopTimeout = setTimeout(onEnd, 6000);
-            }
-        }
-
-        function initSlider() {
-            const items = document.querySelectorAll('.hero-media-item');
-            if (items.length <= 1) return;
-
-            function showNext() {
-                if (isPreparing) return;
-                isPreparing = true;
-
-                const mediaItems = document.querySelectorAll('.hero-media-item');
-                const nextIndex = (currentIndex + 1) % mediaItems.length;
-                
-                const currentItem = mediaItems[currentIndex] as HTMLElement;
-                const nextItem = mediaItems[nextIndex] as HTMLElement;
-
-                // Pre-reproducir si es video para que el primer frame esté listo
-                if (nextItem.dataset.type === 'video') {
-                    (nextItem as HTMLVideoElement).play().catch(() => {});
-                }
-
-                // Swapping con Z-Index dinámico para evitar parpadeos
-                currentItem.style.zIndex = "10";
-                nextItem.style.zIndex = "20";
-                
-                currentItem.classList.remove('active');
-                nextItem.classList.add('active');
-
-                currentIndex = nextIndex;
-                isPreparing = false;
-                playItem(nextItem, showNext);
-            }
-
-            playItem(items[0] as HTMLElement, showNext);
-        }
-
-        if (initialItems.length <= 1) {
-            const PUBLIC_URL = container?.dataset.api || 'https://admin.javiermix.ar';
-            fetch(`${PUBLIC_URL}/files?filter[folder][name][_icontains]=Home&sort=filename_download`)
-                .then(res => res.json())
-                .then(json => {
-                    const assets = json.data || [];
-                    if (assets.length > 0 && container) {
-                        container.innerHTML = '';
-                        assets.forEach((asset: any, idx: number) => {
-                            const isVid = asset.type?.includes('video');
-                            const url = `${PUBLIC_URL}/assets/${asset.id}${isVid ? '' : '?width=1920&format=avif'}`;
-                            const el = document.createElement(isVid ? 'video' : 'img');
-                            el.src = url;
-                            el.className = `hero-media-item ${idx === 0 ? 'active' : ''}`;
-                            if (isVid) {
-                                (el as HTMLVideoElement).muted = true;
-                                (el as HTMLVideoElement).playsInline = true;
-                            }
-                            el.dataset.type = isVid ? 'video' : 'image';
-                            container.appendChild(el);
-                        });
-                        initSlider();
-                    }
-                }).catch(() => {});
-        } else {
-            initSlider();
-        }
-    });
-  </script>
 </Layout>
 
 <style>
-.split-screen {
-    display: flex;
-    min-height: 100dvh;
-    width: 100vw;
-    margin-top: 0;
-    overflow: hidden;
-}
-
-/* Left: Immersive Visual */
-.split-visual {
-    flex: 0 0 50vw;
-    width: 50vw;
-    position: sticky;
-    top: 0;
-    height: 100dvh;
-    overflow: hidden;
-    background-color: #000 !important;
-    margin: 0;
-    padding: 0 !important;
-    z-index: 5;
-}
-
-.hero-visual-container {
-    width: 100%;
-    height: 100dvh;
-    position: relative;
-    overflow: hidden;
-    padding: 0 !important;
-}
-
-.hero-main-stack {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
-}
-
-.hero-poster-master {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: top;
-    z-index: 10;
-    animation: fadeHeroPoster 0.8s ease-out forwards;
-    animation-delay: 0s;
-    pointer-events: none;
-}
-
-@keyframes fadeHeroPoster {
-    from { opacity: 1; filter: blur(0); }
-    to { opacity: 0; filter: blur(20px); visibility: hidden; }
-}
-
-.hero-media-item {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top;
-    z-index: 10;
-    transition: opacity 1.5s ease-in-out;
-    opacity: 0;
-    pointer-events: none;
-    display: block;
-    /* 🚀 FIX: Destrucción total de cualquier resplandor azul */
-    box-shadow: none !important;
-    filter: none !important;
-    border: none !important;
-    outline: none !important;
-}
-
-.hero-media-item.active {
-    opacity: 1 !important;
-    z-index: 20 !important;
-    pointer-events: auto;
-}
-
-/* 🚀 FIX: Asegurar visibilidad 100% sin marcos heredados */
-.wooden-frame, 
-.hero-frame-overlay {
-    display: none !important;
-}
-
-
-.video-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
-
-/* Immersive CTA Styles */
-.immersive-cta-overlay {
-    position: absolute;
-    bottom: 8%; /* Slightly lowered to look perfectly proportioned */
-    left: 0;
-    right: 0;
-    z-index: 100;
-    pointer-events: auto;
-    display: flex;
-    justify-content: center;
-}
-
-/* 🚀 SHOWROOM EXPLORE BUTTON UPGRADE */
-.glass-cta-btn.explore {
-    background: rgba(197, 160, 89, 0.05);
-    border-color: rgba(197, 160, 89, 0.2);
-}
-
-.glass-cta-btn.explore .explore-arrow {
-    display: inline-block;
-    margin-left: 0.8rem;
-    color: #c5a059;
-    font-size: 1rem;
-    line-height: 1;
-    animation: scrollBounceSide 2s infinite ease-in-out;
-}
-
-.glass-cta-btn.explore:hover {
-    border-color: var(--color-accent);
-}
-
-.glass-cta-btn.explore:hover .btn-label {
-    color: var(--color-onyx-deep);
-}
-
-.glass-cta-btn.explore:hover .explore-arrow {
-    color: var(--color-onyx-deep);
-}
-
-@keyframes scrollBounceSide {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(4px);
-    }
-}
-
-.glass-cta-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-    width: 60%;
-}
-
-.glass-cta-btn {
-    position: relative;
-    padding: 1.1rem 2rem;
-    width: 100%;
-    background: rgba(13, 13, 13, 0.5);
-    backdrop-filter: blur(40px) saturate(150%);
-    -webkit-backdrop-filter: blur(40px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
-    color: var(--color-white);
-    text-decoration: none;
-    overflow: hidden;
-    transition: var(--transition-premium);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.glass-cta-btn .btn-label {
-    font-family: var(--font-secondary);
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 3px;
-    z-index: 2;
-}
-
-.glass-cta-btn .btn-hover-bg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: var(--color-accent);
-    opacity: 0;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.8s ease, height 0.8s ease, opacity 0.4s ease;
-    z-index: 1;
-}
-
-.glass-cta-btn:hover {
-    border-color: var(--color-accent);
-    transform: translateX(10px);
-    box-shadow: 0 20px 50px rgba(13, 13, 13, 0.5);
-}
-
-.glass-cta-btn:hover .btn-label {
-    color: var(--color-onyx-deep);
-}
-
-.glass-cta-btn:hover .btn-hover-bg {
-    width: 350px;
-    height: 350px;
-    opacity: 1;
-}
-
-.glass-cta-btn.secondary {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-.glass-cta-btn.community {
-    background: rgba(197, 160, 89, 0.15);
-    border-color: rgba(197, 160, 89, 0.3);
-    box-shadow: inset 0 0 20px rgba(197, 160, 89, 0.1);
-}
-
-.glass-cta-btn.community:hover {
-    border-color: rgba(197, 160, 89, 0.6);
-    background: rgba(197, 160, 89, 0.25);
-}
-
-.glass-cta-btn.secondary:hover {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(50px) saturate(150%);
-    -webkit-backdrop-filter: blur(50px) saturate(150%);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-5px);
-}
-
-.glass-cta-btn.secondary:hover .btn-label {
-    color: var(--color-white);
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-}
-
-.glass-cta-btn.secondary:hover .btn-hover-bg {
-    opacity: 0;
-}
-
-.split-content {
-    flex: 0 0 50%;
-    width: 50%;
-    background-color: var(--color-onyx-soft);
-    padding: 6rem 4% 10rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 100dvh;
-    position: relative;
-    box-sizing: border-box;
-    border-left: 1px solid var(--glass-border);
-}
-
-.main-heading {
-    margin-bottom: 2rem;
-    line-height: 1.1;
-    display: block;
-}
-
-.main-heading .gold-text {
-    font-weight: 300;
-    color: #C5A059;
-    letter-spacing: -0.01em;
-    font-size: clamp(2.5rem, 5vw, 4.5rem);
-}
-
-.intro-text {
-    font-size: 1.1rem;
-    color: var(--color-travertine-light);
-    margin-bottom: 2.5rem;
-    max-width: 85%;
-    line-height: 1.8;
-    font-weight: 300;
-}
-
-/* 🌌 JMX EDITORIAL GOLDEN QUOTE */
-.jmx-editorial-quote {
-    position: relative;
-    margin: 0 0 3rem 0;
-    padding: 1rem 2rem;
-    border-left: 2px solid var(--color-accent);
-    background: rgba(197, 160, 89, 0.02);
-    max-width: 85%;
-    box-sizing: border-box;
-}
-
-.jmx-editorial-quote .quote-body {
-    font-family: var(--font-primary), serif;
-    font-size: 1.3rem;
-    font-style: italic;
-    line-height: 1.6;
-    color: var(--color-travertine-light);
-    margin: 0;
-    font-weight: 300;
-}
-
-.home-section {
-    margin-bottom: 3.5rem;
-}
-
-.home-section h3 {
-    font-family: var(--font-secondary);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 0.75rem;
-    color: var(--color-white);
-    font-weight: 700;
-}
-
-.home-section p {
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.7;
-    max-width: 90%;
-    font-weight: 300;
-}
-
-.home-closing {
-    font-family: var(--font-secondary), sans-serif;
-    font-size: 0.7rem;
-    font-weight: 700;
-    font-style: normal;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--color-accent);
-    opacity: 0.8;
-    margin-top: 2rem;
-    margin-bottom: 4rem;
-    line-height: 1.8;
-    border-left: 2px solid rgba(197, 160, 89, 0.3);
-    padding-left: 1.5rem;
-    max-width: 85%;
-}
-
-.home-social-links-floating {
-    position: absolute;
-    bottom: 2rem;
-    right: 2rem;
-    display: flex;
-    gap: 1rem;
-}
-
-.social-circle-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-white);
-    transition: var(--transition-premium);
-}
-
-.social-circle-btn:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-    transform: translateY(-5px);
-}
-
-@media (max-width: 1024px) {
-    .split-screen {
-        flex-direction: column;
-        overflow-y: auto;
-    }
-    .split-visual, .split-content {
-        width: 100% !important;
-        flex: none !important;
-    }
-    .split-visual {
-        height: 65vh; /* 65% de la pantalla para el impacto visual */
-        position: relative;
-    }
-    /* 🚀 CORRECCIÓN CLAVE: El contenedor debe respetar la altura del panel visual (65vh) en lugar de heredar 100dvh */
-    .hero-visual-container {
-        height: 100% !important;
-    }
-    .immersive-cta-overlay {
-        bottom: 5% !important;
-    }
-    /* 🎨 Forma particular móvil: Grid premium 2x2 para acomodarse al espacio horizontal de celulares */
-    .glass-cta-stack {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.75rem !important;
-        width: 95% !important;
-        max-width: 480px !important;
-    }
-    .glass-cta-btn {
-        padding: 0.85rem 0.5rem !important;
-        border-radius: 0 !important;
-        width: 100% !important;
-        transform: none !important;
-        background: rgba(13, 13, 13, 0.75) !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
-    }
-    .glass-cta-btn:hover {
-        transform: scale(1.02) !important;
-    }
-    .glass-cta-btn .btn-label {
-        font-size: 0.7rem !important;
-        letter-spacing: 1px !important;
-        text-align: center;
-    }
-    /* El botón explorar ahora se queda integrado de manera uniforme */
-    .glass-cta-btn.explore {
-        grid-column: span 2 !important;
-        width: 100% !important;
-        padding: 0.65rem 1.5rem !important;
-    }
-    .split-content {
-        padding: 4rem 10% 6rem; /* Más aire para lectura móvil */
-        border-left: none;
-        border-top: 1px solid var(--glass-border);
-    }
-    .main-heading .gold-text {
-        font-size: 3rem;
-    }
-    .intro-text {
-        max-width: 100%;
-        font-size: 1.2rem; /* Aumentado para mejor legibilidad móvil */
-        line-height: 1.7;
-    }
-    .home-section p {
-        font-size: 1.1rem; /* Un punto más grande también aquí */
-        max-width: 100%;
-    }
-}
-
-/* 📱 Optimizaciones ultrafinas para celulares pequeños */
-@media (max-width: 480px) {
-    .glass-cta-stack {
-        gap: 0.5rem !important;
-        width: 92% !important;
-    }
-    .glass-cta-btn {
-        padding: 0.75rem 0.8rem !important;
-    }
-    .glass-cta-btn .btn-label {
-        font-size: 0.68rem !important;
-        letter-spacing: 1px !important;
-    }
-    .glass-cta-btn.explore {
-        padding: 0.55rem 1.2rem !important;
-    }
-}
+  /* Los estilos base se importan globalmente o se pueden dejar aquí si es un css directo, 
+     pero como creamos portfolio.css, lo incluiremos aquí o en global. */
+  @import url('../styles/portfolio.css');
 </style>
