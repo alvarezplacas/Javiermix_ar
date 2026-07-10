@@ -102,57 +102,57 @@ services:
     networks:
       - javiermix_internal
 
-  # Comunidad Noir & Lux (Discourse)
-  discourse:
-    image: bitnami/discourse:latest
-    container_name: javiermix_discourse
-    restart: always
-    environment:
-      - DISCOURSE_DATABASE_HOST=db
-      - DISCOURSE_DATABASE_PORT_NUMBER=5432
-      - DISCOURSE_DATABASE_USER=postgres
-      - DISCOURSE_DATABASE_PASSWORD=JavierMix2026!
-      - DISCOURSE_DATABASE_NAME=javiermix_discourse
-      - DISCOURSE_REDIS_HOST=cache
-      - DISCOURSE_REDIS_PORT_NUMBER=6379
-      - DISCOURSE_HOST=community.noirandlux.com
-      - DISCOURSE_PORT_NUMBER=80
-      - DISCOURSE_SMTP_HOST=144.217.163.13
-      - DISCOURSE_SMTP_PORT_NUMBER=587
-      - DISCOURSE_SMTP_USER=noreply@noirandlux.com
-      - DISCOURSE_SMTP_PASSWORD=NoirandluxMail2026!
-      - DISCOURSE_SMTP_PROTOCOL=tls
-    volumes:
-      - /opt/javiermix/personal_files/discourse_data:/bitnami/discourse
-    depends_on:
-      - db
-      - cache
-    networks:
-      - javiermix_internal
-      - javiermix_network
+  # Comunidad Noir & Lux (Discourse) - TEMPORALMENTE DESHABILITADO POR FALLO DE IMAGEN BITNAMI
+  # discourse:
+  #   image: bitnami/discourse:latest
+  #   container_name: javiermix_discourse
+  #   restart: always
+  #   environment:
+  #     - DISCOURSE_DATABASE_HOST=db
+  #     - DISCOURSE_DATABASE_PORT_NUMBER=5432
+  #     - DISCOURSE_DATABASE_USER=postgres
+  #     - DISCOURSE_DATABASE_PASSWORD=JavierMix2026!
+  #     - DISCOURSE_DATABASE_NAME=javiermix_discourse
+  #     - DISCOURSE_REDIS_HOST=cache
+  #     - DISCOURSE_REDIS_PORT_NUMBER=6379
+  #     - DISCOURSE_HOST=community.noirandlux.com
+  #     - DISCOURSE_PORT_NUMBER=80
+  #     - DISCOURSE_SMTP_HOST=144.217.163.13
+  #     - DISCOURSE_SMTP_PORT_NUMBER=587
+  #     - DISCOURSE_SMTP_USER=noreply@noirandlux.com
+  #     - DISCOURSE_SMTP_PASSWORD=NoirandluxMail2026!
+  #     - DISCOURSE_SMTP_PROTOCOL=tls
+  #   volumes:
+  #     - /opt/javiermix/personal_files/discourse_data:/bitnami/discourse
+  #   depends_on:
+  #     - db
+  #     - cache
+  #   networks:
+  #     - javiermix_internal
+  #     - javiermix_network
 
   # Tareas en Segundo Plano de Discourse
-  discourse-sidekiq:
-    image: bitnami/discourse:latest
-    container_name: javiermix_discourse_sidekiq
-    restart: always
-    command: /opt/bitnami/scripts/discourse/run.sh sidekiq
-    environment:
-      - DISCOURSE_DATABASE_HOST=db
-      - DISCOURSE_DATABASE_PORT_NUMBER=5432
-      - DISCOURSE_DATABASE_USER=postgres
-      - DISCOURSE_DATABASE_PASSWORD=JavierMix2026!
-      - DISCOURSE_DATABASE_NAME=javiermix_discourse
-      - DISCOURSE_REDIS_HOST=cache
-      - DISCOURSE_REDIS_PORT_NUMBER=6379
-    volumes:
-      - /opt/javiermix/personal_files/discourse_data:/bitnami/discourse
-    depends_on:
-      - db
-      - cache
-      - discourse
-    networks:
-      - javiermix_internal
+  # discourse-sidekiq:
+  #   image: bitnami/discourse:latest
+  #   container_name: javiermix_discourse_sidekiq
+  #   restart: always
+  #   command: /opt/bitnami/scripts/discourse/run.sh sidekiq
+  #   environment:
+  #     - DISCOURSE_DATABASE_HOST=db
+  #     - DISCOURSE_DATABASE_PORT_NUMBER=5432
+  #     - DISCOURSE_DATABASE_USER=postgres
+  #     - DISCOURSE_DATABASE_PASSWORD=JavierMix2026!
+  #     - DISCOURSE_DATABASE_NAME=javiermix_discourse
+  #     - DISCOURSE_REDIS_HOST=cache
+  #     - DISCOURSE_REDIS_PORT_NUMBER=6379
+  #   volumes:
+  #     - /opt/javiermix/personal_files/discourse_data:/bitnami/discourse
+  #   depends_on:
+  #     - db
+  #     - cache
+  #     - discourse
+  #   networks:
+  #     - javiermix_internal
 
 networks:
   javiermix_network:
