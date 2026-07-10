@@ -6,33 +6,44 @@ import Footer from '@components/Footer.astro';
 import { getAssetUrl, fetchFromDirectus, slugify, DirectusManager } from '@conexion/directus';
 import { readItems } from '@directus/sdk';
 
-export const prerender = true;
+// export const prerender = true; // Removido para usar SSR
 
 // NOTA SOBRE VARIABLES DE ENTORNO DE DIRECTUS:
 // DirectusManager y getAssetUrl utilizan internamente las variables de entorno de Directus:
 // - import.meta.env.PUBLIC_DIRECTUS_URL
 
-export async function getStaticPaths({ paginate }) {
-  try {
-    const client = await DirectusManager.getClient();
-    // Obtener todos los artículos publicados
-    const dbArticles = await client.request(readItems('magazine' as any, { 
-        filter: {
-          status: { _in: ['published', 'Publicado'] }
-        },
-        sort: ['-date_created'],
-        fields: ['*', { user_created: ['*'] }],
-        limit: -1
-    }));
-    return paginate(dbArticles, { pageSize: 12 });
-  } catch (e) {
-    console.error('Error fetching articles for pagination:', e);
-    return paginate([], { pageSize: 12 });
-  }
+let allArticles = [];
+try {
+  const client = await DirectusManager.getClient();
+  // Obtener todos los artículos publicados
+  allArticles = await client.request(readItems('magazine' as any, { 
+      filter: {
+        status: { _in: ['published', 'Publicado'] }
+      },
+      sort: ['-date_created'],
+      fields: ['*', { user_created: ['*'] }],
+      limit: -1
+  }));
+} catch (e) {
+  console.error('Error fetching articles for SSR pagination:', e);
 }
 
-const { page } = Astro.props;
-const dbArticles = page.data || [];
+const pageSize = 12;
+const totalPages = Math.max(1, Math.ceil(allArticles.length / pageSize));
+const currentPageParam = Astro.params.page;
+const currentPage = currentPageParam ? parseInt(currentPageParam) : 1;
+
+const dbArticles = allArticles.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+const page = {
+  data: dbArticles,
+  currentPage: currentPage,
+  lastPage: totalPages,
+  url: {
+    prev: currentPage > 1 ? (currentPage === 2 ? '/revista' : `/revista/${currentPage - 1}`) : null,
+    next: currentPage < totalPages ? `/revista/${currentPage + 1}` : null
+  }
+};
 
 // 🛠️ Decodificador de entidades HTML para textos impecables (Estándar JMX Oro)
 function decodeHtml(html: string): string {

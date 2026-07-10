@@ -8,27 +8,7 @@ import { getArticleFeedback } from '@conexion/magazine_feedback';
 import OptimizedImage from '@components/OptimizedImage.astro';
 import { readItems } from '@directus/sdk';
 
-export const prerender = true;
-
-export async function getStaticPaths() {
-  try {
-    const client = await DirectusManager.getClient();
-    const articles = await client.request(readItems('magazine' as any, {
-      filter: {
-        status: { _in: ['published', 'Publicado'] }
-      },
-      fields: ['id', 'slug'],
-      limit: -1
-    }));
-    
-    return articles.map((art: any) => ({
-      params: { slug: `${art.id}-${art.slug}` }
-    }));
-  } catch (e) {
-    console.error('[[slug].astro getStaticPaths] Error fetching paths:', e);
-    return [];
-  }
-}
+// SSR Puro: prerender y getStaticPaths han sido eliminados para cargar los datos en runtime (esquivando Cloudflare)
 
 const { slug } = Astro.params;
 
