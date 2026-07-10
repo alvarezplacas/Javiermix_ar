@@ -74,8 +74,8 @@ const aDesign = homeSettings?.author_design || "Herbert Bayer";
 
     <!-- 2. INSPIRACIÓN Y MAESTROS -->
     <section class="inspiration-section">
-        <h2 class="section-title">Pilares de Inspiración</h2>
-        <div class="quotes-grid">
+        <h2 class="section-title reveal-on-scroll">Pilares de Inspiración</h2>
+        <div class="quotes-grid reveal-on-scroll delay-100">
             
             <article class="quote-card">
                 <span class="quote-category">Fotografía</span>
@@ -100,8 +100,8 @@ const aDesign = homeSettings?.author_design || "Herbert Bayer";
 
     <!-- 3. HABILIDADES -->
     <section class="skills-section">
-        <h2 class="section-title">Habilidades y Herramientas</h2>
-        <div class="skills-container">
+        <h2 class="section-title reveal-on-scroll">Habilidades y Herramientas</h2>
+        <div class="skills-container reveal-on-scroll delay-100">
             <span class="skill-pill">Fotografía Fine Art</span>
             <span class="skill-pill">Adobe Photoshop</span>
             <span class="skill-pill">Adobe Illustrator</span>
@@ -114,8 +114,8 @@ const aDesign = homeSettings?.author_design || "Herbert Bayer";
 
     <!-- 4. ECOSISTEMA DE PROYECTOS -->
     <section class="projects-section">
-        <h2 class="section-title">Proyectos Destacados</h2>
-        <div class="projects-grid">
+        <h2 class="section-title reveal-on-scroll">Proyectos Destacados</h2>
+        <div class="projects-grid reveal-on-scroll delay-100">
             
             <a href="https://alvarezplacas.com.ar" target="_blank" rel="noopener noreferrer" class="project-card">
                 <div class="project-bg" style="background-image: url('/img/hero-placas.jpg');"></div>
@@ -150,3 +150,26 @@ const aDesign = homeSettings?.author_design || "Herbert Bayer";
      pero como creamos portfolio.css, lo incluiremos aquí o en global. */
   @import url('../styles/portfolio.css');
 </style>
+
+<script>
+  // Observador para animaciones de reveal on scroll estilo Rowen
+  document.addEventListener('astro:page-load', () => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.15
+    };
+
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target); // Solo animar la primera vez
+        }
+      });
+    }, observerOptions);
+
+    const revealElements = document.querySelectorAll('.reveal-on-scroll');
+    revealElements.forEach(el => observer.observe(el));
+  });
+</script>
