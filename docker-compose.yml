@@ -104,7 +104,7 @@ services:
 
   # Comunidad Noir & Lux (Discourse)
   discourse:
-    image: bitnami/discourse:3
+    image: bitnami/discourse:latest
     container_name: javiermix_discourse
     restart: always
     environment:
@@ -133,7 +133,7 @@ services:
 
   # Tareas en Segundo Plano de Discourse
   discourse-sidekiq:
-    image: bitnami/discourse:3
+    image: bitnami/discourse:latest
     container_name: javiermix_discourse_sidekiq
     restart: always
     command: /opt/bitnami/scripts/discourse/run.sh sidekiq
