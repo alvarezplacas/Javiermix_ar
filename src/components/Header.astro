@@ -7,11 +7,7 @@ const { currentPath = '/', theme = 'dark', themeForce } = Astro.props;
 <header class={`site-header theme-${theme}`}>
 	<nav class="nav-container" aria-label="Navegación principal">
         <div class="nav-links">
-            <a href="/" class={currentPath === '/' ? 'active' : ''}>Inicio</a>
-            <a href="#portfolio" class={currentPath.startsWith('/portfolio') ? 'active' : ''}>Portfolio</a>
-            <a href="#design" class={currentPath.startsWith('/design') ? 'active' : ''}>Diseño Web</a>
-            <a href="#about" class={currentPath.startsWith('/about') ? 'active' : ''}>Sobre Mí</a>
-            <a href="#contact" class={currentPath.startsWith('/contact') ? 'active' : ''}>Contacto</a>
+            <!-- Enlaces de menú eliminados a petición del usuario -->
             
             <div class="cart-wrapper">
 			    <CartNavButton client:load />
