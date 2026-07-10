@@ -18,6 +18,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: javiermix_network
     container_name: javiermix_web
     restart: always
     env_file:
